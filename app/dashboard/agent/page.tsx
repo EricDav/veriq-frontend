@@ -1,13 +1,15 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import {
   Plus, TrendingUp, CheckCircle, Clock, AlertCircle, Shield,
-  Upload, FileText, RefreshCw, ChevronDown, ChevronUp, Eye,
+  Upload, FileText, Eye, ChevronDown, X, Camera, CreditCard,
+  MapPin, Briefcase, User, Lock,
 } from 'lucide-react';
 import { agentsApi, ApiError } from '@/lib/api';
 import type { Agent } from '@/types';
@@ -16,14 +18,62 @@ import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/components/ui/Toast';
 import { LoadingSpinner, PageLoader } from '@/components/ui/LoadingSpinner';
 
-// ─── Profile form schema ───────────────────────────────────────────────────
+// ─── Constants ────────────────────────────────────────────────────────────
+
+const NIGERIAN_STATES = [
+  'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue',
+  'Borno', 'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu',
+  'FCT (Abuja)', 'Gombe', 'Imo', 'Jigawa', 'Kaduna', 'Kano', 'Katsina',
+  'Kebbi', 'Kogi', 'Kwara', 'Lagos', 'Nasarawa', 'Niger', 'Ogun', 'Ondo',
+  'Osun', 'Oyo', 'Plateau', 'Rivers', 'Sokoto', 'Taraba', 'Yobe', 'Zamfara',
+];
+
+const NIGERIAN_BANKS = [
+  'Access Bank', 'Citibank Nigeria', 'Ecobank Nigeria', 'Fidelity Bank',
+  'First Bank of Nigeria', 'First City Monument Bank (FCMB)', 'Globus Bank',
+  'Guaranty Trust Bank (GTBank)', 'Heritage Bank', 'Jaiz Bank', 'Keystone Bank',
+  'Kuda Bank', 'Lotus Bank', 'Opay', 'Palmpay', 'Polaris Bank',
+  'Premium Trust Bank', 'Providus Bank', 'Stanbic IBTC Bank',
+  'Standard Chartered Bank', 'Sterling Bank', 'Suntrust Bank',
+  'Union Bank of Nigeria', 'United Bank for Africa (UBA)',
+  'Unity Bank', 'Wema Bank', 'Zenith Bank',
+];
+
+const SPECIALIZATION_OPTIONS = [
+  'Apartment Rentals',
+  'Hostels',
+  'Short Stay',
+  'Residential Sales',
+  'Commercial Properties',
+];
+
+const EXPERIENCE_OPTIONS = [
+  { value: '0', label: 'Less than 1 year' },
+  { value: '2', label: '1 – 3 years' },
+  { value: '5', label: '4 – 7 years' },
+  { value: '8', label: '8+ years' },
+];
+
+const TIER_STYLES: Record<AgentTrustTier, string> = {
+  bronze: 'bg-orange-100 text-orange-700',
+  silver: 'bg-slate-100 text-slate-700',
+  gold: 'bg-amber-100 text-amber-700',
+  platinum: 'bg-purple-100 text-purple-700',
+};
+
+// ─── Schemas ──────────────────────────────────────────────────────────────
 
 const profileSchema = z.object({
+  profilePhotoUrl: z.string().url('Enter a valid photo URL').or(z.literal('')).optional(),
   businessName: z.string().max(200).optional(),
   businessAddress: z.string().optional(),
   bio: z.string().max(500).optional(),
   yearsOfExperience: z.coerce.number().min(0).max(50).optional(),
-  specialization: z.string().optional(),
+  stateOfOperation: z.string().optional(),
+  bankAccountName: z.string().optional(),
+  bankName: z.string().optional(),
+  bankAccountNumber: z.string().regex(/^\d{10}$/, 'Account number must be 10 digits').or(z.literal('')).optional(),
+  agreementAccepted: z.boolean().optional(),
 });
 
 type ProfileFormData = z.infer<typeof profileSchema>;
@@ -44,16 +94,141 @@ const level2Schema = z.object({
 });
 type Level2FormData = z.infer<typeof level2Schema>;
 
-// ─── Trust tier info ──────────────────────────────────────────────────────
+// ─── Chip multi-select ────────────────────────────────────────────────────
 
-const TIER_STYLES: Record<AgentTrustTier, string> = {
-  bronze: 'bg-orange-100 text-orange-700',
-  silver: 'bg-slate-100 text-slate-700',
-  gold: 'bg-gold-100 text-gold-700',
-  platinum: 'bg-purple-100 text-purple-700',
-};
+function ChipSelect({
+  label,
+  options,
+  selected,
+  onToggle,
+}: {
+  label: string;
+  options: string[];
+  selected: string[];
+  onToggle: (v: string) => void;
+}) {
+  return (
+    <div>
+      <label className="label">{label}</label>
+      <div className="flex flex-wrap gap-2 mt-1">
+        {options.map((opt) => {
+          const active = selected.includes(opt);
+          return (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => onToggle(opt)}
+              className={`rounded-full px-3 py-1.5 text-xs font-medium border transition-all ${
+                active
+                  ? 'bg-navy-900 text-white border-navy-900'
+                  : 'bg-white text-slate-600 border-slate-200 hover:border-navy-400'
+              }`}
+            >
+              {active && <CheckCircle className="inline h-3 w-3 mr-1" />}
+              {opt}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
-// ─── Component ────────────────────────────────────────────────────────────
+// ─── Location tag input ───────────────────────────────────────────────────
+
+function LocationTagInput({
+  locations,
+  onChange,
+}: {
+  locations: string[];
+  onChange: (locs: string[]) => void;
+}) {
+  const [input, setInput] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const add = () => {
+    const val = input.trim();
+    if (val && !locations.includes(val)) onChange([...locations, val]);
+    setInput('');
+  };
+
+  return (
+    <div>
+      <label className="label">Primary Locations of Operation</label>
+      <p className="text-[11px] text-slate-400 mb-2">Type an area name and press Enter or comma</p>
+      <div
+        className="input flex flex-wrap gap-1.5 min-h-[42px] cursor-text"
+        onClick={() => inputRef.current?.focus()}
+      >
+        {locations.map((loc) => (
+          <span
+            key={loc}
+            className="inline-flex items-center gap-1 rounded-full bg-navy-100 text-navy-800 text-xs font-medium px-2.5 py-1"
+          >
+            {loc}
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onChange(locations.filter((l) => l !== loc)); }}
+              className="text-navy-500 hover:text-navy-900"
+            >
+              <X className="h-2.5 w-2.5" />
+            </button>
+          </span>
+        ))}
+        <input
+          ref={inputRef}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); add(); }
+            if (e.key === 'Backspace' && !input && locations.length) {
+              onChange(locations.slice(0, -1));
+            }
+          }}
+          onBlur={add}
+          className="flex-1 min-w-[120px] outline-none bg-transparent text-sm text-navy-900 placeholder:text-slate-400"
+          placeholder={locations.length === 0 ? 'e.g. Woji, GRA, Lekki…' : ''}
+        />
+      </div>
+    </div>
+  );
+}
+
+// ─── Section card ─────────────────────────────────────────────────────────
+
+function SectionCard({
+  icon: Icon,
+  title,
+  subtitle,
+  done,
+  children,
+}: {
+  icon: React.ElementType;
+  title: string;
+  subtitle: string;
+  done?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="card overflow-hidden">
+      <div className="flex items-center gap-3 p-6 pb-0">
+        <div className={`h-9 w-9 rounded-xl flex items-center justify-center flex-shrink-0 ${done ? 'bg-emerald-100' : 'bg-slate-100'}`}>
+          <Icon className={`h-4 w-4 ${done ? 'text-emerald-600' : 'text-slate-500'}`} />
+        </div>
+        <div className="flex-1">
+          <p className="font-semibold text-navy-900 text-sm flex items-center gap-2">
+            {title}
+            {done && <CheckCircle className="h-3.5 w-3.5 text-emerald-500" />}
+          </p>
+          <p className="text-xs text-slate-500">{subtitle}</p>
+        </div>
+      </div>
+      <div className="p-6 pt-5">{children}</div>
+    </div>
+  );
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────
 
 export default function AgentProfilePage() {
   const { user } = useAuth();
@@ -62,22 +237,31 @@ export default function AgentProfilePage() {
   const [agent, setAgent] = useState<Agent | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [profileExists, setProfileExists] = useState(false);
-  const [activeSection, setActiveSection] = useState<'profile' | 'level1' | 'level2'>('profile');
 
-  // ── Load existing profile ────────────────────────────────────────────
+  // Multi-select states
+  const [specializations, setSpecializations] = useState<string[]>([]);
+  const [operatingLocations, setOperatingLocations] = useState<string[]>([]);
 
   useEffect(() => {
     async function load() {
       try {
         const res = await agentsApi.getMyProfile();
-        setAgent(res.data);
+        const a = res.data;
+        setAgent(a);
         setProfileExists(true);
+        setSpecializations(a.specializations ?? []);
+        setOperatingLocations(a.operatingLocations ?? []);
         resetProfile({
-          businessName: res.data.businessName ?? '',
-          businessAddress: res.data.businessAddress ?? '',
-          bio: res.data.bio ?? '',
-          yearsOfExperience: res.data.yearsOfExperience ?? undefined,
-          specialization: res.data.specialization ?? '',
+          profilePhotoUrl: a.profilePhotoUrl ?? '',
+          businessName: a.businessName ?? '',
+          businessAddress: a.businessAddress ?? '',
+          bio: a.bio ?? '',
+          yearsOfExperience: a.yearsOfExperience ?? undefined,
+          stateOfOperation: a.stateOfOperation ?? '',
+          bankAccountName: a.bankAccountName ?? '',
+          bankName: a.bankName ?? '',
+          bankAccountNumber: a.bankAccountNumber ?? '',
+          agreementAccepted: a.agreementAccepted ?? false,
         });
       } catch {
         // No profile yet
@@ -88,23 +272,37 @@ export default function AgentProfilePage() {
     load();
   }, []);
 
-  // ── Profile form ─────────────────────────────────────────────────────
+  // ── Profile form ───────────────────────────────────────────────────────
 
   const {
     register: regProfile,
     handleSubmit: handleProfileSubmit,
     reset: resetProfile,
+    watch: watchProfile,
+    setValue: setProfileValue,
     formState: { errors: profileErrors, isSubmitting: profileSubmitting },
   } = useForm<ProfileFormData>({ resolver: zodResolver(profileSchema) });
 
+  const agreementChecked = watchProfile('agreementAccepted');
+  const photoUrl = watchProfile('profilePhotoUrl');
+
   const onProfileSubmit = async (data: ProfileFormData) => {
+    const cleanData = Object.fromEntries(
+      Object.entries(data).filter(([, v]) => v !== '' && v !== undefined),
+    );
+    const payload = {
+      ...cleanData,
+      specializations,
+      operatingLocations,
+    };
+
     try {
       if (profileExists) {
-        const res = await agentsApi.updateProfile(data);
+        const res = await agentsApi.updateProfile(payload);
         setAgent(res.data);
         success('Profile updated successfully!');
       } else {
-        const res = await agentsApi.createProfile(data);
+        const res = await agentsApi.createProfile(payload);
         setAgent(res.data);
         setProfileExists(true);
         success('Agent profile created!');
@@ -114,7 +312,7 @@ export default function AgentProfilePage() {
     }
   };
 
-  // ── Level 1 form ─────────────────────────────────────────────────────
+  // ── Level 1 form ───────────────────────────────────────────────────────
 
   const {
     register: regL1,
@@ -132,7 +330,7 @@ export default function AgentProfilePage() {
     }
   };
 
-  // ── Level 2 form ─────────────────────────────────────────────────────
+  // ── Level 2 form ───────────────────────────────────────────────────────
 
   const {
     register: regL2,
@@ -161,10 +359,12 @@ export default function AgentProfilePage() {
 
   const verLevel = agent?.verificationLevel ?? AgentVerificationLevel.NONE;
   const tier = agent?.trustTier ?? AgentTrustTier.BRONZE;
+  const isVerifiedAgent = agent?.isGovIdVerified && agent?.isPlatformVerified;
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      {/* Header */}
+
+      {/* ── Header ── */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="font-display text-2xl font-bold text-navy-900">Agent Profile</h1>
@@ -173,8 +373,8 @@ export default function AgentProfilePage() {
               {tier.charAt(0).toUpperCase() + tier.slice(1)} Tier
             </span>
             {agent?.isPlatformVerified && (
-              <span className="badge bg-emerald-100 text-emerald-700 text-xs">
-                <CheckCircle className="h-3 w-3" /> Platform Verified
+              <span className="badge bg-emerald-100 text-emerald-700 text-xs gap-1">
+                <CheckCircle className="h-3 w-3" /> Verified Agent
               </span>
             )}
             <span className="badge bg-slate-100 text-slate-600 text-xs">
@@ -187,27 +387,60 @@ export default function AgentProfilePage() {
         </Link>
       </div>
 
-      {/* Performance metrics (if profile exists) */}
-      {agent && (
+      {/* ── Verification progress bar ── */}
+      <div className="card p-6">
+        <h2 className="font-display text-sm font-bold text-navy-900 mb-4">Verification Progress</h2>
+        <div className="flex items-start gap-2">
+          {[
+            { label: 'Profile', sublabel: 'Basic info', done: profileExists },
+            { label: 'Identity', sublabel: 'Gov ID + selfie', done: !!agent?.isGovIdVerified },
+            { label: 'Professional', sublabel: 'Business docs', done: !!agent?.isProfessionallyVerified },
+            { label: 'Verified', sublabel: 'Platform badge', done: !!agent?.isPlatformVerified },
+          ].map(({ label, sublabel, done }, idx, arr) => (
+            <React.Fragment key={label}>
+              <div className="flex flex-col items-center gap-1 flex-shrink-0">
+                <div className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold ${
+                  done ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-400'
+                }`}>
+                  {done ? <CheckCircle className="h-4 w-4" /> : idx + 1}
+                </div>
+                <p className="text-[10px] text-center text-navy-800 font-semibold whitespace-nowrap">{label}</p>
+                <p className="text-[9px] text-center text-slate-400 whitespace-nowrap">{sublabel}</p>
+              </div>
+              {idx < arr.length - 1 && (
+                <div className={`flex-1 h-0.5 mt-4 ${done ? 'bg-emerald-300' : 'bg-slate-200'}`} />
+              )}
+            </React.Fragment>
+          ))}
+        </div>
+        {!profileExists && (
+          <div className="mt-4 flex items-start gap-2 rounded-xl bg-amber-50 border border-amber-100 px-4 py-3">
+            <AlertCircle className="h-4 w-4 text-amber-500 flex-shrink-0 mt-0.5" />
+            <p className="text-xs text-amber-700">
+              Complete your profile to become eligible for identity verification and start listing properties.
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* ── Performance metrics ── */}
+      {agent && (agent.totalConsultations > 0 || agent.isPlatformVerified) && (
         <div className="card p-6">
-          <h2 className="font-display text-base font-bold text-navy-900 mb-5">Trust Performance Metrics</h2>
+          <h2 className="font-display text-base font-bold text-navy-900 mb-5">Performance Metrics</h2>
           <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
             {[
               { label: 'Listing Accuracy', value: Number(agent.listingAccuracyScore), color: 'bg-blue-500' },
               { label: 'Inspection Success', value: Number(agent.inspectionSuccessRate), color: 'bg-emerald-500' },
               { label: 'Satisfaction', value: Number(agent.consultationSatisfactionRating) * 20, color: 'bg-purple-500' },
-              { label: 'Availability', value: Number(agent.availabilityReliabilityScore), color: 'bg-gold-500' },
+              { label: 'Availability', value: Number(agent.availabilityReliabilityScore), color: 'bg-amber-500' },
             ].map((metric) => (
               <div key={metric.label}>
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-xs text-slate-500">{metric.label}</p>
                   <p className="text-sm font-bold text-navy-900">{metric.value.toFixed(0)}%</p>
                 </div>
-                <div className="h-2 rounded-full bg-slate-100">
-                  <div
-                    className={`h-2 rounded-full ${metric.color} transition-all`}
-                    style={{ width: `${Math.min(metric.value, 100)}%` }}
-                  />
+                <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
+                  <div className={`h-2 rounded-full ${metric.color}`} style={{ width: `${Math.min(metric.value, 100)}%` }} />
                 </div>
               </div>
             ))}
@@ -229,240 +462,412 @@ export default function AgentProfilePage() {
         </div>
       )}
 
-      {/* Verification progress */}
-      <div className="card p-6">
-        <h2 className="font-display text-base font-bold text-navy-900 mb-4">Verification Progress</h2>
-        <div className="flex gap-4 mb-4">
-          {[
-            { step: 0, label: 'Profile', done: profileExists },
-            { step: 1, label: 'Level 1\nBasic', done: agent?.isGovIdVerified },
-            { step: 2, label: 'Level 2\nProfessional', done: agent?.isProfessionallyVerified },
-            { step: 3, label: 'Level 3\nPerformance', done: verLevel >= AgentVerificationLevel.PERFORMANCE },
-          ].map(({ step, label, done }, idx, arr) => (
-            <React.Fragment key={step}>
-              <div className="flex flex-col items-center gap-1">
-                <div className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold ${
-                  done
-                    ? 'bg-emerald-500 text-white'
-                    : verLevel >= step
-                    ? 'bg-veriq-secondary text-white'
-                    : 'bg-slate-100 text-slate-400'
-                }`}>
-                  {done ? <CheckCircle className="h-4 w-4" /> : step + 1}
-                </div>
-                <p className="text-[10px] text-center text-slate-500 whitespace-pre-line leading-tight">{label}</p>
-              </div>
-              {idx < arr.length - 1 && (
-                <div className={`flex-1 h-0.5 self-start mt-4 ${done ? 'bg-emerald-300' : 'bg-slate-200'}`} />
-              )}
-            </React.Fragment>
-          ))}
-        </div>
-      </div>
+      {/* ══════════════════════════════════════════════════════════════
+          SECTION 1: PERSONAL INFORMATION & BUSINESS PROFILE
+      ══════════════════════════════════════════════════════════════ */}
 
-      {/* Accordion sections */}
-      {/* ── Profile ── */}
-      <div className="card overflow-hidden">
-        <button
-          onClick={() => setActiveSection(activeSection === 'profile' ? 'profile' : 'profile')}
-          className="w-full flex items-center justify-between p-6 text-left"
-        >
-          <div className="flex items-center gap-3">
-            <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${profileExists ? 'bg-emerald-100' : 'bg-slate-100'}`}>
-              <FileText className={`h-4 w-4 ${profileExists ? 'text-emerald-600' : 'text-slate-400'}`} />
-            </div>
-            <div>
-              <p className="font-semibold text-navy-900 text-sm">Business Profile</p>
-              <p className="text-xs text-slate-500">{profileExists ? 'Profile set up' : 'Set up your agent profile'}</p>
+      <SectionCard
+        icon={User}
+        title="Personal Information & Business Profile"
+        subtitle={profileExists ? 'Profile set up — click to update' : 'Set up your agent profile'}
+        done={profileExists}
+      >
+        <form onSubmit={handleProfileSubmit(onProfileSubmit)} className="space-y-5">
+
+          {/* Profile photo */}
+          <div>
+            <label className="label">Profile Photo URL</label>
+            <p className="text-[11px] text-slate-400 mb-2">
+              Upload your passport-style photo to a hosting service (e.g. Cloudinary, Imgur) and paste the URL here.
+            </p>
+            <div className="flex items-start gap-4">
+              <div className="h-16 w-16 rounded-full bg-slate-100 overflow-hidden flex-shrink-0 flex items-center justify-center border border-slate-200">
+                {photoUrl ? (
+                  <Image src={photoUrl} alt="Profile" width={64} height={64} className="object-cover w-full h-full" />
+                ) : (
+                  <Camera className="h-6 w-6 text-slate-300" />
+                )}
+              </div>
+              <div className="flex-1">
+                <input
+                  {...regProfile('profilePhotoUrl')}
+                  className="input"
+                  placeholder="https://example.com/your-photo.jpg"
+                />
+                {profileErrors.profilePhotoUrl && (
+                  <p className="text-xs text-red-500 mt-1">{profileErrors.profilePhotoUrl.message}</p>
+                )}
+              </div>
             </div>
           </div>
-        </button>
 
-        <div className="px-6 pb-6 border-t border-slate-100">
-          <form onSubmit={handleProfileSubmit(onProfileSubmit)} className="space-y-4 mt-4">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <label className="label">Business Name</label>
-                <input {...regProfile('businessName')} className="input" placeholder="Emeka Properties Ltd" />
-              </div>
-              <div>
-                <label className="label">Years of Experience</label>
-                <input {...regProfile('yearsOfExperience')} type="number" className="input" placeholder="e.g. 8" />
-              </div>
+          {/* Name (from user account) + business name */}
+          <div className="rounded-xl bg-veriq-surface px-4 py-3">
+            <p className="text-xs text-slate-500 mb-0.5">Full Name (from your account)</p>
+            <p className="text-sm font-semibold text-navy-900">
+              {user?.firstName} {user?.lastName}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label className="label">Business Name</label>
+              <input {...regProfile('businessName')} className="input" placeholder="e.g. Emeka Properties Ltd" />
             </div>
             <div>
               <label className="label">Business Address</label>
-              <input {...regProfile('businessAddress')} className="input" placeholder="15 Adeola Odeku, VI, Lagos" />
+              <input {...regProfile('businessAddress')} className="input" placeholder="e.g. 15 Adeola Odeku, VI" />
+            </div>
+          </div>
+
+          {/* Experience dropdown */}
+          <div>
+            <label className="label">Years of Experience</label>
+            <select {...regProfile('yearsOfExperience')} className="input">
+              <option value="">Select experience…</option>
+              {EXPERIENCE_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Specializations (multi-select chips) */}
+          <ChipSelect
+            label="Specialization"
+            options={SPECIALIZATION_OPTIONS}
+            selected={specializations}
+            onToggle={(v) =>
+              setSpecializations((prev) =>
+                prev.includes(v) ? prev.filter((x) => x !== v) : [...prev, v],
+              )
+            }
+          />
+
+          {/* State of operation */}
+          <div>
+            <label className="label">State of Operation</label>
+            <select {...regProfile('stateOfOperation')} className="input">
+              <option value="">Select state…</option>
+              {NIGERIAN_STATES.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Operating locations tag input */}
+          <LocationTagInput
+            locations={operatingLocations}
+            onChange={setOperatingLocations}
+          />
+
+          {/* Bio */}
+          <div>
+            <label className="label">Bio <span className="text-slate-400 font-normal">(max 500 chars)</span></label>
+            <textarea
+              {...regProfile('bio')}
+              rows={3}
+              className="input resize-none"
+              placeholder="Tell property seekers about your expertise, areas, and approach…"
+            />
+            {profileErrors.bio && <p className="text-xs text-red-500 mt-1">{profileErrors.bio.message}</p>}
+          </div>
+
+          <div className="flex justify-end pt-1">
+            <button type="submit" disabled={profileSubmitting} className="btn-primary flex items-center gap-2">
+              {profileSubmitting && <LoadingSpinner size="sm" />}
+              {profileExists ? 'Update Profile' : 'Save Profile'}
+            </button>
+          </div>
+        </form>
+      </SectionCard>
+
+      {/* ══════════════════════════════════════════════════════════════
+          SECTION 2: IDENTITY VERIFICATION (Level 1)
+      ══════════════════════════════════════════════════════════════ */}
+
+      <SectionCard
+        icon={Shield}
+        title="Identity Verification"
+        subtitle={
+          agent?.isGovIdVerified
+            ? 'Approved ✓ — Verified Agent badge earned'
+            : agent?.govIdUrl
+            ? 'Documents submitted — awaiting admin review'
+            : 'Submit your government ID and selfie'
+        }
+        done={!!agent?.isGovIdVerified}
+      >
+        {agent?.isGovIdVerified ? (
+          <div className="flex items-center gap-3 rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3">
+            <CheckCircle className="h-5 w-5 text-emerald-500 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-semibold text-emerald-800">Identity Verified</p>
+              <p className="text-xs text-emerald-600">Your government ID and selfie have been approved by Veriq admin.</p>
+            </div>
+          </div>
+        ) : agent?.govIdUrl ? (
+          <div className="flex items-center gap-3 rounded-xl bg-amber-50 border border-amber-100 px-4 py-3">
+            <Clock className="h-5 w-5 text-amber-500 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-semibold text-amber-800">Under Review</p>
+              <p className="text-xs text-amber-600">Documents submitted. Admin review typically takes 24–48 hours.</p>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="mb-4 flex items-start gap-2 rounded-xl bg-blue-50 border border-blue-100 px-4 py-3">
+              <AlertCircle className="h-4 w-4 text-blue-500 flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-blue-700">
+                Upload your documents to a hosting service (e.g. Google Drive, Cloudinary) and paste the public URL below.
+                Identity verification is required before you can list properties.
+              </p>
+            </div>
+
+            <form onSubmit={handleL1Submit(onLevel1Submit)} className="space-y-4">
+              <div>
+                <label className="label">Government ID Type *</label>
+                <select {...regL1('govIdType')} className="input">
+                  <option value="">Select document type…</option>
+                  <option value="National ID Card">National ID Card</option>
+                  <option value="International Passport">International Passport</option>
+                  <option value="Drivers License">Driver&apos;s Licence</option>
+                  <option value="Voters Card">Voter&apos;s Card</option>
+                </select>
+                {l1Errors.govIdType && <p className="text-xs text-red-500 mt-1">{l1Errors.govIdType.message}</p>}
+              </div>
+
+              <div>
+                <label className="label">ID Document URL *</label>
+                <input
+                  {...regL1('govIdUrl')}
+                  className="input"
+                  placeholder="https://drive.google.com/file/…"
+                />
+                {l1Errors.govIdUrl && <p className="text-xs text-red-500 mt-1">{l1Errors.govIdUrl.message}</p>}
+              </div>
+
+              <div>
+                <label className="label">Selfie with ID URL *</label>
+                <p className="text-[11px] text-slate-400 mb-1.5">
+                  Take a live photo holding your ID document. Upload it and paste the URL here.
+                </p>
+                <input
+                  {...regL1('selfieUrl')}
+                  className="input"
+                  placeholder="https://drive.google.com/file/…"
+                />
+                {l1Errors.selfieUrl && <p className="text-xs text-red-500 mt-1">{l1Errors.selfieUrl.message}</p>}
+              </div>
+
+              <div className="flex justify-end">
+                <button type="submit" disabled={l1Submitting} className="btn-primary flex items-center gap-2">
+                  {l1Submitting && <LoadingSpinner size="sm" />}
+                  <Upload className="h-4 w-4" /> Submit for Verification
+                </button>
+              </div>
+            </form>
+          </>
+        )}
+      </SectionCard>
+
+      {/* ══════════════════════════════════════════════════════════════
+          SECTION 3: BANK ACCOUNT DETAILS
+      ══════════════════════════════════════════════════════════════ */}
+
+      <SectionCard
+        icon={CreditCard}
+        title="Bank Account Details"
+        subtitle="Used for agent payouts and platform transactions"
+        done={!!(agent?.bankAccountName && agent?.bankName && agent?.bankAccountNumber)}
+      >
+        <form onSubmit={handleProfileSubmit(onProfileSubmit)} className="space-y-4">
+          <div>
+            <label className="label">Account Name *</label>
+            <input {...regProfile('bankAccountName')} className="input" placeholder="e.g. Emeka John Obi" />
+            {profileErrors.bankAccountName && (
+              <p className="text-xs text-red-500 mt-1">{profileErrors.bankAccountName.message}</p>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="label">Bank Name *</label>
+              <select {...regProfile('bankName')} className="input">
+                <option value="">Select bank…</option>
+                {NIGERIAN_BANKS.map((b) => (
+                  <option key={b} value={b}>{b}</option>
+                ))}
+              </select>
             </div>
             <div>
-              <label className="label">Specialization</label>
-              <input {...regProfile('specialization')} className="input" placeholder="Residential Rentals, Luxury Properties" />
-            </div>
-            <div>
-              <label className="label">Bio <span className="text-slate-400">(max 500 chars)</span></label>
-              <textarea
-                {...regProfile('bio')}
-                rows={3}
-                className="input resize-none"
-                placeholder="Tell property seekers about your expertise…"
+              <label className="label">Account Number *</label>
+              <input
+                {...regProfile('bankAccountNumber')}
+                className="input"
+                placeholder="10-digit account number"
+                maxLength={10}
               />
-              {profileErrors.bio && <p className="text-xs text-red-500 mt-1">{profileErrors.bio.message}</p>}
+              {profileErrors.bankAccountNumber && (
+                <p className="text-xs text-red-500 mt-1">{profileErrors.bankAccountNumber.message}</p>
+              )}
             </div>
+          </div>
+
+          <div className="flex items-start gap-2 rounded-xl bg-slate-50 border border-slate-200 px-4 py-3">
+            <Lock className="h-4 w-4 text-slate-400 flex-shrink-0 mt-0.5" />
+            <p className="text-xs text-slate-500">
+              Your bank details are securely stored and never shown to users. They are only used for Veriq platform payouts.
+            </p>
+          </div>
+
+          <div className="flex justify-end">
+            <button type="submit" disabled={profileSubmitting} className="btn-primary flex items-center gap-2">
+              {profileSubmitting && <LoadingSpinner size="sm" />}
+              Save Bank Details
+            </button>
+          </div>
+        </form>
+      </SectionCard>
+
+      {/* ══════════════════════════════════════════════════════════════
+          SECTION 4: AGENT AGREEMENT
+      ══════════════════════════════════════════════════════════════ */}
+
+      <SectionCard
+        icon={FileText}
+        title="Agent Agreement"
+        subtitle={agent?.agreementAccepted ? 'Agreement accepted' : 'Review and accept the Veriq Agent Agreement'}
+        done={!!agent?.agreementAccepted}
+      >
+        {agent?.agreementAccepted ? (
+          <div className="flex items-center gap-3 rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3">
+            <CheckCircle className="h-5 w-5 text-emerald-500 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-semibold text-emerald-800">Agreement Accepted</p>
+              {agent.agreementAcceptedAt && (
+                <p className="text-xs text-emerald-600">
+                  Accepted on {new Date(agent.agreementAcceptedAt).toLocaleDateString('en-NG', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </p>
+              )}
+            </div>
+          </div>
+        ) : (
+          <form onSubmit={handleProfileSubmit(onProfileSubmit)} className="space-y-4">
+            <div className="rounded-xl bg-veriq-surface border border-slate-200 p-4 space-y-2">
+              <p className="text-xs font-semibold text-navy-900 uppercase tracking-wider mb-3">By joining Veriq Property, you agree to:</p>
+              {[
+                'Provide accurate and truthful property information at all times.',
+                'Update the availability of your listings promptly when properties are taken.',
+                'Follow Veriq Property listing standards and quality guidelines.',
+                'Maintain professional conduct in all interactions with users and platform staff.',
+                'Accept Veriq Property moderation decisions, including listing removal or account suspension.',
+              ].map((item, i) => (
+                <div key={i} className="flex items-start gap-2">
+                  <CheckCircle className="h-3.5 w-3.5 text-veriq-secondary flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-slate-600">{item}</p>
+                </div>
+              ))}
+            </div>
+
+            <label className="flex items-start gap-3 cursor-pointer group">
+              <input
+                type="checkbox"
+                {...regProfile('agreementAccepted')}
+                className="mt-0.5 h-4 w-4 rounded border-slate-300 text-veriq-secondary accent-veriq-secondary"
+              />
+              <span className="text-sm text-navy-800 group-hover:text-navy-900">
+                I have read and agree to the Veriq Property Agent Agreement and commit to upholding platform standards.
+              </span>
+            </label>
+
             <div className="flex justify-end">
-              <button type="submit" disabled={profileSubmitting} className="btn-primary flex items-center gap-2">
+              <button
+                type="submit"
+                disabled={profileSubmitting || !agreementChecked}
+                className="btn-primary flex items-center gap-2 disabled:opacity-50"
+              >
                 {profileSubmitting && <LoadingSpinner size="sm" />}
-                {profileExists ? 'Update Profile' : 'Create Profile'}
+                Accept & Continue
               </button>
             </div>
           </form>
-        </div>
-      </div>
+        )}
+      </SectionCard>
 
-      {/* ── Level 1 ── */}
-      <div className="card overflow-hidden">
-        <div className="p-6 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${agent?.isGovIdVerified ? 'bg-emerald-100' : 'bg-amber-100'}`}>
-              <Shield className={`h-4 w-4 ${agent?.isGovIdVerified ? 'text-emerald-600' : 'text-amber-600'}`} />
+      {/* ══════════════════════════════════════════════════════════════
+          SECTION 5: PROFESSIONAL VERIFICATION (Level 2)
+      ══════════════════════════════════════════════════════════════ */}
+
+      <SectionCard
+        icon={Briefcase}
+        title="Professional Verification (Optional)"
+        subtitle={
+          agent?.isProfessionallyVerified
+            ? 'Approved ✓'
+            : agent?.cacNumber
+            ? 'Submitted — awaiting admin review'
+            : 'CAC registration, association membership, or landlord authorization'
+        }
+        done={!!agent?.isProfessionallyVerified}
+      >
+        {agent?.isProfessionallyVerified ? (
+          <div className="flex items-center gap-3 rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3">
+            <CheckCircle className="h-5 w-5 text-emerald-500 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-semibold text-emerald-800">Professional Verification Approved</p>
+              <p className="text-xs text-emerald-600">Your business credentials have been verified.</p>
+            </div>
+          </div>
+        ) : !agent?.isGovIdVerified ? (
+          <div className="flex items-center gap-2 text-xs text-slate-500 rounded-xl bg-slate-50 px-4 py-3">
+            <Clock className="h-4 w-4" />
+            Complete Level 1 identity verification first.
+          </div>
+        ) : agent?.cacNumber ? (
+          <div className="flex items-center gap-3 rounded-xl bg-amber-50 border border-amber-100 px-4 py-3">
+            <Clock className="h-5 w-5 text-amber-500 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-semibold text-amber-800">Under Review</p>
+              <p className="text-xs text-amber-600">Professional documents submitted. Admin review in progress.</p>
+            </div>
+          </div>
+        ) : (
+          <form onSubmit={handleL2Submit(onLevel2Submit)} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="label">CAC Number <span className="text-slate-400 font-normal">(optional)</span></label>
+                <input {...regL2('cacNumber')} className="input" placeholder="RC 123456" />
+              </div>
+              <div>
+                <label className="label">Real Estate Association</label>
+                <input {...regL2('realEstateAssociation')} className="input" placeholder="REDAN, NIESV…" />
+              </div>
             </div>
             <div>
-              <p className="font-semibold text-navy-900 text-sm">Level 1 — Basic Verification</p>
-              <p className="text-xs text-slate-500">
-                {agent?.isGovIdVerified
-                  ? 'Approved ✓'
-                  : agent?.govIdUrl
-                  ? 'Submitted — awaiting admin review'
-                  : 'Submit government ID and selfie'}
-              </p>
-            </div>
-          </div>
-          {agent?.isGovIdVerified && <CheckCircle className="h-5 w-5 text-emerald-500" />}
-        </div>
-
-        {!agent?.isGovIdVerified && (
-          <div className="px-6 pb-6 border-t border-slate-100">
-            <div className="mt-4 mb-4 flex items-start gap-2 rounded-xl bg-amber-50 border border-amber-100 px-4 py-3">
-              <AlertCircle className="h-4 w-4 text-amber-500 flex-shrink-0 mt-0.5" />
-              <p className="text-xs text-amber-700">
-                Upload your documents to a file hosting service (e.g. Google Drive, Cloudinary) and paste the public URL below. Basic verification allows you to list properties.
-              </p>
-            </div>
-
-            {agent?.govIdUrl ? (
-              <div className="flex items-center gap-2 text-sm text-slate-600">
-                <Clock className="h-4 w-4 text-amber-500" />
-                Documents submitted — pending admin review.
-              </div>
-            ) : (
-              <form onSubmit={handleL1Submit(onLevel1Submit)} className="space-y-4">
-                <div>
-                  <label className="label">Government ID Type</label>
-                  <select {...regL1('govIdType')} className="input">
-                    <option value="">Select type…</option>
-                    <option value="NIN">National ID (NIN)</option>
-                    <option value="Drivers License">Driver&apos;s License</option>
-                    <option value="Voters Card">Voter&apos;s Card</option>
-                    <option value="International Passport">International Passport</option>
-                  </select>
-                  {l1Errors.govIdType && <p className="text-xs text-red-500 mt-1">{l1Errors.govIdType.message}</p>}
-                </div>
-                <div>
-                  <label className="label">ID Document URL</label>
-                  <input {...regL1('govIdUrl')} className="input" placeholder="https://drive.google.com/file/..." />
-                  {l1Errors.govIdUrl && <p className="text-xs text-red-500 mt-1">{l1Errors.govIdUrl.message}</p>}
-                </div>
-                <div>
-                  <label className="label">Selfie with ID URL</label>
-                  <input {...regL1('selfieUrl')} className="input" placeholder="https://drive.google.com/file/..." />
-                  {l1Errors.selfieUrl && <p className="text-xs text-red-500 mt-1">{l1Errors.selfieUrl.message}</p>}
-                </div>
-                <div className="flex justify-end">
-                  <button type="submit" disabled={l1Submitting} className="btn-primary flex items-center gap-2">
-                    {l1Submitting && <LoadingSpinner size="sm" />}
-                    <Upload className="h-4 w-4" /> Submit Level 1
-                  </button>
-                </div>
-              </form>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* ── Level 2 ── */}
-      <div className="card overflow-hidden">
-        <div className="p-6 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${agent?.isProfessionallyVerified ? 'bg-emerald-100' : 'bg-blue-50'}`}>
-              <TrendingUp className={`h-4 w-4 ${agent?.isProfessionallyVerified ? 'text-emerald-600' : 'text-blue-500'}`} />
+              <label className="label">CAC Document URL <span className="text-slate-400 font-normal">(optional)</span></label>
+              <input {...regL2('cacDocumentUrl')} className="input" placeholder="https://…" />
+              {l2Errors.cacDocumentUrl && <p className="text-xs text-red-500 mt-1">{l2Errors.cacDocumentUrl.message}</p>}
             </div>
             <div>
-              <p className="font-semibold text-navy-900 text-sm">Level 2 — Professional Verification</p>
-              <p className="text-xs text-slate-500">
-                {agent?.isProfessionallyVerified
-                  ? 'Approved ✓'
-                  : agent?.cacNumber
-                  ? 'Submitted — awaiting admin review'
-                  : 'CAC documents & association membership'}
-              </p>
+              <label className="label">Association Membership URL</label>
+              <input {...regL2('associationMembershipUrl')} className="input" placeholder="https://…" />
+              {l2Errors.associationMembershipUrl && <p className="text-xs text-red-500 mt-1">{l2Errors.associationMembershipUrl.message}</p>}
             </div>
-          </div>
-          {agent?.isProfessionallyVerified && <CheckCircle className="h-5 w-5 text-emerald-500" />}
-        </div>
-
-        {!agent?.isProfessionallyVerified && agent?.isGovIdVerified && (
-          <div className="px-6 pb-6 border-t border-slate-100">
-            {agent?.cacNumber ? (
-              <div className="mt-4 flex items-center gap-2 text-sm text-slate-600">
-                <Clock className="h-4 w-4 text-amber-500" />
-                Documents submitted — pending admin review.
-              </div>
-            ) : (
-              <form onSubmit={handleL2Submit(onLevel2Submit)} className="space-y-4 mt-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="label">CAC Number <span className="text-slate-400">(optional)</span></label>
-                    <input {...regL2('cacNumber')} className="input" placeholder="RC 123456" />
-                  </div>
-                  <div>
-                    <label className="label">Real Estate Association</label>
-                    <input {...regL2('realEstateAssociation')} className="input" placeholder="REDAN, NIESV…" />
-                  </div>
-                </div>
-                <div>
-                  <label className="label">CAC Document URL <span className="text-slate-400">(optional)</span></label>
-                  <input {...regL2('cacDocumentUrl')} className="input" placeholder="https://..." />
-                  {l2Errors.cacDocumentUrl && <p className="text-xs text-red-500 mt-1">{l2Errors.cacDocumentUrl.message}</p>}
-                </div>
-                <div>
-                  <label className="label">Association Membership URL</label>
-                  <input {...regL2('associationMembershipUrl')} className="input" placeholder="https://..." />
-                  {l2Errors.associationMembershipUrl && <p className="text-xs text-red-500 mt-1">{l2Errors.associationMembershipUrl.message}</p>}
-                </div>
-                <div>
-                  <label className="label">Landlord Authorization URL <span className="text-slate-400">(optional)</span></label>
-                  <input {...regL2('landlordAuthorizationUrl')} className="input" placeholder="https://..." />
-                </div>
-                <div className="flex justify-end">
-                  <button type="submit" disabled={l2Submitting} className="btn-primary flex items-center gap-2">
-                    {l2Submitting && <LoadingSpinner size="sm" />}
-                    <Upload className="h-4 w-4" /> Submit Level 2
-                  </button>
-                </div>
-              </form>
-            )}
-          </div>
+            <div>
+              <label className="label">Landlord Authorization URL <span className="text-slate-400 font-normal">(optional)</span></label>
+              <input {...regL2('landlordAuthorizationUrl')} className="input" placeholder="https://…" />
+            </div>
+            <div className="flex justify-end">
+              <button type="submit" disabled={l2Submitting} className="btn-primary flex items-center gap-2">
+                {l2Submitting && <LoadingSpinner size="sm" />}
+                <Upload className="h-4 w-4" /> Submit Professional Docs
+              </button>
+            </div>
+          </form>
         )}
+      </SectionCard>
 
-        {!agent?.isGovIdVerified && (
-          <div className="px-6 pb-6 border-t border-slate-100">
-            <p className="mt-4 text-xs text-slate-500 flex items-center gap-2">
-              <Clock className="h-4 w-4" /> Complete Level 1 verification first.
-            </p>
-          </div>
-        )}
-      </div>
-
-      {/* Quick links */}
+      {/* ── Quick links ── */}
       <div className="flex flex-wrap gap-3">
         <Link href="/dashboard/properties" className="btn-primary !text-sm !py-2.5 flex items-center gap-2">
           <Eye className="h-4 w-4" /> View My Listings

@@ -3,11 +3,13 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, ChevronDown, Shield, LayoutDashboard } from "lucide-react";
+import { Menu, X, ChevronDown, LayoutDashboard } from "lucide-react";
+import Image from "next/image";
 import { useAuth } from "@/context/AuthContext";
 
 const NAV_LINKS = [
   { label: "Properties", href: "/properties" },
+  { label: "Blog", href: "/blog" },
   {
     label: "Company",
     href: "#",
@@ -55,9 +57,7 @@ export function Navbar() {
         <div className="flex h-16 items-center justify-between lg:h-20">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-veriq-secondary shadow-md group-hover:shadow-glow transition-shadow duration-300">
-              <Shield className="h-5 w-5 text-white" strokeWidth={2.5} />
-            </div>
+            <Image src="/images/Logo.png" alt="Veriq Logo" width={36} height={36} className="rounded-xl" />
             <div className="flex flex-col leading-none">
               <span className={`font-display text-lg font-bold tracking-tight transition-colors ${scrolled ? "text-navy-900" : "text-white"}`}>
                 Veriq

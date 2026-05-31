@@ -171,6 +171,7 @@ import type {
   Agent,
   Property,
   Consultation,
+  MediaItem,
   RegisterDto,
   LoginDto,
   AuthTokens,
@@ -244,6 +245,9 @@ export const agentsApi = {
 
   getById: (id: string) =>
     api.get<ApiResponse<Agent>>(`/agents/${id}`, { public: true }),
+
+  getBySlug: (slug: string) =>
+    api.get<ApiResponse<Agent>>(`/agents/by-slug/${slug}`, { public: true }),
 
   getTrustProfile: (id: string) =>
     api.get<ApiResponse<unknown>>(`/agents/${id}/trust-profile`, {
@@ -343,4 +347,52 @@ export const consultationsApi = {
     api.get<PaginatedResponse<Consultation>>(
       `/consultations/my?page=${page}&limit=${limit}`,
     ),
+};
+
+// ── Media ─────────────────────────────────────────────────────────────────
+
+async function uploadFile<T>(path: string, formData: FormData): Promise<T> {
+  await ensureFreshToken();
+  const accessToken = getAccessToken();
+  const url = `${BASE_URL}${path.startsWith('/') ? path : `/${path}`}`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+    body: formData,
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    const errBody = data as Record<string, unknown>;
+    throw new ApiError(res.status, (errBody?.message as string) ?? `HTTP ${res.status}`);
+  }
+  return data as T;
+}
+
+export const mediaApi = {
+  upload: (
+    propertyId: string,
+    section: string,
+    file: File,
+    caption?: string,
+  ) => {
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('section', section);
+    if (caption) fd.append('caption', caption);
+    return uploadFile<ApiResponse<unknown>>(
+      `/properties/${propertyId}/media/upload`,
+      fd,
+    );
+  },
+
+  getAll: (propertyId: string, section?: string) => {
+    const query = section ? `?section=${section}` : '';
+    return api.get<ApiResponse<MediaItem[]>>(
+      `/properties/${propertyId}/media${query}`,
+      { public: true },
+    );
+  },
+
+  delete: (propertyId: string, mediaId: string) =>
+    api.delete<ApiResponse<null>>(`/properties/${propertyId}/media/${mediaId}`),
 };

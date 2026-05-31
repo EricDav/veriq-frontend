@@ -9,23 +9,58 @@ import { PropertyCard } from '@/components/properties/PropertyCard';
 import { propertiesApi } from '@/lib/api';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import type { Property, FilterPropertiesDto } from '@/types';
-import { PropertyType, FreshnessScore } from '@/types';
+import {
+  PropertyType, FreshnessScore,
+  HostelSuitableFor, HostelGender, HostelCampusProximity,
+  ShortStayPricingModel,
+} from '@/types';
 
+// V2 Framework — primary types only
 const PROPERTY_TYPES = [
   { value: '', label: 'All Types' },
-  { value: PropertyType.FLAT, label: 'Flat' },
+  { value: PropertyType.FLAT, label: 'Apartment / Flat' },
+  { value: PropertyType.MINI_FLAT, label: 'Mini Flat' },
+  { value: PropertyType.SELF_CONTAIN, label: 'Self Contain' },
+  { value: PropertyType.ROOM_AND_PARLOUR, label: 'Room & Parlour' },
   { value: PropertyType.DUPLEX, label: 'Duplex' },
   { value: PropertyType.BUNGALOW, label: 'Bungalow' },
-  { value: PropertyType.SELF_CONTAIN, label: 'Self-Contain' },
-  { value: PropertyType.STUDIO, label: 'Studio' },
-  { value: PropertyType.MANSION, label: 'Mansion' },
-  { value: PropertyType.OTHER, label: 'Other' },
+  { value: PropertyType.HOSTEL, label: 'Hostel' },
+  { value: PropertyType.SHORT_STAY, label: 'Short Stay' },
+];
+
+const SHORT_STAY_PRICING_OPTIONS = [
+  { value: '', label: 'Any' },
+  { value: ShortStayPricingModel.DAILY, label: 'Daily Rate' },
+  { value: ShortStayPricingModel.WEEKLY, label: 'Weekly Rate' },
+  { value: ShortStayPricingModel.BOTH, label: 'Daily & Weekly' },
 ];
 
 const FRESHNESS_OPTIONS = [
   { value: '', label: 'Any Freshness' },
   { value: FreshnessScore.FRESHLY_VERIFIED, label: 'Freshly Verified' },
   { value: FreshnessScore.RECENTLY_VERIFIED, label: 'Recently Verified' },
+];
+
+const HOSTEL_SUITABLE_FOR_OPTIONS = [
+  { value: '', label: 'Any' },
+  { value: HostelSuitableFor.STUDENTS, label: 'Students' },
+  { value: HostelSuitableFor.CORP_MEMBERS, label: 'Corp Members (NYSC)' },
+  { value: HostelSuitableFor.WORKING_CLASS, label: 'Working Class' },
+  { value: HostelSuitableFor.TEMPORARY_STAY, label: 'Temporary Stay' },
+  { value: HostelSuitableFor.MIXED, label: 'Mixed / Any' },
+];
+
+const HOSTEL_GENDER_OPTIONS = [
+  { value: '', label: 'Any Gender' },
+  { value: HostelGender.MALE, label: 'Male Only' },
+  { value: HostelGender.FEMALE, label: 'Female Only' },
+  { value: HostelGender.MIXED, label: 'Mixed' },
+];
+
+const HOSTEL_CAMPUS_OPTIONS = [
+  { value: '', label: 'Any Location' },
+  { value: HostelCampusProximity.ON_CAMPUS, label: 'On Campus' },
+  { value: HostelCampusProximity.OFF_CAMPUS, label: 'Off Campus' },
 ];
 
 const LIMIT = 12;
@@ -41,6 +76,10 @@ export default function BrowsePropertiesPage() {
 
   const [filters, setFilters] = useState<FilterPropertiesDto>({});
   const [pendingFilters, setPendingFilters] = useState<FilterPropertiesDto>({});
+
+  const isHostel = pendingFilters.propertyType === PropertyType.HOSTEL;
+  const isShortStay = pendingFilters.propertyType === PropertyType.SHORT_STAY;
+  const isStandard = !isHostel && !isShortStay;
 
   const fetchProperties = useCallback(async (
     currentFilters: FilterPropertiesDto,
@@ -84,6 +123,19 @@ export default function BrowsePropertiesPage() {
     setFilters(newFilters);
     setPendingFilters(newFilters);
     setPage(1);
+  };
+
+  // Clear type-specific filters when switching property type
+  const handleTypeChange = (value: string) => {
+    setPendingFilters((f) => ({
+      state: f.state,
+      city: f.city,
+      area: f.area,
+      minRent: f.minRent,
+      maxRent: f.maxRent,
+      freshnessScore: f.freshnessScore,
+      propertyType: (value as PropertyType) || undefined,
+    }));
   };
 
   const activeFilterCount = Object.values(filters).filter(Boolean).length;
@@ -139,7 +191,9 @@ export default function BrowsePropertiesPage() {
 
       {/* Collapsible filter panel */}
       {showFilters && (
-        <div className="card p-5">
+        <div className="card p-5 space-y-4">
+
+          {/* Row 1: Location + Type + Rent + Freshness */}
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
             <div>
               <label className="label text-xs">State</label>
@@ -148,7 +202,7 @@ export default function BrowsePropertiesPage() {
                 value={pendingFilters.state ?? ''}
                 onChange={(e) => setPendingFilters((f) => ({ ...f, state: e.target.value || undefined }))}
                 className="input text-xs"
-                placeholder="e.g. Lagos"
+                placeholder="e.g. Rivers"
               />
             </div>
             <div>
@@ -158,16 +212,14 @@ export default function BrowsePropertiesPage() {
                 value={pendingFilters.city ?? ''}
                 onChange={(e) => setPendingFilters((f) => ({ ...f, city: e.target.value || undefined }))}
                 className="input text-xs"
-                placeholder="e.g. Lekki"
+                placeholder="e.g. Port Harcourt"
               />
             </div>
             <div>
               <label className="label text-xs">Property Type</label>
               <select
                 value={pendingFilters.propertyType ?? ''}
-                onChange={(e) => setPendingFilters((f) => ({
-                  ...f, propertyType: (e.target.value as PropertyType) || undefined,
-                }))}
+                onChange={(e) => handleTypeChange(e.target.value)}
                 className="input text-xs"
               >
                 {PROPERTY_TYPES.map((t) => (
@@ -184,7 +236,7 @@ export default function BrowsePropertiesPage() {
                   ...f, minRent: e.target.value ? Number(e.target.value) : undefined,
                 }))}
                 className="input text-xs"
-                placeholder="100,000"
+                placeholder="e.g. 50,000"
               />
             </div>
             <div>
@@ -196,7 +248,7 @@ export default function BrowsePropertiesPage() {
                   ...f, maxRent: e.target.value ? Number(e.target.value) : undefined,
                 }))}
                 className="input text-xs"
-                placeholder="2,000,000"
+                placeholder="e.g. 2,000,000"
               />
             </div>
             <div>
@@ -215,32 +267,147 @@ export default function BrowsePropertiesPage() {
             </div>
           </div>
 
-          {/* Bedrooms */}
-          <div className="mt-4">
-            <label className="label text-xs">Min Bedrooms</label>
-            <div className="flex gap-2 mt-1">
-              {['Any', '1', '2', '3', '4+'].map((b) => {
-                const val = b === 'Any' ? undefined : b === '4+' ? 4 : Number(b);
-                const isActive = (pendingFilters.minBedrooms ?? undefined) === val;
-                return (
-                  <button
-                    key={b}
-                    type="button"
-                    onClick={() => setPendingFilters((f) => ({ ...f, minBedrooms: val }))}
-                    className={`flex-1 rounded-lg py-1.5 text-xs font-medium transition-all ${
-                      isActive
-                        ? 'bg-veriq-secondary text-white'
-                        : 'bg-white border border-slate-200 text-navy-700 hover:border-veriq-secondary'
-                    }`}
-                  >
-                    {b}
-                  </button>
-                );
-              })}
+          {/* ── Standard filters (non-hostel, non-short-stay) ── */}
+          {isStandard && (
+            <div>
+              <label className="label text-xs">Min Bedrooms</label>
+              <div className="flex gap-2 mt-1">
+                {['Any', '1', '2', '3', '4+'].map((b) => {
+                  const val = b === 'Any' ? undefined : b === '4+' ? 4 : Number(b);
+                  const isActive = (pendingFilters.minBedrooms ?? undefined) === val;
+                  return (
+                    <button
+                      key={b}
+                      type="button"
+                      onClick={() => setPendingFilters((f) => ({ ...f, minBedrooms: val }))}
+                      className={`flex-1 rounded-lg py-1.5 text-xs font-medium transition-all ${
+                        isActive
+                          ? 'bg-veriq-secondary text-white'
+                          : 'bg-white border border-slate-200 text-navy-700 hover:border-veriq-secondary'
+                      }`}
+                    >
+                      {b}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
 
-          <div className="flex gap-3 mt-5">
+          {/* ── Short Stay filters ── */}
+          {isShortStay && (
+            <div className="rounded-xl border border-veriq-secondary/20 bg-veriq-secondary/5 p-4 space-y-4">
+              <p className="text-xs font-semibold text-veriq-secondary uppercase tracking-wide">Short Stay Filters</p>
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                <div>
+                  <label className="label text-xs">Pricing Model</label>
+                  <select
+                    value={pendingFilters.shortStayPricingModel ?? ''}
+                    onChange={(e) => setPendingFilters((f) => ({
+                      ...f, shortStayPricingModel: (e.target.value as ShortStayPricingModel) || undefined,
+                    }))}
+                    className="input text-xs"
+                  >
+                    {SHORT_STAY_PRICING_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="label text-xs">Max Rate / Night (₦)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={pendingFilters.maxDailyRate ?? ''}
+                    onChange={(e) => setPendingFilters((f) => ({
+                      ...f, maxDailyRate: e.target.value ? Number(e.target.value) : undefined,
+                    }))}
+                    className="input text-xs"
+                    placeholder="e.g. 30,000"
+                  />
+                </div>
+                <div>
+                  <label className="label text-xs">Max Stay (nights)</label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={pendingFilters.maxNights ?? ''}
+                    onChange={(e) => setPendingFilters((f) => ({
+                      ...f, maxNights: e.target.value ? Number(e.target.value) : undefined,
+                    }))}
+                    className="input text-xs"
+                    placeholder="e.g. 7"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── Hostel-specific filters ── */}
+          {isHostel && (
+            <div className="rounded-xl border border-veriq-secondary/20 bg-veriq-secondary/5 p-4 space-y-4">
+              <p className="text-xs font-semibold text-veriq-secondary uppercase tracking-wide">Hostel Filters</p>
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                <div>
+                  <label className="label text-xs">Suitable For</label>
+                  <select
+                    value={pendingFilters.hostelSuitableFor ?? ''}
+                    onChange={(e) => setPendingFilters((f) => ({
+                      ...f, hostelSuitableFor: (e.target.value as HostelSuitableFor) || undefined,
+                    }))}
+                    className="input text-xs"
+                  >
+                    {HOSTEL_SUITABLE_FOR_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="label text-xs">Gender</label>
+                  <select
+                    value={pendingFilters.hostelGender ?? ''}
+                    onChange={(e) => setPendingFilters((f) => ({
+                      ...f, hostelGender: (e.target.value as HostelGender) || undefined,
+                    }))}
+                    className="input text-xs"
+                  >
+                    {HOSTEL_GENDER_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="label text-xs">Campus Location</label>
+                  <select
+                    value={pendingFilters.hostelCampusProximity ?? ''}
+                    onChange={(e) => setPendingFilters((f) => ({
+                      ...f, hostelCampusProximity: (e.target.value as HostelCampusProximity) || undefined,
+                    }))}
+                    className="input text-xs"
+                  >
+                    {HOSTEL_CAMPUS_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="label text-xs">Max Persons/Room</label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={pendingFilters.hostelPersonsPerRoom ?? ''}
+                    onChange={(e) => setPendingFilters((f) => ({
+                      ...f, hostelPersonsPerRoom: e.target.value ? Number(e.target.value) : undefined,
+                    }))}
+                    className="input text-xs"
+                    placeholder="e.g. 2"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="flex gap-3">
             <button onClick={handleApplyFilters} className="btn-primary !text-xs !py-2">
               Apply Filters
             </button>
@@ -255,9 +422,9 @@ export default function BrowsePropertiesPage() {
       )}
 
       {/* Trust banner */}
-      <div className="flex items-center gap-3 rounded-xl bg-blue-50 border border-blue-100 px-4 py-3">
-        <Shield className="h-4 w-4 text-blue-600 flex-shrink-0" />
-        <p className="text-xs text-blue-700">
+      <div className="flex items-center gap-3 rounded-xl bg-veriq-secondary/10 border border-veriq-secondary/20 px-4 py-3">
+        <Shield className="h-4 w-4 text-veriq-secondary flex-shrink-0" />
+        <p className="text-xs text-navy-800">
           <strong>Verified listings</strong> — unlock a property&apos;s intelligence report to access full details, agent contact, and disclosures.
         </p>
       </div>

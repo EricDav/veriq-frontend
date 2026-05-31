@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { MapPin, CheckCircle, Bed, Bath, Lock, Shield, Home } from 'lucide-react';
 import type { Property } from '@/types';
 import { AgentVerificationLevel, FreshnessScore } from '@/types';
@@ -58,6 +59,7 @@ export function PropertyCard({
     agent,
     status,
     isVerified,
+    coverImageUrl,
   } = property as Property & { isVerified?: boolean };
 
   const gradient = TYPE_COLORS[propertyType] ?? TYPE_COLORS.other;
@@ -76,9 +78,19 @@ export function PropertyCard({
       <div className="card overflow-hidden">
         {/* Image / placeholder */}
         <div className={`relative h-52 bg-gradient-to-br ${gradient} overflow-hidden`}>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <Home className="h-12 w-12 text-white/10" />
-          </div>
+          {coverImageUrl ? (
+            <Image
+              src={coverImageUrl}
+              alt={title}
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, 33vw"
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Home className="h-12 w-12 text-white/10" />
+            </div>
+          )}
 
           {/* Freshness badge */}
           <div className="absolute top-3 left-3">

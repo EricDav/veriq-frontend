@@ -6,7 +6,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Shield, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { Eye, EyeOff, AlertCircle } from 'lucide-react';
+import Image from 'next/image';
 import { useAuth } from '@/context/AuthContext';
 import { ApiError } from '@/lib/api';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -28,7 +29,7 @@ function LoginPageInner() {
   const params = useSearchParams();
   const redirect = params.get('redirect') ?? '/dashboard';
 
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, isLoading } = useAuth();
   const { success } = useToast();
 
   const [showPassword, setShowPassword] = useState(false);
@@ -42,19 +43,22 @@ function LoginPageInner() {
     resolver: zodResolver(loginSchema),
   });
 
-  // Already logged in → redirect
+  // Single redirect effect — fires whenever isAuthenticated becomes true
+  // (covers both "already logged in on page load" and "just logged in")
   useEffect(() => {
-    if (isAuthenticated) {
+    if (!isLoading && isAuthenticated) {
       router.replace(redirect);
     }
-  }, [isAuthenticated, redirect, router]);
+  }, [isAuthenticated, isLoading, redirect, router]);
 
   const onSubmit = async (data: LoginFormData) => {
     setServerError(null);
     try {
       await login(data);
       success('Welcome back!');
-      router.push(redirect);
+      // ⚠️ Do NOT call router.push here — setUser() inside login() schedules
+      // a React state update that hasn't committed yet when router.push fires.
+      // The useEffect above handles navigation after the update is committed.
     } catch (err) {
       if (err instanceof ApiError) {
         setServerError(
@@ -74,9 +78,7 @@ function LoginPageInner() {
         {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2.5 mb-6">
-            <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center backdrop-blur-sm border border-white/20">
-              <Shield className="h-5 w-5 text-white" strokeWidth={2.5} />
-            </div>
+            <Image src="/images/Logo.png" alt="Veriq Logo" width={40} height={40} className="rounded-xl" />
             <div className="flex flex-col leading-none text-left">
               <span className="font-display text-xl font-bold text-white">Veriq</span>
               <span className="text-[10px] font-semibold tracking-widest uppercase text-gold-400">Property</span>

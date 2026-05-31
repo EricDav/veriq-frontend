@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Shield, Youtube, Facebook, Instagram } from "lucide-react";
+import { Youtube, Facebook, Instagram } from "lucide-react";
+import Image from "next/image";
 
 const TikTokIcon = () => (
   <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
@@ -66,9 +67,7 @@ export function Footer() {
           {/* Brand */}
           <div className="lg:col-span-2">
             <Link href="/" className="flex items-center gap-2.5 mb-5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-veriq-secondary">
-                <Shield className="h-5 w-5 text-white" strokeWidth={2.5} />
-              </div>
+              <Image src="/images/Logo.png" alt="Veriq Logo" width={36} height={36} className="rounded-xl" />
               <div className="flex flex-col leading-none">
                 <span className="font-display text-lg font-bold tracking-tight text-white">Veriq</span>
                 <span className="text-[10px] font-semibold tracking-widest uppercase text-gold-400">Property</span>
@@ -96,9 +95,7 @@ export function Footer() {
             </div>
             {/* PWA Install hint */}
             <div className="mt-6 flex items-center gap-2 rounded-lg bg-white/5 px-4 py-3 border border-white/10">
-              <div className="h-8 w-8 rounded-lg bg-veriq-secondary flex items-center justify-center flex-shrink-0">
-                <Shield className="h-4 w-4 text-white" />
-              </div>
+              <Image src="/images/Logo.png" alt="Veriq Logo" width={32} height={32} className="rounded-lg flex-shrink-0" />
               <div>
                 <p className="text-xs font-semibold text-white">Install as App</p>
                 <p className="text-[11px] text-slate-500">Add to home screen for the best experience</p>

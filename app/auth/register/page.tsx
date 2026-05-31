@@ -6,7 +6,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Shield, Users, Home, Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react';
+import { Users, Home, Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react';
+import Image from 'next/image';
 import { useAuth } from '@/context/AuthContext';
 import { ApiError } from '@/lib/api';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -108,9 +109,7 @@ function RegisterPageInner() {
         {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2.5 mb-6">
-            <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center backdrop-blur-sm border border-white/20">
-              <Shield className="h-5 w-5 text-white" strokeWidth={2.5} />
-            </div>
+            <Image src="/images/Logo.png" alt="Veriq Logo" width={40} height={40} className="rounded-xl" />
             <div className="flex flex-col leading-none text-left">
               <span className="font-display text-xl font-bold text-white">Veriq</span>
               <span className="text-[10px] font-semibold tracking-widest uppercase text-gold-400">Property</span>

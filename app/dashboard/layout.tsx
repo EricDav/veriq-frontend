@@ -4,10 +4,11 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
-  Shield, LayoutDashboard, Heart, Search, User, LogOut,
+  LayoutDashboard, Heart, Search, User, LogOut,
   Bell, Menu, X, Home, TrendingUp, Plus,
   Settings, ChevronRight, Users, ShieldCheck,
 } from 'lucide-react';
+import Image from 'next/image';
 import { useAuth } from '@/context/AuthContext';
 import { UserRole } from '@/types';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
@@ -62,7 +63,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [isLoading, isAuthenticated, router, pathname]);
 
   if (isLoading) return <PageLoader />;
-  if (!isAuthenticated) return null;
+  if (!isAuthenticated) return <PageLoader />;
 
   const navItems = getNavItems(user?.role);
   const initials = getInitials(user?.firstName, user?.lastName);
@@ -86,9 +87,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Brand */}
         <div className="flex items-center gap-3 px-6 py-5 border-b border-white/5">
           <Link href="/" className="flex items-center gap-3 flex-1 min-w-0">
-            <div className="h-9 w-9 rounded-xl bg-veriq-secondary flex items-center justify-center flex-shrink-0">
-              <Shield className="h-5 w-5 text-white" strokeWidth={2.5} />
-            </div>
+            <Image src="/images/Logo.png" alt="Veriq Logo" width={36} height={36} className="rounded-xl flex-shrink-0" />
             <div className="flex flex-col leading-none">
               <span className="font-display text-base font-bold text-white">Veriq</span>
               <span className="text-[9px] font-semibold tracking-widest uppercase text-gold-400">Property</span>

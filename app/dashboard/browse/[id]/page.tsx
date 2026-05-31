@@ -1,18 +1,33 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import {
-  ArrowLeft, MapPin, CheckCircle, Bed, Bath, Lock,
-  Shield, Eye, FileText, Clock, AlertCircle, Home, Wallet, DollarSign,
+  ArrowLeft, MapPin, CheckCircle, Bed, Bath, Lock, Unlock,
+  Shield, Eye, FileText, Clock, AlertCircle, Home, Wallet,
+  DollarSign, Phone, Zap, Droplets, Wifi, Volume2, Star,
+  ChevronLeft, ChevronRight, X, Play, Timer, RefreshCw,
+  Building2, Trees, Sun, Cloud, Car, Users,
 } from 'lucide-react';
-import { propertiesApi, consultationsApi, ApiError } from '@/lib/api';
-import type { Property } from '@/types';
-import { AgentVerificationLevel, AgentTrustTier, FreshnessScore } from '@/types';
+import { propertiesApi, consultationsApi, mediaApi, ApiError } from '@/lib/api';
+import type { Property, Consultation, MediaItem } from '@/types';
+import {
+  AgentVerificationLevel, AgentTrustTier, FreshnessScore,
+  FloodRisk, ElectricitySituation, WaterAvailability, WaterSource,
+  RoadAccess, RoadAccessRain, NetworkQuality, NoiseLevel,
+  SecurityFeel, PropertyCondition, CompoundCulture, PropertyType,
+  ShortStayAC, ShortStayInternet, ShortStayCleanliness,
+  ShortStayFurnishing, ShortStayKitchen,
+} from '@/types';
 import { PageLoader, LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/components/ui/Toast';
+
+// ─── Constants ────────────────────────────────────────────────────────────
+
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api/v1', '') ?? 'http://localhost:3000';
 
 const FRESHNESS_INFO: Record<FreshnessScore, { label: string; cls: string; width: string }> = {
   freshly_verified: { label: 'Freshly verified — within 24 hours', cls: 'bg-emerald-500', width: 'w-full' },
@@ -24,61 +39,447 @@ const FRESHNESS_INFO: Record<FreshnessScore, { label: string; cls: string; width
 const TRUST_TIER_BADGE: Record<AgentTrustTier, { label: string; cls: string }> = {
   bronze: { label: 'Bronze', cls: 'bg-orange-100 text-orange-700' },
   silver: { label: 'Silver', cls: 'bg-slate-100 text-slate-700' },
-  gold: { label: 'Gold', cls: 'bg-gold-100 text-gold-700' },
+  gold: { label: 'Gold', cls: 'bg-amber-100 text-amber-700' },
   platinum: { label: 'Platinum', cls: 'bg-purple-100 text-purple-700' },
 };
+
+// Section display labels
+const SECTION_LABELS: Record<string, string> = {
+  road_access: 'Road Access',
+  environment: 'Environment',
+  living_room: 'Living Room',
+  kitchen: 'Kitchen',
+  bathroom: 'Bathroom',
+  bedroom: 'Bedroom',
+  compound: 'Compound',
+  water_area: 'Water Area',
+  ceiling: 'Ceiling',
+  other: 'Other',
+};
+
+// ─── Helpers ─────────────────────────────────────────────────────────────
 
 function formatNaira(amount: number | null | undefined): string {
   if (!amount) return '₦0';
   return `₦${Number(amount).toLocaleString()}`;
 }
 
+function mediaUrl(url: string): string {
+  if (url.startsWith('http')) return url;
+  return `${API_BASE}${url}`;
+}
+
+function useCountdown(expiresAt: string | null) {
+  const [timeLeft, setTimeLeft] = useState<string>('');
+  const [isExpired, setIsExpired] = useState(false);
+
+  useEffect(() => {
+    if (!expiresAt) return;
+
+    const tick = () => {
+      const diff = new Date(expiresAt).getTime() - Date.now();
+      if (diff <= 0) {
+        setIsExpired(true);
+        setTimeLeft('Expired');
+        return;
+      }
+      const h = Math.floor(diff / 3_600_000);
+      const m = Math.floor((diff % 3_600_000) / 60_000);
+      const s = Math.floor((diff % 60_000) / 1_000);
+      setTimeLeft(`${h}h ${m}m ${s}s`);
+    };
+
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [expiresAt]);
+
+  return { timeLeft, isExpired };
+}
+
+// ─── Media Gallery ────────────────────────────────────────────────────────
+
+function MediaGallery({ propertyId }: { propertyId: string }) {
+  const [media, setMedia] = useState<MediaItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeSection, setActiveSection] = useState<string>('all');
+  const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
+
+  useEffect(() => {
+    mediaApi.getAll(propertyId).then((res) => {
+      setMedia((res.data as MediaItem[]) ?? []);
+    }).catch(() => {}).finally(() => setLoading(false));
+  }, [propertyId]);
+
+  const sections = ['all', ...Array.from(new Set(media.map((m) => m.section)))];
+  const filtered = activeSection === 'all' ? media : media.filter((m) => m.section === activeSection);
+
+  if (loading) return (
+    <div className="flex items-center justify-center h-48">
+      <LoadingSpinner size="md" />
+    </div>
+  );
+
+  if (media.length === 0) return (
+    <div className="flex flex-col items-center justify-center h-48 text-center">
+      <Eye className="h-10 w-10 text-slate-300 mb-3" />
+      <p className="text-sm text-slate-400">No media uploaded yet</p>
+    </div>
+  );
+
+  const closeLightbox = () => setLightboxIdx(null);
+  const prevImg = () => setLightboxIdx((i) => (i !== null ? Math.max(0, i - 1) : null));
+  const nextImg = () => setLightboxIdx((i) => (i !== null ? Math.min(filtered.length - 1, i + 1) : null));
+
+  return (
+    <div>
+      {/* Section filter tabs */}
+      {sections.length > 2 && (
+        <div className="flex gap-2 mb-4 overflow-x-auto pb-1 scrollbar-hide">
+          {sections.map((s) => (
+            <button
+              key={s}
+              onClick={() => setActiveSection(s)}
+              className={`flex-shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-all ${
+                activeSection === s
+                  ? 'bg-navy-900 text-white'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              {SECTION_LABELS[s] ?? s}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        {filtered.map((item, idx) => (
+          <button
+            key={item.id}
+            onClick={() => setLightboxIdx(idx)}
+            className="relative aspect-[4/3] rounded-xl overflow-hidden bg-slate-100 hover:opacity-90 transition-opacity"
+          >
+            <Image
+              src={mediaUrl(item.url)}
+              alt={item.caption ?? SECTION_LABELS[item.section] ?? item.section}
+              fill
+              className="object-cover"
+              sizes="(max-width: 640px) 50vw, 33vw"
+            />
+            {item.caption && (
+              <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 px-2 py-1.5">
+                <p className="text-[10px] text-white truncate">{item.caption}</p>
+              </div>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* Lightbox */}
+      {lightboxIdx !== null && (
+        <div
+          className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center"
+          onClick={closeLightbox}
+        >
+          <button
+            onClick={(e) => { e.stopPropagation(); closeLightbox(); }}
+            className="absolute top-4 right-4 text-white/60 hover:text-white"
+          >
+            <X className="h-7 w-7" />
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); prevImg(); }}
+            disabled={lightboxIdx === 0}
+            className="absolute left-4 text-white/60 hover:text-white disabled:opacity-20"
+          >
+            <ChevronLeft className="h-10 w-10" />
+          </button>
+          <div
+            className="relative w-full max-w-3xl max-h-[80vh] mx-16"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Image
+              src={mediaUrl(filtered[lightboxIdx].url)}
+              alt={filtered[lightboxIdx].caption ?? ''}
+              width={1200}
+              height={800}
+              className="object-contain w-full h-full max-h-[80vh] rounded-xl"
+            />
+            {filtered[lightboxIdx].caption && (
+              <p className="text-center text-white/70 text-sm mt-3">
+                {filtered[lightboxIdx].caption}
+              </p>
+            )}
+            <p className="text-center text-white/40 text-xs mt-1">
+              {lightboxIdx + 1} / {filtered.length}
+            </p>
+          </div>
+          <button
+            onClick={(e) => { e.stopPropagation(); nextImg(); }}
+            disabled={lightboxIdx === filtered.length - 1}
+            className="absolute right-4 text-white/60 hover:text-white disabled:opacity-20"
+          >
+            <ChevronRight className="h-10 w-10" />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Quick Intelligence Panel ─────────────────────────────────────────────
+
+function QIRow({ label, value, icon: Icon }: { label: string; value: string | null | undefined; icon?: React.ElementType }) {
+  if (!value) return null;
+  const display = value.replace(/_/g, ' ');
+  return (
+    <div className="flex items-center justify-between py-2.5 border-b border-slate-100 last:border-0">
+      <div className="flex items-center gap-2 text-xs text-slate-500">
+        {Icon && <Icon className="h-3.5 w-3.5 text-slate-400" />}
+        {label}
+      </div>
+      <span className="text-xs font-semibold text-navy-800 capitalize">{display}</span>
+    </div>
+  );
+}
+
+function QIChips({ label, values }: { label: string; values: string[] | null | undefined }) {
+  if (!values?.length) return null;
+  return (
+    <div className="py-2.5 border-b border-slate-100 last:border-0">
+      <p className="text-xs text-slate-500 mb-1.5">{label}</p>
+      <div className="flex flex-wrap gap-1.5">
+        {values.map((v) => (
+          <span key={v} className="rounded-full bg-navy-50 px-2.5 py-0.5 text-[11px] font-medium text-navy-700 capitalize">
+            {v.replace(/_/g, ' ')}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function QuickIntelligencePanel({ property }: { property: Property }) {
+  const hasQI = property.floodRisk || property.electricitySituation || property.waterAvailability
+    || property.roadAccess || property.networkQuality || property.noiseLevel || property.securityFeel
+    || property.propertyCondition || property.compoundCulture;
+
+  if (!hasQI) return null;
+
+  return (
+    <div className="card p-6">
+      <h2 className="font-display text-base font-bold text-navy-900 mb-4 flex items-center gap-2">
+        <Shield className="h-4 w-4 text-veriq-secondary" /> Veriq Quick Intelligence
+      </h2>
+      <div className="space-y-0">
+        <QIRow label="Flood Risk" value={property.floodRisk} icon={Cloud} />
+        <QIRow label="Electricity" value={property.electricitySituation} icon={Zap} />
+        <QIChips label="Electricity Details" values={property.electricityInfo} />
+        <QIRow label="Water Availability" value={property.waterAvailability} icon={Droplets} />
+        <QIRow label="Water Source" value={property.waterSource} icon={Droplets} />
+        <QIRow label="Road Access" value={property.roadAccess} icon={Car} />
+        <QIRow label="Road in Rain" value={property.roadAccessRain} icon={Car} />
+        <QIRow label="Network Quality" value={property.networkQuality} icon={Wifi} />
+        <QIChips label="Best Networks" values={property.bestNetwork} />
+        <QIRow label="Noise Level" value={property.noiseLevel} icon={Volume2} />
+        <QIRow label="Noise Source" value={property.noiseSource} icon={Volume2} />
+        <QIRow label="Security Feel" value={property.securityFeel} icon={Shield} />
+        <QIChips label="Security Features" values={property.securityFeatures} />
+        <QIRow label="Property Condition" value={property.propertyCondition} icon={Building2} />
+        <QIChips label="Known Issues" values={property.knownIssues} />
+        <QIRow label="Compound Culture" value={property.compoundCulture} icon={Users} />
+      </div>
+      {property.agentObservation && (
+        <div className="mt-4 rounded-xl bg-veriq-surface p-3.5">
+          <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Agent Observation</p>
+          <p className="text-sm text-navy-800 italic">"{property.agentObservation}"</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Short Stay Intelligence Panel ────────────────────────────────────────
+
+function ShortStayPanel({ property }: { property: Property }) {
+  if (property.propertyType !== PropertyType.SHORT_STAY) return null;
+  const hasData = property.shortStayAC || property.shortStayInternet || property.shortStayCleanliness
+    || property.shortStayFurnishing || property.shortStayKitchen;
+  if (!hasData) return null;
+
+  return (
+    <div className="card p-6">
+      <h2 className="font-display text-base font-bold text-navy-900 mb-4 flex items-center gap-2">
+        <Sun className="h-4 w-4 text-amber-500" /> Short Stay Intelligence
+      </h2>
+      <div className="space-y-0">
+        <QIRow label="Air Conditioning" value={property.shortStayAC} icon={Sun} />
+        <QIRow label="Internet" value={property.shortStayInternet} icon={Wifi} />
+        <QIRow label="Cleanliness" value={property.shortStayCleanliness} icon={Star} />
+        <QIRow label="Furnishing" value={property.shortStayFurnishing} icon={Home} />
+        <QIRow label="Kitchen Access" value={property.shortStayKitchen} icon={Building2} />
+      </div>
+      {property.shortStayAgentNote && (
+        <div className="mt-4 rounded-xl bg-amber-50 p-3.5">
+          <p className="text-[10px] font-semibold text-amber-600 uppercase tracking-wider mb-1">Agent Note</p>
+          <p className="text-sm text-navy-800 italic">"{property.shortStayAgentNote}"</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Access Timer ─────────────────────────────────────────────────────────
+
+function AccessTimer({ expiresAt }: { expiresAt: string }) {
+  const { timeLeft, isExpired } = useCountdown(expiresAt);
+
+  return (
+    <div className={`rounded-xl border px-4 py-3 flex items-center gap-3 ${
+      isExpired
+        ? 'bg-red-50 border-red-200'
+        : 'bg-emerald-50 border-emerald-200'
+    }`}>
+      <Timer className={`h-4 w-4 flex-shrink-0 ${isExpired ? 'text-red-500' : 'text-emerald-600'}`} />
+      <div>
+        <p className={`text-xs font-semibold ${isExpired ? 'text-red-700' : 'text-emerald-700'}`}>
+          {isExpired ? 'Access Expired' : 'Access expires in'}
+        </p>
+        {!isExpired && <p className="text-sm font-bold text-navy-900">{timeLeft}</p>}
+      </div>
+    </div>
+  );
+}
+
+// ─── Paystack loader ──────────────────────────────────────────────────────
+
+declare global {
+  interface Window {
+    PaystackPop?: {
+      setup: (opts: {
+        key: string;
+        email: string;
+        amount: number;
+        currency: string;
+        ref: string;
+        callback: (response: { reference: string }) => void;
+        onClose: () => void;
+      }) => { openIframe: () => void };
+    };
+  }
+}
+
+function usePaystackScript() {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    if (window.PaystackPop) { setReady(true); return; }
+    const s = document.createElement('script');
+    s.src = 'https://js.paystack.co/v1/inline.js';
+    s.async = true;
+    s.onload = () => setReady(true);
+    document.head.appendChild(s);
+  }, []);
+  return ready;
+}
+
+// ─── Main page ────────────────────────────────────────────────────────────
+
 export default function DashboardPropertyDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { success, error: toastError } = useToast();
+  const paystackReady = usePaystackScript();
 
   const [property, setProperty] = useState<Property | null>(null);
+  const [consultation, setConsultation] = useState<Consultation | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
   const [isUnlocking, setIsUnlocking] = useState(false);
   const [notFound, setNotFound] = useState(false);
+  const [heroImgIdx, setHeroImgIdx] = useState(0);
 
-  useEffect(() => {
-    async function load() {
-      setIsLoading(true);
-      try {
-        const res = await propertiesApi.getById(id);
-        setProperty(res.data);
-        if (isAuthenticated) {
-          try {
-            const accessRes = await consultationsApi.checkAccess(id);
-            setHasAccess(accessRes.data?.hasAccess ?? false);
-          } catch {
-            // no access yet
+  const load = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const res = await propertiesApi.getById(id);
+      setProperty(res.data);
+      if (isAuthenticated) {
+        try {
+          const accessRes = await consultationsApi.checkAccess(id);
+          const access = accessRes.data?.hasAccess ?? false;
+          setHasAccess(access);
+          if (access) {
+            // Find active consultation for the timer
+            const myRes = await consultationsApi.getMyConsultations(1, 50);
+            const active = myRes.data.find(
+              (c) => c.propertyId === id && (c.status === 'unlocked' || c.status === 'paid'),
+            );
+            if (active) setConsultation(active);
           }
+        } catch {
+          // no access yet — ok
         }
-      } catch {
-        setNotFound(true);
-      } finally {
-        setIsLoading(false);
       }
+    } catch {
+      setNotFound(true);
+    } finally {
+      setIsLoading(false);
     }
-    if (id) load();
   }, [id, isAuthenticated]);
 
-  const handleUnlock = async () => {
+  useEffect(() => { if (id) load(); }, [id, load]);
+
+  // ── Paystack payment flow ──
+  const handleUnlock = useCallback(async () => {
+    if (!isAuthenticated) { toastError('Please log in to unlock this report.'); return; }
+
     setIsUnlocking(true);
     try {
-      await consultationsApi.initiate({ propertyId: id });
-      success('Intelligence report unlocked!');
-      setHasAccess(true);
+      const res = await consultationsApi.initiate({ propertyId: id });
+      const initiated = res.data as Consultation & { consultationId?: string; feeAmount?: number };
+      const consultationId = initiated.id ?? initiated.consultationId;
+      const feeAmount = initiated.feeAmount ?? property?.consultationFee ?? 0;
+
+      if (!paystackReady || !window.PaystackPop) {
+        toastError('Payment system not ready. Please try again.');
+        setIsUnlocking(false);
+        return;
+      }
+
+      const handler = window.PaystackPop.setup({
+        key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY ?? '',
+        email: user?.email ?? '',
+        amount: feeAmount * 100, // kobo
+        currency: 'NGN',
+        ref: `veriq-${consultationId}-${Date.now()}`,
+        callback: async (response) => {
+          try {
+            await consultationsApi.confirmPayment(consultationId, {
+              paymentReference: response.reference,
+              paymentProvider: 'paystack',
+            });
+            success('Intelligence report unlocked!');
+            setHasAccess(true);
+            await load(); // refresh to get timer
+          } catch (err) {
+            toastError(err instanceof ApiError ? err.message : 'Payment confirmation failed.');
+          } finally {
+            setIsUnlocking(false);
+          }
+        },
+        onClose: () => {
+          setIsUnlocking(false);
+          toastError('Payment was cancelled.');
+        },
+      });
+
+      handler.openIframe();
     } catch (err) {
-      toastError(err instanceof ApiError ? err.message : 'Failed to unlock report.');
-    } finally {
+      toastError(err instanceof ApiError ? err.message : 'Failed to initiate payment.');
       setIsUnlocking(false);
     }
-  };
+  }, [id, isAuthenticated, paystackReady, property, user, load, success, toastError]);
 
   if (isLoading) return <PageLoader />;
 
@@ -99,9 +500,13 @@ export default function DashboardPropertyDetailPage() {
   const freshness = FRESHNESS_INFO[property.freshnessScore];
   const tierBadge = TRUST_TIER_BADGE[agent?.trustTier ?? AgentTrustTier.BRONZE];
   const location = [property.area, property.city, property.state].filter(Boolean).join(', ');
+  const isShortStay = property.propertyType === PropertyType.SHORT_STAY;
+
+  // Hero image — cover or gradient fallback
+  const hasCover = !!property.coverImageUrl;
 
   return (
-    <div className="max-w-7xl mx-auto space-y-0">
+    <div className="max-w-7xl mx-auto">
       {/* Back */}
       <Link
         href="/dashboard/browse"
@@ -111,13 +516,26 @@ export default function DashboardPropertyDetailPage() {
       </Link>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-        {/* Left: Images & details */}
+        {/* ── Left ── */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Hero image placeholder */}
-          <div className="relative h-72 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-800 overflow-hidden">
-            <div className="absolute inset-0 flex items-center justify-center">
-              <Home className="h-20 w-20 text-white/10" />
-            </div>
+
+          {/* Hero */}
+          <div className="relative h-72 rounded-2xl overflow-hidden bg-gradient-to-br from-blue-600 to-indigo-800">
+            {hasCover ? (
+              <Image
+                src={property.coverImageUrl!}
+                alt={property.title}
+                fill
+                className="object-cover"
+                priority
+                sizes="(max-width: 1024px) 100vw, 66vw"
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Home className="h-20 w-20 text-white/10" />
+              </div>
+            )}
+            {/* Overlay badges */}
             <div className="absolute top-4 left-4 flex gap-2">
               <span className={`badge text-xs font-semibold capitalize ${
                 property.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-700'
@@ -125,11 +543,18 @@ export default function DashboardPropertyDetailPage() {
                 {property.status}
               </span>
               {agentVerified && (
-                <span className="badge bg-white/90 text-emerald-700 text-xs">
+                <span className="badge bg-white/90 text-emerald-700 text-xs gap-1">
                   <CheckCircle className="h-3 w-3" /> Verified
                 </span>
               )}
             </div>
+            {/* Lock overlay for non-unlocked */}
+            {!hasAccess && (
+              <div className="absolute bottom-4 right-4 flex items-center gap-1.5 rounded-lg bg-navy-900/80 backdrop-blur-sm px-3 py-2">
+                <Lock className="h-3.5 w-3.5 text-amber-400" />
+                <span className="text-xs font-semibold text-white">Full gallery unlocked after payment</span>
+              </div>
+            )}
           </div>
 
           {/* Basic info */}
@@ -162,6 +587,9 @@ export default function DashboardPropertyDetailPage() {
               {property.isFurnished && (
                 <span className="badge bg-blue-50 text-blue-700 text-xs">Furnished</span>
               )}
+              {property.floorLevel && (
+                <span className="text-sm text-navy-700">{property.floorLevel}</span>
+              )}
             </div>
 
             {property.description && (
@@ -176,7 +604,7 @@ export default function DashboardPropertyDetailPage() {
               <h3 className="font-semibold text-navy-900 mb-3 flex items-center gap-2">
                 <DollarSign className="h-4 w-4 text-veriq-secondary" /> Move-in Estimate
               </h3>
-              <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-xs">
                 {[
                   { label: 'Annual Rent', value: property.rentAmount },
                   { label: 'Agency Fee', value: property.agencyFee },
@@ -185,12 +613,12 @@ export default function DashboardPropertyDetailPage() {
                   { label: 'Caution Fee', value: property.cautionFee },
                   { label: 'Inspection Fee', value: property.inspectionFee },
                 ].map(({ label, value }) =>
-                  Number(value) > 0 && (
+                  Number(value) > 0 ? (
                     <div key={label} className="flex justify-between">
                       <span className="text-slate-500">{label}</span>
                       <span className="font-semibold text-navy-800">{formatNaira(value)}</span>
                     </div>
-                  ),
+                  ) : null,
                 )}
               </div>
               {Number(property.totalMoveInEstimate) > 0 && (
@@ -202,36 +630,85 @@ export default function DashboardPropertyDetailPage() {
                 </div>
               )}
             </div>
+
+            {/* Short Stay-specific details */}
+            {isShortStay && (property.shortStayDailyRate || property.shortStayWeeklyRate) && (
+              <div className="mt-4 rounded-xl bg-amber-50 border border-amber-100 p-4">
+                <h3 className="font-semibold text-navy-900 mb-3 flex items-center gap-2">
+                  <Sun className="h-4 w-4 text-amber-500" /> Short Stay Rates
+                </h3>
+                <div className="grid grid-cols-2 gap-4 text-xs">
+                  {property.shortStayDailyRate && (
+                    <div>
+                      <p className="text-slate-500">Per night</p>
+                      <p className="font-bold text-navy-900">{formatNaira(property.shortStayDailyRate)}</p>
+                    </div>
+                  )}
+                  {property.shortStayWeeklyRate && (
+                    <div>
+                      <p className="text-slate-500">Per week</p>
+                      <p className="font-bold text-navy-900">{formatNaira(property.shortStayWeeklyRate)}</p>
+                    </div>
+                  )}
+                  {property.shortStayMinNights && (
+                    <div>
+                      <p className="text-slate-500">Min nights</p>
+                      <p className="font-bold text-navy-900">{property.shortStayMinNights}</p>
+                    </div>
+                  )}
+                  {property.shortStayCheckInTime && (
+                    <div>
+                      <p className="text-slate-500">Check-in</p>
+                      <p className="font-bold text-navy-900">{property.shortStayCheckInTime}</p>
+                    </div>
+                  )}
+                </div>
+                {property.shortStayHouseRules && (
+                  <p className="mt-3 text-xs text-slate-600 border-t border-amber-200 pt-3">
+                    <span className="font-semibold">House rules: </span>{property.shortStayHouseRules}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
-          {/* Intelligence report */}
+          {/* ── Intelligence Report Block ── */}
           {!hasAccess ? (
-            <div className="card p-6 border-2 border-dashed border-gold-300 bg-gold-50/50">
+            /* Lock panel */
+            <div className="card p-6 border-2 border-dashed border-amber-300 bg-amber-50/40">
               <div className="flex items-start gap-4">
-                <div className="h-12 w-12 rounded-2xl bg-gold-100 flex items-center justify-center flex-shrink-0">
-                  <Lock className="h-6 w-6 text-gold-600" />
+                <div className="h-12 w-12 rounded-2xl bg-amber-100 flex items-center justify-center flex-shrink-0">
+                  <Lock className="h-6 w-6 text-amber-600" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-display text-base font-bold text-navy-900 mb-1">Full Intelligence Report Locked</h3>
+                  <h3 className="font-display text-base font-bold text-navy-900 mb-1">
+                    Full Intelligence Report Locked
+                  </h3>
                   <p className="text-sm text-veriq-muted mb-4">
-                    Unlock the complete property intelligence report to access detailed images, environmental data, utility disclosures, and direct agent consultation.
+                    Unlock the complete property intelligence report to access full photo gallery, environmental data,
+                    utility disclosures, and direct agent consultation — valid for 48 hours.
                   </p>
-                  <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div className="grid grid-cols-2 gap-3 mb-5">
                     {[
                       { icon: Eye, label: 'Full photo gallery' },
                       { icon: FileText, label: 'Utility disclosures' },
                       { icon: MapPin, label: 'Environmental report' },
-                      { icon: Shield, label: 'Agent consultation' },
+                      { icon: Shield, label: 'Agent phone number' },
+                      { icon: Zap, label: 'Electricity & water data' },
+                      { icon: Clock, label: '48-hour access window' },
                     ].map(({ icon: Icon, label }) => (
                       <div key={label} className="flex items-center gap-2 text-xs text-navy-700">
-                        <Icon className="h-4 w-4 text-emerald-500" /> {label}
+                        <Icon className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0" /> {label}
                       </div>
                     ))}
                   </div>
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <div className="flex items-center gap-1.5 text-sm font-bold text-navy-900">
-                      <Wallet className="h-4 w-4 text-gold-500" />
-                      {formatNaira(property.consultationFee)}
+                  <div className="flex items-center gap-4 flex-wrap">
+                    <div className="flex items-center gap-1.5">
+                      <Wallet className="h-4 w-4 text-amber-500" />
+                      <span className="text-base font-black text-navy-900">
+                        {formatNaira(property.consultationFee)}
+                      </span>
+                      <span className="text-xs text-slate-400">one-time</span>
                     </div>
                     <button
                       onClick={handleUnlock}
@@ -243,55 +720,93 @@ export default function DashboardPropertyDetailPage() {
                       ) : (
                         <Lock className="h-4 w-4" />
                       )}
-                      {isUnlocking ? 'Unlocking…' : 'Unlock Intelligence Report'}
+                      {isUnlocking ? 'Opening payment…' : 'Unlock Intelligence Report'}
                     </button>
                   </div>
                 </div>
               </div>
             </div>
           ) : (
-            <div className="card p-6 border-2 border-emerald-200 bg-emerald-50/50">
-              <div className="flex items-start gap-4">
-                <div className="h-12 w-12 rounded-2xl bg-emerald-100 flex items-center justify-center flex-shrink-0">
-                  <CheckCircle className="h-6 w-6 text-emerald-600" />
-                </div>
-                <div>
-                  <h3 className="font-display text-base font-bold text-navy-900 mb-1">Intelligence Report Unlocked</h3>
-                  <p className="text-sm text-veriq-muted">
-                    You have full access to this property&apos;s intelligence report. Contact the agent directly to arrange an inspection.
+            /* Post-unlock content */
+            <div className="space-y-6">
+              {/* Unlocked header */}
+              <div className="rounded-2xl border-2 border-emerald-200 bg-emerald-50 p-5 flex items-start gap-3">
+                <Unlock className="h-5 w-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="font-semibold text-emerald-800 mb-0.5">Intelligence Report Unlocked</p>
+                  <p className="text-xs text-emerald-700">
+                    You have full access. Contact the agent to arrange an inspection.
                   </p>
-                  {agent?.user?.phone && (
-                    <p className="mt-3 text-sm font-semibold text-navy-900">
-                      Agent contact: {agent.user.phone}
-                    </p>
-                  )}
                 </div>
+                {consultation?.accessExpiresAt && (
+                  <AccessTimer expiresAt={consultation.accessExpiresAt} />
+                )}
               </div>
+
+              {/* Agent contact */}
+              {agent?.user?.phone && (
+                <div className="card p-5">
+                  <h3 className="font-display text-sm font-bold text-navy-900 mb-3 flex items-center gap-2">
+                    <Phone className="h-4 w-4 text-veriq-secondary" /> Agent Contact
+                  </h3>
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-veriq-secondary flex items-center justify-center text-white font-bold text-sm">
+                      {agentInitial}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-navy-900">{agentName}</p>
+                      <a
+                        href={`tel:${agent.user.phone}`}
+                        className="text-veriq-secondary font-semibold text-sm hover:underline"
+                      >
+                        {agent.user.phone}
+                      </a>
+                    </div>
+                  </div>
+                  <p className="mt-3 text-xs text-slate-400">
+                    Always physically inspect the property before making any payments or commitments.
+                  </p>
+                </div>
+              )}
+
+              {/* Media gallery */}
+              <div className="card p-6">
+                <h2 className="font-display text-base font-bold text-navy-900 mb-4 flex items-center gap-2">
+                  <Eye className="h-4 w-4 text-veriq-secondary" /> Property Photos
+                </h2>
+                <MediaGallery propertyId={id} />
+              </div>
+
+              {/* Quick Intelligence */}
+              <QuickIntelligencePanel property={property} />
+
+              {/* Short Stay Intelligence */}
+              <ShortStayPanel property={property} />
             </div>
           )}
         </div>
 
-        {/* Right: Agent & meta */}
+        {/* ── Right sidebar ── */}
         <div className="space-y-5">
           {/* Agent card */}
           <div className="card p-6">
             <h3 className="font-display text-sm font-bold text-navy-900 mb-4">Listing Agent</h3>
             <div className="flex items-center gap-3 mb-4">
-              <div className="h-12 w-12 rounded-full bg-veriq-secondary flex items-center justify-center text-white font-bold text-lg">
+              <div className="h-12 w-12 rounded-full bg-veriq-secondary flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
                 {agentInitial}
               </div>
-              <div>
-                <p className="font-semibold text-navy-900">{agentName}</p>
+              <div className="min-w-0">
+                <p className="font-semibold text-navy-900 truncate">{agentName}</p>
                 {agent?.businessName && (
-                  <p className="text-xs text-slate-500">{agent.businessName}</p>
+                  <p className="text-xs text-slate-500 truncate">{agent.businessName}</p>
                 )}
                 <span className={`inline-block mt-1 badge text-[10px] ${tierBadge.cls}`}>
                   {tierBadge.label} Tier
                 </span>
               </div>
               {agentVerified && (
-                <div className="ml-auto">
-                  <span className="badge bg-emerald-50 text-emerald-700 text-[10px]">
+                <div className="ml-auto flex-shrink-0">
+                  <span className="badge bg-emerald-50 text-emerald-700 text-[10px] gap-1">
                     <CheckCircle className="h-2.5 w-2.5" /> Verified
                   </span>
                 </div>
@@ -315,7 +830,7 @@ export default function DashboardPropertyDetailPage() {
             )}
             {!hasAccess && (
               <p className="text-[11px] text-slate-400">
-                Unlock the intelligence report to contact this agent directly.
+                Phone number revealed after unlocking the report.
               </p>
             )}
           </div>
@@ -326,8 +841,8 @@ export default function DashboardPropertyDetailPage() {
               <Clock className="h-4 w-4 text-emerald-500" />
               <span className="text-sm font-semibold text-navy-900">Listing Freshness</span>
             </div>
-            <div className="h-2 rounded-full bg-slate-100 mb-2">
-              <div className={`h-2 rounded-full ${freshness.cls} ${freshness.width}`} />
+            <div className="h-2 rounded-full bg-slate-100 mb-2 overflow-hidden">
+              <div className={`h-2 rounded-full transition-all ${freshness.cls} ${freshness.width}`} />
             </div>
             <p className={`text-xs font-medium ${
               property.freshnessScore === 'freshly_verified' ? 'text-emerald-600' :
@@ -337,24 +852,30 @@ export default function DashboardPropertyDetailPage() {
             }`}>
               {freshness.label}
             </p>
-            <p className="text-[11px] text-slate-400 mt-1">
-              Agents must reconfirm availability regularly to maintain freshness.
-            </p>
+            {property.lastVerifiedAt && (
+              <p className="text-[11px] text-slate-400 mt-1">
+                Last verified: {new Date(property.lastVerifiedAt).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' })}
+              </p>
+            )}
           </div>
 
-          {/* Access fee */}
-          <div className="card p-5 bg-gradient-to-br from-navy-50 to-blue-50 border-blue-100">
-            <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Intelligence Access Fee</p>
-            <p className="text-2xl font-black text-navy-900 mb-1">
-              {formatNaira(property.consultationFee)}
-            </p>
-            <p className="text-xs text-veriq-muted">One-time fee — valid 7 days</p>
-          </div>
+          {/* Access fee / timer */}
+          {!hasAccess ? (
+            <div className="card p-5 bg-gradient-to-br from-navy-50 to-blue-50 border-blue-100">
+              <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Intelligence Access Fee</p>
+              <p className="text-2xl font-black text-navy-900 mb-0.5">
+                {formatNaira(property.consultationFee)}
+              </p>
+              <p className="text-xs text-veriq-muted">One-time fee — valid 48 hours</p>
+            </div>
+          ) : consultation?.accessExpiresAt ? (
+            <AccessTimer expiresAt={consultation.accessExpiresAt} />
+          ) : null}
 
           {/* Refund protection */}
           <div className="rounded-2xl bg-navy-900 p-5">
             <div className="flex items-start gap-3">
-              <Shield className="h-5 w-5 text-gold-400 flex-shrink-0 mt-0.5" />
+              <Shield className="h-5 w-5 text-amber-400 flex-shrink-0 mt-0.5" />
               <div>
                 <p className="text-white text-sm font-semibold mb-1">Refund Protection</p>
                 <p className="text-slate-400 text-xs leading-relaxed">

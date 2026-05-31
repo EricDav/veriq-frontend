@@ -21,17 +21,214 @@ export enum AgentTrustTier {
 }
 
 export enum PropertyType {
-  FLAT = 'flat',
-  DUPLEX = 'duplex',
-  BUNGALOW = 'bungalow',
-  SELF_CONTAIN = 'self_contain',
-  ROOM_AND_PARLOUR = 'room_and_parlour',
+  // ─── V2 Primary Types ─────────────────────────────────────────
+  FLAT = 'flat',                          // Apartment / Flat
+  MINI_FLAT = 'mini_flat',               // Mini Flat
+  SELF_CONTAIN = 'self_contain',         // Self Contain
+  ROOM_AND_PARLOUR = 'room_and_parlour', // Room & Parlour
+  DUPLEX = 'duplex',                     // Duplex
+  BUNGALOW = 'bungalow',                 // Bungalow
+  HOSTEL = 'hostel',                     // Hostel Intelligence Framework
+  SHORT_STAY = 'short_stay',             // Short Stay Intelligence Framework
+  // ─── Legacy ───────────────────────────────────────────────────
   STUDIO = 'studio',
   PENTHOUSE = 'penthouse',
   TERRACED_HOUSE = 'terraced_house',
   DETACHED_HOUSE = 'detached_house',
   SEMI_DETACHED = 'semi_detached',
   MANSION = 'mansion',
+  OTHER = 'other',
+}
+
+export enum ShortStayPricingModel {
+  DAILY = 'daily',
+  WEEKLY = 'weekly',
+  BOTH = 'both',
+}
+
+export enum HostelSuitableFor {
+  STUDENTS = 'students',
+  CORP_MEMBERS = 'corp_members',
+  WORKING_CLASS = 'working_class',
+  TEMPORARY_STAY = 'temporary_stay',
+  MIXED = 'mixed',
+}
+
+export enum HostelGender {
+  MALE = 'male',
+  FEMALE = 'female',
+  MIXED = 'mixed',
+}
+
+export enum HostelCampusProximity {
+  ON_CAMPUS = 'on_campus',
+  OFF_CAMPUS = 'off_campus',
+}
+
+// ─── Veriq Quick Intelligence Enums ──────────────────────────────────────────
+
+export enum FloodRisk {
+  NO_KNOWN_FLOODING = 'no_known_flooding',
+  MINOR_OCCASIONALLY = 'minor_occasionally',
+  FLOODS_HEAVY_RAIN = 'floods_heavy_rain',
+}
+
+export enum ElectricitySituation {
+  EXCELLENT = 'excellent',
+  GOOD = 'good',
+  FAIR = 'fair',
+  POOR = 'poor',
+}
+
+export enum ElectricityInfo {
+  PUBLIC_POWER_MOSTLY = 'public_power_mostly',
+  FREQUENT_OUTAGES = 'frequent_outages',
+  GENERATOR_COMMON = 'generator_common',
+  SOLAR_BACKUP = 'solar_backup',
+}
+
+export enum WaterAvailability {
+  CONSTANT = 'constant',
+  MOSTLY_AVAILABLE = 'mostly_available',
+  OCCASIONAL_SHORTAGE = 'occasional_shortage',
+  FREQUENT_SHORTAGE = 'frequent_shortage',
+}
+
+export enum WaterSource {
+  BOREHOLE = 'borehole',
+  WATER_CORPORATION = 'water_corporation',
+  WELL = 'well',
+  MIXED_SOURCE = 'mixed_source',
+}
+
+export enum RoadAccess {
+  EXCELLENT = 'excellent',
+  GOOD = 'good',
+  FAIR = 'fair',
+  POOR = 'poor',
+}
+
+export enum RoadAccessRain {
+  FULLY_ACCESSIBLE = 'fully_accessible',
+  SLIGHTLY_DIFFICULT = 'slightly_difficult',
+  DIFFICULT = 'difficult',
+  SOMETIMES_CUT_OFF = 'sometimes_cut_off',
+}
+
+export enum NetworkQuality {
+  EXCELLENT = 'excellent',
+  GOOD = 'good',
+  FAIR = 'fair',
+  POOR = 'poor',
+}
+
+export enum BestNetwork {
+  MTN = 'mtn',
+  AIRTEL = 'airtel',
+  GLO = 'glo',
+  NINE_MOBILE = '9mobile',
+}
+
+export enum NoiseLevel {
+  QUIET = 'quiet',
+  MODERATE = 'moderate',
+  NOISY = 'noisy',
+}
+
+export enum NoiseSource {
+  CHURCH = 'church',
+  MARKET = 'market',
+  NIGHTLIFE = 'nightlife',
+  SCHOOL = 'school',
+  TRAFFIC = 'traffic',
+  GENERATOR_NOISE = 'generator_noise',
+  NONE = 'none',
+}
+
+export enum SecurityFeel {
+  GOOD = 'good',
+  FAIR = 'fair',
+  POOR = 'poor',
+}
+
+export enum SecurityFeatures {
+  GATED_COMPOUND = 'gated_compound',
+  SECURITY_PERSONNEL = 'security_personnel',
+  ESTATE_ENVIRONMENT = 'estate_environment',
+  BUSY_AREA = 'busy_area',
+  ISOLATED_AREA = 'isolated_area',
+}
+
+export enum PropertyCondition {
+  NEWLY_BUILT = 'newly_built',
+  NEWLY_RENOVATED = 'newly_renovated',
+  GOOD_CONDITION = 'good_condition',
+  FAIR_CONDITION = 'fair_condition',
+  NEEDS_REPAIRS = 'needs_repairs',
+}
+
+export enum KnownIssues {
+  DAMP_WALL = 'damp_wall',
+  PLUMBING_ISSUE = 'plumbing_issue',
+  CEILING_DAMAGE = 'ceiling_damage',
+  CRACKS = 'cracks',
+  POOR_FINISHING = 'poor_finishing',
+  NONE_OBSERVED = 'none_observed',
+}
+
+export enum CompoundCulture {
+  FAMILY_FRIENDLY = 'family_friendly',
+  MOSTLY_FAMILIES = 'mostly_families',
+  MOSTLY_SINGLES = 'mostly_singles',
+  MIXED_OCCUPANTS = 'mixed_occupants',
+  QUIET_COMPOUND = 'quiet_compound',
+  SOCIAL_COMPOUND = 'social_compound',
+}
+
+// ─── Short Stay Intelligence Enums ───────────────────────────────────────────
+
+export enum ShortStayAC {
+  AVAILABLE_ALL_ROOMS = 'available_all_rooms',
+  AVAILABLE_SOME_ROOMS = 'available_some_rooms',
+  NOT_AVAILABLE = 'not_available',
+}
+
+export enum ShortStayInternet {
+  HIGH_SPEED = 'high_speed',
+  STANDARD = 'standard',
+  LIMITED = 'limited',
+  NOT_AVAILABLE = 'not_available',
+}
+
+export enum ShortStayCleanliness {
+  EXCELLENT = 'excellent',
+  GOOD = 'good',
+  FAIR = 'fair',
+  POOR = 'poor',
+}
+
+export enum ShortStayFurnishing {
+  FULLY_FURNISHED = 'fully_furnished',
+  PARTIALLY_FURNISHED = 'partially_furnished',
+  BASIC_FURNISHING = 'basic_furnishing',
+}
+
+export enum ShortStayKitchen {
+  FULL_KITCHEN = 'full_kitchen',
+  KITCHENETTE = 'kitchenette',
+  NOT_AVAILABLE = 'not_available',
+}
+
+export enum MediaSection {
+  ROAD_ACCESS = 'road_access',
+  ENVIRONMENT = 'environment',
+  LIVING_ROOM = 'living_room',
+  KITCHEN = 'kitchen',
+  BATHROOM = 'bathroom',
+  BEDROOM = 'bedroom',
+  COMPOUND = 'compound',
+  WATER_AREA = 'water_area',
+  CEILING = 'ceiling',
   OTHER = 'other',
 }
 
@@ -121,6 +318,16 @@ export interface Agent {
   businessAddress: string | null;
   yearsOfExperience: number | null;
   specialization: string | null;
+  // Extended onboarding
+  profilePhotoUrl: string | null;
+  stateOfOperation: string | null;
+  operatingLocations: string[] | null;
+  specializations: string[] | null;
+  bankAccountName: string | null;
+  bankName: string | null;
+  bankAccountNumber: string | null;
+  agreementAccepted: boolean;
+  agreementAcceptedAt: string | null;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -159,6 +366,51 @@ export interface Property {
   reconfirmationCount: number;
   lastConfirmedRent: number | null;
   wasAutoHidden: boolean;
+  // Hostel fields
+  hostelSuitableFor: HostelSuitableFor[] | null;
+  hostelPersonsPerRoom: number | null;
+  hostelGender: HostelGender | null;
+  hostelCampusProximity: HostelCampusProximity | null;
+  hostelNearestCampus: string | null;
+  hostelDistanceFromCampus: string | null;
+  hostelMealsIncluded: boolean;
+  hostelRulesNotes: string | null;
+  // Short Stay fields
+  shortStayPricingModel: ShortStayPricingModel | null;
+  shortStayDailyRate: number | null;
+  shortStayWeeklyRate: number | null;
+  shortStayMinNights: number | null;
+  shortStayMaxNights: number | null;
+  shortStayCheckInTime: string | null;
+  shortStayCheckOutTime: string | null;
+  shortStayAmenities: string[] | null;
+  shortStayHouseRules: string | null;
+  // Veriq Quick Intelligence fields
+  floodRisk: FloodRisk | null;
+  electricitySituation: ElectricitySituation | null;
+  electricityInfo: string[] | null;
+  waterAvailability: WaterAvailability | null;
+  waterSource: WaterSource | null;
+  roadAccess: RoadAccess | null;
+  roadAccessRain: RoadAccessRain | null;
+  networkQuality: NetworkQuality | null;
+  bestNetwork: string[] | null;
+  noiseLevel: NoiseLevel | null;
+  noiseSource: NoiseSource | null;
+  securityFeel: SecurityFeel | null;
+  securityFeatures: string[] | null;
+  propertyCondition: PropertyCondition | null;
+  knownIssues: string[] | null;
+  compoundCulture: CompoundCulture | null;
+  agentObservation: string | null;
+  // Short Stay Intelligence fields
+  shortStayAC: ShortStayAC | null;
+  shortStayInternet: ShortStayInternet | null;
+  shortStayCleanliness: ShortStayCleanliness | null;
+  shortStayFurnishing: ShortStayFurnishing | null;
+  shortStayKitchen: ShortStayKitchen | null;
+  shortStayAgentNote: string | null;
+  coverImageUrl: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -236,6 +488,14 @@ export interface CreateAgentProfileDto {
   bio?: string;
   yearsOfExperience?: number;
   specialization?: string;
+  profilePhotoUrl?: string;
+  stateOfOperation?: string;
+  operatingLocations?: string[];
+  specializations?: string[];
+  bankAccountName?: string;
+  bankName?: string;
+  bankAccountNumber?: string;
+  agreementAccepted?: boolean;
 }
 
 export interface SubmitLevel1VerificationDto {
@@ -259,7 +519,7 @@ export interface CreatePropertyDto {
   title: string;
   description?: string;
   propertyType: PropertyType;
-  bedrooms: number;
+  bedrooms?: number;
   bathrooms: number;
   floorLevel?: string;
   isFurnished?: boolean;
@@ -275,6 +535,51 @@ export interface CreatePropertyDto {
   address?: string;
   latitude?: number;
   longitude?: number;
+  // Hostel-specific
+  hostelSuitableFor?: HostelSuitableFor[];
+  hostelPersonsPerRoom?: number;
+  hostelGender?: HostelGender;
+  hostelCampusProximity?: HostelCampusProximity;
+  hostelNearestCampus?: string;
+  hostelDistanceFromCampus?: string;
+  hostelMealsIncluded?: boolean;
+  hostelRulesNotes?: string;
+  // Short Stay-specific
+  shortStayPricingModel?: ShortStayPricingModel;
+  shortStayDailyRate?: number;
+  shortStayWeeklyRate?: number;
+  shortStayMinNights?: number;
+  shortStayMaxNights?: number;
+  shortStayCheckInTime?: string;
+  shortStayCheckOutTime?: string;
+  shortStayAmenities?: string[];
+  shortStayHouseRules?: string;
+  // Veriq Quick Intelligence
+  floodRisk?: FloodRisk;
+  electricitySituation?: ElectricitySituation;
+  electricityInfo?: string[];
+  waterAvailability?: WaterAvailability;
+  waterSource?: WaterSource;
+  roadAccess?: RoadAccess;
+  roadAccessRain?: RoadAccessRain;
+  networkQuality?: NetworkQuality;
+  bestNetwork?: string[];
+  noiseLevel?: NoiseLevel;
+  noiseSource?: NoiseSource;
+  securityFeel?: SecurityFeel;
+  securityFeatures?: string[];
+  propertyCondition?: PropertyCondition;
+  knownIssues?: string[];
+  compoundCulture?: CompoundCulture;
+  agentObservation?: string;
+  // Short Stay Intelligence
+  shortStayAC?: ShortStayAC;
+  shortStayInternet?: ShortStayInternet;
+  shortStayCleanliness?: ShortStayCleanliness;
+  shortStayFurnishing?: ShortStayFurnishing;
+  shortStayKitchen?: ShortStayKitchen;
+  shortStayAgentNote?: string;
+  coverImageUrl?: string;
 }
 
 export interface FilterPropertiesDto {
@@ -288,6 +593,15 @@ export interface FilterPropertiesDto {
   maxRent?: number;
   isFurnished?: boolean;
   freshnessScore?: FreshnessScore;
+  // Hostel filters
+  hostelSuitableFor?: HostelSuitableFor;
+  hostelGender?: HostelGender;
+  hostelCampusProximity?: HostelCampusProximity;
+  hostelPersonsPerRoom?: number;
+  // Short Stay filters
+  maxDailyRate?: number;
+  maxNights?: number;
+  shortStayPricingModel?: ShortStayPricingModel;
   page?: number;
   limit?: number;
 }
@@ -305,4 +619,21 @@ export interface UpdateUserDto {
 
 export interface InitiateConsultationDto {
   propertyId: string;
+}
+
+// ─── Media ────────────────────────────────────────────────────────────────
+
+export interface MediaItem {
+  id: string;
+  propertyId: string;
+  mediaType: string;
+  section: string;
+  originalName: string;
+  filename: string;
+  url: string;
+  mimeType: string;
+  sizeBytes: number;
+  caption: string | null;
+  sortOrder: number;
+  createdAt: string;
 }
