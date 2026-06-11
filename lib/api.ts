@@ -249,6 +249,9 @@ export const agentsApi = {
   getBySlug: (slug: string) =>
     api.get<ApiResponse<Agent>>(`/agents/by-slug/${slug}`, { public: true }),
 
+  getByUsername: (username: string) =>
+    api.get<ApiResponse<Agent>>(`/agents/by-username/${username}`, { public: true }),
+
   getTrustProfile: (id: string) =>
     api.get<ApiResponse<unknown>>(`/agents/${id}/trust-profile`, {
       public: true,
@@ -296,6 +299,15 @@ export const propertiesApi = {
 
   getById: (id: string) =>
     api.get<ApiResponse<Property>>(`/properties/${id}`, { public: true }),
+
+  /** Admin: list properties of any status, optionally scoped to one agent */
+  listAdmin: (params: { page?: number; limit?: number; agentId?: string } = {}) => {
+    const sp = new URLSearchParams();
+    if (params.page) sp.set('page', String(params.page));
+    if (params.limit) sp.set('limit', String(params.limit));
+    if (params.agentId) sp.set('agentId', params.agentId);
+    return api.get<PaginatedResponse<Property>>(`/properties/admin/all?${sp}`);
+  },
 
   create: (dto: CreatePropertyDto) =>
     api.post<ApiResponse<Property>>('/properties', dto),

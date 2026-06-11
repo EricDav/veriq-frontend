@@ -284,6 +284,7 @@ export interface User {
 export interface Agent {
   id: string;
   userId: string;
+  username: string | null;
   user: User;
   // Level 1
   isPhoneVerified: boolean;
@@ -583,6 +584,7 @@ export interface CreatePropertyDto {
 }
 
 export interface FilterPropertiesDto {
+  agentId?: string;
   state?: string;
   city?: string;
   area?: string;

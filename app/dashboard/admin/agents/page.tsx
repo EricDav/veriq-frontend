@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Shield, CheckCircle, XCircle, Clock, ChevronLeft, ChevronRight,
-  Search, RefreshCw, AlertCircle, User, ExternalLink,
+  Search, RefreshCw, AlertCircle, User, ExternalLink, Home,
 } from 'lucide-react';
 import { agentsApi, usersApi, ApiError } from '@/lib/api';
 import type { Agent } from '@/types';
@@ -14,6 +14,7 @@ import { PageLoader, LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ConfirmDialog } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 const TIER_BADGE: Record<AgentTrustTier, string> = {
   bronze: 'bg-orange-100 text-orange-700',
@@ -345,6 +346,13 @@ export default function AdminAgentsPage() {
                       {/* Actions */}
                       <td className="px-4 py-4">
                         <div className="flex flex-col gap-1.5 items-end">
+                          {/* View listings */}
+                          <Link
+                            href={`/dashboard/admin/properties?agentId=${agent.id}&agentName=${encodeURIComponent(name || 'Agent')}`}
+                            className="flex items-center gap-1.5 rounded-lg border border-slate-200 text-navy-700 px-3 py-1.5 text-[10px] font-bold hover:bg-slate-50 transition-colors"
+                          >
+                            <Home className="h-3 w-3" /> View Listings
+                          </Link>
                           {/* Approve L1 */}
                           {hasPendingL1 && !agent.isGovIdVerified && (
                             <button

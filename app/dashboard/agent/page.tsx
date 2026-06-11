@@ -9,7 +9,7 @@ import { z } from 'zod';
 import {
   Plus, TrendingUp, CheckCircle, Clock, AlertCircle, Shield,
   Upload, FileText, Eye, ChevronDown, X, Camera, CreditCard,
-  MapPin, Briefcase, User, Lock,
+  MapPin, Briefcase, User, Lock, ExternalLink, Copy, Check, Share2,
 } from 'lucide-react';
 import { agentsApi, ApiError } from '@/lib/api';
 import type { Agent } from '@/types';
@@ -237,6 +237,7 @@ export default function AgentProfilePage() {
   const [agent, setAgent] = useState<Agent | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [profileExists, setProfileExists] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
 
   // Multi-select states
   const [specializations, setSpecializations] = useState<string[]>([]);
@@ -386,6 +387,55 @@ export default function AgentProfilePage() {
           <Plus className="h-4 w-4" /> Add New Listing
         </Link>
       </div>
+
+      {/* ── Share public profile ── */}
+      {agent?.username && (
+        <div className="card p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <Share2 className="h-4 w-4 text-veriq-secondary" />
+            <h2 className="font-display text-sm font-bold text-navy-900">Share Your Public Profile</h2>
+          </div>
+          <p className="text-xs text-slate-500 mb-3">
+            Anyone with this link can view your verified profile and all of your active listings — no login required.
+          </p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex-1 min-w-[200px] rounded-lg border border-slate-200 bg-veriq-surface px-3 py-2.5 text-sm font-medium text-navy-700 truncate">
+              veriqproperty.com/{agent.username}
+            </div>
+            <button
+              type="button"
+              onClick={async () => {
+                const url = `${window.location.origin}/${agent.username}`;
+                try {
+                  await navigator.clipboard.writeText(url);
+                } catch {
+                  // Fallback for environments without Clipboard API
+                  const ta = document.createElement('textarea');
+                  ta.value = url;
+                  document.body.appendChild(ta);
+                  ta.select();
+                  document.execCommand('copy');
+                  document.body.removeChild(ta);
+                }
+                setLinkCopied(true);
+                success('Profile link copied to clipboard');
+                setTimeout(() => setLinkCopied(false), 2000);
+              }}
+              className="btn-secondary !text-sm !py-2.5 flex items-center gap-2"
+            >
+              {linkCopied ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
+              {linkCopied ? 'Copied' : 'Copy Link'}
+            </button>
+            <Link
+              href={`/${agent.username}`}
+              target="_blank"
+              className="btn-gold !text-sm !py-2.5 flex items-center gap-2"
+            >
+              <ExternalLink className="h-4 w-4" /> View Profile
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* ── Verification progress bar ── */}
       <div className="card p-6">

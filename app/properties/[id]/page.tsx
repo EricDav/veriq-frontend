@@ -108,8 +108,8 @@ export default function PropertyDetailPage() {
   const agentName = agent?.user ? `${agent.user.firstName} ${agent.user.lastName}` : 'Unknown Agent';
   const agentInitial = agentName[0]?.toUpperCase() ?? 'A';
   const agentVerified = (agent?.verificationLevel ?? 0) >= AgentVerificationLevel.BASIC;
-  const freshness = FRESHNESS_INFO[property.freshnessScore];
-  const tierBadge = TRUST_TIER_BADGE[agent?.trustTier ?? AgentTrustTier.BRONZE];
+  const freshness = FRESHNESS_INFO[property.freshnessScore] ?? FRESHNESS_INFO.unverified;
+  const tierBadge = TRUST_TIER_BADGE[agent?.trustTier ?? AgentTrustTier.BRONZE] ?? TRUST_TIER_BADGE.bronze;
   const location = [property.area, property.city, property.state].filter(Boolean).join(', ');
   const gradient = 'from-blue-600 to-indigo-800';
 

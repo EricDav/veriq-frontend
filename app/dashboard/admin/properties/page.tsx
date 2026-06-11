@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import {
   Home, EyeOff, Eye, Search, RefreshCw,
-  ChevronLeft, ChevronRight, CheckCircle, MapPin,
+  ChevronLeft, ChevronRight, CheckCircle, MapPin, X, User,
 } from 'lucide-react';
 import { propertiesApi, ApiError } from '@/lib/api';
 import type { Property } from '@/types';
@@ -12,7 +12,7 @@ import { useAuth } from '@/context/AuthContext';
 import { PageLoader, LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ConfirmDialog } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 const STATUS_STYLES: Record<ListingStatus, string> = {
@@ -32,10 +32,14 @@ interface PendingAction {
   title: string;
 }
 
-export default function AdminPropertiesPage() {
+function AdminPropertiesPageInner() {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { success, error: toastError } = useToast();
+
+  const agentId = searchParams.get('agentId') ?? undefined;
+  const agentName = searchParams.get('agentName') ?? undefined;
 
   const [properties, setProperties] = useState<Property[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -52,11 +56,16 @@ export default function AdminPropertiesPage() {
     }
   }, [authLoading, user, router]);
 
+  // Reset to page 1 whenever the agent filter changes
+  useEffect(() => {
+    setPage(1);
+  }, [agentId]);
+
   const load = useCallback(async () => {
     setIsLoading(true);
     try {
-      // Admin fetches all properties (public endpoint returns active ones; use admin endpoint for full list)
-      const res = await propertiesApi.list({ page, limit: 20 });
+      // Admin endpoint returns properties of every status (active, hidden, expired…)
+      const res = await propertiesApi.listAdmin({ page, limit: 20, agentId });
       setProperties(res.data);
       setTotal(res.meta.total);
       setTotalPages(res.meta.pages);
@@ -65,7 +74,7 @@ export default function AdminPropertiesPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [page]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [page, agentId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     load();
@@ -113,12 +122,32 @@ export default function AdminPropertiesPage() {
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="font-display text-2xl font-bold text-navy-900">Property Management</h1>
-          <p className="text-sm text-veriq-muted">{total} listings in the platform</p>
+          <p className="text-sm text-veriq-muted">
+            {agentId
+              ? `${total} listing${total !== 1 ? 's' : ''}${agentName ? ` by ${agentName}` : ''}`
+              : `${total} listings in the platform`}
+          </p>
         </div>
         <button onClick={load} className="btn-primary !text-sm !py-2.5 flex items-center gap-2">
           <RefreshCw className="h-4 w-4" /> Refresh
         </button>
       </div>
+
+      {/* Agent filter banner */}
+      {agentId && (
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-veriq-secondary/30 bg-veriq-secondary/5 px-4 py-3">
+          <div className="flex items-center gap-2 text-sm text-navy-800">
+            <User className="h-4 w-4 text-veriq-secondary flex-shrink-0" />
+            Showing listings for <span className="font-semibold">{agentName || 'this agent'}</span>
+          </div>
+          <Link
+            href="/dashboard/admin/properties"
+            className="flex items-center gap-1 text-xs font-medium text-veriq-secondary hover:underline"
+          >
+            <X className="h-3 w-3" /> Clear filter
+          </Link>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -280,5 +309,13 @@ export default function AdminPropertiesPage() {
         isLoading={isActioning}
       />
     </div>
+  );
+}
+
+export default function AdminPropertiesPage() {
+  return (
+    <Suspense fallback={<PageLoader />}>
+      <AdminPropertiesPageInner />
+    </Suspense>
   );
 }
