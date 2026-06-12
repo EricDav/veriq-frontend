@@ -184,6 +184,15 @@ import type {
   UpdateUserDto,
   InitiateConsultationDto,
   AgentTrustTier,
+  Wallet,
+  WalletTransaction,
+  TopUpWalletDto,
+  VerifyTopUpDto,
+  InitiateTopUpResponse,
+  VerifyTopUpResponse,
+  WalletLedgerEntry,
+  WalletAdminLedgerFilters,
+  WalletAdminSummary,
 } from '@/types';
 
 // ── Auth ─────────────────────────────────────────────────────────────────
@@ -359,6 +368,36 @@ export const consultationsApi = {
     api.get<PaginatedResponse<Consultation>>(
       `/consultations/my?page=${page}&limit=${limit}`,
     ),
+};
+
+// ── Wallet ────────────────────────────────────────────────────────────────
+
+export const walletApi = {
+  getBalance: () => api.get<ApiResponse<Wallet>>('/wallet'),
+
+  topUp: (dto: TopUpWalletDto) =>
+    api.post<ApiResponse<InitiateTopUpResponse>>('/wallet/topup', dto),
+
+  verifyTopUp: (dto: VerifyTopUpDto) =>
+    api.post<ApiResponse<VerifyTopUpResponse>>('/wallet/topup/verify', dto),
+
+  getTransactions: (page = 1, limit = 20) =>
+    api.get<PaginatedResponse<WalletTransaction>>(
+      `/wallet/transactions?page=${page}&limit=${limit}`,
+    ),
+
+  // Admin
+  adminGetLedger: (filters: WalletAdminLedgerFilters = {}) => {
+    const params = new URLSearchParams();
+    Object.entries(filters).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== '') {
+        params.set(k, String(v));
+      }
+    });
+    return api.get<PaginatedResponse<WalletLedgerEntry>>(`/wallet/admin/transactions?${params}`);
+  },
+
+  adminGetSummary: () => api.get<ApiResponse<WalletAdminSummary>>('/wallet/admin/summary'),
 };
 
 // ── Media ─────────────────────────────────────────────────────────────────

@@ -2,7 +2,7 @@
 
 import React, { useEffect } from 'react';
 import Link from 'next/link';
-import { ShieldCheck, Users, Home, ArrowRight, AlertCircle } from 'lucide-react';
+import { ShieldCheck, Users, Home, ArrowRight, AlertCircle, Landmark } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { UserRole } from '@/types';
 import { useRouter } from 'next/navigation';
@@ -45,7 +45,7 @@ export default function AdminOverviewPage() {
       </div>
 
       {/* Quick nav cards */}
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {[
           {
             href: '/dashboard/admin/agents',
@@ -73,6 +73,15 @@ export default function AdminOverviewPage() {
             description: 'Review all listings across the platform. Hide inappropriate or misleading properties.',
             cta: 'Manage Properties',
             ctaCls: 'bg-purple-600 hover:bg-purple-700',
+          },
+          {
+            href: '/dashboard/admin/ledger',
+            icon: Landmark,
+            iconCls: 'bg-gold-100 text-gold-600',
+            title: 'Wallet Ledger & Revenue',
+            description: 'View every wallet transaction platform-wide, and see the revenue split between Veriq and agents.',
+            cta: 'View Ledger',
+            ctaCls: 'bg-gold-600 hover:bg-gold-700',
           },
         ].map(({ href, icon: Icon, iconCls, title, description, cta, ctaCls }) => (
           <div key={href} className="card p-6 flex flex-col">

@@ -434,6 +434,132 @@ export interface Consultation {
   updatedAt: string;
 }
 
+// ─── Wallet ────────────────────────────────────────────────────────────────
+
+export enum WalletTransactionType {
+  TOPUP = 'topup',
+  DEBIT = 'debit',
+  REFUND = 'refund',
+  EARNING = 'earning',
+}
+
+export enum WalletTransactionStatus {
+  PENDING = 'pending',
+  SUCCESS = 'success',
+  FAILED = 'failed',
+}
+
+export interface Wallet {
+  id: string;
+  balance: number;
+  balanceFormatted: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WalletTransaction {
+  id: string;
+  walletId: string;
+  userId: string;
+  type: WalletTransactionType;
+  amount: number;
+  status: WalletTransactionStatus;
+  balanceAfter: number | null;
+  paymentReference: string | null;
+  paymentProvider: string | null;
+  description: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TopUpWalletDto {
+  amount: number;
+  paymentProvider?: string;
+}
+
+export interface VerifyTopUpDto {
+  reference: string;
+}
+
+export interface InitiateTopUpResponse {
+  transactionId: string;
+  amount: number;
+  amountFormatted: string;
+  paymentReference: string;
+  paymentProvider: string;
+  authorizationUrl: string;
+  accessCode: string;
+}
+
+export interface VerifyTopUpResponse {
+  transactionId: string;
+  status: WalletTransactionStatus;
+  balance: number;
+  balanceFormatted: string;
+}
+
+// ─── Admin: Wallet Ledger & Revenue Split ──────────────────────────────────
+
+export interface WalletLedgerUser {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+}
+
+export interface WalletLedgerEntry {
+  id: string;
+  walletId: string;
+  userId: string;
+  user: WalletLedgerUser | null;
+  type: WalletTransactionType;
+  amount: number;
+  status: WalletTransactionStatus;
+  balanceAfter: number | null;
+  paymentReference: string | null;
+  paymentProvider: string | null;
+  description: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WalletAdminLedgerFilters {
+  page?: number;
+  limit?: number;
+  type?: WalletTransactionType;
+  status?: WalletTransactionStatus;
+  userId?: string;
+  search?: string;
+}
+
+export interface WalletAdminSummary {
+  wallets: {
+    totalBalance: number;
+    totalBalanceFormatted: string;
+    walletCount: number;
+  };
+  transactions: {
+    totalTopUps: number;
+    totalTopUpsFormatted: string;
+    totalDebits: number;
+    totalDebitsFormatted: string;
+    totalRefunds: number;
+    totalRefundsFormatted: string;
+    totalAgentEarnings: number;
+    totalAgentEarningsFormatted: string;
+  };
+  revenue: {
+    commissionPercent: number;
+    paidConsultations: number;
+    totalConsultationRevenue: number;
+    totalConsultationRevenueFormatted: string;
+    platformShare: number;
+    platformShareFormatted: string;
+    agentShare: number;
+    agentShareFormatted: string;
+  };
+}
+
 // ─── API Response Wrappers ────────────────────────────────────────────────
 
 export interface ApiResponse<T> {

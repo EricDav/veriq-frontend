@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Heart, Search, User, LogOut,
   Bell, Menu, X, Home, TrendingUp, Plus,
-  Settings, ChevronRight, Users, ShieldCheck,
+  Settings, ChevronRight, Users, ShieldCheck, Wallet, Landmark,
 } from 'lucide-react';
 import Image from 'next/image';
 import { useAuth } from '@/context/AuthContext';
@@ -19,6 +19,7 @@ const USER_NAV = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { label: 'Browse Properties', href: '/dashboard/browse', icon: Search },
   { label: 'Saved', href: '/dashboard/saved', icon: Heart },
+  { label: 'Wallet', href: '/dashboard/wallet', icon: Wallet },
   { label: 'Profile', href: '/dashboard/profile', icon: User },
 ];
 
@@ -27,6 +28,7 @@ const AGENT_NAV = [
   { label: 'Browse Properties', href: '/dashboard/browse', icon: Search },
   { label: 'My Listings', href: '/dashboard/properties', icon: Home },
   { label: 'Agent Profile', href: '/dashboard/agent', icon: TrendingUp },
+  { label: 'Wallet', href: '/dashboard/wallet', icon: Wallet },
   { label: 'Profile', href: '/dashboard/profile', icon: User },
 ];
 
@@ -35,6 +37,7 @@ const ADMIN_NAV = [
   { label: 'Agents', href: '/dashboard/admin/agents', icon: ShieldCheck },
   { label: 'Users', href: '/dashboard/admin/users', icon: Users },
   { label: 'Properties', href: '/dashboard/admin/properties', icon: Home },
+  { label: 'Ledger', href: '/dashboard/admin/ledger', icon: Landmark },
   { label: 'Profile', href: '/dashboard/profile', icon: User },
 ];
 
