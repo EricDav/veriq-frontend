@@ -6,10 +6,10 @@ import {
   ChevronLeft, ChevronRight, X, Unlock,
 } from 'lucide-react';
 import { PropertyCard } from '@/components/properties/PropertyCard';
-import { agentsApi, consultationsApi, propertiesApi } from '@/lib/api';
+import { agentsApi, consultationsApi, locationsApi, propertiesApi } from '@/lib/api';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useAuth } from '@/context/AuthContext';
-import type { Agent, Property, FilterPropertiesDto } from '@/types';
+import type { Agent, AllowedState, Property, FilterPropertiesDto } from '@/types';
 import {
   PropertyType, FreshnessScore,
   HostelSuitableFor, HostelGender, HostelCampusProximity,
@@ -71,6 +71,21 @@ function matchesFilters(property: Property, filters: FilterPropertiesDto) {
   const includes = (value: string | null | undefined, query: string) =>
     (value ?? '').toLowerCase().includes(query.toLowerCase());
 
+  if (filters.q) {
+    const agentName = property.agent?.user
+      ? `${property.agent.user.firstName ?? ''} ${property.agent.user.lastName ?? ''}`.trim()
+      : '';
+    const agentBusinessName = property.agent?.businessName ?? '';
+    const searchable = [
+      property.title,
+      property.state,
+      property.city,
+      property.area,
+      agentName,
+      agentBusinessName,
+    ];
+    if (!searchable.some((value) => includes(value, filters.q as string))) return false;
+  }
   if (filters.state && !includes(property.state, filters.state)) return false;
   if (filters.agentId && property.agentId !== filters.agentId) return false;
   if (filters.city && !includes(property.city, filters.city)) return false;
@@ -95,6 +110,7 @@ export default function BrowsePropertiesPage() {
   const { isAuthenticated } = useAuth();
   const [properties, setProperties] = useState<Property[]>([]);
   const [agents, setAgents] = useState<Agent[]>([]);
+  const [activeStates, setActiveStates] = useState<AllowedState[]>([]);
   const [unlockedCount, setUnlockedCount] = useState(0);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -168,6 +184,10 @@ export default function BrowsePropertiesPage() {
     agentsApi.list(1, 100)
       .then((res) => setAgents(res.data))
       .catch(() => setAgents([]));
+
+    locationsApi.activeStates()
+      .then((res) => setActiveStates(res.data))
+      .catch(() => setActiveStates([]));
   }, []);
 
   const handleApplyFilters = () => {
@@ -188,9 +208,13 @@ export default function BrowsePropertiesPage() {
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const parts = search.trim().split(',').map((s) => s.trim());
+    const query = search.trim();
     const newFilters: FilterPropertiesDto = { ...pendingFilters };
-    if (parts[0]) newFilters.area = parts[0];
+    if (query) {
+      newFilters.q = query;
+    } else {
+      delete newFilters.q;
+    }
     setFilters(newFilters);
     setPendingFilters(newFilters);
     setPage(1);
@@ -205,6 +229,7 @@ export default function BrowsePropertiesPage() {
   // Clear type-specific filters when switching property type
   const handleTypeChange = (value: string) => {
     setPendingFilters((f) => ({
+      q: f.q,
       state: f.state,
       city: f.city,
       area: f.area,
@@ -330,13 +355,18 @@ export default function BrowsePropertiesPage() {
             </div>
             <div>
               <label className="label text-xs">State</label>
-              <input
-                type="text"
+              <select
                 value={pendingFilters.state ?? ''}
                 onChange={(e) => setPendingFilters((f) => ({ ...f, state: e.target.value || undefined }))}
                 className="input text-xs"
-                placeholder="e.g. Rivers"
-              />
+              >
+                <option value="">All states</option>
+                {activeStates.map((state) => (
+                  <option key={state.id} value={state.name}>
+                    {state.name}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="label text-xs">City</label>

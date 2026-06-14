@@ -368,9 +368,6 @@ export const propertiesApi = {
   update: (id: string, dto: Partial<CreatePropertyDto>) =>
     api.patch<ApiResponse<Property>>(`/properties/${id}`, dto),
 
-  updateAdmin: (id: string, dto: Partial<CreatePropertyDto>) =>
-    api.patch<ApiResponse<Property>>(`/properties/admin/${id}`, dto),
-
   getMyListings: (page = 1, limit = 20) =>
     api.get<PaginatedResponse<Property>>(
       `/properties/my/listings?page=${page}&limit=${limit}`,

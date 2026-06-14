@@ -6,10 +6,10 @@ import {
   ChevronLeft, ChevronRight, X, Unlock,
 } from 'lucide-react';
 import { PropertyCard } from '@/components/properties/PropertyCard';
-import { agentsApi, propertiesApi } from '@/lib/api';
+import { agentsApi, locationsApi, propertiesApi } from '@/lib/api';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useAuth } from '@/context/AuthContext';
-import type { Agent, Property, FilterPropertiesDto } from '@/types';
+import type { Agent, AllowedState, Property, FilterPropertiesDto } from '@/types';
 import {
   PropertyType, FreshnessScore,
   HostelSuitableFor, HostelGender, HostelCampusProximity,
@@ -70,6 +70,7 @@ export default function PropertiesPage() {
   const { isAuthenticated } = useAuth();
   const [properties, setProperties] = useState<Property[]>([]);
   const [agents, setAgents] = useState<Agent[]>([]);
+  const [activeStates, setActiveStates] = useState<AllowedState[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -110,6 +111,10 @@ export default function PropertiesPage() {
     agentsApi.list(1, 100)
       .then((res) => setAgents(res.data))
       .catch(() => setAgents([]));
+
+    locationsApi.activeStates()
+      .then((res) => setActiveStates(res.data))
+      .catch(() => setActiveStates([]));
   }, []);
 
   const handleApplyFilters = () => {
@@ -130,9 +135,13 @@ export default function PropertiesPage() {
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const parts = search.trim().split(',').map((s) => s.trim());
+    const query = search.trim();
     const newFilters: FilterPropertiesDto = { ...pendingFilters };
-    if (parts[0]) newFilters.area = parts[0];
+    if (query) {
+      newFilters.q = query;
+    } else {
+      delete newFilters.q;
+    }
     setFilters(newFilters);
     setPendingFilters(newFilters);
     setPage(1);
@@ -140,6 +149,7 @@ export default function PropertiesPage() {
 
   const handleTypeChange = (value: string) => {
     setPendingFilters((f) => ({
+      q: f.q,
       state: f.state,
       city: f.city,
       area: f.area,
@@ -203,25 +213,27 @@ export default function PropertiesPage() {
               </p>
               <p className="text-xs text-veriq-muted">Nigeria</p>
             </div>
-            <div className="inline-flex rounded-xl border border-slate-200 bg-white p-1">
-              <button
-                type="button"
-                onClick={() => { setAccessFilter('all'); setPendingAccessFilter('all'); }}
-                className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
-                  accessFilter === 'all' ? 'bg-navy-900 text-white' : 'text-navy-700 hover:bg-slate-50'
-                }`}
-              >
-                All Properties
-              </button>
-              <button
-                type="button"
-                disabled
-                className="flex cursor-not-allowed items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-navy-700 opacity-50"
-              >
-                <Unlock className="h-4 w-4" />
-                Unlocked
-              </button>
-            </div>
+            {isAuthenticated && (
+              <div className="inline-flex rounded-xl border border-slate-200 bg-white p-1">
+                <button
+                  type="button"
+                  onClick={() => { setAccessFilter('all'); setPendingAccessFilter('all'); }}
+                  className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+                    accessFilter === 'all' ? 'bg-navy-900 text-white' : 'text-navy-700 hover:bg-slate-50'
+                  }`}
+                >
+                  All Properties
+                </button>
+                <button
+                  type="button"
+                  disabled
+                  className="flex cursor-not-allowed items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-navy-700 opacity-50"
+                >
+                  <Unlock className="h-4 w-4" />
+                  Unlocked
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
@@ -265,18 +277,19 @@ export default function PropertiesPage() {
           {showFilters && (
             <div className="card space-y-4 p-5">
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-                <div>
-                  <label className="label text-xs">Access</label>
-                  <select
-                    value={pendingAccessFilter}
-                    onChange={(e) => setPendingAccessFilter(e.target.value as AccessFilter)}
-                    className="input text-xs"
-                    disabled={!isAuthenticated}
-                  >
-                    <option value="all">All properties</option>
-                    <option value="unlocked">Unlocked only</option>
-                  </select>
-                </div>
+                {isAuthenticated && (
+                  <div>
+                    <label className="label text-xs">Access</label>
+                    <select
+                      value={pendingAccessFilter}
+                      onChange={(e) => setPendingAccessFilter(e.target.value as AccessFilter)}
+                      className="input text-xs"
+                    >
+                      <option value="all">All properties</option>
+                      <option value="unlocked">Unlocked only</option>
+                    </select>
+                  </div>
+                )}
                 <div>
                   <label className="label text-xs">Agent</label>
                   <select
@@ -294,13 +307,18 @@ export default function PropertiesPage() {
                 </div>
                 <div>
                   <label className="label text-xs">State</label>
-                  <input
-                    type="text"
+                  <select
                     value={pendingFilters.state ?? ''}
                     onChange={(e) => setPendingFilters((f) => ({ ...f, state: e.target.value || undefined }))}
                     className="input text-xs"
-                    placeholder="e.g. Rivers"
-                  />
+                  >
+                    <option value="">All states</option>
+                    {activeStates.map((state) => (
+                      <option key={state.id} value={state.name}>
+                        {state.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="label text-xs">City</label>

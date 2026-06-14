@@ -368,6 +368,7 @@ export interface Property {
   expiresAt: string | null;
   reconfirmationCount: number;
   lastConfirmedRent: number | null;
+  expiryWarningSent: boolean;
   wasAutoHidden: boolean;
   // Hostel fields
   hostelSuitableFor: HostelSuitableFor[] | null;
@@ -767,6 +768,7 @@ export interface CreatePropertyDto {
 }
 
 export interface FilterPropertiesDto {
+  q?: string;
   agentId?: string;
   state?: string;
   city?: string;

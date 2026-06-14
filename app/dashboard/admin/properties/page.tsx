@@ -3,11 +3,10 @@
 import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import {
   Home, EyeOff, Eye, Search, RefreshCw,
-  ChevronLeft, ChevronRight, CheckCircle, MapPin, X, User, Pencil, Upload,
+  ChevronLeft, ChevronRight, CheckCircle, MapPin, X, User,
 } from 'lucide-react';
-import { locationsApi, propertiesApi, ApiError } from '@/lib/api';
-import { uploadToFileService } from '@/lib/upload';
-import type { AllowedState, CreatePropertyDto, Property } from '@/types';
+import { propertiesApi, ApiError } from '@/lib/api';
+import type { Property } from '@/types';
 import { ListingStatus, UserRole } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 import { PageLoader, LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -33,6 +32,37 @@ interface PendingAction {
   title: string;
 }
 
+const money = (value: number | string | null | undefined) =>
+  `₦${Number(value ?? 0).toLocaleString()}`;
+
+const pretty = (value: unknown) => {
+  if (value === null || value === undefined || value === '') return 'Not provided';
+  if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+  if (Array.isArray(value)) return value.length ? value.map((item) => String(item).replace(/_/g, ' ')).join(', ') : 'None';
+  return String(value).replace(/_/g, ' ');
+};
+
+const dateTime = (value: string | null | undefined) =>
+  value ? new Date(value).toLocaleString() : 'Not provided';
+
+function DetailItem({ label, value }: { label: string; value: unknown }) {
+  return (
+    <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
+      <p className="text-[10px] font-semibold uppercase text-slate-400">{label}</p>
+      <p className="mt-1 break-words text-xs font-medium capitalize text-navy-900">{pretty(value)}</p>
+    </div>
+  );
+}
+
+function DetailSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="space-y-3">
+      <h3 className="text-sm font-bold text-navy-900">{title}</h3>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">{children}</div>
+    </section>
+  );
+}
+
 function AdminPropertiesPageInner() {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
@@ -50,26 +80,13 @@ function AdminPropertiesPageInner() {
   const [search, setSearch] = useState('');
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const [isActioning, setIsActioning] = useState(false);
-  const [editingProperty, setEditingProperty] = useState<Property | null>(null);
-  const [editForm, setEditForm] = useState<Partial<CreatePropertyDto>>({});
-  const [isSavingEdit, setIsSavingEdit] = useState(false);
-  const [isCoverUploading, setIsCoverUploading] = useState(false);
-  const [coverUploadError, setCoverUploadError] = useState('');
-  const [activeStates, setActiveStates] = useState<AllowedState[]>([]);
+  const [viewingProperty, setViewingProperty] = useState<Property | null>(null);
 
   useEffect(() => {
     if (!authLoading && user?.role !== UserRole.ADMIN) {
       router.push('/dashboard');
     }
   }, [authLoading, user, router]);
-
-  useEffect(() => {
-    if (user?.role === UserRole.ADMIN) {
-      locationsApi.activeStates()
-        .then((res) => setActiveStates(res.data))
-        .catch(() => setActiveStates([]));
-    }
-  }, [user?.role]);
 
   // Reset to page 1 whenever the agent filter changes
   useEffect(() => {
@@ -114,62 +131,6 @@ function AdminPropertiesPageInner() {
     } finally {
       setIsActioning(false);
       setPendingAction(null);
-    }
-  };
-
-  const openEdit = (property: Property) => {
-    setEditingProperty(property);
-    setEditForm({
-      title: property.title,
-      description: property.description ?? '',
-      rentAmount: Number(property.rentAmount),
-      serviceCharge: Number(property.serviceCharge ?? 0),
-      agencyFee: Number(property.agencyFee ?? 0),
-      legalFee: Number(property.legalFee ?? 0),
-      cautionFee: Number(property.cautionFee ?? 0),
-      inspectionFee: Number(property.inspectionFee ?? 0),
-      state: property.state,
-      city: property.city,
-      area: property.area,
-      address: property.address ?? '',
-      coverImageUrl: property.coverImageUrl ?? '',
-    });
-  };
-
-  const updateEditForm = (key: keyof CreatePropertyDto, value: string | number) => {
-    setEditForm((prev) => ({ ...prev, [key]: value }));
-  };
-
-  const uploadEditCover = async (file: File | undefined) => {
-    if (!file) return;
-    setIsCoverUploading(true);
-    setCoverUploadError('');
-    try {
-      const uploaded = await uploadToFileService(file);
-      updateEditForm('coverImageUrl', uploaded.url);
-    } catch (err) {
-      setCoverUploadError(err instanceof Error ? err.message : 'Cover upload failed');
-    } finally {
-      setIsCoverUploading(false);
-    }
-  };
-
-  const saveEdit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingProperty) return;
-    setIsSavingEdit(true);
-    try {
-      const payload = Object.fromEntries(
-        Object.entries(editForm).filter(([, value]) => value !== ''),
-      ) as Partial<CreatePropertyDto>;
-      const res = await propertiesApi.updateAdmin(editingProperty.id, payload);
-      setProperties((prev) => prev.map((p) => (p.id === editingProperty.id ? res.data : p)));
-      success('Property updated.');
-      setEditingProperty(null);
-    } catch (err) {
-      toastError(err instanceof ApiError ? err.message : 'Failed to update property');
-    } finally {
-      setIsSavingEdit(false);
     }
   };
 
@@ -326,11 +287,11 @@ function AdminPropertiesPageInner() {
                             <Eye className="h-3.5 w-3.5" />
                           </Link>
                           <button
-                            onClick={() => openEdit(prop)}
-                            className="rounded-lg p-1.5 text-veriq-secondary hover:bg-veriq-secondary/10 transition-colors"
-                            title="Edit property"
+                            onClick={() => setViewingProperty(prop)}
+                            className="rounded-lg p-1.5 text-navy-700 hover:bg-slate-100 transition-colors"
+                            title="View all admin data"
                           >
-                            <Pencil className="h-3.5 w-3.5" />
+                            <Search className="h-3.5 w-3.5" />
                           </button>
                           {isHidden ? (
                             <button
@@ -387,107 +348,140 @@ function AdminPropertiesPageInner() {
         isLoading={isActioning}
       />
 
-      {editingProperty && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-          <form onSubmit={saveEdit} className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-card-hover">
-            <div className="flex items-center justify-between gap-3 mb-5">
+      {viewingProperty && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-3 py-6 sm:px-4">
+          <div className="max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-2xl bg-white shadow-card-hover">
+            <div className="sticky top-0 z-10 flex items-start justify-between gap-3 border-b border-slate-100 bg-white px-5 py-4">
               <div>
-                <h2 className="font-display text-lg font-bold text-navy-900">Edit Property</h2>
-                <p className="text-xs text-veriq-muted">{editingProperty.title}</p>
+                <h2 className="font-display text-lg font-bold text-navy-900">Property Data</h2>
+                <p className="text-xs text-veriq-muted">{viewingProperty.title}</p>
               </div>
-              <button type="button" onClick={() => setEditingProperty(null)} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100">
+              <button type="button" onClick={() => setViewingProperty(null)} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <div className="space-y-4">
-              <div>
-                <label className="label">Title</label>
-                <input value={editForm.title ?? ''} onChange={(e) => updateEditForm('title', e.target.value)} className="input" required />
-              </div>
-              <div>
-                <label className="label">Description</label>
-                <textarea value={editForm.description ?? ''} onChange={(e) => updateEditForm('description', e.target.value)} className="input min-h-[100px] resize-y" />
-              </div>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <div>
-                  <label className="label">State</label>
-                  <select value={editForm.state ?? ''} onChange={(e) => updateEditForm('state', e.target.value)} className="input" required>
-                    <option value="">Select state...</option>
-                    {editForm.state && !activeStates.some((state) => state.name === editForm.state) && (
-                      <option value={editForm.state}>{editForm.state} (currently inactive)</option>
-                    )}
-                    {activeStates.map((state) => (
-                      <option key={state.id} value={state.name}>{state.name}</option>
-                    ))}
-                  </select>
+            <div className="space-y-6 p-5">
+              {viewingProperty.coverImageUrl && (
+                <div className="overflow-hidden rounded-xl border border-slate-100">
+                  <img src={viewingProperty.coverImageUrl} alt={viewingProperty.title} className="h-56 w-full object-cover sm:h-72" />
                 </div>
-                <div>
-                  <label className="label">City</label>
-                  <input value={editForm.city ?? ''} onChange={(e) => updateEditForm('city', e.target.value)} className="input" required />
-                </div>
-                <div>
-                  <label className="label">Area</label>
-                  <input value={editForm.area ?? ''} onChange={(e) => updateEditForm('area', e.target.value)} className="input" required />
-                </div>
-              </div>
-              <div>
-                <label className="label">Full Address</label>
-                <input value={editForm.address ?? ''} onChange={(e) => updateEditForm('address', e.target.value)} className="input" />
-              </div>
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-                {[
-                  ['rentAmount', 'Rent'],
-                  ['serviceCharge', 'Service Charge'],
-                  ['agencyFee', 'Agency Fee'],
-                  ['legalFee', 'Legal Fee'],
-                  ['cautionFee', 'Caution Fee'],
-                  ['inspectionFee', 'Inspection Fee'],
-                ].map(([key, label]) => (
-                  <div key={key}>
-                    <label className="label">{label}</label>
-                    <input
-                      type="number"
-                      min={0}
-                      value={(editForm[key as keyof CreatePropertyDto] as number | undefined) ?? 0}
-                      onChange={(e) => updateEditForm(key as keyof CreatePropertyDto, Number(e.target.value))}
-                      className="input"
-                    />
-                  </div>
-                ))}
-              </div>
-              <div>
-                <label className="label">Cover Image</label>
-                <div className="flex flex-wrap items-center gap-3">
-                  <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-navy-700 hover:border-veriq-secondary">
-                    {isCoverUploading ? <LoadingSpinner size="sm" /> : <Upload className="h-4 w-4" />}
-                    {isCoverUploading ? 'Uploading...' : editForm.coverImageUrl ? 'Replace cover' : 'Upload cover'}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      disabled={isCoverUploading}
-                      onChange={(e) => uploadEditCover(e.target.files?.[0])}
-                    />
-                  </label>
-                  {editForm.coverImageUrl && (
-                    <a href={editForm.coverImageUrl} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-veriq-secondary hover:underline">
-                      View cover
-                    </a>
-                  )}
-                </div>
-                {coverUploadError && <p className="text-xs text-red-500 mt-1">{coverUploadError}</p>}
-              </div>
-            </div>
+              )}
 
-            <div className="mt-6 flex justify-end gap-3">
-              <button type="button" onClick={() => setEditingProperty(null)} className="btn-outline !py-2.5 !text-sm">Cancel</button>
-              <button type="submit" disabled={isSavingEdit} className="btn-primary !py-2.5 !text-sm flex items-center gap-2">
-                {isSavingEdit && <LoadingSpinner size="sm" />}
-                Save Changes
-              </button>
+              <DetailSection title="Basic Information">
+                <DetailItem label="ID" value={viewingProperty.id} />
+                <DetailItem label="Title" value={viewingProperty.title} />
+                <DetailItem label="Type" value={viewingProperty.propertyType} />
+                <DetailItem label="Description" value={viewingProperty.description} />
+                <DetailItem label="Bedrooms" value={viewingProperty.bedrooms} />
+                <DetailItem label="Bathrooms" value={viewingProperty.bathrooms} />
+                <DetailItem label="Floor Level" value={viewingProperty.floorLevel} />
+                <DetailItem label="Furnished" value={viewingProperty.isFurnished} />
+              </DetailSection>
+
+              <DetailSection title="Agent">
+                <DetailItem label="Agent ID" value={viewingProperty.agentId} />
+                <DetailItem label="Agent Name" value={viewingProperty.agent?.user ? `${viewingProperty.agent.user.firstName} ${viewingProperty.agent.user.lastName}` : null} />
+                <DetailItem label="Business Name" value={viewingProperty.agent?.businessName} />
+                <DetailItem label="Username" value={viewingProperty.agent?.username} />
+                <DetailItem label="Phone" value={viewingProperty.agent?.user?.phone} />
+                <DetailItem label="Trust Tier" value={viewingProperty.agent?.trustTier} />
+                <DetailItem label="Verification Level" value={viewingProperty.agent?.verificationLevel} />
+                <DetailItem label="Platform Verified" value={viewingProperty.agent?.isPlatformVerified} />
+                <DetailItem label="Contact After Payment" value={viewingProperty.agent?.allowContactAfterPayment} />
+              </DetailSection>
+
+              <DetailSection title="Location">
+                <DetailItem label="State" value={viewingProperty.state} />
+                <DetailItem label="City" value={viewingProperty.city} />
+                <DetailItem label="Area" value={viewingProperty.area} />
+                <DetailItem label="Address" value={viewingProperty.address} />
+                <DetailItem label="Latitude" value={viewingProperty.latitude} />
+                <DetailItem label="Longitude" value={viewingProperty.longitude} />
+              </DetailSection>
+
+              <DetailSection title="Pricing">
+                <DetailItem label="Rent" value={money(viewingProperty.rentAmount)} />
+                <DetailItem label="Service Charge" value={money(viewingProperty.serviceCharge)} />
+                <DetailItem label="Agency Fee" value={money(viewingProperty.agencyFee)} />
+                <DetailItem label="Legal Fee" value={money(viewingProperty.legalFee)} />
+                <DetailItem label="Caution Fee" value={money(viewingProperty.cautionFee)} />
+                <DetailItem label="Inspection Fee" value={money(viewingProperty.inspectionFee)} />
+                <DetailItem label="Total Move-in Estimate" value={money(viewingProperty.totalMoveInEstimate)} />
+                <DetailItem label="Consultation Tier" value={viewingProperty.consultationTier} />
+                <DetailItem label="Consultation Fee" value={money(viewingProperty.consultationFee)} />
+              </DetailSection>
+
+              <DetailSection title="Lifecycle">
+                <DetailItem label="Status" value={viewingProperty.status} />
+                <DetailItem label="Freshness" value={viewingProperty.freshnessScore} />
+                <DetailItem label="Last Verified" value={dateTime(viewingProperty.lastVerifiedAt)} />
+                <DetailItem label="Expires At" value={dateTime(viewingProperty.expiresAt)} />
+                <DetailItem label="Reconfirmations" value={viewingProperty.reconfirmationCount} />
+                <DetailItem label="Last Confirmed Rent" value={viewingProperty.lastConfirmedRent ? money(viewingProperty.lastConfirmedRent) : null} />
+                <DetailItem label="Expiry Warning Sent" value={viewingProperty.expiryWarningSent} />
+                <DetailItem label="Auto-hidden" value={viewingProperty.wasAutoHidden} />
+                <DetailItem label="Created" value={dateTime(viewingProperty.createdAt)} />
+                <DetailItem label="Updated" value={dateTime(viewingProperty.updatedAt)} />
+              </DetailSection>
+
+              <DetailSection title="Intelligence">
+                <DetailItem label="Flood Risk" value={viewingProperty.floodRisk} />
+                <DetailItem label="Electricity Situation" value={viewingProperty.electricitySituation} />
+                <DetailItem label="Electricity Info" value={viewingProperty.electricityInfo} />
+                <DetailItem label="Water Availability" value={viewingProperty.waterAvailability} />
+                <DetailItem label="Water Source" value={viewingProperty.waterSource} />
+                <DetailItem label="Road Access" value={viewingProperty.roadAccess} />
+                <DetailItem label="Road Access In Rain" value={viewingProperty.roadAccessRain} />
+                <DetailItem label="Network Quality" value={viewingProperty.networkQuality} />
+                <DetailItem label="Best Network" value={viewingProperty.bestNetwork} />
+                <DetailItem label="Noise Level" value={viewingProperty.noiseLevel} />
+                <DetailItem label="Noise Source" value={viewingProperty.noiseSource} />
+                <DetailItem label="Security Feel" value={viewingProperty.securityFeel} />
+                <DetailItem label="Security Features" value={viewingProperty.securityFeatures} />
+                <DetailItem label="Condition" value={viewingProperty.propertyCondition} />
+                <DetailItem label="Known Issues" value={viewingProperty.knownIssues} />
+                <DetailItem label="Compound Culture" value={viewingProperty.compoundCulture} />
+                <DetailItem label="Agent Observation" value={viewingProperty.agentObservation} />
+              </DetailSection>
+
+              <DetailSection title="Hostel Details">
+                <DetailItem label="Suitable For" value={viewingProperty.hostelSuitableFor} />
+                <DetailItem label="Persons Per Room" value={viewingProperty.hostelPersonsPerRoom} />
+                <DetailItem label="Gender" value={viewingProperty.hostelGender} />
+                <DetailItem label="Campus Proximity" value={viewingProperty.hostelCampusProximity} />
+                <DetailItem label="Nearest Campus" value={viewingProperty.hostelNearestCampus} />
+                <DetailItem label="Distance From Campus" value={viewingProperty.hostelDistanceFromCampus} />
+                <DetailItem label="Meals Included" value={viewingProperty.hostelMealsIncluded} />
+                <DetailItem label="Rules" value={viewingProperty.hostelRulesNotes} />
+              </DetailSection>
+
+              <DetailSection title="Short Stay Details">
+                <DetailItem label="Pricing Model" value={viewingProperty.shortStayPricingModel} />
+                <DetailItem label="Daily Rate" value={viewingProperty.shortStayDailyRate ? money(viewingProperty.shortStayDailyRate) : null} />
+                <DetailItem label="Weekly Rate" value={viewingProperty.shortStayWeeklyRate ? money(viewingProperty.shortStayWeeklyRate) : null} />
+                <DetailItem label="Min Nights" value={viewingProperty.shortStayMinNights} />
+                <DetailItem label="Max Nights" value={viewingProperty.shortStayMaxNights} />
+                <DetailItem label="Check-in" value={viewingProperty.shortStayCheckInTime} />
+                <DetailItem label="Check-out" value={viewingProperty.shortStayCheckOutTime} />
+                <DetailItem label="Amenities" value={viewingProperty.shortStayAmenities} />
+                <DetailItem label="House Rules" value={viewingProperty.shortStayHouseRules} />
+                <DetailItem label="AC" value={viewingProperty.shortStayAC} />
+                <DetailItem label="Internet" value={viewingProperty.shortStayInternet} />
+                <DetailItem label="Cleanliness" value={viewingProperty.shortStayCleanliness} />
+                <DetailItem label="Furnishing" value={viewingProperty.shortStayFurnishing} />
+                <DetailItem label="Kitchen" value={viewingProperty.shortStayKitchen} />
+                <DetailItem label="Agent Note" value={viewingProperty.shortStayAgentNote} />
+              </DetailSection>
+
+              <section className="space-y-3">
+                <h3 className="text-sm font-bold text-navy-900">Raw Data</h3>
+                <pre className="max-h-80 overflow-auto rounded-xl bg-navy-950 p-4 text-[11px] leading-relaxed text-slate-100">
+                  {JSON.stringify(viewingProperty, null, 2)}
+                </pre>
+              </section>
             </div>
-          </form>
+          </div>
         </div>
       )}
     </div>
