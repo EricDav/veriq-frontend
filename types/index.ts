@@ -328,6 +328,7 @@ export interface Agent {
   bankName: string | null;
   bankAccountNumber: string | null;
   agreementAccepted: boolean;
+  allowContactAfterPayment: boolean;
   agreementAcceptedAt: string | null;
   isActive: boolean;
   createdAt: string;
@@ -432,6 +433,59 @@ export interface Consultation {
   notes: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ConsultationAccess {
+  hasAccess: boolean;
+  consultationId?: string;
+  accessExpiresAt?: string;
+  unlockedAt?: string;
+  contactAllowed?: boolean;
+  agentContact?: {
+    agentId: string;
+    agentName: string;
+    phone: string;
+    businessName: string | null;
+  } | null;
+}
+
+export interface ChatParticipant {
+  id: string;
+  name: string;
+  role: UserRole;
+  profilePhotoUrl: string | null;
+}
+
+export interface ChatConversation {
+  id: string;
+  propertyId: string;
+  property: {
+    id: string;
+    title: string;
+    area: string;
+    city: string;
+    coverImageUrl: string | null;
+  } | null;
+  otherParticipant: ChatParticipant | null;
+  lastMessagePreview: string | null;
+  lastMessageAt: string | null;
+  unread: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  body: string;
+  sender: ChatParticipant | null;
+  createdAt: string;
+}
+
+export interface ChatMessagesPayload {
+  conversation: ChatConversation;
+  messages: ChatMessage[];
 }
 
 // ─── Wallet ────────────────────────────────────────────────────────────────
@@ -623,6 +677,7 @@ export interface CreateAgentProfileDto {
   bankName?: string;
   bankAccountNumber?: string;
   agreementAccepted?: boolean;
+  allowContactAfterPayment?: boolean;
 }
 
 export interface SubmitLevel1VerificationDto {
@@ -747,6 +802,55 @@ export interface UpdateUserDto {
 
 export interface InitiateConsultationDto {
   propertyId: string;
+}
+
+// ─── Site Content ────────────────────────────────────────────────────────
+
+export interface SiteContent {
+  id: string;
+  page: string;
+  section: string;
+  title: string | null;
+  subtitle: string | null;
+  body: string | null;
+  data: Record<string, unknown> | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type ContactSubmissionStatus = 'new' | 'read' | 'resolved';
+
+export interface ContactSubmission {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string | null;
+  role: string | null;
+  subject: string;
+  message: string;
+  status: ContactSubmissionStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateContactSubmissionDto {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+  role?: string;
+  subject: string;
+  message: string;
+}
+
+export interface UpsertSiteContentDto {
+  page: string;
+  section: string;
+  title?: string;
+  subtitle?: string;
+  body?: string;
+  data?: Record<string, unknown>;
 }
 
 // ─── Media ────────────────────────────────────────────────────────────────

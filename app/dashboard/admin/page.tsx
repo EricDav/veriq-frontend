@@ -2,7 +2,7 @@
 
 import React, { useEffect } from 'react';
 import Link from 'next/link';
-import { ShieldCheck, Users, Home, ArrowRight, AlertCircle, Landmark } from 'lucide-react';
+import { ShieldCheck, Users, Home, ArrowRight, AlertCircle, Landmark, FileText, Mail } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { UserRole } from '@/types';
 import { useRouter } from 'next/navigation';
@@ -45,7 +45,7 @@ export default function AdminOverviewPage() {
       </div>
 
       {/* Quick nav cards */}
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {[
           {
             href: '/dashboard/admin/agents',
@@ -82,6 +82,24 @@ export default function AdminOverviewPage() {
             description: 'View every wallet transaction platform-wide, and see the revenue split between Veriq and agents.',
             cta: 'View Ledger',
             ctaCls: 'bg-gold-600 hover:bg-gold-700',
+          },
+          {
+            href: '/dashboard/admin/contacts',
+            icon: Mail,
+            iconCls: 'bg-blue-100 text-blue-600',
+            title: 'Contact Forms',
+            description: 'View messages submitted from the public contact page and mark them read or resolved.',
+            cta: 'View Messages',
+            ctaCls: 'bg-blue-600 hover:bg-blue-700',
+          },
+          {
+            href: '/dashboard/admin/content',
+            icon: FileText,
+            iconCls: 'bg-cyan-100 text-cyan-600',
+            title: 'Site Content',
+            description: 'Update static pages like About and Contact without developer support.',
+            cta: 'Edit Content',
+            ctaCls: 'bg-cyan-600 hover:bg-cyan-700',
           },
         ].map(({ href, icon: Icon, iconCls, title, description, cta, ctaCls }) => (
           <div key={href} className="card p-6 flex flex-col">

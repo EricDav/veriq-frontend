@@ -2,13 +2,14 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import {
   ArrowLeft, MapPin, CheckCircle, Bed, Bath, Lock,
   Shield, Eye, FileText, Clock, AlertCircle, Home, Wallet, DollarSign,
+  Phone, MessageCircle,
 } from 'lucide-react';
-import { propertiesApi, consultationsApi, ApiError } from '@/lib/api';
-import type { Property } from '@/types';
+import { propertiesApi, consultationsApi, chatApi, ApiError } from '@/lib/api';
+import type { ConsultationAccess, Property } from '@/types';
 import { AgentVerificationLevel, AgentTrustTier, FreshnessScore } from '@/types';
 import { PageLoader, LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useAuth } from '@/context/AuthContext';
@@ -35,12 +36,14 @@ function formatNaira(amount: number | null | undefined): string {
 
 export default function PropertyDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const router = useRouter();
   const { isAuthenticated } = useAuth();
   const { success, error: toastError } = useToast();
 
   const [property, setProperty] = useState<Property | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
+  const [accessDetails, setAccessDetails] = useState<ConsultationAccess | null>(null);
   const [isUnlocking, setIsUnlocking] = useState(false);
   const [notFound, setNotFound] = useState(false);
 
@@ -56,6 +59,7 @@ export default function PropertyDetailPage() {
           try {
             const accessRes = await consultationsApi.checkAccess(id);
             setHasAccess(accessRes.data?.hasAccess ?? false);
+            setAccessDetails(accessRes.data ?? null);
           } catch {
             // Ignore — means no access
           }
@@ -77,8 +81,10 @@ export default function PropertyDetailPage() {
     setIsUnlocking(true);
     try {
       await consultationsApi.initiate({ propertyId: id });
-      success('Intelligence report unlocked! Check your consultation history.');
+      success('Wallet debited. Intelligence report unlocked!');
       setHasAccess(true);
+      const accessRes = await consultationsApi.checkAccess(id);
+      setAccessDetails(accessRes.data ?? null);
     } catch (err) {
       if (err instanceof ApiError) {
         toastError(err.message);
@@ -87,6 +93,19 @@ export default function PropertyDetailPage() {
       }
     } finally {
       setIsUnlocking(false);
+    }
+  };
+
+  const handleStartChat = async () => {
+    if (!isAuthenticated) {
+      window.location.href = `/auth/login?redirect=/properties/${id}`;
+      return;
+    }
+    try {
+      const res = await chatApi.startConversation(id);
+      router.push(`/dashboard/chat?conversation=${res.data.id}`);
+    } catch (err) {
+      toastError(err instanceof ApiError ? err.message : 'Failed to start chat.');
     }
   };
 
@@ -110,6 +129,8 @@ export default function PropertyDetailPage() {
   const agentVerified = (agent?.verificationLevel ?? 0) >= AgentVerificationLevel.BASIC;
   const freshness = FRESHNESS_INFO[property.freshnessScore] ?? FRESHNESS_INFO.unverified;
   const tierBadge = TRUST_TIER_BADGE[agent?.trustTier ?? AgentTrustTier.BRONZE] ?? TRUST_TIER_BADGE.bronze;
+  const agentContact = accessDetails?.agentContact;
+  const canContactAgent = hasAccess && !!agentContact?.phone;
   const location = [property.area, property.city, property.state].filter(Boolean).join(', ');
   const gradient = 'from-blue-600 to-indigo-800';
 
@@ -274,9 +295,19 @@ export default function PropertyDetailPage() {
                     <p className="text-sm text-veriq-muted">
                       You have full access to this property&apos;s intelligence report. Contact the agent directly to arrange an inspection.
                     </p>
-                    {agent?.user?.phone && (
-                      <p className="mt-3 text-sm font-semibold text-navy-900">
-                        Agent contact: {agent.user.phone}
+                    {canContactAgent && (
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        <button type="button" onClick={handleStartChat} className="btn-primary !py-2.5 !text-sm flex items-center gap-2">
+                          <MessageCircle className="h-4 w-4" /> Chat Agent
+                        </button>
+                        <a href={`tel:${agentContact!.phone}`} className="btn-outline !py-2.5 !text-sm flex items-center gap-2">
+                          <Phone className="h-4 w-4" /> Call {agentContact!.phone}
+                        </a>
+                      </div>
+                    )}
+                    {hasAccess && !canContactAgent && (
+                      <p className="mt-3 text-sm text-veriq-muted">
+                        This agent has not enabled direct contact for unlocked reports.
                       </p>
                     )}
                   </div>
@@ -333,6 +364,11 @@ export default function PropertyDetailPage() {
               {!hasAccess && (
                 <p className="text-[11px] text-slate-400">
                   Unlock the intelligence report to contact this agent directly.
+                </p>
+              )}
+              {hasAccess && !agentContact && (
+                <p className="text-[11px] text-slate-400">
+                  This agent has disabled direct contact after payment.
                 </p>
               )}
             </div>

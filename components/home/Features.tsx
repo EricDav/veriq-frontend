@@ -8,6 +8,7 @@ import {
   CheckCircle,
   Eye,
 } from "lucide-react";
+import type { SiteContent } from "@/types";
 
 const FEATURES = [
   {
@@ -68,7 +69,15 @@ const FEATURES = [
   },
 ];
 
-export function Features() {
+export function Features({ content }: { content?: SiteContent }) {
+  const features = Array.isArray(content?.data?.items)
+    ? (content.data.items as Array<{ title: string; description: string }>).map((item, index) => ({
+        ...FEATURES[index % FEATURES.length],
+        title: item.title,
+        description: item.description,
+      }))
+    : FEATURES;
+
   return (
     <section id="features" className="py-24 bg-veriq-surface">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -79,17 +88,16 @@ export function Features() {
             Platform Features
           </div>
           <h2 className="section-heading">
-            Everything you need to{" "}
-            <span className="gradient-text">decide with confidence</span>
+            {content?.title ?? <>Everything you need to <span className="gradient-text">decide with confidence</span></>}
           </h2>
           <p className="section-subheading mt-4">
-            Veriq Property isn't just a listings site. It's a full intelligence ecosystem built around helping you make the right decision before you ever leave home.
+            {content?.body ?? "Veriq Property isn't just a listings site. It's a full intelligence ecosystem built around helping you make the right decision before you ever leave home."}
           </p>
         </div>
 
         {/* Grid */}
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {FEATURES.map((feature, i) => (
+          {features.map((feature, i) => (
             <div
               key={feature.title}
               className="card p-6 group cursor-default"

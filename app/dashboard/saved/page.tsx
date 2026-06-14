@@ -1,8 +1,9 @@
-import type { Metadata } from "next";
+"use client";
+
 import Link from "next/link";
 import { Heart, Star, Lock, Trash2, MapPin } from "lucide-react";
 
-export const metadata: Metadata = { title: "Saved Properties | Veriq Dashboard" };
+const BROWSE_HREF = "/dashboard/browse";
 
 const SAVED = [
   { id: "1", title: "3-Bed Apartment, GRA Phase 2", location: "GRA Phase 2, Port Harcourt", price: 250000, trustScore: 96, savedAt: "2 days ago", color: "bg-blue-100", verified: true },
@@ -19,7 +20,7 @@ export default function SavedPage() {
           <h1 className="font-display text-2xl font-bold text-navy-900">Saved Properties</h1>
           <p className="text-sm text-veriq-muted">{SAVED.length} properties saved to your list</p>
         </div>
-        <Link href="/properties" className="btn-outline !text-sm !py-2.5">
+        <Link href={BROWSE_HREF} className="btn-outline !text-sm !py-2.5">
           Browse More
         </Link>
       </div>
@@ -30,10 +31,10 @@ export default function SavedPage() {
             <div className={`h-20 w-20 rounded-xl ${prop.color} flex-shrink-0`} />
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-2">
-                <Link href={`/properties/${prop.id}`} className="font-semibold text-navy-900 text-sm leading-snug hover:text-veriq-secondary transition-colors line-clamp-2">
+                <Link href={`${BROWSE_HREF}/${prop.id}`} className="font-semibold text-navy-900 text-sm leading-snug hover:text-veriq-secondary transition-colors line-clamp-2">
                   {prop.title}
                 </Link>
-                <button className="text-slate-300 hover:text-red-400 transition-colors flex-shrink-0">
+                <button type="button" className="text-slate-300 hover:text-red-400 transition-colors flex-shrink-0" aria-label={`Remove ${prop.title} from saved properties`}>
                   <Trash2 className="h-4 w-4" />
                 </button>
               </div>
@@ -50,7 +51,7 @@ export default function SavedPage() {
               </div>
               <div className="mt-3 flex items-center justify-between">
                 <p className="text-sm font-bold text-navy-900">₦{prop.price.toLocaleString()}<span className="text-xs font-normal text-slate-400">/mo</span></p>
-                <Link href={`/properties/${prop.id}`} className="inline-flex items-center gap-1 rounded-lg bg-veriq-secondary px-3 py-1.5 text-xs font-semibold text-white hover:bg-navy-700 transition-colors">
+                <Link href={`${BROWSE_HREF}/${prop.id}`} className="inline-flex items-center gap-1 rounded-lg bg-veriq-secondary px-3 py-1.5 text-xs font-semibold text-white hover:bg-navy-700 transition-colors">
                   <Lock className="h-3 w-3" />
                   Unlock
                 </Link>
@@ -65,7 +66,7 @@ export default function SavedPage() {
           <Heart className="h-12 w-12 text-slate-200 mx-auto mb-4" />
           <h3 className="font-display text-lg font-bold text-navy-900 mb-2">No saved properties yet</h3>
           <p className="text-sm text-veriq-muted mb-6">Start browsing and save properties you&apos;re interested in.</p>
-          <Link href="/properties" className="btn-primary">Browse Properties</Link>
+          <Link href={BROWSE_HREF} className="btn-primary">Browse Properties</Link>
         </div>
       )}
     </div>

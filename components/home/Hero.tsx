@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, CheckCircle, Search, Shield, Star } from "lucide-react";
+import type { SiteContent } from "@/types";
 
 const TRUST_POINTS = [
   "Verified property previews",
@@ -7,7 +8,16 @@ const TRUST_POINTS = [
   "Pre-inspection intelligence reports",
 ];
 
-export function Hero() {
+export function Hero({ content }: { content?: SiteContent }) {
+  const title = content?.title ?? "Know Before You Go.";
+  const [titleStart, titleHighlight, titleEnd] =
+    title === "Know Before You Go."
+      ? ["Know", "Before", "You Go."]
+      : [title, "", ""];
+  const trustPoints = Array.isArray(content?.data?.trustPoints)
+    ? (content.data.trustPoints as string[])
+    : TRUST_POINTS;
+
   return (
     <section className="relative min-h-screen bg-hero-pattern overflow-hidden flex items-center">
       {/* Background decorative elements */}
@@ -36,20 +46,20 @@ export function Hero() {
             </div>
 
             <h1 className="font-display text-5xl font-bold text-white leading-tight tracking-tight md:text-6xl lg:text-[68px]">
-              Know{" "}
-              <span className="relative">
-                <span className="text-gold-400">Before</span>
-              </span>{" "}
-              You Go.
+              {titleHighlight ? (
+                <>
+                  {titleStart} <span className="relative"><span className="text-gold-400">{titleHighlight}</span></span> {titleEnd}
+                </>
+              ) : titleStart}
             </h1>
 
             <p className="mt-6 text-lg text-white/70 leading-relaxed max-w-xl">
-              Stop wasting time on misleading listings and pointless inspections. Veriq Property gives you verified property intelligence — so you inspect smarter.
+              {content?.body ?? "Stop wasting time on misleading listings and pointless inspections. Veriq Property gives you verified property intelligence — so you inspect smarter."}
             </p>
 
             {/* Trust points */}
             <ul className="mt-6 space-y-2.5">
-              {TRUST_POINTS.map((point) => (
+              {trustPoints.map((point) => (
                 <li key={point} className="flex items-center gap-3 text-white/80 text-sm">
                   <CheckCircle className="h-4.5 w-4.5 text-emerald-400 flex-shrink-0" />
                   {point}

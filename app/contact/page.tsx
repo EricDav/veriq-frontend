@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Mail, MessageCircle, Youtube, Facebook, Instagram, Shield, Clock, CheckCircle } from "lucide-react";
+import { getPublicPageContent } from "@/lib/site-content";
+import { ContactForm } from "@/components/contact/ContactForm";
 
 export const metadata: Metadata = {
   title: "Contact Us",
@@ -19,7 +21,17 @@ const SOCIAL = [
   { label: "Instagram", href: "https://www.instagram.com/veriqproperty", icon: <Instagram className="h-5 w-5" />, color: "hover:bg-pink-50 hover:text-pink-600 hover:border-pink-200" },
 ];
 
-export default function ContactPage() {
+export default async function ContactPage() {
+  const content = await getPublicPageContent("contact");
+  const hero = content.hero;
+  const support = content.support;
+  const operations = content.operations;
+  const supportData = (support?.data ?? {}) as {
+    supportEmail?: string;
+    agentEmail?: string;
+    responseTime?: string;
+  };
+
   return (
     <>
       {/* Hero */}
@@ -35,10 +47,10 @@ export default function ContactPage() {
             Get in Touch
           </div>
           <h1 className="font-display text-5xl font-bold text-white mb-4 leading-tight">
-            We&apos;re Here to Help
+            {hero?.title ?? "We're Here to Help"}
           </h1>
           <p className="text-white/70 text-lg leading-relaxed">
-            Whether you're a property seeker, a listing agent, or just exploring — our team is ready to assist you.
+            {hero?.subtitle ?? "Whether you're a property seeker, a listing agent, or just exploring — our team is ready to assist you."}
           </p>
         </div>
       </section>
@@ -54,65 +66,7 @@ export default function ContactPage() {
                 Fill in the form below and we&apos;ll get back to you through our official support channels.
               </p>
 
-              <form className="space-y-5">
-                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                  <div>
-                    <label className="label">First Name</label>
-                    <input type="text" className="input" placeholder="John" />
-                  </div>
-                  <div>
-                    <label className="label">Last Name</label>
-                    <input type="text" className="input" placeholder="Doe" />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="label">Email Address</label>
-                  <input type="email" className="input" placeholder="john@example.com" />
-                </div>
-
-                <div>
-                  <label className="label">Phone Number (Optional)</label>
-                  <input type="tel" className="input" placeholder="+234 800 000 0000" />
-                </div>
-
-                <div>
-                  <label className="label">I am a</label>
-                  <select className="input">
-                    <option value="">Select your role...</option>
-                    <option value="renter">Property Seeker / Renter</option>
-                    <option value="agent">Real Estate Agent</option>
-                    <option value="landlord">Property Owner / Landlord</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="label">Subject</label>
-                  <input type="text" className="input" placeholder="How can we help you?" />
-                </div>
-
-                <div>
-                  <label className="label">Message</label>
-                  <textarea
-                    className="input min-h-[140px] resize-none"
-                    placeholder="Tell us more about your inquiry..."
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  className="btn-primary w-full !py-3.5"
-                >
-                  Send Message
-                </button>
-
-                <p className="text-xs text-slate-400 text-center">
-                  By submitting this form, you agree to our{" "}
-                  <a href="/terms" className="text-veriq-secondary hover:underline">Terms of Service</a> and{" "}
-                  <a href="/terms#privacy" className="text-veriq-secondary hover:underline">Privacy Policy</a>.
-                </p>
-              </form>
+              <ContactForm />
             </div>
 
             {/* Contact info */}
@@ -126,9 +80,9 @@ export default function ContactPage() {
                   <div>
                     <h3 className="font-semibold text-navy-900 mb-1">Email Support</h3>
                     <p className="text-sm text-veriq-muted mb-2">
-                      Send us an email and we&apos;ll respond through our official support channels.
+                      {support?.body ?? "Send us an email and we'll respond through our official support channels."}
                     </p>
-                    <p className="text-sm font-medium text-veriq-secondary">support@veriqproperty.com</p>
+                    <p className="text-sm font-medium text-veriq-secondary">{supportData.supportEmail ?? "support@veriqproperty.com"}</p>
                   </div>
                 </div>
               </div>
@@ -141,7 +95,7 @@ export default function ContactPage() {
                   <div>
                     <h3 className="font-semibold text-navy-900 mb-1">Response Time</h3>
                     <p className="text-sm text-veriq-muted mb-2">
-                      We aim to respond to all inquiries within 24–48 hours on business days.
+                      {supportData.responseTime ?? "We aim to respond to all inquiries within 24-48 hours on business days."}
                     </p>
                     <div className="flex items-center gap-1.5">
                       <CheckCircle className="h-4 w-4 text-emerald-500" />
@@ -161,7 +115,7 @@ export default function ContactPage() {
                     <p className="text-sm text-veriq-muted mb-2">
                       For agents with listing disputes, payout queries, or verification issues — use the agent support channel.
                     </p>
-                    <p className="text-sm font-medium text-veriq-secondary">agents@veriqproperty.com</p>
+                    <p className="text-sm font-medium text-veriq-secondary">{supportData.agentEmail ?? "agents@veriqproperty.com"}</p>
                   </div>
                 </div>
               </div>
@@ -192,7 +146,11 @@ export default function ContactPage() {
               <div className="rounded-2xl bg-navy-900 p-6">
                 <p className="text-white/60 text-xs uppercase tracking-wider font-semibold mb-2">Current Operational Focus</p>
                 <p className="text-white text-sm leading-relaxed">
-                  Veriq Property is currently focused on <strong className="text-gold-400">Port Harcourt, Nigeria</strong>, with plans to expand to other regions. We welcome inquiries from property seekers and agents across Nigeria.
+                  {operations?.body ?? (
+                    <>
+                      Veriq Property is currently focused on <strong className="text-gold-400">Port Harcourt, Nigeria</strong>, with plans to expand to other regions. We welcome inquiries from property seekers and agents across Nigeria.
+                    </>
+                  )}
                 </p>
               </div>
             </div>

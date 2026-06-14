@@ -15,6 +15,7 @@ import {
   clearTokens,
   isTokenExpired,
 } from './auth';
+import { uploadToFileService } from './upload';
 
 const BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:3000/api/v1';
@@ -171,6 +172,10 @@ import type {
   Agent,
   Property,
   Consultation,
+  ConsultationAccess,
+  ChatConversation,
+  ChatMessage,
+  ChatMessagesPayload,
   MediaItem,
   RegisterDto,
   LoginDto,
@@ -193,6 +198,11 @@ import type {
   WalletLedgerEntry,
   WalletAdminLedgerFilters,
   WalletAdminSummary,
+  SiteContent,
+  UpsertSiteContentDto,
+  ContactSubmission,
+  ContactSubmissionStatus,
+  CreateContactSubmissionDto,
 } from '@/types';
 
 // ── Auth ─────────────────────────────────────────────────────────────────
@@ -294,28 +304,46 @@ export const agentsApi = {
 // ── Properties ───────────────────────────────────────────────────────────
 
 export const propertiesApi = {
-  list: (filters: FilterPropertiesDto = {}) => {
+  list: async (filters: FilterPropertiesDto = {}) => {
     const params = new URLSearchParams();
     Object.entries(filters).forEach(([k, v]) => {
       if (v !== undefined && v !== null && v !== '') {
         params.set(k, String(v));
       }
     });
-    return api.get<PaginatedResponse<Property>>(`/properties?${params}`, {
+    const res = await api.get<PaginatedResponse<Property>>(`/properties?${params}`, {
       public: true,
     });
+    return {
+      ...res,
+      meta: res.meta ?? {
+        total: res.data.length,
+        page: filters.page ?? 1,
+        limit: filters.limit ?? res.data.length,
+        pages: 1,
+      },
+    };
   },
 
   getById: (id: string) =>
     api.get<ApiResponse<Property>>(`/properties/${id}`, { public: true }),
 
   /** Admin: list properties of any status, optionally scoped to one agent */
-  listAdmin: (params: { page?: number; limit?: number; agentId?: string } = {}) => {
+  listAdmin: async (params: { page?: number; limit?: number; agentId?: string } = {}) => {
     const sp = new URLSearchParams();
     if (params.page) sp.set('page', String(params.page));
     if (params.limit) sp.set('limit', String(params.limit));
     if (params.agentId) sp.set('agentId', params.agentId);
-    return api.get<PaginatedResponse<Property>>(`/properties/admin/all?${sp}`);
+    const res = await api.get<PaginatedResponse<Property>>(`/properties/admin/all?${sp}`);
+    return {
+      ...res,
+      meta: res.meta ?? {
+        total: res.data.length,
+        page: params.page ?? 1,
+        limit: params.limit ?? res.data.length,
+        pages: 1,
+      },
+    };
   },
 
   create: (dto: CreatePropertyDto) =>
@@ -324,12 +352,15 @@ export const propertiesApi = {
   update: (id: string, dto: Partial<CreatePropertyDto>) =>
     api.patch<ApiResponse<Property>>(`/properties/${id}`, dto),
 
+  updateAdmin: (id: string, dto: Partial<CreatePropertyDto>) =>
+    api.patch<ApiResponse<Property>>(`/properties/admin/${id}`, dto),
+
   getMyListings: (page = 1, limit = 20) =>
     api.get<PaginatedResponse<Property>>(
       `/properties/my/listings?page=${page}&limit=${limit}`,
     ),
 
-  reconfirm: (id: string, dto: { currentRent: number; notes?: string }) =>
+  reconfirm: (id: string, dto: { rentAmount?: number; inspectionFee?: number; status?: string }) =>
     api.post<ApiResponse<Property>>(`/properties/${id}/reconfirm`, dto),
 
   delete: (id: string) =>
@@ -362,12 +393,37 @@ export const consultationsApi = {
     ),
 
   checkAccess: (propertyId: string) =>
-    api.get<ApiResponse<{ hasAccess: boolean }>>(`/consultations/check-access/${propertyId}`),
+    api.get<ApiResponse<ConsultationAccess>>(`/consultations/check-access/${propertyId}`),
 
   getMyConsultations: (page = 1, limit = 20) =>
     api.get<PaginatedResponse<Consultation>>(
       `/consultations/my?page=${page}&limit=${limit}`,
     ),
+};
+
+// ── Chat ──────────────────────────────────────────────────────────────────
+
+export const chatApi = {
+  eventsUrl: (token: string) =>
+    `${BASE_URL}/chat/events?token=${encodeURIComponent(token)}`,
+
+  conversations: () =>
+    api.get<ApiResponse<ChatConversation[]>>('/chat/conversations'),
+
+  unreadCount: () =>
+    api.get<ApiResponse<{ unread: number }>>('/chat/unread-count'),
+
+  startConversation: (propertyId: string) =>
+    api.post<ApiResponse<ChatConversation>>('/chat/conversations', { propertyId }),
+
+  messages: (conversationId: string) =>
+    api.get<ApiResponse<ChatMessagesPayload>>(`/chat/conversations/${conversationId}/messages`),
+
+  sendMessage: (conversationId: string, body: string) =>
+    api.post<ApiResponse<ChatMessage>>(`/chat/conversations/${conversationId}/messages`, { body }),
+
+  markRead: (conversationId: string) =>
+    api.post<ApiResponse<null>>(`/chat/conversations/${conversationId}/read`),
 };
 
 // ── Wallet ────────────────────────────────────────────────────────────────
@@ -402,23 +458,6 @@ export const walletApi = {
 
 // ── Media ─────────────────────────────────────────────────────────────────
 
-async function uploadFile<T>(path: string, formData: FormData): Promise<T> {
-  await ensureFreshToken();
-  const accessToken = getAccessToken();
-  const url = `${BASE_URL}${path.startsWith('/') ? path : `/${path}`}`;
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-    body: formData,
-  });
-  const data = await res.json();
-  if (!res.ok) {
-    const errBody = data as Record<string, unknown>;
-    throw new ApiError(res.status, (errBody?.message as string) ?? `HTTP ${res.status}`);
-  }
-  return data as T;
-}
-
 export const mediaApi = {
   upload: (
     propertyId: string,
@@ -426,13 +465,16 @@ export const mediaApi = {
     file: File,
     caption?: string,
   ) => {
-    const fd = new FormData();
-    fd.append('file', file);
-    fd.append('section', section);
-    if (caption) fd.append('caption', caption);
-    return uploadFile<ApiResponse<unknown>>(
-      `/properties/${propertyId}/media/upload`,
-      fd,
+    return uploadToFileService(file).then((uploaded) =>
+      api.post<ApiResponse<unknown>>(`/properties/${propertyId}/media/link`, {
+        section,
+        caption,
+        url: uploaded.url,
+        filename: uploaded.name,
+        originalName: file.name,
+        mimeType: uploaded.mime,
+        sizeBytes: uploaded.size,
+      }),
     );
   },
 
@@ -446,4 +488,37 @@ export const mediaApi = {
 
   delete: (propertyId: string, mediaId: string) =>
     api.delete<ApiResponse<null>>(`/properties/${propertyId}/media/${mediaId}`),
+};
+
+// ── Site Content ─────────────────────────────────────────────────────────
+
+export const siteContentApi = {
+  list: (page?: string) => {
+    const query = page ? `?page=${encodeURIComponent(page)}` : '';
+    return api.get<ApiResponse<SiteContent[]>>(`/site-content${query}`);
+  },
+
+  getPage: (page: string) =>
+    api.get<ApiResponse<SiteContent[]>>(`/site-content/page/${page}`, {
+      public: true,
+    }),
+
+  upsert: (dto: UpsertSiteContentDto) =>
+    api.post<ApiResponse<SiteContent>>('/site-content', dto),
+
+  delete: (id: string) =>
+    api.delete<ApiResponse<null>>(`/site-content/${id}`),
+};
+
+// ── Contact Submissions ──────────────────────────────────────────────────
+
+export const contactSubmissionsApi = {
+  create: (dto: CreateContactSubmissionDto) =>
+    api.post<ApiResponse<{ id: string }>>('/contact-submissions', dto, { public: true }),
+
+  list: (page = 1, limit = 20) =>
+    api.get<PaginatedResponse<ContactSubmission>>(`/contact-submissions?page=${page}&limit=${limit}`),
+
+  update: (id: string, status: ContactSubmissionStatus) =>
+    api.patch<ApiResponse<ContactSubmission>>(`/contact-submissions/${id}`, { status }),
 };

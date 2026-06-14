@@ -3,10 +3,11 @@
 import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import {
   Home, EyeOff, Eye, Search, RefreshCw,
-  ChevronLeft, ChevronRight, CheckCircle, MapPin, X, User,
+  ChevronLeft, ChevronRight, CheckCircle, MapPin, X, User, Pencil, Upload,
 } from 'lucide-react';
 import { propertiesApi, ApiError } from '@/lib/api';
-import type { Property } from '@/types';
+import { uploadToFileService } from '@/lib/upload';
+import type { CreatePropertyDto, Property } from '@/types';
 import { ListingStatus, UserRole } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 import { PageLoader, LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -49,6 +50,11 @@ function AdminPropertiesPageInner() {
   const [search, setSearch] = useState('');
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const [isActioning, setIsActioning] = useState(false);
+  const [editingProperty, setEditingProperty] = useState<Property | null>(null);
+  const [editForm, setEditForm] = useState<Partial<CreatePropertyDto>>({});
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [isCoverUploading, setIsCoverUploading] = useState(false);
+  const [coverUploadError, setCoverUploadError] = useState('');
 
   useEffect(() => {
     if (!authLoading && user?.role !== UserRole.ADMIN) {
@@ -99,6 +105,62 @@ function AdminPropertiesPageInner() {
     } finally {
       setIsActioning(false);
       setPendingAction(null);
+    }
+  };
+
+  const openEdit = (property: Property) => {
+    setEditingProperty(property);
+    setEditForm({
+      title: property.title,
+      description: property.description ?? '',
+      rentAmount: Number(property.rentAmount),
+      serviceCharge: Number(property.serviceCharge ?? 0),
+      agencyFee: Number(property.agencyFee ?? 0),
+      legalFee: Number(property.legalFee ?? 0),
+      cautionFee: Number(property.cautionFee ?? 0),
+      inspectionFee: Number(property.inspectionFee ?? 0),
+      state: property.state,
+      city: property.city,
+      area: property.area,
+      address: property.address ?? '',
+      coverImageUrl: property.coverImageUrl ?? '',
+    });
+  };
+
+  const updateEditForm = (key: keyof CreatePropertyDto, value: string | number) => {
+    setEditForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const uploadEditCover = async (file: File | undefined) => {
+    if (!file) return;
+    setIsCoverUploading(true);
+    setCoverUploadError('');
+    try {
+      const uploaded = await uploadToFileService(file);
+      updateEditForm('coverImageUrl', uploaded.url);
+    } catch (err) {
+      setCoverUploadError(err instanceof Error ? err.message : 'Cover upload failed');
+    } finally {
+      setIsCoverUploading(false);
+    }
+  };
+
+  const saveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingProperty) return;
+    setIsSavingEdit(true);
+    try {
+      const payload = Object.fromEntries(
+        Object.entries(editForm).filter(([, value]) => value !== ''),
+      ) as Partial<CreatePropertyDto>;
+      const res = await propertiesApi.updateAdmin(editingProperty.id, payload);
+      setProperties((prev) => prev.map((p) => (p.id === editingProperty.id ? res.data : p)));
+      success('Property updated.');
+      setEditingProperty(null);
+    } catch (err) {
+      toastError(err instanceof ApiError ? err.message : 'Failed to update property');
+    } finally {
+      setIsSavingEdit(false);
     }
   };
 
@@ -254,6 +316,13 @@ function AdminPropertiesPageInner() {
                           >
                             <Eye className="h-3.5 w-3.5" />
                           </Link>
+                          <button
+                            onClick={() => openEdit(prop)}
+                            className="rounded-lg p-1.5 text-veriq-secondary hover:bg-veriq-secondary/10 transition-colors"
+                            title="Edit property"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </button>
                           {isHidden ? (
                             <button
                               onClick={() => setPendingAction({ propertyId: prop.id, type: 'unhide', title: prop.title })}
@@ -308,6 +377,102 @@ function AdminPropertiesPageInner() {
         variant={pendingAction?.type === 'hide' ? 'danger' : 'primary'}
         isLoading={isActioning}
       />
+
+      {editingProperty && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <form onSubmit={saveEdit} className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-card-hover">
+            <div className="flex items-center justify-between gap-3 mb-5">
+              <div>
+                <h2 className="font-display text-lg font-bold text-navy-900">Edit Property</h2>
+                <p className="text-xs text-veriq-muted">{editingProperty.title}</p>
+              </div>
+              <button type="button" onClick={() => setEditingProperty(null)} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="label">Title</label>
+                <input value={editForm.title ?? ''} onChange={(e) => updateEditForm('title', e.target.value)} className="input" required />
+              </div>
+              <div>
+                <label className="label">Description</label>
+                <textarea value={editForm.description ?? ''} onChange={(e) => updateEditForm('description', e.target.value)} className="input min-h-[100px] resize-y" />
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div>
+                  <label className="label">State</label>
+                  <input value={editForm.state ?? ''} onChange={(e) => updateEditForm('state', e.target.value)} className="input" required />
+                </div>
+                <div>
+                  <label className="label">City</label>
+                  <input value={editForm.city ?? ''} onChange={(e) => updateEditForm('city', e.target.value)} className="input" required />
+                </div>
+                <div>
+                  <label className="label">Area</label>
+                  <input value={editForm.area ?? ''} onChange={(e) => updateEditForm('area', e.target.value)} className="input" required />
+                </div>
+              </div>
+              <div>
+                <label className="label">Full Address</label>
+                <input value={editForm.address ?? ''} onChange={(e) => updateEditForm('address', e.target.value)} className="input" />
+              </div>
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                {[
+                  ['rentAmount', 'Rent'],
+                  ['serviceCharge', 'Service Charge'],
+                  ['agencyFee', 'Agency Fee'],
+                  ['legalFee', 'Legal Fee'],
+                  ['cautionFee', 'Caution Fee'],
+                  ['inspectionFee', 'Inspection Fee'],
+                ].map(([key, label]) => (
+                  <div key={key}>
+                    <label className="label">{label}</label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={(editForm[key as keyof CreatePropertyDto] as number | undefined) ?? 0}
+                      onChange={(e) => updateEditForm(key as keyof CreatePropertyDto, Number(e.target.value))}
+                      className="input"
+                    />
+                  </div>
+                ))}
+              </div>
+              <div>
+                <label className="label">Cover Image</label>
+                <div className="flex flex-wrap items-center gap-3">
+                  <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-navy-700 hover:border-veriq-secondary">
+                    {isCoverUploading ? <LoadingSpinner size="sm" /> : <Upload className="h-4 w-4" />}
+                    {isCoverUploading ? 'Uploading...' : editForm.coverImageUrl ? 'Replace cover' : 'Upload cover'}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      disabled={isCoverUploading}
+                      onChange={(e) => uploadEditCover(e.target.files?.[0])}
+                    />
+                  </label>
+                  {editForm.coverImageUrl && (
+                    <a href={editForm.coverImageUrl} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-veriq-secondary hover:underline">
+                      View cover
+                    </a>
+                  )}
+                </div>
+                {coverUploadError && <p className="text-xs text-red-500 mt-1">{coverUploadError}</p>}
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button type="button" onClick={() => setEditingProperty(null)} className="btn-outline !py-2.5 !text-sm">Cancel</button>
+              <button type="submit" disabled={isSavingEdit} className="btn-primary !py-2.5 !text-sm flex items-center gap-2">
+                {isSavingEdit && <LoadingSpinner size="sm" />}
+                Save Changes
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }

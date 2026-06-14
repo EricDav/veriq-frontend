@@ -3,12 +3,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Search, SlidersHorizontal, Shield,
-  ChevronLeft, ChevronRight, X,
+  ChevronLeft, ChevronRight, X, Unlock,
 } from 'lucide-react';
 import { PropertyCard } from '@/components/properties/PropertyCard';
-import { propertiesApi } from '@/lib/api';
+import { agentsApi, consultationsApi, propertiesApi } from '@/lib/api';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import type { Property, FilterPropertiesDto } from '@/types';
+import { useAuth } from '@/context/AuthContext';
+import type { Agent, Property, FilterPropertiesDto } from '@/types';
 import {
   PropertyType, FreshnessScore,
   HostelSuitableFor, HostelGender, HostelCampusProximity,
@@ -64,9 +65,37 @@ const HOSTEL_CAMPUS_OPTIONS = [
 ];
 
 const LIMIT = 12;
+type AccessFilter = 'all' | 'unlocked';
+
+function matchesFilters(property: Property, filters: FilterPropertiesDto) {
+  const includes = (value: string | null | undefined, query: string) =>
+    (value ?? '').toLowerCase().includes(query.toLowerCase());
+
+  if (filters.state && !includes(property.state, filters.state)) return false;
+  if (filters.agentId && property.agentId !== filters.agentId) return false;
+  if (filters.city && !includes(property.city, filters.city)) return false;
+  if (filters.area && !includes(property.area, filters.area)) return false;
+  if (filters.propertyType && property.propertyType !== filters.propertyType) return false;
+  if (filters.freshnessScore && property.freshnessScore !== filters.freshnessScore) return false;
+  if (filters.minRent && property.rentAmount < Number(filters.minRent)) return false;
+  if (filters.maxRent && property.rentAmount > Number(filters.maxRent)) return false;
+  if (filters.minBedrooms && (property.bedrooms ?? 0) < Number(filters.minBedrooms)) return false;
+  if (filters.shortStayPricingModel && property.shortStayPricingModel !== filters.shortStayPricingModel) return false;
+  if (filters.maxDailyRate && Number(property.shortStayDailyRate ?? 0) > Number(filters.maxDailyRate)) return false;
+  if (filters.maxNights && Number(property.shortStayMaxNights ?? 0) > Number(filters.maxNights)) return false;
+  if (filters.hostelGender && property.hostelGender !== filters.hostelGender) return false;
+  if (filters.hostelCampusProximity && property.hostelCampusProximity !== filters.hostelCampusProximity) return false;
+  if (filters.hostelPersonsPerRoom && Number(property.hostelPersonsPerRoom ?? Infinity) > Number(filters.hostelPersonsPerRoom)) return false;
+  if (filters.hostelSuitableFor && !(property.hostelSuitableFor ?? []).includes(filters.hostelSuitableFor)) return false;
+
+  return true;
+}
 
 export default function BrowsePropertiesPage() {
+  const { isAuthenticated } = useAuth();
   const [properties, setProperties] = useState<Property[]>([]);
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [unlockedCount, setUnlockedCount] = useState(0);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -76,6 +105,8 @@ export default function BrowsePropertiesPage() {
 
   const [filters, setFilters] = useState<FilterPropertiesDto>({});
   const [pendingFilters, setPendingFilters] = useState<FilterPropertiesDto>({});
+  const [accessFilter, setAccessFilter] = useState<AccessFilter>('all');
+  const [pendingAccessFilter, setPendingAccessFilter] = useState<AccessFilter>('all');
 
   const isHostel = pendingFilters.propertyType === PropertyType.HOSTEL;
   const isShortStay = pendingFilters.propertyType === PropertyType.SHORT_STAY;
@@ -84,11 +115,42 @@ export default function BrowsePropertiesPage() {
   const fetchProperties = useCallback(async (
     currentFilters: FilterPropertiesDto,
     currentPage: number,
+    currentAccessFilter: AccessFilter,
   ) => {
     setIsLoading(true);
     try {
+      let unlocked = new Set<string>();
+      let unlockedProperties: Property[] = [];
+      if (isAuthenticated) {
+        try {
+          const consultations = await consultationsApi.getMyConsultations(1, 100);
+          const now = Date.now();
+          const activeConsultations = consultations.data.filter((item) =>
+            item.status === 'unlocked' &&
+            item.accessExpiresAt &&
+            new Date(item.accessExpiresAt).getTime() > now &&
+            item.property,
+          );
+          unlocked = new Set(activeConsultations.map((item) => item.propertyId));
+          unlockedProperties = activeConsultations.map((item) => item.property);
+        } catch {
+          unlocked = new Set<string>();
+          unlockedProperties = [];
+        }
+      }
+      setUnlockedCount(unlocked.size);
+
+      if (currentAccessFilter === 'unlocked') {
+        const filtered = unlockedProperties.filter((property) => matchesFilters(property, currentFilters));
+        const start = (currentPage - 1) * LIMIT;
+        setProperties(filtered.slice(start, start + LIMIT));
+        setTotal(filtered.length);
+        setTotalPages(Math.max(1, Math.ceil(filtered.length / LIMIT)));
+        return;
+      }
+
       const res = await propertiesApi.list({ ...currentFilters, page: currentPage, limit: LIMIT });
-      setProperties(res.data);
+      setProperties([...res.data].sort((a, b) => Number(unlocked.has(b.id)) - Number(unlocked.has(a.id))));
       setTotal(res.meta.total);
       setTotalPages(res.meta.pages);
     } catch {
@@ -96,14 +158,21 @@ export default function BrowsePropertiesPage() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [isAuthenticated]);
 
   useEffect(() => {
-    fetchProperties(filters, page);
-  }, [filters, page, fetchProperties]);
+    fetchProperties(filters, page, accessFilter);
+  }, [filters, page, accessFilter, fetchProperties]);
+
+  useEffect(() => {
+    agentsApi.list(1, 100)
+      .then((res) => setAgents(res.data))
+      .catch(() => setAgents([]));
+  }, []);
 
   const handleApplyFilters = () => {
     setFilters(pendingFilters);
+    setAccessFilter(pendingAccessFilter);
     setPage(1);
     setShowFilters(false);
   };
@@ -111,6 +180,8 @@ export default function BrowsePropertiesPage() {
   const handleClearFilters = () => {
     setPendingFilters({});
     setFilters({});
+    setPendingAccessFilter('all');
+    setAccessFilter('all');
     setSearch('');
     setPage(1);
   };
@@ -125,12 +196,19 @@ export default function BrowsePropertiesPage() {
     setPage(1);
   };
 
+  const handleAccessTab = (value: AccessFilter) => {
+    setAccessFilter(value);
+    setPendingAccessFilter(value);
+    setPage(1);
+  };
+
   // Clear type-specific filters when switching property type
   const handleTypeChange = (value: string) => {
     setPendingFilters((f) => ({
       state: f.state,
       city: f.city,
       area: f.area,
+      agentId: f.agentId,
       minRent: f.minRent,
       maxRent: f.maxRent,
       freshnessScore: f.freshnessScore,
@@ -138,7 +216,7 @@ export default function BrowsePropertiesPage() {
     }));
   };
 
-  const activeFilterCount = Object.values(filters).filter(Boolean).length;
+  const activeFilterCount = Object.values(filters).filter(Boolean).length + (accessFilter === 'unlocked' ? 1 : 0);
 
   return (
     <div className="max-w-7xl mx-auto space-y-5">
@@ -146,8 +224,36 @@ export default function BrowsePropertiesPage() {
       <div>
         <h1 className="font-display text-2xl font-bold text-navy-900">Browse Properties</h1>
         <p className="text-sm text-veriq-muted">
-          {isLoading ? 'Loading listings…' : `${total} verified listings available`}
+          {isLoading ? 'Loading listings…' : accessFilter === 'unlocked' ? `${total} active unlocked ${total === 1 ? 'property' : 'properties'}` : `${total} verified listings available`}
         </p>
+      </div>
+
+      <div className="inline-flex rounded-xl border border-slate-200 bg-white p-1">
+        <button
+          type="button"
+          onClick={() => handleAccessTab('all')}
+          className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+            accessFilter === 'all' ? 'bg-navy-900 text-white' : 'text-navy-700 hover:bg-slate-50'
+          }`}
+        >
+          All Properties
+        </button>
+        <button
+          type="button"
+          onClick={() => handleAccessTab('unlocked')}
+          disabled={!isAuthenticated}
+          className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+            accessFilter === 'unlocked' ? 'bg-veriq-secondary text-white' : 'text-navy-700 hover:bg-slate-50'
+          }`}
+        >
+          <Unlock className="h-4 w-4" />
+          Unlocked
+          {isAuthenticated && (
+            <span className={`rounded-full px-2 py-0.5 text-[10px] ${accessFilter === 'unlocked' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'}`}>
+              {unlockedCount}
+            </span>
+          )}
+        </button>
       </div>
 
       {/* Search + filter toggle row */}
@@ -195,6 +301,33 @@ export default function BrowsePropertiesPage() {
 
           {/* Row 1: Location + Type + Rent + Freshness */}
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+            <div>
+              <label className="label text-xs">Access</label>
+              <select
+                value={pendingAccessFilter}
+                onChange={(e) => setPendingAccessFilter(e.target.value as AccessFilter)}
+                className="input text-xs"
+                disabled={!isAuthenticated}
+              >
+                <option value="all">All properties</option>
+                <option value="unlocked">Unlocked only</option>
+              </select>
+            </div>
+            <div>
+              <label className="label text-xs">Agent</label>
+              <select
+                value={pendingFilters.agentId ?? ''}
+                onChange={(e) => setPendingFilters((f) => ({ ...f, agentId: e.target.value || undefined }))}
+                className="input text-xs"
+              >
+                <option value="">All agents</option>
+                {agents.map((agent) => (
+                  <option key={agent.id} value={agent.id}>
+                    {agent.businessName || `${agent.user?.firstName ?? ''} ${agent.user?.lastName ?? ''}`.trim() || agent.username || 'Agent'}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div>
               <label className="label text-xs">State</label>
               <input

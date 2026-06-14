@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { ArrowRight, Shield, Users } from "lucide-react";
+import type { SiteContent } from "@/types";
 
-export function CTA() {
+export function CTA({ content }: { content?: SiteContent }) {
   return (
     <section className="py-24 bg-veriq-surface">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -18,10 +19,10 @@ export function CTA() {
                 Get Started Today
               </div>
               <h2 className="font-display text-4xl font-bold text-white mb-4 leading-tight">
-                Ready to inspect smarter?
+                {content?.title ?? "Ready to inspect smarter?"}
               </h2>
               <p className="text-white/70 text-base leading-relaxed mb-8">
-                Join thousands of property seekers and agents building a more transparent, trustworthy property experience in Nigeria.
+                {content?.body ?? "Join thousands of property seekers and agents building a more transparent, trustworthy property experience in Nigeria."}
               </p>
               <div className="flex flex-wrap gap-4">
                 <Link

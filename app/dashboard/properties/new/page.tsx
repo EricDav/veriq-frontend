@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { ArrowLeft, Home, GraduationCap, Camera, X, Upload, Zap, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 import { propertiesApi, mediaApi, ApiError } from '@/lib/api';
+import { uploadToFileService } from '@/lib/upload';
 import {
   PropertyType, HostelSuitableFor, HostelGender, HostelCampusProximity,
   ShortStayPricingModel,
@@ -204,12 +205,15 @@ export default function NewPropertyPage() {
   const [mediaFiles, setMediaFiles] = useState<Record<string, File[]>>({});
   const [mediaPreviews, setMediaPreviews] = useState<Record<string, string[]>>({});
   const [mediaErrors, setMediaErrors] = useState<Record<string, string>>({});
+  const [coverUploadError, setCoverUploadError] = useState('');
+  const [isCoverUploading, setIsCoverUploading] = useState(false);
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   const {
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -217,6 +221,7 @@ export default function NewPropertyPage() {
   });
 
   const propertyType = watch('propertyType');
+  const coverImageUrl = watch('coverImageUrl');
   const isHostel = propertyType === PropertyType.HOSTEL;
   const isShortStay = propertyType === PropertyType.SHORT_STAY;
   const isStandard = !isHostel && !isShortStay;
@@ -274,6 +279,20 @@ export default function NewPropertyPage() {
       next.splice(idx, 1);
       return { ...prev, [section]: next };
     });
+  };
+
+  const handleCoverUpload = async (file: File | undefined) => {
+    if (!file) return;
+    setIsCoverUploading(true);
+    setCoverUploadError('');
+    try {
+      const uploaded = await uploadToFileService(file);
+      setValue('coverImageUrl', uploaded.url, { shouldValidate: true, shouldDirty: true });
+    } catch (err) {
+      setCoverUploadError(err instanceof Error ? err.message : 'Cover upload failed');
+    } finally {
+      setIsCoverUploading(false);
+    }
   };
 
   // ── Submit ────────────────────────────────────────────────────────────
@@ -348,13 +367,28 @@ export default function NewPropertyPage() {
           </div>
 
           <div>
-            <label className="label">Cover Image URL</label>
-            <input
-              {...register('coverImageUrl')}
-              className="input"
-              placeholder="https://example.com/photo.jpg (optional — shown on property card)"
-            />
+            <label className="label">Cover Image</label>
+            <input type="hidden" {...register('coverImageUrl')} />
+            <div className="flex flex-wrap items-center gap-3">
+              <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-navy-700 hover:border-veriq-secondary">
+                {isCoverUploading ? <LoadingSpinner size="sm" /> : <Upload className="h-4 w-4" />}
+                {isCoverUploading ? 'Uploading...' : coverImageUrl ? 'Replace cover' : 'Upload cover'}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  disabled={isCoverUploading}
+                  onChange={(e) => handleCoverUpload(e.target.files?.[0])}
+                />
+              </label>
+              {coverImageUrl && (
+                <a href={coverImageUrl} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-veriq-secondary hover:underline">
+                  View cover
+                </a>
+              )}
+            </div>
             {errors.coverImageUrl && <p className="error">{errors.coverImageUrl.message}</p>}
+            {coverUploadError && <p className="error">{coverUploadError}</p>}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

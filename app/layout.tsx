@@ -5,6 +5,7 @@ import { Footer } from "@/components/layout/Footer";
 import { PWARegister } from "./pwa-register";
 import { AuthProvider } from "@/context/AuthContext";
 import { ToastProvider } from "@/components/ui/Toast";
+import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 
 export const metadata: Metadata = {
   title: {
@@ -73,6 +74,7 @@ export default function RootLayout({
         <AuthProvider>
           <ToastProvider>
             <PWARegister />
+            <InstallPrompt />
             <Navbar />
             {children}
             <Footer />

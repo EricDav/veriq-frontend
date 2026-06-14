@@ -1,4 +1,5 @@
 import { Search, Unlock, MapPin, CheckCircle } from "lucide-react";
+import type { SiteContent } from "@/types";
 
 const STEPS = [
   {
@@ -39,7 +40,15 @@ const STEPS = [
   },
 ];
 
-export function HowItWorks() {
+export function HowItWorks({ content }: { content?: SiteContent }) {
+  const steps = Array.isArray(content?.data?.steps)
+    ? (content.data.steps as Array<{ title: string; description: string }>).map((item, index) => ({
+        ...STEPS[index % STEPS.length],
+        title: item.title,
+        description: item.description,
+      }))
+    : STEPS;
+
   return (
     <section id="how-it-works" className="py-24 bg-white">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -50,18 +59,17 @@ export function HowItWorks() {
               Simple Process
             </div>
             <h2 className="section-heading">
-              How Veriq <br className="hidden lg:block" />
-              <span className="gradient-text">Property Works</span>
+              {content?.title ?? <>How Veriq <br className="hidden lg:block" /><span className="gradient-text">Property Works</span></>}
             </h2>
           </div>
           <p className="section-subheading lg:max-w-sm">
-            From discovery to inspection — a smarter, more informed journey every step of the way.
+            {content?.body ?? "From discovery to inspection — a smarter, more informed journey every step of the way."}
           </p>
         </div>
 
         {/* Steps */}
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
-          {STEPS.map((step, i) => (
+          {steps.map((step, i) => (
             <div key={step.number} className="relative">
               {/* Connector line */}
               {i < STEPS.length - 1 && (

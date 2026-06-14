@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Shield, Target, Eye, TrendingUp, Users, CheckCircle, ArrowRight } from "lucide-react";
+import { getPublicPageContent } from "@/lib/site-content";
 
 export const metadata: Metadata = {
   title: "About Us",
@@ -44,7 +45,18 @@ const PROBLEMS_SOLVED = [
   "No pre-inspection intelligence for renters",
 ];
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const content = await getPublicPageContent("about");
+  const hero = content.hero;
+  const mission = content.mission;
+  const missionParagraphs = mission?.body
+    ? mission.body.split(/\n+/).filter(Boolean)
+    : [
+        "Veriq Property is a trust-focused property intelligence platform designed to help people make smarter property decisions before physical inspections.",
+        "Instead of functioning as just another listing marketplace, Veriq Property focuses on helping users gain better property decision confidence through structured intelligence, freshness verification, and trust-based agent performance tracking.",
+        "Our mission is to build a more trusted, transparent, and structured property intelligence ecosystem — starting with residential rentals in Nigeria and expanding over time.",
+      ];
+
   return (
     <>
       {/* Hero */}
@@ -58,11 +70,10 @@ export default function AboutPage() {
             About Veriq Property
           </div>
           <h1 className="font-display text-5xl font-bold text-white mb-5 leading-tight">
-            Building a More Trusted <br />
-            <span className="text-gold-400">Property Ecosystem</span>
+            {hero?.title ?? "Building a More Trusted Property Ecosystem"}
           </h1>
           <p className="text-lg text-white/70 leading-relaxed max-w-2xl mx-auto">
-            We understand the frustrations of the traditional property search process. Veriq Property was built to change it — from the ground up.
+            {hero?.subtitle ?? "We understand the frustrations of the traditional property search process. Veriq Property was built to change it — from the ground up."}
           </p>
         </div>
         <div className="absolute bottom-0 left-0 right-0">
@@ -81,17 +92,16 @@ export default function AboutPage() {
                 Our Mission
               </div>
               <h2 className="section-heading mb-5">
-                Know Before <span className="gradient-text">You Go.</span>
+                {mission?.title ?? <>Know Before <span className="gradient-text">You Go.</span></>}
               </h2>
-              <p className="text-veriq-muted text-base leading-relaxed mb-5">
-                Veriq Property is a trust-focused property intelligence platform designed to help people make smarter property decisions <strong className="text-navy-800">before</strong> physical inspections.
-              </p>
-              <p className="text-veriq-muted text-base leading-relaxed mb-5">
-                Instead of functioning as just another listing marketplace, Veriq Property focuses on helping users gain better property decision confidence through structured intelligence, freshness verification, and trust-based agent performance tracking.
-              </p>
-              <p className="text-veriq-muted text-base leading-relaxed">
-                Our mission is to build a more trusted, transparent, and structured property intelligence ecosystem — starting with residential rentals in Nigeria and expanding over time.
-              </p>
+              {mission?.subtitle && (
+                <p className="text-navy-700 text-base font-semibold leading-relaxed mb-5">{mission.subtitle}</p>
+              )}
+              {missionParagraphs.map((paragraph, index) => (
+                <p key={paragraph} className={`text-veriq-muted text-base leading-relaxed ${index < missionParagraphs.length - 1 ? "mb-5" : ""}`}>
+                  {paragraph}
+                </p>
+              ))}
             </div>
 
             {/* Problems we solve */}

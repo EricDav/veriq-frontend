@@ -3,16 +3,16 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import {
   ArrowLeft, MapPin, CheckCircle, Bed, Bath, Lock, Unlock,
   Shield, Eye, FileText, Clock, AlertCircle, Home, Wallet,
-  DollarSign, Phone, Zap, Droplets, Wifi, Volume2, Star,
+  DollarSign, Phone, Zap, Droplets, Wifi, Volume2, Star, MessageCircle,
   ChevronLeft, ChevronRight, X, Play, Timer, RefreshCw,
   Building2, Trees, Sun, Cloud, Car, Users,
 } from 'lucide-react';
-import { propertiesApi, consultationsApi, mediaApi, ApiError } from '@/lib/api';
-import type { Property, Consultation, MediaItem } from '@/types';
+import { propertiesApi, consultationsApi, mediaApi, chatApi, ApiError } from '@/lib/api';
+import type { ConsultationAccess, Property, Consultation, MediaItem } from '@/types';
 import {
   AgentVerificationLevel, AgentTrustTier, FreshnessScore,
   FloodRisk, ElectricitySituation, WaterAvailability, WaterSource,
@@ -352,49 +352,19 @@ function AccessTimer({ expiresAt }: { expiresAt: string }) {
   );
 }
 
-// ─── Paystack loader ──────────────────────────────────────────────────────
-
-declare global {
-  interface Window {
-    PaystackPop?: {
-      setup: (opts: {
-        key: string;
-        email: string;
-        amount: number;
-        currency: string;
-        ref: string;
-        callback: (response: { reference: string }) => void;
-        onClose: () => void;
-      }) => { openIframe: () => void };
-    };
-  }
-}
-
-function usePaystackScript() {
-  const [ready, setReady] = useState(false);
-  useEffect(() => {
-    if (window.PaystackPop) { setReady(true); return; }
-    const s = document.createElement('script');
-    s.src = 'https://js.paystack.co/v1/inline.js';
-    s.async = true;
-    s.onload = () => setReady(true);
-    document.head.appendChild(s);
-  }, []);
-  return ready;
-}
-
 // ─── Main page ────────────────────────────────────────────────────────────
 
 export default function DashboardPropertyDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { isAuthenticated, user } = useAuth();
+  const router = useRouter();
+  const { isAuthenticated } = useAuth();
   const { success, error: toastError } = useToast();
-  const paystackReady = usePaystackScript();
 
   const [property, setProperty] = useState<Property | null>(null);
   const [consultation, setConsultation] = useState<Consultation | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
+  const [accessDetails, setAccessDetails] = useState<ConsultationAccess | null>(null);
   const [isUnlocking, setIsUnlocking] = useState(false);
   const [notFound, setNotFound] = useState(false);
   const [heroImgIdx, setHeroImgIdx] = useState(0);
@@ -409,6 +379,7 @@ export default function DashboardPropertyDetailPage() {
           const accessRes = await consultationsApi.checkAccess(id);
           const access = accessRes.data?.hasAccess ?? false;
           setHasAccess(access);
+          setAccessDetails(accessRes.data ?? null);
           if (access) {
             // Find active consultation for the timer
             const myRes = await consultationsApi.getMyConsultations(1, 50);
@@ -430,56 +401,32 @@ export default function DashboardPropertyDetailPage() {
 
   useEffect(() => { if (id) load(); }, [id, load]);
 
-  // ── Paystack payment flow ──
+  // ── Wallet unlock flow ──
   const handleUnlock = useCallback(async () => {
     if (!isAuthenticated) { toastError('Please log in to unlock this report.'); return; }
 
     setIsUnlocking(true);
     try {
-      const res = await consultationsApi.initiate({ propertyId: id });
-      const initiated = res.data as Consultation & { consultationId?: string; feeAmount?: number };
-      const consultationId = initiated.id ?? initiated.consultationId;
-      const feeAmount = initiated.feeAmount ?? property?.consultationFee ?? 0;
-
-      if (!paystackReady || !window.PaystackPop) {
-        toastError('Payment system not ready. Please try again.');
-        setIsUnlocking(false);
-        return;
-      }
-
-      const handler = window.PaystackPop.setup({
-        key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY ?? '',
-        email: user?.email ?? '',
-        amount: feeAmount * 100, // kobo
-        currency: 'NGN',
-        ref: `veriq-${consultationId}-${Date.now()}`,
-        callback: async (response) => {
-          try {
-            await consultationsApi.confirmPayment(consultationId, {
-              paymentReference: response.reference,
-              paymentProvider: 'paystack',
-            });
-            success('Intelligence report unlocked!');
-            setHasAccess(true);
-            await load(); // refresh to get timer
-          } catch (err) {
-            toastError(err instanceof ApiError ? err.message : 'Payment confirmation failed.');
-          } finally {
-            setIsUnlocking(false);
-          }
-        },
-        onClose: () => {
-          setIsUnlocking(false);
-          toastError('Payment was cancelled.');
-        },
-      });
-
-      handler.openIframe();
+      await consultationsApi.initiate({ propertyId: id });
+      success('Wallet debited. Intelligence report unlocked!');
+      setHasAccess(true);
+      await load();
     } catch (err) {
-      toastError(err instanceof ApiError ? err.message : 'Failed to initiate payment.');
+      toastError(err instanceof ApiError ? err.message : 'Failed to unlock report.');
+    } finally {
       setIsUnlocking(false);
     }
-  }, [id, isAuthenticated, paystackReady, property, user, load, success, toastError]);
+  }, [id, isAuthenticated, load, success, toastError]);
+
+  const handleStartChat = useCallback(async () => {
+    if (!isAuthenticated) { toastError('Please log in to chat with this agent.'); return; }
+    try {
+      const res = await chatApi.startConversation(id);
+      router.push(`/dashboard/chat?conversation=${res.data.id}`);
+    } catch (err) {
+      toastError(err instanceof ApiError ? err.message : 'Failed to start chat.');
+    }
+  }, [id, isAuthenticated, router, toastError]);
 
   if (isLoading) return <PageLoader />;
 
@@ -501,6 +448,8 @@ export default function DashboardPropertyDetailPage() {
   const tierBadge = TRUST_TIER_BADGE[agent?.trustTier ?? AgentTrustTier.BRONZE];
   const location = [property.area, property.city, property.state].filter(Boolean).join(', ');
   const isShortStay = property.propertyType === PropertyType.SHORT_STAY;
+  const agentContact = accessDetails?.agentContact;
+  const canContactAgent = hasAccess && !!agentContact?.phone;
 
   // Hero image — cover or gradient fallback
   const hasCover = !!property.coverImageUrl;
@@ -720,7 +669,7 @@ export default function DashboardPropertyDetailPage() {
                       ) : (
                         <Lock className="h-4 w-4" />
                       )}
-                      {isUnlocking ? 'Opening payment…' : 'Unlock Intelligence Report'}
+                      {isUnlocking ? 'Unlocking…' : 'Unlock Intelligence Report'}
                     </button>
                   </div>
                 </div>
@@ -744,7 +693,7 @@ export default function DashboardPropertyDetailPage() {
               </div>
 
               {/* Agent contact */}
-              {agent?.user?.phone && (
+              {canContactAgent && (
                 <div className="card p-5">
                   <h3 className="font-display text-sm font-bold text-navy-900 mb-3 flex items-center gap-2">
                     <Phone className="h-4 w-4 text-veriq-secondary" /> Agent Contact
@@ -755,16 +704,29 @@ export default function DashboardPropertyDetailPage() {
                     </div>
                     <div>
                       <p className="font-semibold text-navy-900">{agentName}</p>
-                      <a
-                        href={`tel:${agent.user.phone}`}
-                        className="text-veriq-secondary font-semibold text-sm hover:underline"
-                      >
-                        {agent.user.phone}
-                      </a>
+                      <p className="text-veriq-secondary font-semibold text-sm">{agentContact!.phone}</p>
                     </div>
+                  </div>
+                  <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    <button type="button" onClick={handleStartChat} className="btn-primary !py-2.5 !text-sm flex items-center justify-center gap-2">
+                      <MessageCircle className="h-4 w-4" /> Chat Agent
+                    </button>
+                    <a href={`tel:${agentContact!.phone}`} className="btn-outline !py-2.5 !text-sm flex items-center justify-center gap-2">
+                      <Phone className="h-4 w-4" /> Call Agent
+                    </a>
                   </div>
                   <p className="mt-3 text-xs text-slate-400">
                     Always physically inspect the property before making any payments or commitments.
+                  </p>
+                </div>
+              )}
+              {hasAccess && !canContactAgent && (
+                <div className="card p-5">
+                  <h3 className="font-display text-sm font-bold text-navy-900 mb-2 flex items-center gap-2">
+                    <MessageCircle className="h-4 w-4 text-slate-400" /> Agent Contact
+                  </h3>
+                  <p className="text-sm text-veriq-muted">
+                    This agent has not enabled direct contact for unlocked reports. Use the property intelligence details to decide your next step.
                   </p>
                 </div>
               )}
@@ -831,6 +793,11 @@ export default function DashboardPropertyDetailPage() {
             {!hasAccess && (
               <p className="text-[11px] text-slate-400">
                 Phone number revealed after unlocking the report.
+              </p>
+            )}
+            {hasAccess && !agentContact && (
+              <p className="text-[11px] text-slate-400">
+                This agent has disabled direct contact after payment.
               </p>
             )}
           </div>

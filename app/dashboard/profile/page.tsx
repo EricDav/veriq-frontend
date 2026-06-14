@@ -5,8 +5,9 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { CheckCircle, Shield, Lock, User, Eye, EyeOff, Share2, Copy, Check, ExternalLink } from 'lucide-react';
+import { CheckCircle, Shield, Lock, User, Eye, EyeOff, Share2, Copy, Check, ExternalLink, Camera, Upload } from 'lucide-react';
 import { usersApi, authApi, agentsApi, ApiError } from '@/lib/api';
+import { uploadToFileService } from '@/lib/upload';
 import { useAuth } from '@/context/AuthContext';
 import { UserRole } from '@/types';
 import type { Agent } from '@/types';
@@ -51,6 +52,8 @@ export default function ProfilePage() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [agent, setAgent] = useState<Agent | null>(null);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const [agentPhotoUploading, setAgentPhotoUploading] = useState(false);
 
   const initials = user
     ? `${user.firstName[0] ?? ''}${user.lastName[0] ?? ''}`.toUpperCase()
@@ -108,6 +111,41 @@ export default function ProfilePage() {
     }
   };
 
+  const onPhotoUpload = async (file?: File) => {
+    if (!user || !file) return;
+    setPhotoUploading(true);
+    try {
+      const uploaded = await uploadToFileService(file);
+      await usersApi.update(user.id, { profilePhotoUrl: uploaded.url });
+      await refreshUser();
+      success('Profile photo updated successfully!');
+    } catch (err) {
+      toastError(err instanceof ApiError ? err.message : 'Failed to upload profile photo');
+    } finally {
+      setPhotoUploading(false);
+    }
+  };
+
+  const onAgentPhotoUpload = async (file?: File) => {
+    if (!file) return;
+    if (!agent) {
+      toastError('Create your agent profile before uploading a public agent photo.');
+      return;
+    }
+
+    setAgentPhotoUploading(true);
+    try {
+      const uploaded = await uploadToFileService(file);
+      const res = await agentsApi.updateProfile({ profilePhotoUrl: uploaded.url });
+      setAgent(res.data);
+      success('Agent public photo updated successfully!');
+    } catch (err) {
+      toastError(err instanceof ApiError ? err.message : err instanceof Error ? err.message : 'Failed to upload agent photo');
+    } finally {
+      setAgentPhotoUploading(false);
+    }
+  };
+
   // ── Password form ─────────────────────────────────────────────────────
 
   const {
@@ -143,8 +181,24 @@ export default function ProfilePage() {
 
       {/* Avatar */}
       <div className="card p-6 flex items-center gap-5">
-        <div className="h-20 w-20 rounded-2xl bg-veriq-secondary flex items-center justify-center text-white text-2xl font-black flex-shrink-0">
-          {initials}
+        <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-2xl bg-veriq-secondary">
+          {user?.profilePhotoUrl ? (
+            <img src={user.profilePhotoUrl} alt="Profile" className="h-full w-full object-cover" />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center text-2xl font-black text-white">
+              {initials}
+            </div>
+          )}
+          <label className="absolute inset-x-0 bottom-0 flex cursor-pointer items-center justify-center bg-navy-900/75 py-1 text-white">
+            {photoUploading ? <LoadingSpinner size="sm" /> : <Camera className="h-3.5 w-3.5" />}
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              disabled={photoUploading}
+              onChange={(e) => onPhotoUpload(e.target.files?.[0])}
+            />
+          </label>
         </div>
         <div>
           <h2 className="font-display text-lg font-bold text-navy-900">
@@ -160,6 +214,51 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
+
+      {/* Agent public photo */}
+      {user?.role === UserRole.AGENT && (
+        <div className="card p-6">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-4">
+              <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-2xl border border-slate-200 bg-slate-100">
+                {agent?.profilePhotoUrl ? (
+                  <img src={agent.profilePhotoUrl} alt="Agent public profile" className="h-full w-full object-cover" />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-slate-300">
+                    <Camera className="h-7 w-7" />
+                  </div>
+                )}
+              </div>
+              <div>
+                <h2 className="font-display text-base font-bold text-navy-900">Agent Public Photo</h2>
+                <p className="mt-1 max-w-md text-xs leading-relaxed text-veriq-muted">
+                  This photo appears on your public agent profile, property cards, and unlocked report details.
+                </p>
+                {!agent && (
+                  <Link href="/dashboard/agent" className="mt-2 inline-flex text-xs font-semibold text-veriq-secondary hover:underline">
+                    Create agent profile first
+                  </Link>
+                )}
+              </div>
+            </div>
+            <label
+              className={`inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-navy-700 transition-colors hover:border-veriq-secondary sm:w-auto ${
+                !agent || agentPhotoUploading ? 'pointer-events-none opacity-60' : ''
+              }`}
+            >
+              {agentPhotoUploading ? <LoadingSpinner size="sm" /> : <Upload className="h-4 w-4" />}
+              {agentPhotoUploading ? 'Uploading...' : agent?.profilePhotoUrl ? 'Replace Photo' : 'Upload Photo'}
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                disabled={!agent || agentPhotoUploading}
+                onChange={(e) => onAgentPhotoUpload(e.target.files?.[0])}
+              />
+            </label>
+          </div>
+        </div>
+      )}
 
       {/* Share public profile (agents only) */}
       {user?.role === UserRole.AGENT && agent?.username && (

@@ -12,6 +12,7 @@ import {
   MapPin, Briefcase, User, Lock, ExternalLink, Copy, Check, Share2,
 } from 'lucide-react';
 import { agentsApi, ApiError } from '@/lib/api';
+import { uploadToFileService } from '@/lib/upload';
 import type { Agent } from '@/types';
 import { AgentVerificationLevel, AgentTrustTier } from '@/types';
 import { useAuth } from '@/context/AuthContext';
@@ -74,6 +75,7 @@ const profileSchema = z.object({
   bankName: z.string().optional(),
   bankAccountNumber: z.string().regex(/^\d{10}$/, 'Account number must be 10 digits').or(z.literal('')).optional(),
   agreementAccepted: z.boolean().optional(),
+  allowContactAfterPayment: z.boolean().optional(),
 });
 
 type ProfileFormData = z.infer<typeof profileSchema>;
@@ -228,6 +230,65 @@ function SectionCard({
   );
 }
 
+function UploadField({
+  label,
+  value,
+  onUploaded,
+  accept = 'image/*,.pdf',
+  error,
+  helper,
+}: {
+  label: string;
+  value?: string;
+  onUploaded: (url: string) => void;
+  accept?: string;
+  error?: string;
+  helper?: string;
+}) {
+  const [isUploading, setIsUploading] = useState(false);
+  const [localError, setLocalError] = useState('');
+
+  const handleChange = async (file: File | undefined) => {
+    if (!file) return;
+    setIsUploading(true);
+    setLocalError('');
+    try {
+      const uploaded = await uploadToFileService(file);
+      onUploaded(uploaded.url);
+    } catch (err) {
+      setLocalError(err instanceof Error ? err.message : 'Upload failed');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  return (
+    <div>
+      <label className="label">{label}</label>
+      {helper && <p className="text-[11px] text-slate-400 mb-2">{helper}</p>}
+      <div className="flex flex-wrap items-center gap-3">
+        <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-navy-700 hover:border-veriq-secondary">
+          {isUploading ? <LoadingSpinner size="sm" /> : <Upload className="h-4 w-4" />}
+          {isUploading ? 'Uploading...' : value ? 'Replace file' : 'Choose file'}
+          <input
+            type="file"
+            accept={accept}
+            className="hidden"
+            disabled={isUploading}
+            onChange={(e) => handleChange(e.target.files?.[0])}
+          />
+        </label>
+        {value && (
+          <a href={value} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-veriq-secondary hover:underline">
+            View uploaded file
+          </a>
+        )}
+      </div>
+      {(error || localError) && <p className="text-xs text-red-500 mt-1">{error || localError}</p>}
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────
 
 export default function AgentProfilePage() {
@@ -263,6 +324,7 @@ export default function AgentProfilePage() {
           bankName: a.bankName ?? '',
           bankAccountNumber: a.bankAccountNumber ?? '',
           agreementAccepted: a.agreementAccepted ?? false,
+          allowContactAfterPayment: a.allowContactAfterPayment ?? true,
         });
       } catch {
         // No profile yet
@@ -318,6 +380,8 @@ export default function AgentProfilePage() {
   const {
     register: regL1,
     handleSubmit: handleL1Submit,
+    setValue: setL1Value,
+    watch: watchL1,
     formState: { errors: l1Errors, isSubmitting: l1Submitting },
   } = useForm<Level1FormData>({ resolver: zodResolver(level1Schema) });
 
@@ -336,6 +400,8 @@ export default function AgentProfilePage() {
   const {
     register: regL2,
     handleSubmit: handleL2Submit,
+    setValue: setL2Value,
+    watch: watchL2,
     formState: { errors: l2Errors, isSubmitting: l2Submitting },
   } = useForm<Level2FormData>({ resolver: zodResolver(level2Schema) });
 
@@ -526,10 +592,6 @@ export default function AgentProfilePage() {
 
           {/* Profile photo */}
           <div>
-            <label className="label">Profile Photo URL</label>
-            <p className="text-[11px] text-slate-400 mb-2">
-              Upload your passport-style photo to a hosting service (e.g. Cloudinary, Imgur) and paste the URL here.
-            </p>
             <div className="flex items-start gap-4">
               <div className="h-16 w-16 rounded-full bg-slate-100 overflow-hidden flex-shrink-0 flex items-center justify-center border border-slate-200">
                 {photoUrl ? (
@@ -539,14 +601,15 @@ export default function AgentProfilePage() {
                 )}
               </div>
               <div className="flex-1">
-                <input
-                  {...regProfile('profilePhotoUrl')}
-                  className="input"
-                  placeholder="https://example.com/your-photo.jpg"
+                <input type="hidden" {...regProfile('profilePhotoUrl')} />
+                <UploadField
+                  label="Profile Photo"
+                  value={photoUrl}
+                  accept="image/*"
+                  helper="Upload a passport-style photo. The file is stored in the configured upload service."
+                  onUploaded={(url) => setProfileValue('profilePhotoUrl', url, { shouldValidate: true, shouldDirty: true })}
+                  error={profileErrors.profilePhotoUrl?.message}
                 />
-                {profileErrors.profilePhotoUrl && (
-                  <p className="text-xs text-red-500 mt-1">{profileErrors.profilePhotoUrl.message}</p>
-                )}
               </div>
             </div>
           </div>
@@ -622,6 +685,21 @@ export default function AgentProfilePage() {
             {profileErrors.bio && <p className="text-xs text-red-500 mt-1">{profileErrors.bio.message}</p>}
           </div>
 
+          <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-veriq-surface px-4 py-3">
+            <input
+              type="checkbox"
+              {...regProfile('allowContactAfterPayment')}
+              defaultChecked
+              className="mt-1 h-4 w-4 rounded border-slate-300 text-veriq-secondary focus:ring-veriq-secondary"
+            />
+            <span>
+              <span className="block text-sm font-semibold text-navy-900">Allow paid users to contact me</span>
+              <span className="block text-xs text-slate-500 mt-0.5">
+                When enabled, users who unlock an intelligence report can call you and open chat from the listing.
+              </span>
+            </span>
+          </label>
+
           <div className="flex justify-end pt-1">
             <button type="submit" disabled={profileSubmitting} className="btn-primary flex items-center gap-2">
               {profileSubmitting && <LoadingSpinner size="sm" />}
@@ -668,7 +746,7 @@ export default function AgentProfilePage() {
             <div className="mb-4 flex items-start gap-2 rounded-xl bg-blue-50 border border-blue-100 px-4 py-3">
               <AlertCircle className="h-4 w-4 text-blue-500 flex-shrink-0 mt-0.5" />
               <p className="text-xs text-blue-700">
-                Upload your documents to a hosting service (e.g. Google Drive, Cloudinary) and paste the public URL below.
+                Upload your documents directly here. Veriq will use the returned secure file URL for verification review.
                 Identity verification is required before you can list properties.
               </p>
             </div>
@@ -686,28 +764,24 @@ export default function AgentProfilePage() {
                 {l1Errors.govIdType && <p className="text-xs text-red-500 mt-1">{l1Errors.govIdType.message}</p>}
               </div>
 
-              <div>
-                <label className="label">ID Document URL *</label>
-                <input
-                  {...regL1('govIdUrl')}
-                  className="input"
-                  placeholder="https://drive.google.com/file/…"
-                />
-                {l1Errors.govIdUrl && <p className="text-xs text-red-500 mt-1">{l1Errors.govIdUrl.message}</p>}
-              </div>
+              <input type="hidden" {...regL1('govIdUrl')} />
+              <UploadField
+                label="ID Document *"
+                value={watchL1('govIdUrl')}
+                helper="Upload a clear image or PDF of your selected government ID."
+                onUploaded={(url) => setL1Value('govIdUrl', url, { shouldValidate: true, shouldDirty: true })}
+                error={l1Errors.govIdUrl?.message}
+              />
 
-              <div>
-                <label className="label">Selfie with ID URL *</label>
-                <p className="text-[11px] text-slate-400 mb-1.5">
-                  Take a live photo holding your ID document. Upload it and paste the URL here.
-                </p>
-                <input
-                  {...regL1('selfieUrl')}
-                  className="input"
-                  placeholder="https://drive.google.com/file/…"
-                />
-                {l1Errors.selfieUrl && <p className="text-xs text-red-500 mt-1">{l1Errors.selfieUrl.message}</p>}
-              </div>
+              <input type="hidden" {...regL1('selfieUrl')} />
+              <UploadField
+                label="Selfie with ID *"
+                value={watchL1('selfieUrl')}
+                accept="image/*"
+                helper="Take a live photo holding your ID document, then upload it here."
+                onUploaded={(url) => setL1Value('selfieUrl', url, { shouldValidate: true, shouldDirty: true })}
+                error={l1Errors.selfieUrl?.message}
+              />
 
               <div className="flex justify-end">
                 <button type="submit" disabled={l1Submitting} className="btn-primary flex items-center gap-2">
@@ -893,20 +967,30 @@ export default function AgentProfilePage() {
                 <input {...regL2('realEstateAssociation')} className="input" placeholder="REDAN, NIESV…" />
               </div>
             </div>
-            <div>
-              <label className="label">CAC Document URL <span className="text-slate-400 font-normal">(optional)</span></label>
-              <input {...regL2('cacDocumentUrl')} className="input" placeholder="https://…" />
-              {l2Errors.cacDocumentUrl && <p className="text-xs text-red-500 mt-1">{l2Errors.cacDocumentUrl.message}</p>}
-            </div>
-            <div>
-              <label className="label">Association Membership URL</label>
-              <input {...regL2('associationMembershipUrl')} className="input" placeholder="https://…" />
-              {l2Errors.associationMembershipUrl && <p className="text-xs text-red-500 mt-1">{l2Errors.associationMembershipUrl.message}</p>}
-            </div>
-            <div>
-              <label className="label">Landlord Authorization URL <span className="text-slate-400 font-normal">(optional)</span></label>
-              <input {...regL2('landlordAuthorizationUrl')} className="input" placeholder="https://…" />
-            </div>
+            <input type="hidden" {...regL2('cacDocumentUrl')} />
+            <UploadField
+              label="CAC Document (optional)"
+              value={watchL2('cacDocumentUrl')}
+              helper="Upload CAC registration evidence if available."
+              onUploaded={(url) => setL2Value('cacDocumentUrl', url, { shouldValidate: true, shouldDirty: true })}
+              error={l2Errors.cacDocumentUrl?.message}
+            />
+            <input type="hidden" {...regL2('associationMembershipUrl')} />
+            <UploadField
+              label="Association Membership"
+              value={watchL2('associationMembershipUrl')}
+              helper="Upload REDAN, NIESV, or other real-estate association proof."
+              onUploaded={(url) => setL2Value('associationMembershipUrl', url, { shouldValidate: true, shouldDirty: true })}
+              error={l2Errors.associationMembershipUrl?.message}
+            />
+            <input type="hidden" {...regL2('landlordAuthorizationUrl')} />
+            <UploadField
+              label="Landlord Authorization (optional)"
+              value={watchL2('landlordAuthorizationUrl')}
+              helper="Upload any landlord authorization document for your listings."
+              onUploaded={(url) => setL2Value('landlordAuthorizationUrl', url, { shouldValidate: true, shouldDirty: true })}
+              error={l2Errors.landlordAuthorizationUrl?.message}
+            />
             <div className="flex justify-end">
               <button type="submit" disabled={l2Submitting} className="btn-primary flex items-center gap-2">
                 {l2Submitting && <LoadingSpinner size="sm" />}

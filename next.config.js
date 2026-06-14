@@ -8,6 +8,7 @@ const nextConfig = {
       { protocol: "https", hostname: "via.placeholder.com" },
       { protocol: "https", hostname: "randomuser.me" },
       { protocol: "https", hostname: "cdn.veriq.ng" },
+      { protocol: "https", hostname: "upload.logistecx.online" },
     ],
   },
 };

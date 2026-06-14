@@ -6,12 +6,15 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Heart, Search, User, LogOut,
   Bell, Menu, X, Home, TrendingUp, Plus,
-  Settings, ChevronRight, Users, ShieldCheck, Wallet, Landmark,
+  Settings, ChevronRight, Users, ShieldCheck, Wallet, Landmark, FileText, MessageCircle, Mail,
 } from 'lucide-react';
 import Image from 'next/image';
 import { useAuth } from '@/context/AuthContext';
 import { UserRole } from '@/types';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
+import { chatApi } from '@/lib/api';
+import { getAccessToken } from '@/lib/auth';
+import { canUseNotifications, playChatSound, requestNotificationPermission, showChatNotification } from '@/lib/notify';
 
 // ─── Nav items per role ───────────────────────────────────────────────────
 
@@ -19,6 +22,7 @@ const USER_NAV = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { label: 'Browse Properties', href: '/dashboard/browse', icon: Search },
   { label: 'Saved', href: '/dashboard/saved', icon: Heart },
+  { label: 'Chats', href: '/dashboard/chat', icon: MessageCircle },
   { label: 'Wallet', href: '/dashboard/wallet', icon: Wallet },
   { label: 'Profile', href: '/dashboard/profile', icon: User },
 ];
@@ -28,6 +32,7 @@ const AGENT_NAV = [
   { label: 'Browse Properties', href: '/dashboard/browse', icon: Search },
   { label: 'My Listings', href: '/dashboard/properties', icon: Home },
   { label: 'Agent Profile', href: '/dashboard/agent', icon: TrendingUp },
+  { label: 'Chats', href: '/dashboard/chat', icon: MessageCircle },
   { label: 'Wallet', href: '/dashboard/wallet', icon: Wallet },
   { label: 'Profile', href: '/dashboard/profile', icon: User },
 ];
@@ -37,6 +42,8 @@ const ADMIN_NAV = [
   { label: 'Agents', href: '/dashboard/admin/agents', icon: ShieldCheck },
   { label: 'Users', href: '/dashboard/admin/users', icon: Users },
   { label: 'Properties', href: '/dashboard/admin/properties', icon: Home },
+  { label: 'Contact Forms', href: '/dashboard/admin/contacts', icon: Mail },
+  { label: 'Site Content', href: '/dashboard/admin/content', icon: FileText },
   { label: 'Ledger', href: '/dashboard/admin/ledger', icon: Landmark },
   { label: 'Profile', href: '/dashboard/profile', icon: User },
 ];
@@ -58,12 +65,62 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router = useRouter();
   const { user, isLoading, isAuthenticated, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [chatUnread, setChatUnread] = useState(0);
+  const [notificationPermission, setNotificationPermission] = useState<'default' | 'denied' | 'granted' | 'unsupported'>('unsupported');
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.push(`/auth/login?redirect=${encodeURIComponent(pathname)}`);
     }
   }, [isLoading, isAuthenticated, router, pathname]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    setNotificationPermission(canUseNotifications() ? Notification.permission : 'unsupported');
+    const token = getAccessToken();
+    if (!token) return;
+
+    const events = new EventSource(chatApi.eventsUrl(token));
+    const onUnread = (event: MessageEvent) => {
+      try {
+        const payload = JSON.parse(event.data) as { unread?: number };
+        setChatUnread(payload.unread ?? 0);
+      } catch {
+        setChatUnread(0);
+      }
+    };
+    events.addEventListener('unread', onUnread);
+    const onMessage = (event: MessageEvent) => {
+      try {
+        const payload = JSON.parse(event.data) as {
+          senderId?: string;
+          body?: string;
+          sender?: { name?: string };
+          conversationId?: string;
+        };
+        if (payload.senderId && payload.senderId !== user?.id) {
+          playChatSound();
+          showChatNotification(
+            payload.sender?.name ? `New message from ${payload.sender.name}` : 'New chat message',
+            payload.body ?? 'Open Veriq to read the message.',
+            payload.conversationId ? `/dashboard/chat?conversation=${payload.conversationId}` : '/dashboard/chat',
+          );
+        }
+      } catch {}
+    };
+    events.addEventListener('message', onMessage);
+
+    return () => {
+      events.removeEventListener('unread', onUnread);
+      events.removeEventListener('message', onMessage);
+      events.close();
+    };
+  }, [isAuthenticated, user?.id]);
+
+  const enableNotifications = async () => {
+    const permission = await requestNotificationPermission();
+    setNotificationPermission(permission as typeof notificationPermission);
+  };
 
   if (isLoading) return <PageLoader />;
   if (!isAuthenticated) return <PageLoader />;
@@ -143,6 +200,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               >
                 <Icon className={`h-4 w-4 flex-shrink-0 ${isActive ? 'text-gold-400' : ''}`} />
                 {item.label}
+                {item.href === '/dashboard/chat' && chatUnread > 0 && (
+                  <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-veriq-secondary px-1.5 text-[10px] font-bold text-white">
+                    {chatUnread > 99 ? '99+' : chatUnread}
+                  </span>
+                )}
                 {isActive && <ChevronRight className="h-3.5 w-3.5 ml-auto text-gold-400" />}
               </Link>
             );
@@ -203,12 +265,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="flex items-center gap-3">
             <button className="relative rounded-lg p-2 text-slate-600 hover:bg-slate-100">
               <Bell className="h-5 w-5" />
+              {chatUnread > 0 && (
+                <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-veriq-secondary" />
+              )}
             </button>
             <div className="h-8 w-8 rounded-full bg-veriq-secondary flex items-center justify-center text-white text-xs font-bold">
               {initials}
             </div>
           </div>
         </header>
+
+        {notificationPermission === 'default' && (
+          <div className="border-b border-amber-100 bg-amber-50 px-4 py-2 text-xs text-amber-800 sm:px-6">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <span>Enable chat notifications to hear about new messages instantly.</span>
+              <button type="button" onClick={enableNotifications} className="self-start rounded-lg bg-amber-600 px-3 py-1.5 font-semibold text-white sm:self-auto">
+                Enable notifications
+              </button>
+            </div>
+          </div>
+        )}
 
         <main className="flex-1 overflow-auto p-4 sm:p-6">{children}</main>
       </div>

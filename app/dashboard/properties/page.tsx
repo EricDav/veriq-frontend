@@ -114,9 +114,9 @@ function AgentPropertiesView() {
   const handleReconfirm = async (id: string, currentRent: number) => {
     setReconfirmingId(id);
     try {
-      const res = await propertiesApi.reconfirm(id, { currentRent });
+      const res = await propertiesApi.reconfirm(id, { rentAmount: currentRent, status: ListingStatus.ACTIVE });
       setProperties((prev) => prev.map((p) => (p.id === id ? res.data : p)));
-      success('Listing availability reconfirmed!');
+      success('Listing refreshed and marked active!');
     } catch (err) {
       toastError(err instanceof ApiError ? err.message : 'Reconfirmation failed');
     } finally {
@@ -246,21 +246,23 @@ function AgentPropertiesView() {
                       </td>
                       <td className="px-4 py-4">
                         <div className="flex items-center justify-end gap-2">
-                          {/* Reconfirm */}
-                          {prop.status === 'active' && (
-                            <button
-                              onClick={() => handleReconfirm(prop.id, Number(prop.rentAmount))}
-                              disabled={reconfirmingId === prop.id}
-                              title="Reconfirm availability"
-                              className="rounded-lg p-1.5 text-emerald-600 hover:bg-emerald-50 transition-colors disabled:opacity-50"
-                            >
-                              {reconfirmingId === prop.id ? (
-                                <LoadingSpinner size="sm" className="text-emerald-600" />
-                              ) : (
-                                <RefreshCw className="h-3.5 w-3.5" />
-                              )}
-                            </button>
-                          )}
+                          {/* Refresh / mark active */}
+                          <button
+                            onClick={() => handleReconfirm(prop.id, Number(prop.rentAmount))}
+                            disabled={reconfirmingId === prop.id}
+                            title={prop.status === 'active' ? 'Refresh active listing' : 'Refresh and mark active'}
+                            className={`rounded-lg p-1.5 transition-colors disabled:opacity-50 ${
+                              prop.status === 'active'
+                                ? 'text-emerald-600 hover:bg-emerald-50'
+                                : 'text-amber-600 hover:bg-amber-50'
+                            }`}
+                          >
+                            {reconfirmingId === prop.id ? (
+                              <LoadingSpinner size="sm" className={prop.status === 'active' ? 'text-emerald-600' : 'text-amber-600'} />
+                            ) : (
+                              <RefreshCw className="h-3.5 w-3.5" />
+                            )}
+                          </button>
                           {/* View */}
                           <Link
                             href={`/properties/${prop.id}`}
