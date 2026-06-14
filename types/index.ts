@@ -276,6 +276,7 @@ export interface User {
   isEmailVerified: boolean;
   isPhoneVerified: boolean;
   profilePhotoUrl: string | null;
+  state: string | null;
   lastLoginAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -641,6 +642,7 @@ export interface RegisterDto {
   lastName: string;
   email: string;
   phone: string;
+  state: string;
   password: string;
   role?: UserRole;
 }
@@ -796,6 +798,59 @@ export interface UpdateUserDto {
   lastName?: string;
   phone?: string;
   profilePhotoUrl?: string;
+}
+
+// ─── Locations ────────────────────────────────────────────────────────────
+
+export interface AllowedState {
+  id: string;
+  name: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ─── Blogs ────────────────────────────────────────────────────────────────
+
+export type BlogPostStatus = 'draft' | 'published';
+
+export interface BlogSection {
+  type: 'paragraph' | 'heading' | 'list' | 'callout' | 'youtube';
+  text?: string;
+  items?: string[];
+  youtubeId?: string;
+  variant?: 'warning' | 'info' | 'tip';
+}
+
+export interface BlogPost {
+  id?: string;
+  slug: string;
+  title: string;
+  excerpt: string;
+  category: string;
+  readTime: number;
+  publishedAt: string | null;
+  coverImage?: string | null;
+  youtubeId?: string | null;
+  content: BlogSection[];
+  tags: string[];
+  status?: BlogPostStatus;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface UpsertBlogPostDto {
+  slug: string;
+  title: string;
+  excerpt: string;
+  category: string;
+  readTime?: number;
+  publishedAt?: string;
+  coverImage?: string;
+  youtubeId?: string;
+  content?: BlogSection[];
+  tags?: string[];
+  status?: BlogPostStatus;
 }
 
 // ─── Consultation DTO ─────────────────────────────────────────────────────

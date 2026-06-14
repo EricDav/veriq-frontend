@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { ArrowLeft, Home, GraduationCap, Camera, X, Upload, Zap, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
-import { propertiesApi, mediaApi, ApiError } from '@/lib/api';
+import { propertiesApi, mediaApi, ApiError, locationsApi } from '@/lib/api';
 import { uploadToFileService } from '@/lib/upload';
 import {
   PropertyType, HostelSuitableFor, HostelGender, HostelCampusProximity,
@@ -17,6 +17,7 @@ import {
   SecurityFeel, PropertyCondition, CompoundCulture,
   ShortStayAC, ShortStayInternet, ShortStayCleanliness, ShortStayFurnishing, ShortStayKitchen,
   MediaSection,
+  type AllowedState,
 } from '@/types';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useToast } from '@/components/ui/Toast';
@@ -207,6 +208,7 @@ export default function NewPropertyPage() {
   const [mediaErrors, setMediaErrors] = useState<Record<string, string>>({});
   const [coverUploadError, setCoverUploadError] = useState('');
   const [isCoverUploading, setIsCoverUploading] = useState(false);
+  const [activeStates, setActiveStates] = useState<AllowedState[]>([]);
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   const {
@@ -225,6 +227,12 @@ export default function NewPropertyPage() {
   const isHostel = propertyType === PropertyType.HOSTEL;
   const isShortStay = propertyType === PropertyType.SHORT_STAY;
   const isStandard = !isHostel && !isShortStay;
+
+  useEffect(() => {
+    locationsApi.activeStates()
+      .then((res) => setActiveStates(res.data))
+      .catch(() => setActiveStates([]));
+  }, []);
 
   // ── Toggle helpers ────────────────────────────────────────────────────
   const toggle = <T,>(
@@ -690,7 +698,12 @@ export default function NewPropertyPage() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="label">State *</label>
-              <input {...register('state')} className="input" placeholder="e.g. Rivers" />
+              <select {...register('state')} className="input">
+                <option value="">Select state...</option>
+                {activeStates.map((state) => (
+                  <option key={state.id} value={state.name}>{state.name}</option>
+                ))}
+              </select>
               {errors.state && <p className="error">{errors.state.message}</p>}
             </div>
             <div>

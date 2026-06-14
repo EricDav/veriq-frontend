@@ -16,6 +16,8 @@ import {
   setStoredUser,
   setTokens,
   getAccessToken,
+  getRefreshToken,
+  isTokenExpired,
 } from '@/lib/auth';
 
 import type { LoginDto, RegisterDto, User } from '@/types';
@@ -59,13 +61,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // ── Bootstrap: restore user from localStorage on mount ────────────────
   useEffect(() => {
+    let mounted = true;
+
+    async function bootstrapAuth() {
     const stored = getStoredUser();
     const token = getAccessToken();
-    if (stored && token) {
-      setUser(stored);
-      setAuthCookies(stored.role); // keep cookie in sync with localStorage
+    const refreshToken = getRefreshToken();
+
+      if (!stored || !token || (isTokenExpired(token) && !refreshToken)) {
+        clearTokens();
+        clearAuthCookies();
+        if (mounted) setIsLoading(false);
+        return;
+      }
+
+      try {
+        const res = await authApi.me();
+        if (!mounted) return;
+        setUser(res.data);
+        setStoredUser(res.data);
+        setAuthCookies(res.data.role);
+      } catch {
+      clearTokens();
+      clearAuthCookies();
+        if (mounted) setUser(null);
+      } finally {
+        if (mounted) setIsLoading(false);
+      }
     }
-    setIsLoading(false);
+
+    bootstrapAuth();
+    return () => { mounted = false; };
   }, []);
 
   // ── Listen for token-expired events fired by the API client ───────────

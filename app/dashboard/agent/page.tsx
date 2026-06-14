@@ -11,23 +11,15 @@ import {
   Upload, FileText, Eye, ChevronDown, X, Camera, CreditCard,
   MapPin, Briefcase, User, Lock, ExternalLink, Copy, Check, Share2,
 } from 'lucide-react';
-import { agentsApi, ApiError } from '@/lib/api';
+import { agentsApi, ApiError, locationsApi } from '@/lib/api';
 import { uploadToFileService } from '@/lib/upload';
-import type { Agent } from '@/types';
+import type { Agent, AllowedState } from '@/types';
 import { AgentVerificationLevel, AgentTrustTier } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/components/ui/Toast';
 import { LoadingSpinner, PageLoader } from '@/components/ui/LoadingSpinner';
 
 // ─── Constants ────────────────────────────────────────────────────────────
-
-const NIGERIAN_STATES = [
-  'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue',
-  'Borno', 'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu',
-  'FCT (Abuja)', 'Gombe', 'Imo', 'Jigawa', 'Kaduna', 'Kano', 'Katsina',
-  'Kebbi', 'Kogi', 'Kwara', 'Lagos', 'Nasarawa', 'Niger', 'Ogun', 'Ondo',
-  'Osun', 'Oyo', 'Plateau', 'Rivers', 'Sokoto', 'Taraba', 'Yobe', 'Zamfara',
-];
 
 const NIGERIAN_BANKS = [
   'Access Bank', 'Citibank Nigeria', 'Ecobank Nigeria', 'Fidelity Bank',
@@ -240,7 +232,7 @@ function UploadField({
 }: {
   label: string;
   value?: string;
-  onUploaded: (url: string) => void;
+  onUploaded: (url: string) => void | Promise<void>;
   accept?: string;
   error?: string;
   helper?: string;
@@ -254,7 +246,7 @@ function UploadField({
     setLocalError('');
     try {
       const uploaded = await uploadToFileService(file);
-      onUploaded(uploaded.url);
+      await onUploaded(uploaded.url);
     } catch (err) {
       setLocalError(err instanceof Error ? err.message : 'Upload failed');
     } finally {
@@ -299,6 +291,7 @@ export default function AgentProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [profileExists, setProfileExists] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [activeStates, setActiveStates] = useState<AllowedState[]>([]);
 
   // Multi-select states
   const [specializations, setSpecializations] = useState<string[]>([]);
@@ -333,6 +326,12 @@ export default function AgentProfilePage() {
       }
     }
     load();
+  }, []);
+
+  useEffect(() => {
+    locationsApi.activeStates()
+      .then((res) => setActiveStates(res.data))
+      .catch(() => setActiveStates([]));
   }, []);
 
   // ── Profile form ───────────────────────────────────────────────────────
@@ -607,7 +606,14 @@ export default function AgentProfilePage() {
                   value={photoUrl}
                   accept="image/*"
                   helper="Upload a passport-style photo. The file is stored in the configured upload service."
-                  onUploaded={(url) => setProfileValue('profilePhotoUrl', url, { shouldValidate: true, shouldDirty: true })}
+                  onUploaded={async (url) => {
+                    setProfileValue('profilePhotoUrl', url, { shouldValidate: true, shouldDirty: true });
+                    if (profileExists) {
+                      const res = await agentsApi.updateProfile({ profilePhotoUrl: url });
+                      setAgent(res.data);
+                      success('Profile photo updated successfully!');
+                    }
+                  }}
                   error={profileErrors.profilePhotoUrl?.message}
                 />
               </div>
@@ -660,9 +666,9 @@ export default function AgentProfilePage() {
           <div>
             <label className="label">State of Operation</label>
             <select {...regProfile('stateOfOperation')} className="input">
-              <option value="">Select state…</option>
-              {NIGERIAN_STATES.map((s) => (
-                <option key={s} value={s}>{s}</option>
+              <option value="">Select state...</option>
+              {activeStates.map((state) => (
+                <option key={state.id} value={state.name}>{state.name}</option>
               ))}
             </select>
           </div>

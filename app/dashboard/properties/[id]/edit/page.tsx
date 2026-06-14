@@ -4,9 +4,9 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Home, Upload } from 'lucide-react';
-import { ApiError, propertiesApi } from '@/lib/api';
+import { ApiError, locationsApi, propertiesApi } from '@/lib/api';
 import { uploadToFileService } from '@/lib/upload';
-import type { CreatePropertyDto, Property } from '@/types';
+import type { AllowedState, CreatePropertyDto, Property } from '@/types';
 import { LoadingSpinner, PageLoader } from '@/components/ui/LoadingSpinner';
 import { useToast } from '@/components/ui/Toast';
 
@@ -30,6 +30,7 @@ export default function EditListingPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isCoverUploading, setIsCoverUploading] = useState(false);
+  const [activeStates, setActiveStates] = useState<AllowedState[]>([]);
 
   useEffect(() => {
     let mounted = true;
@@ -65,6 +66,12 @@ export default function EditListingPage() {
       });
     return () => { mounted = false; };
   }, [id, toastError]);
+
+  useEffect(() => {
+    locationsApi.activeStates()
+      .then((res) => setActiveStates(res.data))
+      .catch(() => setActiveStates([]));
+  }, []);
 
   const update = (key: keyof CreatePropertyDto, value: string | number | boolean) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -167,7 +174,15 @@ export default function EditListingPage() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
               <label className="label">State *</label>
-              <input value={form.state ?? ''} onChange={(e) => update('state', e.target.value)} className="input" required />
+              <select value={form.state ?? ''} onChange={(e) => update('state', e.target.value)} className="input" required>
+                <option value="">Select state...</option>
+                {form.state && !activeStates.some((state) => state.name === form.state) && (
+                  <option value={form.state}>{form.state} (currently inactive)</option>
+                )}
+                {activeStates.map((state) => (
+                  <option key={state.id} value={state.name}>{state.name}</option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="label">City *</label>

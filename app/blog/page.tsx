@@ -1,16 +1,16 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Search, BookOpen, Clock, ArrowRight, TrendingUp } from 'lucide-react';
 import {
-  BLOG_POSTS,
   ALL_CATEGORIES,
   CATEGORY_COLORS,
+  getPublishedBlogPosts,
   type BlogCategory,
-} from '@/lib/blog-data';
-
-// ─── Gradient pool for cover art ─────────────────────────────────────────────
+  type BlogPostView,
+} from '@/lib/blogs';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 const COVER_GRADIENTS = [
   'from-blue-600 to-indigo-700',
@@ -35,13 +35,23 @@ function formatDate(iso: string) {
   });
 }
 
-// ─── Featured post ────────────────────────────────────────────────────────────
+function Cover({ post, idx, className }: { post: BlogPostView; idx: number; className: string }) {
+  if (post.coverImage) {
+    return (
+      <div className={`${className} relative overflow-hidden bg-slate-200`}>
+        <img src={post.coverImage} alt="" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
+        <div className="absolute inset-0 bg-black/20" />
+      </div>
+    );
+  }
+  return <div className={`${className} bg-gradient-to-br ${gradient(idx)} relative overflow-hidden`} />;
+}
 
-function FeaturedPost({ post, idx }: { post: (typeof BLOG_POSTS)[0]; idx: number }) {
+function FeaturedPost({ post, idx }: { post: BlogPostView; idx: number }) {
   return (
     <Link href={`/blog/${post.slug}`} className="group block">
-      <div className={`relative h-72 rounded-2xl bg-gradient-to-br ${gradient(idx)} overflow-hidden mb-5`}>
-        <div className="absolute inset-0 bg-black/20" />
+      <div className="relative mb-5">
+        <Cover post={post} idx={idx} className="h-72 rounded-2xl" />
         <div className="absolute bottom-0 inset-x-0 p-6">
           <span className={`inline-block mb-2 rounded-full px-3 py-1 text-xs font-semibold ${CATEGORY_COLORS[post.category]}`}>
             {post.category}
@@ -60,12 +70,11 @@ function FeaturedPost({ post, idx }: { post: (typeof BLOG_POSTS)[0]; idx: number
   );
 }
 
-// ─── Post card ────────────────────────────────────────────────────────────────
-
-function PostCard({ post, idx }: { post: (typeof BLOG_POSTS)[0]; idx: number }) {
+function PostCard({ post, idx }: { post: BlogPostView; idx: number }) {
   return (
     <Link href={`/blog/${post.slug}`} className="group block card overflow-hidden hover:shadow-card-hover transition-shadow">
-      <div className={`h-44 bg-gradient-to-br ${gradient(idx)} relative`}>
+      <div className="relative">
+        <Cover post={post} idx={idx} className="h-44" />
         {post.youtubeId && (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="h-12 w-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
@@ -93,13 +102,19 @@ function PostCard({ post, idx }: { post: (typeof BLOG_POSTS)[0]; idx: number }) 
   );
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
-
 export default function BlogPage() {
+  const [posts, setPosts] = useState<BlogPostView[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState<BlogCategory | 'All'>('All');
 
-  const filtered = BLOG_POSTS.filter((p) => {
+  useEffect(() => {
+    getPublishedBlogPosts()
+      .then(setPosts)
+      .finally(() => setIsLoading(false));
+  }, []);
+
+  const filtered = posts.filter((p) => {
     const matchCat = activeCategory === 'All' || p.category === activeCategory;
     const q = search.toLowerCase();
     const matchSearch = !q || p.title.toLowerCase().includes(q) || p.excerpt.toLowerCase().includes(q) || p.tags.some((t) => t.toLowerCase().includes(q));
@@ -111,7 +126,6 @@ export default function BlogPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* ── Hero ── */}
       <div className="bg-hero-pattern pt-28 pb-16 px-4">
         <div className="max-w-4xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/20 px-4 py-1.5 mb-6">
@@ -125,22 +139,19 @@ export default function BlogPage() {
             Guides, tips, and market intelligence to help you make smarter property decisions in Nigeria.
           </p>
 
-          {/* Search */}
           <div className="relative max-w-md mx-auto">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full bg-white/10 border border-white/20 backdrop-blur-sm rounded-xl pl-11 pr-4 py-3 text-sm text-white placeholder:text-white/40 outline-none focus:border-white/40 focus:ring-2 focus:ring-white/10"
-              placeholder="Search articles…"
+              placeholder="Search articles..."
             />
           </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-
-        {/* ── Category filters ── */}
         <div className="flex gap-2 overflow-x-auto pb-3 mb-10 scrollbar-hide">
           {(['All', ...ALL_CATEGORIES] as const).map((cat) => (
             <button
@@ -157,7 +168,11 @@ export default function BlogPage() {
           ))}
         </div>
 
-        {filtered.length === 0 ? (
+        {isLoading ? (
+          <div className="flex justify-center py-20">
+            <LoadingSpinner size="lg" />
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="text-center py-20">
             <BookOpen className="h-12 w-12 text-slate-200 mx-auto mb-4" />
             <h3 className="font-display text-lg font-bold text-navy-900 mb-2">No articles found</h3>
@@ -165,9 +180,7 @@ export default function BlogPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-12 lg:grid-cols-3">
-            {/* ── Left: featured + latest ── */}
             <div className="lg:col-span-2 space-y-12">
-              {/* Featured */}
               {featured && (
                 <div>
                   <div className="flex items-center gap-2 mb-5">
@@ -180,7 +193,6 @@ export default function BlogPage() {
                 </div>
               )}
 
-              {/* Rest of articles */}
               {rest.length > 0 && (
                 <div>
                   <h2 className="font-display text-sm font-bold text-navy-900 uppercase tracking-wider mb-5">More Articles</h2>
@@ -193,14 +205,12 @@ export default function BlogPage() {
               )}
             </div>
 
-            {/* ── Right sidebar ── */}
             <div className="space-y-8">
-              {/* Browse by category */}
               <div>
                 <h3 className="font-display text-sm font-bold text-navy-900 uppercase tracking-wider mb-4">Browse By Topic</h3>
                 <div className="space-y-1.5">
                   {ALL_CATEGORIES.map((cat) => {
-                    const count = BLOG_POSTS.filter((p) => p.category === cat).length;
+                    const count = posts.filter((p) => p.category === cat).length;
                     if (count === 0) return null;
                     return (
                       <button
@@ -222,23 +232,21 @@ export default function BlogPage() {
                 </div>
               </div>
 
-              {/* CTA card */}
               <div className="rounded-2xl bg-navy-900 p-6 text-center">
                 <BookOpen className="h-8 w-8 text-gold-400 mx-auto mb-3" />
                 <h3 className="font-display text-base font-bold text-white mb-2">Know Before You Go</h3>
                 <p className="text-slate-400 text-xs mb-4 leading-relaxed">
-                  Browse verified properties with full intelligence reports — electricity, flood risk, road access and more.
+                  Browse verified properties with full intelligence reports.
                 </p>
                 <Link href="/properties" className="btn-gold !text-xs !py-2.5 w-full">
                   Browse Properties
                 </Link>
               </div>
 
-              {/* Popular tags */}
               <div>
                 <h3 className="font-display text-sm font-bold text-navy-900 uppercase tracking-wider mb-3">Popular Tags</h3>
                 <div className="flex flex-wrap gap-2">
-                  {Array.from(new Set(BLOG_POSTS.flatMap((p) => p.tags))).slice(0, 16).map((tag) => (
+                  {Array.from(new Set(posts.flatMap((p) => p.tags))).slice(0, 16).map((tag) => (
                     <button
                       key={tag}
                       onClick={() => setSearch(tag)}

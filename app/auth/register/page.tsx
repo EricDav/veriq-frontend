@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, Suspense } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
@@ -9,10 +9,10 @@ import { z } from 'zod';
 import { Users, Home, Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react';
 import Image from 'next/image';
 import { useAuth } from '@/context/AuthContext';
-import { ApiError } from '@/lib/api';
+import { ApiError, locationsApi } from '@/lib/api';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useToast } from '@/components/ui/Toast';
-import { UserRole } from '@/types';
+import { UserRole, type AllowedState } from '@/types';
 
 // ─── Validation Schema ────────────────────────────────────────────────────
 
@@ -23,6 +23,7 @@ const registerSchema = z.object({
   phone: z
     .string()
     .regex(/^\+?[0-9]{10,15}$/, 'Enter a valid phone number (e.g. +2348012345678)'),
+  state: z.string().min(1, 'Select your state'),
   password: z
     .string()
     .min(8, 'Password must be at least 8 characters')
@@ -60,6 +61,8 @@ function RegisterPageInner() {
   const [showPassword, setShowPassword] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [passwordValue, setPasswordValue] = useState('');
+  const [states, setStates] = useState<AllowedState[]>([]);
+  const [statesLoading, setStatesLoading] = useState(true);
 
   const {
     register,
@@ -75,6 +78,13 @@ function RegisterPageInner() {
     setPasswordValue(watchedPassword ?? '');
   }, [watchedPassword]);
 
+  useEffect(() => {
+    locationsApi.activeStates()
+      .then((res) => setStates(res.data))
+      .catch(() => setStates([]))
+      .finally(() => setStatesLoading(false));
+  }, []);
+
   const onSubmit = async (data: RegisterFormData) => {
     setServerError(null);
     try {
@@ -83,6 +93,7 @@ function RegisterPageInner() {
         lastName: data.lastName,
         email: data.email,
         phone: data.phone,
+        state: data.state,
         password: data.password,
         role: selectedRole,
       });
@@ -227,6 +238,31 @@ function RegisterPageInner() {
               {errors.phone && <p className="mt-1 text-xs text-red-300">{errors.phone.message}</p>}
             </div>
 
+            {/* State */}
+            <div>
+              <label className="block text-sm font-medium text-white/80 mb-1.5">State</label>
+              <select
+                {...register('state')}
+                disabled={statesLoading}
+                className={`w-full rounded-lg border bg-white/10 px-4 py-3 text-sm text-white outline-none transition-all focus:ring-2 focus:ring-white/10 ${
+                  errors.state ? 'border-red-400/60' : 'border-white/20 focus:border-white/40'
+                } disabled:opacity-60`}
+              >
+                <option value="" className="text-navy-900">
+                  {statesLoading ? 'Loading states...' : 'Select your state'}
+                </option>
+                {states.map((state) => (
+                  <option key={state.id} value={state.name} className="text-navy-900">
+                    {state.name}
+                  </option>
+                ))}
+              </select>
+              {errors.state && <p className="mt-1 text-xs text-red-300">{errors.state.message}</p>}
+              {!statesLoading && states.length === 0 && (
+                <p className="mt-1 text-xs text-amber-200">No states are currently active. Please contact support.</p>
+              )}
+            </div>
+
             {/* Password */}
             <div>
               <label className="block text-sm font-medium text-white/80 mb-1.5">Password</label>
@@ -289,7 +325,7 @@ function RegisterPageInner() {
             {/* Submit */}
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || statesLoading || states.length === 0}
               className="w-full flex items-center justify-center gap-2 rounded-xl bg-gold-gradient py-3.5 text-sm font-bold text-navy-900 shadow-gold-glow transition-all duration-200 hover:scale-[1.02] active:scale-95 disabled:opacity-60 disabled:scale-100"
             >
               {isSubmitting && <LoadingSpinner size="sm" className="text-navy-900" />}

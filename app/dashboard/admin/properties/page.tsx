@@ -5,9 +5,9 @@ import {
   Home, EyeOff, Eye, Search, RefreshCw,
   ChevronLeft, ChevronRight, CheckCircle, MapPin, X, User, Pencil, Upload,
 } from 'lucide-react';
-import { propertiesApi, ApiError } from '@/lib/api';
+import { locationsApi, propertiesApi, ApiError } from '@/lib/api';
 import { uploadToFileService } from '@/lib/upload';
-import type { CreatePropertyDto, Property } from '@/types';
+import type { AllowedState, CreatePropertyDto, Property } from '@/types';
 import { ListingStatus, UserRole } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 import { PageLoader, LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -55,12 +55,21 @@ function AdminPropertiesPageInner() {
   const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [isCoverUploading, setIsCoverUploading] = useState(false);
   const [coverUploadError, setCoverUploadError] = useState('');
+  const [activeStates, setActiveStates] = useState<AllowedState[]>([]);
 
   useEffect(() => {
     if (!authLoading && user?.role !== UserRole.ADMIN) {
       router.push('/dashboard');
     }
   }, [authLoading, user, router]);
+
+  useEffect(() => {
+    if (user?.role === UserRole.ADMIN) {
+      locationsApi.activeStates()
+        .then((res) => setActiveStates(res.data))
+        .catch(() => setActiveStates([]));
+    }
+  }, [user?.role]);
 
   // Reset to page 1 whenever the agent filter changes
   useEffect(() => {
@@ -403,7 +412,15 @@ function AdminPropertiesPageInner() {
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div>
                   <label className="label">State</label>
-                  <input value={editForm.state ?? ''} onChange={(e) => updateEditForm('state', e.target.value)} className="input" required />
+                  <select value={editForm.state ?? ''} onChange={(e) => updateEditForm('state', e.target.value)} className="input" required>
+                    <option value="">Select state...</option>
+                    {editForm.state && !activeStates.some((state) => state.name === editForm.state) && (
+                      <option value={editForm.state}>{editForm.state} (currently inactive)</option>
+                    )}
+                    {activeStates.map((state) => (
+                      <option key={state.id} value={state.name}>{state.name}</option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="label">City</label>

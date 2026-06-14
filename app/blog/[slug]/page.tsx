@@ -1,18 +1,20 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useParams, notFound } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import {
   ArrowLeft, Clock, Tag, CheckCircle, AlertTriangle, Lightbulb,
   BookOpen, Play, Share2,
 } from 'lucide-react';
 import {
-  getPostBySlug,
-  BLOG_POSTS,
+  getPublishedBlogPost,
+  getPublishedBlogPosts,
   CATEGORY_COLORS,
-  type BlogSection,
-} from '@/lib/blog-data';
+  type BlogPostView,
+} from '@/lib/blogs';
+import type { BlogSection } from '@/types';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 // ─── Section renderers ────────────────────────────────────────────────────────
 
@@ -94,7 +96,37 @@ const COVER_GRADIENTS = [
 
 export default function BlogPostPage() {
   const { slug } = useParams<{ slug: string }>();
-  const post = getPostBySlug(slug);
+  const [post, setPost] = useState<BlogPostView | null>(null);
+  const [related, setRelated] = useState<BlogPostView[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    Promise.all([getPublishedBlogPost(slug), getPublishedBlogPosts()])
+      .then(([current, posts]) => {
+        if (!mounted) return;
+        setPost(current);
+        setRelated(
+          current
+            ? posts
+                .filter((p) => p.slug !== slug && (p.category === current.category || p.tags.some((t) => current.tags.includes(t))))
+                .slice(0, 3)
+            : [],
+        );
+      })
+      .finally(() => {
+        if (mounted) setIsLoading(false);
+      });
+    return () => { mounted = false; };
+  }, [slug]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4 pt-24">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
 
   if (!post) {
     return (
@@ -108,12 +140,7 @@ export default function BlogPostPage() {
     );
   }
 
-  const postIndex = BLOG_POSTS.findIndex((p) => p.slug === slug);
-  const gradient = COVER_GRADIENTS[postIndex % COVER_GRADIENTS.length];
-
-  const related = BLOG_POSTS
-    .filter((p) => p.slug !== slug && (p.category === post.category || p.tags.some((t) => post.tags.includes(t))))
-    .slice(0, 3);
+  const gradient = COVER_GRADIENTS[0];
 
   const publishDate = new Date(post.publishedAt).toLocaleDateString('en-NG', {
     day: 'numeric',
@@ -132,7 +159,10 @@ export default function BlogPostPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* ── Cover hero ── */}
-      <div className={`relative h-64 sm:h-80 bg-gradient-to-br ${gradient} pt-16`}>
+      <div className={`relative h-64 sm:h-80 bg-gradient-to-br ${gradient} pt-16 overflow-hidden`}>
+        {post.coverImage && (
+          <img src={post.coverImage} alt="" className="absolute inset-0 h-full w-full object-cover" />
+        )}
         <div className="absolute inset-0 bg-black/30" />
         {post.youtubeId && (
           <div className="absolute inset-0 flex items-center justify-center">
@@ -255,7 +285,7 @@ export default function BlogPostPage() {
                 <div className="space-y-4">
                   {related.map((rel, i) => (
                     <Link key={rel.slug} href={`/blog/${rel.slug}`} className="group flex items-start gap-3">
-                      <div className={`h-12 w-12 rounded-xl bg-gradient-to-br ${COVER_GRADIENTS[(BLOG_POSTS.findIndex(p => p.slug === rel.slug)) % COVER_GRADIENTS.length]} flex-shrink-0`} />
+                      <div className={`h-12 w-12 rounded-xl bg-gradient-to-br ${COVER_GRADIENTS[i % COVER_GRADIENTS.length]} flex-shrink-0`} />
                       <div className="min-w-0">
                         <p className="text-xs font-semibold text-navy-900 leading-snug line-clamp-2 group-hover:text-veriq-secondary transition-colors">
                           {rel.title}

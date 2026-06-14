@@ -203,6 +203,9 @@ import type {
   ContactSubmission,
   ContactSubmissionStatus,
   CreateContactSubmissionDto,
+  AllowedState,
+  BlogPost,
+  UpsertBlogPostDto,
 } from '@/types';
 
 // ── Auth ─────────────────────────────────────────────────────────────────
@@ -246,6 +249,19 @@ export const usersApi = {
 
   activate: (id: string) =>
     api.patch<ApiResponse<User>>(`/users/${id}/activate`),
+};
+
+// ── Locations ─────────────────────────────────────────────────────────────
+
+export const locationsApi = {
+  activeStates: () =>
+    api.get<ApiResponse<AllowedState[]>>('/locations/states/active', { public: true }),
+
+  allStates: () =>
+    api.get<ApiResponse<AllowedState[]>>('/locations/states'),
+
+  updateState: (id: string, isActive: boolean) =>
+    api.patch<ApiResponse<AllowedState>>(`/locations/states/${id}`, { isActive }),
 };
 
 // ── Agents ───────────────────────────────────────────────────────────────
@@ -521,4 +537,26 @@ export const contactSubmissionsApi = {
 
   update: (id: string, status: ContactSubmissionStatus) =>
     api.patch<ApiResponse<ContactSubmission>>(`/contact-submissions/${id}`, { status }),
+};
+
+// ── Blogs ─────────────────────────────────────────────────────────────────
+
+export const blogsApi = {
+  listPublished: () =>
+    api.get<ApiResponse<BlogPost[]>>('/blogs', { public: true }),
+
+  getBySlug: (slug: string) =>
+    api.get<ApiResponse<BlogPost>>(`/blogs/slug/${slug}`, { public: true }),
+
+  listAdmin: () =>
+    api.get<ApiResponse<BlogPost[]>>('/blogs/admin/all'),
+
+  create: (dto: UpsertBlogPostDto) =>
+    api.post<ApiResponse<BlogPost>>('/blogs/admin', dto),
+
+  update: (id: string, dto: UpsertBlogPostDto) =>
+    api.patch<ApiResponse<BlogPost>>(`/blogs/admin/${id}`, dto),
+
+  delete: (id: string) =>
+    api.delete<ApiResponse<null>>(`/blogs/admin/${id}`),
 };

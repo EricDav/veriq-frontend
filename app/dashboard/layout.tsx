@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Heart, Search, User, LogOut,
   Bell, Menu, X, Home, TrendingUp, Plus,
-  Settings, ChevronRight, Users, ShieldCheck, Wallet, Landmark, FileText, MessageCircle, Mail,
+  Settings, ChevronRight, Users, ShieldCheck, Wallet, Landmark, FileText, MessageCircle, Mail, MapPin, BookOpen,
 } from 'lucide-react';
 import Image from 'next/image';
 import { useAuth } from '@/context/AuthContext';
@@ -42,6 +42,8 @@ const ADMIN_NAV = [
   { label: 'Agents', href: '/dashboard/admin/agents', icon: ShieldCheck },
   { label: 'Users', href: '/dashboard/admin/users', icon: Users },
   { label: 'Properties', href: '/dashboard/admin/properties', icon: Home },
+  { label: 'Allowed States', href: '/dashboard/admin/states', icon: MapPin },
+  { label: 'Blogs', href: '/dashboard/admin/blogs', icon: BookOpen },
   { label: 'Contact Forms', href: '/dashboard/admin/contacts', icon: Mail },
   { label: 'Site Content', href: '/dashboard/admin/content', icon: FileText },
   { label: 'Ledger', href: '/dashboard/admin/ledger', icon: Landmark },
