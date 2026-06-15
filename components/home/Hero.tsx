@@ -22,17 +22,7 @@ export function Hero({ content }: { content?: SiteContent }) {
     <section className="relative min-h-screen bg-hero-pattern overflow-hidden flex items-center">
       {/* Background decorative elements */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-1/4 right-0 w-96 h-96 rounded-full bg-veriq-secondary/20 blur-3xl translate-x-1/2" />
-        <div className="absolute bottom-0 left-0 w-80 h-80 rounded-full bg-gold-500/10 blur-3xl -translate-x-1/3" />
-        <div className="absolute top-1/2 left-1/4 w-64 h-64 rounded-full bg-blue-400/10 blur-3xl" />
-        {/* Grid pattern */}
-        <div
-          className="absolute inset-0 opacity-[0.04]"
-          style={{
-            backgroundImage: `linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)`,
-            backgroundSize: "64px 64px",
-          }}
-        />
+        <div className="absolute inset-0 bg-gradient-to-b from-navy-950/10 via-transparent to-navy-950/70" />
       </div>
 
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-28 pb-20 lg:pt-36 lg:pb-28">

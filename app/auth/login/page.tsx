@@ -78,7 +78,9 @@ function LoginPageInner() {
         {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2.5 mb-6">
-            <Image src="/images/Logo.png" alt="Veriq Logo" width={40} height={40} className="rounded-xl" />
+            <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-navy-950 p-2 ring-1 ring-white/10">
+              <Image src="/images/Logo.png" alt="Veriq Logo" width={40} height={40} className="rounded-lg" />
+            </span>
             <div className="flex flex-col leading-none text-left">
               <span className="font-display text-xl font-bold text-white">Veriq</span>
               <span className="text-[10px] font-semibold tracking-widest uppercase text-gold-400">Property</span>

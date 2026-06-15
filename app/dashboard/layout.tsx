@@ -149,7 +149,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Brand */}
         <div className="flex items-center gap-3 px-6 py-5 border-b border-white/5">
           <Link href="/" className="flex items-center gap-3 flex-1 min-w-0">
-            <Image src="/images/Logo.png" alt="Veriq Logo" width={36} height={36} className="rounded-xl flex-shrink-0" />
+            <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-navy-950 p-1.5 ring-1 ring-white/10">
+              <Image src="/images/Logo.png" alt="Veriq Logo" width={36} height={36} className="rounded-lg" />
+            </span>
             <div className="flex flex-col leading-none">
               <span className="font-display text-base font-bold text-white">Veriq</span>
               <span className="text-[9px] font-semibold tracking-widest uppercase text-gold-400">Property</span>

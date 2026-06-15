@@ -58,7 +58,9 @@ export function Navbar() {
         <div className="flex h-16 items-center justify-between lg:h-20">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 group">
-            <Image src="/images/Logo.png" alt="Veriq Logo" width={36} height={36} className="rounded-xl" />
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-navy-950 p-1.5 ring-1 ring-white/10">
+              <Image src="/images/Logo.png" alt="Veriq Logo" width={36} height={36} className="rounded-lg" />
+            </span>
             <div className="flex flex-col leading-none">
               <span className={`font-display text-lg font-bold tracking-tight transition-colors ${scrolled ? "text-navy-900" : "text-white"}`}>
                 Veriq

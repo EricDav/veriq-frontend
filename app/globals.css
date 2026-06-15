@@ -138,3 +138,22 @@ body {
 .animate-delay-300 { animation-delay: 300ms; }
 .animate-delay-400 { animation-delay: 400ms; }
 .animate-delay-500 { animation-delay: 500ms; }
+
+.bg-hero-pattern {
+  background-color: #030508;
+  background-image:
+    linear-gradient(90deg, rgba(3, 5, 8, 0.82) 0%, rgba(3, 5, 8, 0.52) 48%, rgba(3, 5, 8, 0.26) 100%),
+    url('/images/web-background-visual-layer.png') !important;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+@media (max-width: 767px) {
+  .bg-hero-pattern {
+    background-image:
+      linear-gradient(180deg, rgba(3, 5, 8, 0.8) 0%, rgba(3, 5, 8, 0.46) 42%, rgba(3, 5, 8, 0.22) 100%),
+      url('/images/app-background-visual-layer.png') !important;
+    background-position: center top;
+  }
+}

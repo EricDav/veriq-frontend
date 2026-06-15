@@ -12,30 +12,49 @@ export function InstallPrompt() {
   const [promptEvent, setPromptEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [visible, setVisible] = useState(false);
   const [manual, setManual] = useState(false);
+  const [installed, setInstalled] = useState(false);
 
   useEffect(() => {
     const dismissed = localStorage.getItem('veriq_install_prompt_dismissed') === '1';
-    if (dismissed) return;
+    const isStandalone =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      (window.navigator as Navigator & { standalone?: boolean }).standalone;
+    setInstalled(Boolean(isStandalone));
 
     const onBeforeInstallPrompt = (event: Event) => {
       event.preventDefault();
       setPromptEvent(event as BeforeInstallPromptEvent);
+      if (!dismissed) setVisible(true);
+    };
+
+    const onOpenInstallPrompt = () => {
+      localStorage.removeItem('veriq_install_prompt_dismissed');
+      setManual(!promptEvent);
       setVisible(true);
     };
 
+    const onAppInstalled = () => {
+      setInstalled(true);
+      setVisible(false);
+      setPromptEvent(null);
+    };
+
     window.addEventListener('beforeinstallprompt', onBeforeInstallPrompt);
+    window.addEventListener('veriq:open-install-prompt', onOpenInstallPrompt);
+    window.addEventListener('appinstalled', onAppInstalled);
 
     const isIos = /iphone|ipad|ipod/i.test(window.navigator.userAgent);
-    const isStandalone =
-      window.matchMedia('(display-mode: standalone)').matches ||
-      (window.navigator as Navigator & { standalone?: boolean }).standalone;
-    if (isIos && !isStandalone) {
+    if (!dismissed && isIos && !isStandalone) {
       setManual(true);
       setVisible(true);
     }
 
-    return () => window.removeEventListener('beforeinstallprompt', onBeforeInstallPrompt);
-  }, []);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', onBeforeInstallPrompt);
+      window.removeEventListener('veriq:open-install-prompt', onOpenInstallPrompt);
+      window.removeEventListener('appinstalled', onAppInstalled);
+    };
+  }, [promptEvent]);
 
   const dismiss = () => {
     localStorage.setItem('veriq_install_prompt_dismissed', '1');
@@ -54,7 +73,7 @@ export function InstallPrompt() {
     setPromptEvent(null);
   };
 
-  if (!visible) return null;
+  if (!visible || installed) return null;
 
   return (
     <div className="fixed inset-x-3 bottom-3 z-[70] rounded-xl border border-slate-200 bg-white p-4 shadow-card-hover sm:left-auto sm:right-4 sm:max-w-sm">
@@ -66,7 +85,7 @@ export function InstallPrompt() {
           <p className="text-sm font-bold text-navy-900">Add Veriq to your home screen</p>
           <p className="mt-1 text-xs leading-relaxed text-veriq-muted">
             {manual
-              ? 'On iPhone, tap Share in Safari, then choose Add to Home Screen.'
+              ? 'Use your browser menu and choose Add to Home Screen or Install app.'
               : 'Install the app for faster access, full-screen browsing, and a mobile app feel.'}
           </p>
           <div className="mt-3 flex gap-2">
