@@ -26,7 +26,7 @@ const FOOTER_LINKS = {
   ],
   Legal: [
     { label: "Terms of Service", href: "/terms" },
-    { label: "Privacy Policy", href: "/terms#privacy" },
+    { label: "Privacy Policy", href: "/privacy" },
     { label: "Agent Terms", href: "/terms#agent-terms" },
     { label: "Refund Policy", href: "/terms#refunds" },
   ],

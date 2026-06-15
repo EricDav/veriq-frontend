@@ -101,7 +101,7 @@ export function ContactForm() {
       <p className="text-xs text-slate-400 text-center">
         By submitting this form, you agree to our{' '}
         <a href="/terms" className="text-veriq-secondary hover:underline">Terms of Service</a> and{' '}
-        <a href="/terms#privacy" className="text-veriq-secondary hover:underline">Privacy Policy</a>.
+        <a href="/privacy" className="text-veriq-secondary hover:underline">Privacy Policy</a>.
       </p>
     </form>
   );

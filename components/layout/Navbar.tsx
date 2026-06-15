@@ -16,6 +16,7 @@ const NAV_LINKS = [
     children: [
       { label: "About Us", href: "/about" },
       { label: "FAQ", href: "/faq" },
+      { label: "Privacy Policy", href: "/privacy" },
       { label: "Terms & Conditions", href: "/terms" },
     ],
   },
