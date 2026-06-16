@@ -12,6 +12,12 @@ interface ExternalUploadResponse {
   message?: string;
   data?: ExternalUploadFile;
   file?: ExternalUploadFile;
+  url?: string;
+  name?: string;
+  path?: string;
+  size?: number;
+  mime?: string;
+  mimetype?: string;
 }
 
 export const UPLOAD_URL =
@@ -27,8 +33,19 @@ export async function uploadToFileService(file: File): Promise<ExternalUploadFil
   });
 
   const body = (await res.json().catch(() => null)) as ExternalUploadResponse | null;
-  const uploaded = body?.data ?? body?.file;
-  const successful = body?.success ?? body?.ok;
+  const uploaded =
+    body?.data ??
+    body?.file ??
+    (body?.url
+      ? {
+          url: body.url,
+          name: body.name ?? file.name,
+          path: body.path ?? body.url,
+          size: body.size ?? file.size,
+          mime: body.mime ?? body.mimetype ?? file.type,
+        }
+      : null);
+  const successful = body?.success ?? body?.ok ?? res.ok;
   if (!res.ok || !successful || !uploaded?.url) {
     throw new Error(body?.message ?? 'File upload failed');
   }

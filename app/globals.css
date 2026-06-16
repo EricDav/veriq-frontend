@@ -88,6 +88,109 @@ body {
   .label {
     @apply block text-sm font-medium text-navy-800 mb-1.5;
   }
+
+  .cms-editor,
+  .cms-preview {
+    @apply text-[15px] leading-7 text-slate-700;
+  }
+
+  .cms-editor h1,
+  .cms-preview h1 {
+    @apply mb-5 mt-7 font-display text-3xl font-black leading-tight text-navy-900;
+  }
+
+  .cms-editor h2,
+  .cms-preview h2 {
+    @apply mb-4 mt-7 font-display text-2xl font-bold leading-tight text-navy-900;
+  }
+
+  .cms-editor h3,
+  .cms-preview h3 {
+    @apply mb-3 mt-6 font-display text-xl font-bold text-navy-900;
+  }
+
+  .cms-editor h4,
+  .cms-preview h4,
+  .cms-editor h5,
+  .cms-preview h5,
+  .cms-editor h6,
+  .cms-preview h6 {
+    @apply mb-3 mt-5 font-display text-lg font-bold text-navy-900;
+  }
+
+  .cms-editor p,
+  .cms-preview p {
+    @apply mb-4;
+  }
+
+  .cms-preview .lead {
+    @apply border-l-4 border-veriq-secondary pl-4 text-base italic text-slate-600;
+  }
+
+  .cms-editor a,
+  .cms-preview a {
+    @apply font-semibold text-veriq-secondary underline underline-offset-4;
+  }
+
+  .cms-editor ul,
+  .cms-preview ul {
+    @apply mb-5 ml-6 list-disc space-y-2;
+  }
+
+  .cms-editor ol,
+  .cms-preview ol {
+    @apply mb-5 ml-6 list-decimal space-y-2;
+  }
+
+  .cms-editor blockquote,
+  .cms-preview blockquote {
+    @apply my-6 rounded-xl border-l-4 border-veriq-secondary bg-emerald-50 px-5 py-4 font-medium text-navy-800;
+  }
+
+  .cms-editor pre,
+  .cms-preview pre {
+    @apply my-6 overflow-x-auto rounded-xl bg-navy-900 p-4 text-sm leading-6 text-emerald-100;
+  }
+
+  .cms-editor code,
+  .cms-preview code {
+    @apply rounded bg-slate-100 px-1.5 py-0.5 text-sm text-navy-900;
+  }
+
+  .cms-editor pre code,
+  .cms-preview pre code {
+    @apply bg-transparent p-0 text-emerald-100;
+  }
+
+  .cms-editor img,
+  .cms-preview img {
+    @apply my-6 max-h-[520px] w-full rounded-2xl object-cover;
+  }
+
+  .cms-editor table,
+  .cms-preview table {
+    @apply my-6 w-full border-collapse overflow-hidden rounded-xl text-sm;
+  }
+
+  .cms-editor th,
+  .cms-preview th {
+    @apply border border-slate-200 bg-slate-100 px-4 py-3 text-left font-bold text-navy-900;
+  }
+
+  .cms-editor td,
+  .cms-preview td {
+    @apply border border-slate-200 px-4 py-3;
+  }
+
+  .cms-editor .cms-embed,
+  .cms-preview .cms-embed {
+    @apply my-6 aspect-video overflow-hidden rounded-2xl bg-slate-100;
+  }
+
+  .cms-editor iframe,
+  .cms-preview iframe {
+    @apply h-full w-full;
+  }
 }
 
 @layer utilities {

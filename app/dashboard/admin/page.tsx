@@ -2,7 +2,7 @@
 
 import React, { useEffect } from 'react';
 import Link from 'next/link';
-import { ShieldCheck, Users, Home, ArrowRight, AlertCircle, Landmark, FileText, Mail } from 'lucide-react';
+import { ShieldCheck, Users, Home, ArrowRight, AlertCircle, Landmark, FileText, Mail, Settings2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { UserRole } from '@/types';
 import { useRouter } from 'next/navigation';
@@ -73,6 +73,15 @@ export default function AdminOverviewPage() {
             description: 'Review all listings across the platform. Hide inappropriate or misleading properties.',
             cta: 'Manage Properties',
             ctaCls: 'bg-purple-600 hover:bg-purple-700',
+          },
+          {
+            href: '/dashboard/admin/pricing',
+            icon: Settings2,
+            iconCls: 'bg-emerald-100 text-emerald-600',
+            title: 'Consultation Pricing',
+            description: 'Edit default intelligence fees and create partner-specific pricing overrides.',
+            cta: 'Manage Pricing',
+            ctaCls: 'bg-emerald-600 hover:bg-emerald-700',
           },
           {
             href: '/dashboard/admin/ledger',

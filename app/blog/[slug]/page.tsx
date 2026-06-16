@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import {
   ArrowLeft, Clock, Tag, CheckCircle, AlertTriangle, Lightbulb,
-  BookOpen, Play, Share2,
+  BookOpen, Play, Share2, UserRound,
 } from 'lucide-react';
 import {
   getPublishedBlogPost,
@@ -216,6 +216,22 @@ export default function BlogPostPage() {
               </div>
             </div>
 
+            {(post.authorName || post.authorAvatar) && (
+              <div className="mb-8 flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
+                {post.authorAvatar ? (
+                  <img src={post.authorAvatar} alt="" className="h-10 w-10 rounded-full object-cover" />
+                ) : (
+                  <div className="grid h-10 w-10 place-items-center rounded-full bg-white text-veriq-secondary">
+                    <UserRound className="h-5 w-5" />
+                  </div>
+                )}
+                <div>
+                  <p className="text-xs text-slate-400">Written by</p>
+                  <p className="text-sm font-bold text-navy-900">{post.authorName ?? 'Veriq Editorial Team'}</p>
+                </div>
+              </div>
+            )}
+
             {/* Excerpt */}
             <p className="text-base text-slate-600 leading-relaxed border-l-4 border-veriq-secondary pl-4 mb-8 italic">
               {post.excerpt}
@@ -235,9 +251,13 @@ export default function BlogPostPage() {
             )}
 
             {/* Body sections */}
-            <div className="space-y-6">
-              {post.content.map((section, idx) => renderSection(section, idx))}
-            </div>
+            {post.contentHtml ? (
+              <div className="cms-preview" dangerouslySetInnerHTML={{ __html: post.contentHtml }} />
+            ) : (
+              <div className="space-y-6">
+                {post.content.map((section, idx) => renderSection(section, idx))}
+              </div>
+            )}
 
             {/* Tags */}
             <div className="mt-10 pt-6 border-t border-slate-100">

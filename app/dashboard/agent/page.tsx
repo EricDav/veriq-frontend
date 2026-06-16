@@ -267,7 +267,10 @@ function UploadField({
             accept={accept}
             className="hidden"
             disabled={isUploading}
-            onChange={(e) => handleChange(e.target.files?.[0])}
+            onChange={(e) => {
+              handleChange(e.target.files?.[0]);
+              e.currentTarget.value = '';
+            }}
           />
         </label>
         {value && (
@@ -762,10 +765,10 @@ export default function AgentProfilePage() {
                 <label className="label">Government ID Type *</label>
                 <select {...regL1('govIdType')} className="input">
                   <option value="">Select document type…</option>
-                  <option value="National ID Card">National ID Card</option>
-                  <option value="International Passport">International Passport</option>
-                  <option value="Drivers License">Driver&apos;s Licence</option>
-                  <option value="Voters Card">Voter&apos;s Card</option>
+                  <option value="NIN">National ID Card / NIN</option>
+                  <option value="international_passport">International Passport</option>
+                  <option value="drivers_license">Driver&apos;s Licence</option>
+                  <option value="voters_card">Voter&apos;s Card</option>
                 </select>
                 {l1Errors.govIdType && <p className="text-xs text-red-500 mt-1">{l1Errors.govIdType.message}</p>}
               </div>

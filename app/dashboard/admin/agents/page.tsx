@@ -2,12 +2,12 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Shield, CheckCircle, XCircle, Clock, ChevronLeft, ChevronRight,
-  Search, RefreshCw, AlertCircle, User, ExternalLink, Home,
+  CheckCircle, XCircle, Clock, ChevronLeft, ChevronRight,
+  Search, RefreshCw, User, ExternalLink,
 } from 'lucide-react';
 import { agentsApi, usersApi, ApiError } from '@/lib/api';
 import type { Agent } from '@/types';
-import { AgentTrustTier, AgentVerificationLevel } from '@/types';
+import { AgentTrustTier } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 import { UserRole } from '@/types';
 import { PageLoader, LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -44,7 +44,7 @@ export default function AdminAgentsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [search, setSearch] = useState('');
-  const [tierFilter, setTierFilter] = useState<AgentTrustTier | ''>('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'verified' | 'inactive'>('all');
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const [isActioning, setIsActioning] = useState(false);
 
@@ -59,7 +59,7 @@ export default function AdminAgentsPage() {
   const load = useCallback(async () => {
     setIsLoading(true);
     try {
-      const res = await agentsApi.list(page, 20, tierFilter || undefined);
+      const res = await agentsApi.listAdmin(page, 20, statusFilter);
       setAgents(res.data);
       setTotal(res.meta.total);
       setTotalPages(res.meta.pages);
@@ -68,7 +68,7 @@ export default function AdminAgentsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [page, tierFilter]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [page, statusFilter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     load();
@@ -197,14 +197,14 @@ export default function AdminAgentsPage() {
           />
         </div>
         <select
-          value={tierFilter}
-          onChange={(e) => { setTierFilter(e.target.value as AgentTrustTier | ''); setPage(1); }}
+          value={statusFilter}
+          onChange={(e) => { setStatusFilter(e.target.value as typeof statusFilter); setPage(1); }}
           className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-navy-700 outline-none focus:border-veriq-secondary"
         >
-          <option value="">All Tiers</option>
-          {Object.values(AgentTrustTier).map((t) => (
-            <option key={t} value={t} className="capitalize">{t.charAt(0).toUpperCase() + t.slice(1)}</option>
-          ))}
+          <option value="all">All agents</option>
+          <option value="pending">Pending review</option>
+          <option value="verified">Verified</option>
+          <option value="inactive">Inactive</option>
         </select>
       </div>
 
@@ -237,7 +237,8 @@ export default function AdminAgentsPage() {
                 {filteredAgents.map((agent) => {
                   const name = `${agent.user?.firstName ?? ''} ${agent.user?.lastName ?? ''}`.trim();
                   const initial = name[0]?.toUpperCase() ?? 'A';
-                  const isActive = agent.user?.isActive !== false;
+                  const userActive = agent.user?.isActive !== false;
+                  const isActive = agent.isActive && userActive;
                   const hasPendingL1 = agent.govIdUrl && !agent.isGovIdVerified;
                   const hasPendingL2 = agent.cacNumber && !agent.isProfessionallyVerified;
 
@@ -307,6 +308,16 @@ export default function AdminAgentsPage() {
                           ) : (
                             <span className="text-[10px] text-slate-400">No L1 docs</span>
                           )}
+                          {agent.selfieUrl ? (
+                            <a
+                              href={agent.selfieUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1 text-[10px] text-blue-600 hover:underline"
+                            >
+                              <ExternalLink className="h-3 w-3" /> Selfie
+                            </a>
+                          ) : null}
                           {agent.cacDocumentUrl ? (
                             <a
                               href={agent.cacDocumentUrl}
@@ -346,47 +357,43 @@ export default function AdminAgentsPage() {
                       {/* Actions */}
                       <td className="px-4 py-4">
                         <div className="flex flex-col gap-1.5 items-end">
-                          {/* View listings */}
                           <Link
                             href={`/dashboard/admin/properties?agentId=${agent.id}&agentName=${encodeURIComponent(name || 'Agent')}`}
-                            className="flex items-center gap-1.5 rounded-lg border border-slate-200 text-navy-700 px-3 py-1.5 text-[10px] font-bold hover:bg-slate-50 transition-colors"
+                            className="text-[10px] font-bold text-navy-700 hover:text-veriq-secondary hover:underline"
                           >
-                            <Home className="h-3 w-3" /> View Listings
+                            View listings
                           </Link>
-                          {/* Approve L1 */}
                           {hasPendingL1 && !agent.isGovIdVerified && (
                             <button
                               onClick={() => initiateAction(agent, 'approve-l1')}
-                              className="flex items-center gap-1.5 rounded-lg bg-emerald-600 text-white px-3 py-1.5 text-[10px] font-bold hover:bg-emerald-700 transition-colors"
+                              className="rounded-lg bg-emerald-600 text-white px-3 py-1.5 text-[10px] font-bold hover:bg-emerald-700 transition-colors"
                             >
-                              <CheckCircle className="h-3 w-3" /> Approve L1
+                              Approve identity
                             </button>
                           )}
-                          {/* Approve L2 */}
                           {hasPendingL2 && !agent.isProfessionallyVerified && agent.isGovIdVerified && (
                             <button
                               onClick={() => initiateAction(agent, 'approve-l2')}
-                              className="flex items-center gap-1.5 rounded-lg bg-purple-600 text-white px-3 py-1.5 text-[10px] font-bold hover:bg-purple-700 transition-colors"
+                              className="rounded-lg bg-purple-600 text-white px-3 py-1.5 text-[10px] font-bold hover:bg-purple-700 transition-colors"
                             >
-                              <Shield className="h-3 w-3" /> Approve L2
+                              Approve professional
                             </button>
                           )}
-                          {/* Deactivate / Reactivate */}
-                          {isActive ? (
+                          {agent.isActive && userActive ? (
                             <button
                               onClick={() => initiateAction(agent, 'deactivate')}
-                              className="flex items-center gap-1.5 rounded-lg border border-red-200 text-red-600 px-3 py-1.5 text-[10px] font-bold hover:bg-red-50 transition-colors"
+                              className="text-[10px] font-bold text-red-500 hover:underline"
                             >
-                              <XCircle className="h-3 w-3" /> Deactivate
+                              Deactivate
                             </button>
-                          ) : (
+                          ) : !userActive ? (
                             <button
                               onClick={() => initiateAction(agent, 'reactivate')}
-                              className="flex items-center gap-1.5 rounded-lg border border-emerald-200 text-emerald-600 px-3 py-1.5 text-[10px] font-bold hover:bg-emerald-50 transition-colors"
+                              className="text-[10px] font-bold text-emerald-600 hover:underline"
                             >
-                              <CheckCircle className="h-3 w-3" /> Reactivate
+                              Reactivate
                             </button>
-                          )}
+                          ) : null}
                         </div>
                       </td>
                     </tr>

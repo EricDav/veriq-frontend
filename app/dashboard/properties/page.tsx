@@ -124,7 +124,7 @@ function AgentPropertiesView() {
     }
   };
 
-  const isApproved = (agent?.verificationLevel ?? 0) >= AgentVerificationLevel.BASIC;
+  const isApproved = !!agent?.isActive && (agent?.verificationLevel ?? 0) >= AgentVerificationLevel.BASIC;
 
   if (isLoading) return <PageLoader />;
 
@@ -154,7 +154,7 @@ function AgentPropertiesView() {
           <div>
             <p className="text-sm font-semibold text-amber-800">Verification Required</p>
             <p className="text-xs text-amber-700 mt-0.5">
-              You must complete Level 1 (Basic) verification before listing properties. {' '}
+              You must complete Level 1 (Basic) verification and receive admin approval before listing properties. {' '}
               <Link href="/dashboard/agent" className="underline font-medium">Get verified →</Link>
             </p>
           </div>

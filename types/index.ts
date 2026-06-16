@@ -814,7 +814,7 @@ export interface AllowedState {
 
 // ─── Blogs ────────────────────────────────────────────────────────────────
 
-export type BlogPostStatus = 'draft' | 'published';
+export type BlogPostStatus = 'draft' | 'scheduled' | 'published' | 'archived';
 
 export interface BlogSection {
   type: 'paragraph' | 'heading' | 'list' | 'callout' | 'youtube';
@@ -830,12 +830,20 @@ export interface BlogPost {
   title: string;
   excerpt: string;
   category: string;
+  authorName?: string | null;
+  authorAvatar?: string | null;
   readTime: number;
   publishedAt: string | null;
+  scheduledAt?: string | null;
   coverImage?: string | null;
   youtubeId?: string | null;
   content: BlogSection[];
+  contentHtml?: string | null;
   tags: string[];
+  seoTitle?: string | null;
+  seoDescription?: string | null;
+  canonicalUrl?: string | null;
+  revisionHistory?: Array<Record<string, unknown>>;
   status?: BlogPostStatus;
   createdAt?: string;
   updatedAt?: string;
@@ -846,13 +854,46 @@ export interface UpsertBlogPostDto {
   title: string;
   excerpt: string;
   category: string;
+  authorName?: string;
+  authorAvatar?: string;
   readTime?: number;
   publishedAt?: string;
+  scheduledAt?: string;
   coverImage?: string;
   youtubeId?: string;
   content?: BlogSection[];
+  contentHtml?: string;
   tags?: string[];
+  seoTitle?: string;
+  seoDescription?: string;
+  canonicalUrl?: string;
   status?: BlogPostStatus;
+}
+
+export interface ConsultationPricingRule {
+  id: string;
+  agentId: string | null;
+  agent?: Agent | null;
+  tier: ConsultationTier;
+  label: string;
+  minRent: number;
+  maxRent: number | null;
+  fee: number;
+  platformCommissionPercent: number | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UpsertConsultationPricingRuleDto {
+  agentId?: string | null;
+  tier: ConsultationTier;
+  label: string;
+  minRent: number;
+  maxRent?: number | null;
+  fee: number;
+  platformCommissionPercent?: number | null;
+  isActive?: boolean;
 }
 
 // ─── Consultation DTO ─────────────────────────────────────────────────────

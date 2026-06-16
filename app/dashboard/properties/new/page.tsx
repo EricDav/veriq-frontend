@@ -335,7 +335,7 @@ export default function NewPropertyPage() {
     } catch (err) {
       if (err instanceof ApiError) {
         if (err.statusCode === 403) {
-          toastError('You must complete Level 1 verification before listing properties.');
+          toastError('Admin approval is required before listing properties.');
         } else {
           toastError(err.message);
         }

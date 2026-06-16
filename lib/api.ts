@@ -206,6 +206,8 @@ import type {
   AllowedState,
   BlogPost,
   UpsertBlogPostDto,
+  ConsultationPricingRule,
+  UpsertConsultationPricingRuleDto,
 } from '@/types';
 
 // ── Auth ─────────────────────────────────────────────────────────────────
@@ -307,6 +309,15 @@ export const agentsApi = {
     api.post<ApiResponse<Agent>>('/agents/verification/level2', dto),
 
   // Admin
+  listAdmin: (page = 1, limit = 20, status?: string) => {
+    const params = new URLSearchParams({
+      page: String(page),
+      limit: String(limit),
+    });
+    if (status && status !== 'all') params.set('status', status);
+    return api.get<PaginatedResponse<Agent>>(`/agents/admin/all?${params}`);
+  },
+
   approveLevel1: (id: string) =>
     api.patch<ApiResponse<Agent>>(`/agents/${id}/approve-level1`),
 
@@ -545,8 +556,14 @@ export const blogsApi = {
   getBySlug: (slug: string) =>
     api.get<ApiResponse<BlogPost>>(`/blogs/slug/${slug}`, { public: true }),
 
-  listAdmin: () =>
-    api.get<ApiResponse<BlogPost[]>>('/blogs/admin/all'),
+  listAdmin: (filters: { q?: string; status?: string; category?: string } = {}) => {
+    const params = new URLSearchParams();
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value) params.set(key, value);
+    });
+    const query = params.toString();
+    return api.get<ApiResponse<BlogPost[]>>(`/blogs/admin/all${query ? `?${query}` : ''}`);
+  },
 
   create: (dto: UpsertBlogPostDto) =>
     api.post<ApiResponse<BlogPost>>('/blogs/admin', dto),
@@ -556,4 +573,19 @@ export const blogsApi = {
 
   delete: (id: string) =>
     api.delete<ApiResponse<null>>(`/blogs/admin/${id}`),
+};
+
+// ── Consultation Pricing ─────────────────────────────────────────────────
+
+export const consultationPricingApi = {
+  listAdmin: (agentId?: string) => {
+    const query = agentId ? `?agentId=${encodeURIComponent(agentId)}` : '';
+    return api.get<ApiResponse<ConsultationPricingRule[]>>(`/consultation-pricing/admin${query}`);
+  },
+
+  upsert: (dto: UpsertConsultationPricingRuleDto) =>
+    api.post<ApiResponse<ConsultationPricingRule>>('/consultation-pricing/admin', dto),
+
+  delete: (id: string) =>
+    api.delete<ApiResponse<null>>(`/consultation-pricing/admin/${id}`),
 };
