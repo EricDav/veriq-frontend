@@ -497,6 +497,7 @@ export enum WalletTransactionType {
   DEBIT = 'debit',
   REFUND = 'refund',
   EARNING = 'earning',
+  WITHDRAWAL = 'withdrawal',
 }
 
 export enum WalletTransactionStatus {
@@ -552,6 +553,38 @@ export interface VerifyTopUpResponse {
   status: WalletTransactionStatus;
   balance: number;
   balanceFormatted: string;
+}
+
+export interface AgentEarningsSummary {
+  walletBalance: number;
+  walletBalanceFormatted: string;
+  totalEarnings: number;
+  totalEarningsFormatted: string;
+  maturedEarnings: number;
+  maturedEarningsFormatted: string;
+  pendingClearance: number;
+  pendingClearanceFormatted: string;
+  withdrawn: number;
+  withdrawnFormatted: string;
+  pendingWithdrawal: number;
+  pendingWithdrawalFormatted: string;
+  availableForWithdrawal: number;
+  availableForWithdrawalFormatted: string;
+  minWithdrawalAmount: number;
+  minWithdrawalAmountFormatted: string;
+  holdHours: number;
+  nextEligibleAt: string | null;
+  isEligible: boolean;
+}
+
+export interface RequestWithdrawalDto {
+  amount: number;
+  note?: string;
+}
+
+export interface RequestWithdrawalResponse {
+  transaction: WalletTransaction;
+  earnings: AgentEarningsSummary;
 }
 
 // ─── Admin: Wallet Ledger & Revenue Split ──────────────────────────────────
@@ -633,6 +666,7 @@ export interface PaginatedResponse<T> {
     page: number;
     limit: number;
     pages: number;
+    summary?: Record<string, number>;
   };
 }
 

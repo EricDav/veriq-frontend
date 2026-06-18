@@ -2,14 +2,15 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import {
   ArrowLeft, MapPin, CheckCircle, Bed, Bath, Lock,
   Shield, Eye, FileText, Clock, AlertCircle, Home, Wallet, DollarSign,
   Phone, MessageCircle,
 } from 'lucide-react';
-import { propertiesApi, consultationsApi, chatApi, ApiError } from '@/lib/api';
-import type { ConsultationAccess, Property } from '@/types';
+import { propertiesApi, consultationsApi, chatApi, mediaApi, ApiError } from '@/lib/api';
+import type { ConsultationAccess, MediaItem, Property } from '@/types';
 import { AgentVerificationLevel, AgentTrustTier, FreshnessScore } from '@/types';
 import { PageLoader, LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useAuth } from '@/context/AuthContext';
@@ -29,9 +30,94 @@ const TRUST_TIER_BADGE: Record<AgentTrustTier, { label: string; cls: string }> =
   platinum: { label: 'Platinum', cls: 'bg-purple-100 text-purple-700' },
 };
 
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api/v1', '') ?? 'http://localhost:3000';
+
 function formatNaira(amount: number | null | undefined): string {
   if (!amount) return '₦0';
   return `₦${Number(amount).toLocaleString()}`;
+}
+
+function mediaUrl(url: string): string {
+  if (url.startsWith('http')) return url;
+  return `${API_BASE}${url}`;
+}
+
+function pretty(value: unknown) {
+  if (value === null || value === undefined || value === '') return 'Not provided';
+  if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+  if (Array.isArray(value)) {
+    return value.length ? value.map((item) => String(item).replace(/_/g, ' ')).join(', ') : 'Not provided';
+  }
+  return String(value).replace(/_/g, ' ');
+}
+
+function IntelligenceGrid({ title, items }: { title: string; items: Array<{ label: string; value: unknown }> }) {
+  const visibleItems = items.filter((item) => item.value !== null && item.value !== undefined && item.value !== '');
+  if (visibleItems.length === 0) return null;
+
+  return (
+    <div className="card p-6">
+      <h3 className="font-display mb-4 flex items-center gap-2 text-base font-bold text-navy-900">
+        <Shield className="h-4 w-4 text-veriq-secondary" /> {title}
+      </h3>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {visibleItems.map((item) => (
+          <div key={item.label} className="rounded-xl border border-slate-100 bg-slate-50 p-3">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">{item.label}</p>
+            <p className="mt-1 text-sm font-medium capitalize text-navy-900">{pretty(item.value)}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function UnlockedMediaGallery({ propertyId }: { propertyId: string }) {
+  const [media, setMedia] = useState<MediaItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    mediaApi.getAll(propertyId)
+      .then((res) => setMedia((res.data as MediaItem[]) ?? []))
+      .catch(() => setMedia([]))
+      .finally(() => setIsLoading(false));
+  }, [propertyId]);
+
+  if (isLoading) {
+    return (
+      <div className="card flex h-44 items-center justify-center p-6">
+        <LoadingSpinner size="md" className="text-veriq-secondary" />
+      </div>
+    );
+  }
+
+  if (media.length === 0) return null;
+
+  return (
+    <div className="card p-6">
+      <h3 className="font-display mb-4 flex items-center gap-2 text-base font-bold text-navy-900">
+        <Eye className="h-4 w-4 text-veriq-secondary" /> Full Photo Gallery
+      </h3>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        {media.map((item) => (
+          <div key={item.id} className="relative aspect-[4/3] overflow-hidden rounded-xl bg-slate-100">
+            <Image
+              src={mediaUrl(item.url)}
+              alt={item.caption ?? item.section}
+              fill
+              sizes="(max-width: 640px) 50vw, 33vw"
+              className="object-cover"
+            />
+            {(item.caption || item.section) && (
+              <div className="absolute inset-x-0 bottom-0 bg-navy-950/70 px-2 py-1 text-[10px] capitalize text-white">
+                {item.caption ?? item.section.replace(/_/g, ' ')}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 export default function PropertyDetailPage() {
@@ -81,12 +167,18 @@ export default function PropertyDetailPage() {
     setIsUnlocking(true);
     try {
       await consultationsApi.initiate({ propertyId: id });
-      success('Wallet debited. Intelligence report unlocked!');
-      setHasAccess(true);
       const accessRes = await consultationsApi.checkAccess(id);
+      const confirmedAccess = accessRes.data?.hasAccess ?? false;
+      setHasAccess(confirmedAccess);
       setAccessDetails(accessRes.data ?? null);
+      if (!confirmedAccess) {
+        throw new Error('Payment was processed, but access could not be confirmed. Please refresh and try again.');
+      }
+      success('Wallet debited. Intelligence report unlocked!');
     } catch (err) {
       if (err instanceof ApiError) {
+        toastError(err.message);
+      } else if (err instanceof Error) {
         toastError(err.message);
       } else {
         toastError('Failed to unlock report. Please try again.');
@@ -312,6 +404,68 @@ export default function PropertyDetailPage() {
                     )}
                   </div>
                 </div>
+              </div>
+            )}
+
+            {hasAccess && (
+              <div className="space-y-5">
+                <UnlockedMediaGallery propertyId={id} />
+                <IntelligenceGrid
+                  title="Location & Access Intelligence"
+                  items={[
+                    { label: 'Exact Address', value: property.address },
+                    { label: 'Flood Risk', value: property.floodRisk },
+                    { label: 'Road Access', value: property.roadAccess },
+                    { label: 'Road During Rain', value: property.roadAccessRain },
+                  ]}
+                />
+                <IntelligenceGrid
+                  title="Utilities & Connectivity"
+                  items={[
+                    { label: 'Electricity Situation', value: property.electricitySituation },
+                    { label: 'Electricity Details', value: property.electricityInfo },
+                    { label: 'Water Availability', value: property.waterAvailability },
+                    { label: 'Water Source', value: property.waterSource },
+                    { label: 'Network Quality', value: property.networkQuality },
+                    { label: 'Best Networks', value: property.bestNetwork },
+                  ]}
+                />
+                <IntelligenceGrid
+                  title="Environment & Safety"
+                  items={[
+                    { label: 'Noise Level', value: property.noiseLevel },
+                    { label: 'Noise Source', value: property.noiseSource },
+                    { label: 'Security Feel', value: property.securityFeel },
+                    { label: 'Security Features', value: property.securityFeatures },
+                    { label: 'Compound Culture', value: property.compoundCulture },
+                  ]}
+                />
+                <IntelligenceGrid
+                  title="Hostel Intelligence"
+                  items={[
+                    { label: 'Suitable For', value: property.hostelSuitableFor },
+                    { label: 'Persons Per Room', value: property.hostelPersonsPerRoom },
+                    { label: 'Gender', value: property.hostelGender },
+                    { label: 'Campus Proximity', value: property.hostelCampusProximity },
+                    { label: 'Nearest Campus', value: property.hostelNearestCampus },
+                    { label: 'Distance From Campus', value: property.hostelDistanceFromCampus },
+                    { label: 'Meals Included', value: property.hostelMealsIncluded },
+                    { label: 'Rules', value: property.hostelRulesNotes },
+                  ]}
+                />
+                <IntelligenceGrid
+                  title="Condition & Agent Notes"
+                  items={[
+                    { label: 'Property Condition', value: property.propertyCondition },
+                    { label: 'Known Issues', value: property.knownIssues },
+                    { label: 'Agent Observation', value: property.agentObservation },
+                    { label: 'Short Stay Internet', value: property.shortStayInternet },
+                    { label: 'Short Stay Cleanliness', value: property.shortStayCleanliness },
+                    { label: 'Short Stay Furnishing', value: property.shortStayFurnishing },
+                    { label: 'Short Stay Kitchen', value: property.shortStayKitchen },
+                    { label: 'Short Stay Agent Note', value: property.shortStayAgentNote },
+                  ]}
+                />
               </div>
             )}
           </div>

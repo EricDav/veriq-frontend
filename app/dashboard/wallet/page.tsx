@@ -3,13 +3,14 @@
 import React, { useEffect, useState } from 'react';
 import {
   Wallet as WalletIcon, Plus, ArrowDownCircle, ArrowUpCircle, RefreshCw,
-  Clock, CheckCircle, XCircle,
+  Clock, CheckCircle, XCircle, Landmark, Timer, TrendingUp,
 } from 'lucide-react';
 import { walletApi, ApiError } from '@/lib/api';
-import type { Wallet, WalletTransaction } from '@/types';
-import { WalletTransactionType, WalletTransactionStatus } from '@/types';
+import type { AgentEarningsSummary, Wallet, WalletTransaction } from '@/types';
+import { UserRole, WalletTransactionType, WalletTransactionStatus } from '@/types';
 import { useToast } from '@/components/ui/Toast';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { useAuth } from '@/context/AuthContext';
 
 // ─── Formatters ───────────────────────────────────────────────────────────
 
@@ -44,6 +45,7 @@ function TransactionRow({ tx }: { tx: WalletTransaction }) {
     [WalletTransactionType.DEBIT]: 'Payment',
     [WalletTransactionType.REFUND]: 'Refund',
     [WalletTransactionType.EARNING]: 'Commission Earning',
+    [WalletTransactionType.WITHDRAWAL]: 'Withdrawal Request',
   }[tx.type];
 
   return (
@@ -70,15 +72,23 @@ function TransactionRow({ tx }: { tx: WalletTransaction }) {
 // ─── Page ─────────────────────────────────────────────────────────────────
 
 export default function WalletPage() {
-  const { error: toastError } = useToast();
+  const { user } = useAuth();
+  const { success, error: toastError } = useToast();
 
   const [wallet, setWallet] = useState<Wallet | null>(null);
+  const [earnings, setEarnings] = useState<AgentEarningsSummary | null>(null);
   const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
   const [loadingWallet, setLoadingWallet] = useState(true);
+  const [loadingEarnings, setLoadingEarnings] = useState(false);
   const [loadingTx, setLoadingTx] = useState(true);
 
   const [amount, setAmount] = useState('');
   const [topUpLoading, setTopUpLoading] = useState(false);
+  const [withdrawAmount, setWithdrawAmount] = useState('');
+  const [withdrawNote, setWithdrawNote] = useState('');
+  const [withdrawLoading, setWithdrawLoading] = useState(false);
+
+  const isAgent = user?.role === UserRole.AGENT;
 
   const loadWallet = () => {
     setLoadingWallet(true);
@@ -98,10 +108,24 @@ export default function WalletPage() {
       .finally(() => setLoadingTx(false));
   };
 
+  const loadEarnings = () => {
+    if (!isAgent) return;
+    setLoadingEarnings(true);
+    walletApi
+      .getAgentEarnings()
+      .then((res) => setEarnings(res.data))
+      .catch(() => {})
+      .finally(() => setLoadingEarnings(false));
+  };
+
   useEffect(() => {
     loadWallet();
     loadTransactions();
   }, []);
+
+  useEffect(() => {
+    loadEarnings();
+  }, [isAgent]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleTopUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -130,11 +154,49 @@ export default function WalletPage() {
     }
   };
 
+  const handleWithdrawal = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const value = Number(withdrawAmount);
+    if (!earnings) return;
+    if (!value || value < earnings.minWithdrawalAmount) {
+      toastError(`Minimum withdrawal is ${earnings.minWithdrawalAmountFormatted}`);
+      return;
+    }
+    if (value > earnings.availableForWithdrawal) {
+      toastError(`You can withdraw up to ${earnings.availableForWithdrawalFormatted}`);
+      return;
+    }
+
+    setWithdrawLoading(true);
+    try {
+      const res = await walletApi.requestWithdrawal({
+        amount: value,
+        note: withdrawNote.trim() || undefined,
+      });
+      setEarnings(res.data.earnings);
+      setWithdrawAmount('');
+      setWithdrawNote('');
+      success('Withdrawal request submitted.');
+      loadWallet();
+      loadTransactions();
+    } catch (err) {
+      toastError(err instanceof ApiError ? err.message : 'Withdrawal request failed.');
+    } finally {
+      setWithdrawLoading(false);
+    }
+  };
+
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="max-w-5xl mx-auto space-y-6">
       <div>
-        <h1 className="font-display text-2xl font-bold text-navy-900">Wallet</h1>
-        <p className="text-sm text-veriq-muted">View your balance, top up funds, and track transactions</p>
+        <h1 className="font-display text-2xl font-bold text-navy-900">
+          {isAgent ? 'Transactions & Earnings' : 'Wallet'}
+        </h1>
+        <p className="text-sm text-veriq-muted">
+          {isAgent
+            ? 'Track commission earnings, clearance status, withdrawals, and wallet activity'
+            : 'View your balance, top up funds, and track transactions'}
+        </p>
       </div>
 
       {/* Balance card */}
@@ -155,6 +217,7 @@ export default function WalletPage() {
           <button
             onClick={() => {
               loadWallet();
+              loadEarnings();
               loadTransactions();
             }}
             className="text-slate-400 hover:text-white transition-colors p-2 rounded-lg hover:bg-white/5"
@@ -165,7 +228,104 @@ export default function WalletPage() {
         </div>
       </div>
 
+      {isAgent && (
+        <>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+            {[
+              {
+                label: 'Total Earnings',
+                value: earnings?.totalEarningsFormatted ?? '₦0',
+                icon: TrendingUp,
+                cls: 'text-emerald-600 bg-emerald-50',
+              },
+              {
+                label: 'Available',
+                value: earnings?.availableForWithdrawalFormatted ?? '₦0',
+                icon: CheckCircle,
+                cls: 'text-veriq-secondary bg-veriq-secondary/10',
+              },
+              {
+                label: 'Pending Clearance',
+                value: earnings?.pendingClearanceFormatted ?? '₦0',
+                icon: Timer,
+                cls: 'text-gold-600 bg-gold-50',
+              },
+              {
+                label: 'Pending Withdrawal',
+                value: earnings?.pendingWithdrawalFormatted ?? '₦0',
+                icon: Landmark,
+                cls: 'text-blue-600 bg-blue-50',
+              },
+            ].map(({ label, value, icon: Icon, cls }) => (
+              <div key={label} className="card p-4">
+                <div className={`mb-3 flex h-9 w-9 items-center justify-center rounded-xl ${cls}`}>
+                  <Icon className="h-4 w-4" />
+                </div>
+                <p className="text-xs text-slate-500">{label}</p>
+                <p className="mt-1 text-xl font-black text-navy-900">
+                  {loadingEarnings ? '…' : value}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <div className="card p-6">
+            <h2 className="font-display text-base font-bold text-navy-900 mb-4 flex items-center gap-2">
+              <Landmark className="h-4 w-4 text-veriq-secondary" /> Withdraw Earnings
+            </h2>
+            <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+              <p>
+                Earnings become withdrawable after {earnings?.holdHours ?? 48} hours. Minimum withdrawal is{' '}
+                <span className="font-semibold text-navy-900">
+                  {earnings?.minWithdrawalAmountFormatted ?? '₦5,000'}
+                </span>
+                .
+              </p>
+              {earnings?.nextEligibleAt && (
+                <p className="mt-1 text-xs text-slate-500">
+                  Next pending earning clears around {formatDate(earnings.nextEligibleAt)}.
+                </p>
+              )}
+            </div>
+
+            <form onSubmit={handleWithdrawal} className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_1fr_auto] md:items-end">
+              <div>
+                <label className="label">Amount (₦)</label>
+                <input
+                  type="number"
+                  min={earnings?.minWithdrawalAmount ?? 5000}
+                  max={earnings?.availableForWithdrawal ?? undefined}
+                  step={1}
+                  value={withdrawAmount}
+                  onChange={(e) => setWithdrawAmount(e.target.value)}
+                  placeholder={earnings?.availableForWithdrawalFormatted ?? '₦0 available'}
+                  className="input"
+                />
+              </div>
+              <div>
+                <label className="label">Note</label>
+                <input
+                  value={withdrawNote}
+                  onChange={(e) => setWithdrawNote(e.target.value)}
+                  placeholder="Optional payout note"
+                  className="input"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={withdrawLoading || !earnings?.isEligible}
+                className="btn-primary !text-sm !py-2.5 flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50"
+              >
+                {withdrawLoading && <LoadingSpinner size="sm" />}
+                Request Withdrawal
+              </button>
+            </form>
+          </div>
+        </>
+      )}
+
       {/* Top up */}
+      {!isAgent && (
       <div className="card p-6">
         <h2 className="font-display text-base font-bold text-navy-900 mb-4 flex items-center gap-2">
           <Plus className="h-4 w-4 text-veriq-secondary" /> Top Up Wallet
@@ -210,6 +370,7 @@ export default function WalletPage() {
           You&apos;ll be redirected to Paystack to complete your payment securely. Minimum top-up is ₦100.
         </p>
       </div>
+      )}
 
       {/* Transaction history */}
       <div className="card p-6">

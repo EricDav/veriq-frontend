@@ -10,6 +10,10 @@ const TRUST_POINTS = [
 
 export function Hero({ content }: { content?: SiteContent }) {
   const title = content?.title ?? "Know Before You Go.";
+  const heroImageUrl = typeof content?.data?.heroImageUrl === "string" && content.data.heroImageUrl
+    ? content.data.heroImageUrl
+    : null;
+  const badgeText = content?.subtitle ?? "Property Intelligence Platform";
   const [titleStart, titleHighlight, titleEnd] =
     title === "Know Before You Go."
       ? ["Know", "Before", "You Go."]
@@ -19,7 +23,10 @@ export function Hero({ content }: { content?: SiteContent }) {
     : TRUST_POINTS;
 
   return (
-    <section className="relative min-h-screen bg-hero-pattern overflow-hidden flex items-center">
+    <section
+      className="relative min-h-screen bg-hero-pattern overflow-hidden flex items-center bg-cover bg-center"
+      style={heroImageUrl ? { backgroundImage: `url("${heroImageUrl}")` } : undefined}
+    >
       {/* Background decorative elements */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-navy-950/10 via-transparent to-navy-950/70" />
@@ -32,7 +39,7 @@ export function Hero({ content }: { content?: SiteContent }) {
             {/* Badge */}
             <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/20 px-4 py-1.5 text-sm text-gold-300 font-medium mb-6 backdrop-blur-sm">
               <div className="h-1.5 w-1.5 rounded-full bg-gold-400 animate-pulse" />
-              Property Intelligence Platform
+              {badgeText}
             </div>
 
             <h1 className="font-display text-5xl font-bold text-white leading-tight tracking-tight md:text-6xl lg:text-[68px]">

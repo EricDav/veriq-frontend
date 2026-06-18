@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { FileText, RefreshCw, Save, ShieldCheck } from 'lucide-react';
+import { FileText, ImageIcon, RefreshCw, Save, ShieldCheck, Upload } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { siteContentApi, ApiError } from '@/lib/api';
+import { uploadToFileService } from '@/lib/upload';
 import type { SiteContent, UpsertSiteContentDto } from '@/types';
 import { UserRole } from '@/types';
 import { useAuth } from '@/context/AuthContext';
@@ -23,11 +24,78 @@ const PRESETS = [
 ];
 
 const EMPTY_FORM: UpsertSiteContentDto = {
-  page: 'about',
+  page: 'home',
   section: 'hero',
   title: '',
   subtitle: '',
   body: '',
+};
+
+const DEFAULT_CONTENT: Record<string, UpsertSiteContentDto> = {
+  'home:hero': {
+    page: 'home',
+    section: 'hero',
+    title: 'Know Before You Go.',
+    subtitle: 'Property Intelligence Platform',
+    body: 'Stop wasting time on misleading listings and pointless inspections. Veriq Property gives you verified property intelligence — so you inspect smarter.',
+    data: {
+      trustPoints: [
+        'Verified property previews',
+        'Agent trust scores & ratings',
+        'Pre-inspection intelligence reports',
+      ],
+      heroImageUrl: '',
+    },
+  },
+  'home:features': {
+    page: 'home',
+    section: 'features',
+    title: 'Everything You Need to Inspect Smarter',
+    subtitle: 'Verified intelligence before you spend money visiting a property.',
+  },
+  'home:how_it_works': {
+    page: 'home',
+    section: 'how_it_works',
+    title: 'How Veriq Works',
+    subtitle: 'Search, unlock intelligence, then inspect with confidence.',
+  },
+  'home:cta': {
+    page: 'home',
+    section: 'cta',
+    title: 'Ready to inspect smarter?',
+    body: 'Browse verified listings and unlock the details that matter before visiting.',
+  },
+  'about:hero': {
+    page: 'about',
+    section: 'hero',
+    title: 'Building a More Trusted Property Ecosystem',
+    subtitle: 'We understand the frustrations of the traditional property search process. Veriq Property was built to change it — from the ground up.',
+  },
+  'about:mission': {
+    page: 'about',
+    section: 'mission',
+    title: 'Our Mission',
+    body: 'To make property search in Nigeria more transparent, safer, and less wasteful for everyone involved.',
+  },
+  'contact:hero': {
+    page: 'contact',
+    section: 'hero',
+    title: "We're Here to Help",
+    subtitle: "Whether you're a property seeker, a listing agent, or just exploring — our team is ready to assist you.",
+  },
+  'contact:support': {
+    page: 'contact',
+    section: 'support',
+    title: 'Support',
+    body: 'Reach out to the Veriq Property team for account, listing, payment, or verification support.',
+    data: { supportEmail: 'support@veriqproperty.com', agentEmail: 'agents@veriqproperty.com' },
+  },
+  'contact:operations': {
+    page: 'contact',
+    section: 'operations',
+    title: 'Operations',
+    body: 'Our operations team reviews agent verification, listing quality, and property intelligence submissions.',
+  },
 };
 
 function contentKey(item: Pick<SiteContent, 'page' | 'section'>) {
@@ -44,6 +112,7 @@ export default function AdminContentPage() {
   const [dataJson, setDataJson] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingHero, setIsUploadingHero] = useState(false);
 
   useEffect(() => {
     if (!authLoading && user?.role !== UserRole.ADMIN) {
@@ -62,6 +131,18 @@ export default function AdminContentPage() {
     try {
       const res = await siteContentApi.list();
       setItems(res.data);
+      const currentKey = `${form.page}:${form.section}`;
+      const selected = res.data.find((item) => contentKey(item) === currentKey);
+      const fallback = DEFAULT_CONTENT[currentKey] ?? form;
+      setForm({
+        page: form.page,
+        section: form.section,
+        title: selected?.title ?? fallback.title ?? '',
+        subtitle: selected?.subtitle ?? fallback.subtitle ?? '',
+        body: selected?.body ?? fallback.body ?? '',
+        data: selected?.data ?? fallback.data,
+      });
+      setDataJson(JSON.stringify(selected?.data ?? fallback.data ?? {}, null, 2));
     } catch (err) {
       toastError(err instanceof ApiError ? err.message : 'Failed to load content');
     } finally {
@@ -77,15 +158,37 @@ export default function AdminContentPage() {
 
   const selectPreset = (page: string, section: string) => {
     const existing = byKey.get(`${page}:${section}`);
+    const fallback = DEFAULT_CONTENT[`${page}:${section}`];
     setForm({
       page,
       section,
-      title: existing?.title ?? '',
-      subtitle: existing?.subtitle ?? '',
-      body: existing?.body ?? '',
-      data: existing?.data ?? undefined,
+      title: existing?.title ?? fallback?.title ?? '',
+      subtitle: existing?.subtitle ?? fallback?.subtitle ?? '',
+      body: existing?.body ?? fallback?.body ?? '',
+      data: existing?.data ?? fallback?.data,
     });
-    setDataJson(existing?.data ? JSON.stringify(existing.data, null, 2) : '');
+    setDataJson(JSON.stringify(existing?.data ?? fallback?.data ?? {}, null, 2));
+  };
+
+  const updateDataValue = (key: string, value: unknown) => {
+    const parsed = dataJson.trim() ? JSON.parse(dataJson) as Record<string, unknown> : {};
+    const next = { ...parsed, [key]: value };
+    setForm((prev) => ({ ...prev, data: next }));
+    setDataJson(JSON.stringify(next, null, 2));
+  };
+
+  const handleHeroImageUpload = async (file: File | undefined) => {
+    if (!file) return;
+    setIsUploadingHero(true);
+    try {
+      const uploaded = await uploadToFileService(file);
+      updateDataValue('heroImageUrl', uploaded.url);
+      success('Hero image uploaded.');
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : 'Failed to upload hero image');
+    } finally {
+      setIsUploadingHero(false);
+    }
   };
 
   const save = async (e: React.FormEvent) => {
@@ -229,6 +332,48 @@ export default function AdminContentPage() {
                   placeholder='{"supportEmail":"support@veriqproperty.com","agentEmail":"agents@veriqproperty.com"}'
                 />
               </div>
+
+              {form.section === 'hero' && (
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <label className="label flex items-center gap-2">
+                    <ImageIcon className="h-4 w-4 text-veriq-secondary" /> Hero Image
+                  </label>
+                  <input
+                    value={(() => {
+                      try {
+                        return String((dataJson ? JSON.parse(dataJson) : {}).heroImageUrl ?? '');
+                      } catch {
+                        return '';
+                      }
+                    })()}
+                    onChange={(e) => {
+                      try {
+                        updateDataValue('heroImageUrl', e.target.value);
+                      } catch {
+                        toastError('Fix the metadata JSON before changing the hero image');
+                      }
+                    }}
+                    className="input"
+                    placeholder="https://... or upload an image"
+                  />
+                  <div className="mt-3 flex flex-wrap items-center gap-3">
+                    <label className="btn-outline !py-2 !text-xs inline-flex cursor-pointer items-center gap-2">
+                      {isUploadingHero ? <LoadingSpinner size="sm" /> : <Upload className="h-4 w-4" />}
+                      {isUploadingHero ? 'Uploading...' : 'Upload Image'}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          handleHeroImageUpload(e.target.files?.[0]);
+                          e.currentTarget.value = '';
+                        }}
+                      />
+                    </label>
+                    <p className="text-xs text-slate-500">Saved as metadata key <span className="font-mono">heroImageUrl</span>.</p>
+                  </div>
+                </div>
+              )}
 
               <div className="flex justify-end">
                 <button type="submit" disabled={isSaving} className="btn-primary flex items-center gap-2">

@@ -154,6 +154,16 @@ export default function AdminAgentsPage() {
       })
     : agents;
 
+  const hasProfessionalSubmission = (agent: Agent) =>
+    Boolean(
+      agent.cacNumber ||
+      agent.cacDocumentUrl ||
+      agent.realEstateAssociation ||
+      agent.associationMembershipUrl ||
+      agent.landlordAuthorizationUrl ||
+      agent.referralAgentId,
+    );
+
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       {/* Header */}
@@ -175,7 +185,7 @@ export default function AdminAgentsPage() {
           { label: 'Total Agents', value: total, cls: 'bg-blue-50 text-blue-600' },
           { label: 'L1 Verified', value: agents.filter((a) => a.isGovIdVerified).length, cls: 'bg-emerald-50 text-emerald-600' },
           { label: 'L2 Professional', value: agents.filter((a) => a.isProfessionallyVerified).length, cls: 'bg-purple-50 text-purple-600' },
-          { label: 'Pending Review', value: agents.filter((a) => !a.isGovIdVerified && a.govIdUrl).length, cls: 'bg-amber-50 text-amber-600' },
+          { label: 'Pending Review', value: agents.filter((a) => (!a.isGovIdVerified && a.govIdUrl) || (!a.isProfessionallyVerified && hasProfessionalSubmission(a))).length, cls: 'bg-amber-50 text-amber-600' },
         ].map((s) => (
           <div key={s.label} className="card p-4">
             <p className={`text-2xl font-black ${s.cls.split(' ')[1]}`}>{s.value}</p>
@@ -240,7 +250,7 @@ export default function AdminAgentsPage() {
                   const userActive = agent.user?.isActive !== false;
                   const isActive = agent.isActive && userActive;
                   const hasPendingL1 = agent.govIdUrl && !agent.isGovIdVerified;
-                  const hasPendingL2 = agent.cacNumber && !agent.isProfessionallyVerified;
+                  const hasPendingL2 = hasProfessionalSubmission(agent) && !agent.isProfessionallyVerified;
 
                   return (
                     <tr key={agent.id} className="hover:bg-slate-50 transition-colors">
@@ -328,6 +338,31 @@ export default function AdminAgentsPage() {
                               <ExternalLink className="h-3 w-3" /> CAC Doc
                             </a>
                           ) : null}
+                          {agent.associationMembershipUrl ? (
+                            <a
+                              href={agent.associationMembershipUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1 text-[10px] text-blue-600 hover:underline"
+                            >
+                              <ExternalLink className="h-3 w-3" /> Association Doc
+                            </a>
+                          ) : null}
+                          {agent.landlordAuthorizationUrl ? (
+                            <a
+                              href={agent.landlordAuthorizationUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1 text-[10px] text-blue-600 hover:underline"
+                            >
+                              <ExternalLink className="h-3 w-3" /> Authorization
+                            </a>
+                          ) : null}
+                          {(agent.cacNumber || agent.realEstateAssociation) && (
+                            <p className="max-w-[140px] truncate text-[10px] text-slate-500">
+                              {[agent.cacNumber, agent.realEstateAssociation].filter(Boolean).join(' · ')}
+                            </p>
+                          )}
                         </div>
                       </td>
 

@@ -195,6 +195,9 @@ import type {
   VerifyTopUpDto,
   InitiateTopUpResponse,
   VerifyTopUpResponse,
+  AgentEarningsSummary,
+  RequestWithdrawalDto,
+  RequestWithdrawalResponse,
   WalletLedgerEntry,
   WalletAdminLedgerFilters,
   WalletAdminSummary,
@@ -466,6 +469,12 @@ export const walletApi = {
       `/wallet/transactions?page=${page}&limit=${limit}`,
     ),
 
+  getAgentEarnings: () =>
+    api.get<ApiResponse<AgentEarningsSummary>>('/wallet/agent/earnings'),
+
+  requestWithdrawal: (dto: RequestWithdrawalDto) =>
+    api.post<ApiResponse<RequestWithdrawalResponse>>('/wallet/agent/withdrawals', dto),
+
   // Admin
   adminGetLedger: (filters: WalletAdminLedgerFilters = {}) => {
     const params = new URLSearchParams();
@@ -478,6 +487,15 @@ export const walletApi = {
   },
 
   adminGetSummary: () => api.get<ApiResponse<WalletAdminSummary>>('/wallet/admin/summary'),
+
+  adminMarkWithdrawalPaid: (transactionId: string) =>
+    api.post<ApiResponse<WalletTransaction>>(`/wallet/admin/withdrawals/${transactionId}/mark-paid`, {}),
+
+  adminRejectWithdrawal: (transactionId: string) =>
+    api.post<ApiResponse<{ transactionId: string; refund: WalletTransaction }>>(
+      `/wallet/admin/withdrawals/${transactionId}/reject`,
+      {},
+    ),
 };
 
 // ── Media ─────────────────────────────────────────────────────────────────

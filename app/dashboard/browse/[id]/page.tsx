@@ -408,11 +408,17 @@ export default function DashboardPropertyDetailPage() {
     setIsUnlocking(true);
     try {
       await consultationsApi.initiate({ propertyId: id });
+      const accessRes = await consultationsApi.checkAccess(id);
+      const confirmedAccess = accessRes.data?.hasAccess ?? false;
+      setHasAccess(confirmedAccess);
+      setAccessDetails(accessRes.data ?? null);
+      if (!confirmedAccess) {
+        throw new Error('Payment was processed, but access could not be confirmed. Please refresh and try again.');
+      }
       success('Wallet debited. Intelligence report unlocked!');
-      setHasAccess(true);
       await load();
     } catch (err) {
-      toastError(err instanceof ApiError ? err.message : 'Failed to unlock report.');
+      toastError(err instanceof ApiError || err instanceof Error ? err.message : 'Failed to unlock report.');
     } finally {
       setIsUnlocking(false);
     }

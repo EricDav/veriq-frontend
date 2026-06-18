@@ -33,7 +33,7 @@ const AGENT_NAV = [
   { label: 'My Listings', href: '/dashboard/properties', icon: Home },
   { label: 'Agent Profile', href: '/dashboard/agent', icon: TrendingUp },
   { label: 'Chats', href: '/dashboard/chat', icon: MessageCircle },
-  { label: 'Wallet', href: '/dashboard/wallet', icon: Wallet },
+  { label: 'Transactions', href: '/dashboard/wallet', icon: Wallet },
   { label: 'Profile', href: '/dashboard/profile', icon: User },
 ];
 

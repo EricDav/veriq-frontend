@@ -35,6 +35,7 @@ const TYPE_LABEL: Record<WalletTransactionType, string> = {
   [WalletTransactionType.DEBIT]: 'Debit',
   [WalletTransactionType.REFUND]: 'Refund',
   [WalletTransactionType.EARNING]: 'Agent Earning',
+  [WalletTransactionType.WITHDRAWAL]: 'Withdrawal',
 };
 
 const STATUS_BADGE: Record<WalletTransactionStatus, { icon: React.ReactNode; cls: string }> = {
@@ -64,9 +65,22 @@ function SummaryCard({
 
 // ─── Ledger row ─────────────────────────────────────────────────────────────
 
-function LedgerRow({ tx }: { tx: WalletLedgerEntry }) {
+function LedgerRow({
+  tx,
+  onMarkPaid,
+  onReject,
+  isActioning,
+}: {
+  tx: WalletLedgerEntry;
+  onMarkPaid: (id: string) => void;
+  onReject: (id: string) => void;
+  isActioning: boolean;
+}) {
   const isCredit = CREDIT_TYPES.has(tx.type);
   const statusBadge = STATUS_BADGE[tx.status];
+  const canActionWithdrawal =
+    tx.type === WalletTransactionType.WITHDRAWAL &&
+    tx.status === WalletTransactionStatus.PENDING;
 
   return (
     <tr className="border-b border-slate-100 last:border-0 hover:bg-slate-50/60">
@@ -103,7 +117,28 @@ function LedgerRow({ tx }: { tx: WalletLedgerEntry }) {
         </span>
       </td>
       <td className="py-3 px-3 text-right whitespace-nowrap">
-        <p className="text-xs text-slate-400">{formatDate(tx.createdAt)}</p>
+        {canActionWithdrawal ? (
+          <div className="flex flex-col items-end gap-1.5">
+            <button
+              type="button"
+              disabled={isActioning}
+              onClick={() => onMarkPaid(tx.id)}
+              className="rounded-lg bg-emerald-600 px-2.5 py-1 text-[10px] font-bold text-white hover:bg-emerald-700 disabled:opacity-50"
+            >
+              Mark paid
+            </button>
+            <button
+              type="button"
+              disabled={isActioning}
+              onClick={() => onReject(tx.id)}
+              className="text-[10px] font-bold text-red-500 hover:underline disabled:opacity-50"
+            >
+              Reject
+            </button>
+          </div>
+        ) : (
+          <p className="text-xs text-slate-400">{formatDate(tx.createdAt)}</p>
+        )}
       </td>
     </tr>
   );
@@ -114,7 +149,7 @@ function LedgerRow({ tx }: { tx: WalletLedgerEntry }) {
 export default function AdminLedgerPage() {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
-  const { error: toastError } = useToast();
+  const { success, error: toastError } = useToast();
 
   const [summary, setSummary] = useState<WalletAdminSummary | null>(null);
   const [loadingSummary, setLoadingSummary] = useState(true);
@@ -129,6 +164,7 @@ export default function AdminLedgerPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
+  const [actioningTxId, setActioningTxId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && user?.role !== UserRole.ADMIN) {
@@ -181,6 +217,32 @@ export default function AdminLedgerPage() {
   const refreshAll = () => {
     loadSummary();
     loadEntries();
+  };
+
+  const handleMarkWithdrawalPaid = async (transactionId: string) => {
+    setActioningTxId(transactionId);
+    try {
+      await walletApi.adminMarkWithdrawalPaid(transactionId);
+      success('Withdrawal marked as paid.');
+      refreshAll();
+    } catch (err) {
+      toastError(err instanceof ApiError ? err.message : 'Failed to update withdrawal');
+    } finally {
+      setActioningTxId(null);
+    }
+  };
+
+  const handleRejectWithdrawal = async (transactionId: string) => {
+    setActioningTxId(transactionId);
+    try {
+      await walletApi.adminRejectWithdrawal(transactionId);
+      success('Withdrawal rejected and funds returned.');
+      refreshAll();
+    } catch (err) {
+      toastError(err instanceof ApiError ? err.message : 'Failed to reject withdrawal');
+    } finally {
+      setActioningTxId(null);
+    }
   };
 
   if (authLoading) return <PageLoader />;
@@ -350,7 +412,15 @@ export default function AdminLedgerPage() {
                   </td>
                 </tr>
               ) : (
-                entries.map((tx) => <LedgerRow key={tx.id} tx={tx} />)
+                entries.map((tx) => (
+                  <LedgerRow
+                    key={tx.id}
+                    tx={tx}
+                    onMarkPaid={handleMarkWithdrawalPaid}
+                    onReject={handleRejectWithdrawal}
+                    isActioning={actioningTxId === tx.id}
+                  />
+                ))
               )}
             </tbody>
           </table>

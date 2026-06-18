@@ -5,8 +5,8 @@ import {
   Home, EyeOff, Eye, Search, RefreshCw,
   ChevronLeft, ChevronRight, CheckCircle, MapPin, X, User,
 } from 'lucide-react';
-import { propertiesApi, ApiError } from '@/lib/api';
-import type { Property } from '@/types';
+import { propertiesApi, mediaApi, ApiError } from '@/lib/api';
+import type { MediaItem, Property } from '@/types';
 import { ListingStatus, UserRole } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 import { PageLoader, LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -45,6 +45,13 @@ const pretty = (value: unknown) => {
 const dateTime = (value: string | null | undefined) =>
   value ? new Date(value).toLocaleString() : 'Not provided';
 
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api/v1', '') ?? 'http://localhost:3000';
+
+function mediaUrl(url: string) {
+  if (url.startsWith('http')) return url;
+  return `${API_BASE}${url}`;
+}
+
 function DetailItem({ label, value }: { label: string; value: unknown }) {
   return (
     <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
@@ -77,10 +84,13 @@ function AdminPropertiesPageInner() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+  const [statusSummary, setStatusSummary] = useState<Record<string, number>>({ total: 0 });
   const [search, setSearch] = useState('');
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const [isActioning, setIsActioning] = useState(false);
   const [viewingProperty, setViewingProperty] = useState<Property | null>(null);
+  const [propertyMedia, setPropertyMedia] = useState<MediaItem[]>([]);
+  const [isLoadingMedia, setIsLoadingMedia] = useState(false);
 
   useEffect(() => {
     if (!authLoading && user?.role !== UserRole.ADMIN) {
@@ -101,6 +111,7 @@ function AdminPropertiesPageInner() {
       setProperties(res.data);
       setTotal(res.meta.total);
       setTotalPages(res.meta.pages);
+      setStatusSummary(res.meta.summary ?? { total: res.meta.total });
     } catch {
       toastError('Failed to load properties');
     } finally {
@@ -111,6 +122,20 @@ function AdminPropertiesPageInner() {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    if (!viewingProperty?.id) {
+      setPropertyMedia([]);
+      return;
+    }
+
+    setIsLoadingMedia(true);
+    mediaApi
+      .getAll(viewingProperty.id)
+      .then((res) => setPropertyMedia(res.data ?? []))
+      .catch(() => setPropertyMedia([]))
+      .finally(() => setIsLoadingMedia(false));
+  }, [viewingProperty?.id]);
 
   const executeAction = async () => {
     if (!pendingAction) return;
@@ -182,12 +207,14 @@ function AdminPropertiesPageInner() {
       )}
 
       {/* Stats */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
         {[
           { label: 'Total', value: total, cls: 'text-navy-900' },
-          { label: 'Active', value: properties.filter((p) => p.status === 'active').length, cls: 'text-emerald-600' },
-          { label: 'Hidden', value: properties.filter((p) => p.status === 'hidden').length, cls: 'text-slate-500' },
-          { label: 'Expired', value: properties.filter((p) => p.status === 'expired').length, cls: 'text-red-500' },
+          { label: 'Active', value: statusSummary.active ?? 0, cls: 'text-emerald-600' },
+          { label: 'Pending', value: statusSummary.pending ?? 0, cls: 'text-amber-600' },
+          { label: 'Occupied', value: statusSummary.occupied ?? 0, cls: 'text-blue-600' },
+          { label: 'Hidden', value: statusSummary.hidden ?? 0, cls: 'text-slate-500' },
+          { label: 'Expired/Taken', value: (statusSummary.expired ?? 0) + (statusSummary.taken ?? 0), cls: 'text-red-500' },
         ].map((s) => (
           <div key={s.label} className="card p-4">
             <p className={`text-2xl font-black ${s.cls}`}>{s.value}</p>
@@ -475,10 +502,47 @@ function AdminPropertiesPageInner() {
               </DetailSection>
 
               <section className="space-y-3">
-                <h3 className="text-sm font-bold text-navy-900">Raw Data</h3>
-                <pre className="max-h-80 overflow-auto rounded-xl bg-navy-950 p-4 text-[11px] leading-relaxed text-slate-100">
-                  {JSON.stringify(viewingProperty, null, 2)}
-                </pre>
+                <h3 className="text-sm font-bold text-navy-900">Uploaded Media</h3>
+                {isLoadingMedia ? (
+                  <div className="flex justify-center rounded-xl border border-slate-100 bg-slate-50 py-8">
+                    <LoadingSpinner size="md" className="text-veriq-secondary" />
+                  </div>
+                ) : propertyMedia.length === 0 ? (
+                  <div className="rounded-xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-500">
+                    No media uploaded for this listing.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {propertyMedia.map((item) => {
+                      const src = mediaUrl(item.url);
+                      const isImage = item.mimeType?.startsWith('image/') || item.mediaType === 'image';
+                      const isVideo = item.mimeType?.startsWith('video/') || item.mediaType === 'video';
+
+                      return (
+                        <div key={item.id} className="overflow-hidden rounded-xl border border-slate-100 bg-white">
+                          <div className="relative aspect-[4/3] bg-slate-100">
+                            {isImage ? (
+                              <img src={src} alt={item.caption ?? item.section} className="h-full w-full object-cover" />
+                            ) : isVideo ? (
+                              <video src={src} controls className="h-full w-full object-cover" />
+                            ) : (
+                              <div className="flex h-full items-center justify-center p-4 text-center text-xs text-slate-500">
+                                Preview unavailable
+                              </div>
+                            )}
+                          </div>
+                          <div className="space-y-1 p-3">
+                            <p className="text-xs font-bold capitalize text-navy-900">{pretty(item.section)}</p>
+                            <p className="truncate text-xs text-slate-500">{item.caption || item.originalName || item.filename}</p>
+                            <a href={src} target="_blank" rel="noopener noreferrer" className="inline-flex text-xs font-semibold text-veriq-secondary hover:underline">
+                              Open media
+                            </a>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </section>
             </div>
           </div>
