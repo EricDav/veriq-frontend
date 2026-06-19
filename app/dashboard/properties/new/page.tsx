@@ -165,6 +165,7 @@ const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const MIN_IMAGES = 2;
 const MAX_IMAGES = 5;
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api/v1', '') ?? 'http://localhost:3000';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────
 
@@ -184,6 +185,12 @@ function Chip({
       {label}
     </button>
   );
+}
+
+function normalizeAssetUrl(url: string) {
+  if (!url) return '';
+  if (url.startsWith('http') || url.startsWith('blob:')) return url;
+  return `${API_BASE}${url.startsWith('/') ? url : `/${url}`}`;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────
@@ -390,7 +397,7 @@ export default function NewPropertyPage() {
                 />
               </label>
               {coverImageUrl && (
-                <a href={coverImageUrl} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-veriq-secondary hover:underline">
+                <a href={normalizeAssetUrl(coverImageUrl)} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-veriq-secondary hover:underline">
                   View cover
                 </a>
               )}

@@ -188,6 +188,7 @@ import type {
   FilterPropertiesDto,
   UpdateUserDto,
   InitiateConsultationDto,
+  RecordInspectionOutcomeDto,
   AgentTrustTier,
   Wallet,
   WalletTransaction,
@@ -329,6 +330,9 @@ export const agentsApi = {
 
   updateMetrics: (id: string) =>
     api.patch<ApiResponse<Agent>>(`/agents/${id}/update-metrics`),
+
+  recordInspectionOutcome: (dto: RecordInspectionOutcomeDto) =>
+    api.post<ApiResponse<unknown>>('/agents/inspection-outcome', dto),
 };
 
 // ── Properties ───────────────────────────────────────────────────────────
@@ -389,6 +393,12 @@ export const propertiesApi = {
 
   reconfirm: (id: string, dto: { rentAmount?: number; inspectionFee?: number; status?: string }) =>
     api.post<ApiResponse<Property>>(`/properties/${id}/reconfirm`, dto),
+
+  markUnavailable: (id: string) =>
+    api.patch<ApiResponse<Property>>(`/properties/${id}/mark-unavailable`, {}),
+
+  reactivate: (id: string) =>
+    api.patch<ApiResponse<Property>>(`/properties/${id}/reactivate`, {}),
 
   delete: (id: string) =>
     api.delete<ApiResponse<null>>(`/properties/${id}`),

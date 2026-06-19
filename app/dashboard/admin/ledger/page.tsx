@@ -299,14 +299,14 @@ export default function AdminLedgerPage() {
               iconCls="bg-gold-100 text-gold-600"
               label="Veriq Revenue (Company Share)"
               value={summary.revenue.platformShareFormatted}
-              sub={`${summary.revenue.commissionPercent}% commission · ${summary.revenue.paidConsultations} consultations`}
+              sub={`${summary.revenue.commissionLabel} · ${summary.revenue.paidConsultations} consultations`}
             />
             <SummaryCard
               icon={Award}
               iconCls="bg-purple-100 text-purple-600"
               label="Agent Earnings (Commission)"
               value={summary.revenue.agentShareFormatted}
-              sub={`${100 - summary.revenue.commissionPercent}% of consultation fees`}
+              sub="Actual agent share from paid consultations"
             />
           </div>
 
@@ -314,17 +314,21 @@ export default function AdminLedgerPage() {
             <h2 className="font-display text-sm font-bold text-navy-900 mb-3 flex items-center gap-2">
               <Users className="h-4 w-4 text-veriq-secondary" /> Revenue Breakdown
             </h2>
+            <p className="mb-4 text-xs text-veriq-muted">
+              Splits vary by pricing tier and partner-specific rules. These totals use the actual
+              split saved on each paid consultation.
+            </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
               <div className="flex items-center justify-between sm:flex-col sm:items-start gap-1">
                 <span className="text-veriq-muted">Total consultation revenue</span>
                 <span className="font-bold text-navy-900">{summary.revenue.totalConsultationRevenueFormatted}</span>
               </div>
               <div className="flex items-center justify-between sm:flex-col sm:items-start gap-1">
-                <span className="text-veriq-muted">Veriq share ({summary.revenue.commissionPercent}%)</span>
+                <span className="text-veriq-muted">Veriq share (actual)</span>
                 <span className="font-bold text-gold-600">{summary.revenue.platformShareFormatted}</span>
               </div>
               <div className="flex items-center justify-between sm:flex-col sm:items-start gap-1">
-                <span className="text-veriq-muted">Agent share ({100 - summary.revenue.commissionPercent}%)</span>
+                <span className="text-veriq-muted">Agent share (actual)</span>
                 <span className="font-bold text-purple-600">{summary.revenue.agentShareFormatted}</span>
               </div>
             </div>

@@ -433,6 +433,11 @@ export interface Consultation {
   unlockedAt: string | null;
   accessExpiresAt: string | null;
   notes: string | null;
+  inspectionOccurred: boolean | null;
+  listingAccuracyScore: number | null;
+  userSatisfactionRating: number | null;
+  userFeedbackComment: string | null;
+  ratedAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -449,6 +454,14 @@ export interface ConsultationAccess {
     phone: string;
     businessName: string | null;
   } | null;
+}
+
+export interface RecordInspectionOutcomeDto {
+  propertyId: string;
+  inspectionOccurred: boolean;
+  accuracyScore?: number;
+  satisfactionRating?: number;
+  comment?: string;
 }
 
 export interface ChatParticipant {
@@ -638,7 +651,9 @@ export interface WalletAdminSummary {
     totalAgentEarningsFormatted: string;
   };
   revenue: {
-    commissionPercent: number;
+    commissionPercent: number | null;
+    defaultCommissionPercent: number;
+    commissionLabel: string;
     paidConsultations: number;
     totalConsultationRevenue: number;
     totalConsultationRevenueFormatted: string;

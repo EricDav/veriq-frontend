@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import {
-  Plus, Eye, Clock, Trash2, RefreshCw, CheckCircle,
+  Plus, Eye, Clock, RefreshCw, CheckCircle,
   AlertCircle, Home, MoreHorizontal, X,
 } from 'lucide-react';
 import { propertiesApi, agentsApi, ApiError } from '@/lib/api';
@@ -67,8 +67,8 @@ function AgentPropertiesView() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [agent, setAgent] = useState<Agent | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [statusTarget, setStatusTarget] = useState<{ id: string; action: 'unavailable' | 'reactivate'; title: string } | null>(null);
+  const [isStatusChanging, setIsStatusChanging] = useState(false);
   const [reconfirmingId, setReconfirmingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -96,18 +96,20 @@ function AgentPropertiesView() {
     load();
   }, [load]);
 
-  const handleDelete = async () => {
-    if (!deleteTarget) return;
-    setIsDeleting(true);
+  const handleStatusChange = async () => {
+    if (!statusTarget) return;
+    setIsStatusChanging(true);
     try {
-      await propertiesApi.delete(deleteTarget);
-      success('Listing deleted');
-      setProperties((prev) => prev.filter((p) => p.id !== deleteTarget));
+      const res = statusTarget.action === 'unavailable'
+        ? await propertiesApi.markUnavailable(statusTarget.id)
+        : await propertiesApi.reactivate(statusTarget.id);
+      setProperties((prev) => prev.map((p) => (p.id === statusTarget.id ? res.data : p)));
+      success(statusTarget.action === 'unavailable' ? 'Listing marked as rented/unavailable.' : 'Listing reactivated.');
     } catch (err) {
-      toastError(err instanceof ApiError ? err.message : 'Failed to delete');
+      toastError(err instanceof ApiError ? err.message : 'Failed to update listing status');
     } finally {
-      setIsDeleting(false);
-      setDeleteTarget(null);
+      setIsStatusChanging(false);
+      setStatusTarget(null);
     }
   };
 
@@ -165,7 +167,7 @@ function AgentPropertiesView() {
       <div className="grid grid-cols-3 gap-4">
         {[
           { label: 'Active', value: properties.filter((p) => p.status === 'active').length, cls: 'bg-emerald-50 text-emerald-600' },
-          { label: 'Hidden', value: properties.filter((p) => p.status === 'hidden').length, cls: 'bg-slate-50 text-slate-500' },
+          { label: 'Unavailable', value: properties.filter((p) => p.status === ListingStatus.OCCUPIED || p.status === ListingStatus.TAKEN).length, cls: 'bg-blue-50 text-blue-600' },
           { label: 'Total', value: properties.length, cls: 'bg-blue-50 text-blue-600' },
         ].map((s) => (
           <div key={s.label} className="card p-4 text-center">
@@ -279,14 +281,23 @@ function AgentPropertiesView() {
                           >
                             <MoreHorizontal className="h-3.5 w-3.5" />
                           </Link>
-                          {/* Delete */}
-                          <button
-                            onClick={() => setDeleteTarget(prop.id)}
-                            title="Delete listing"
-                            className="rounded-lg p-1.5 text-red-500 hover:bg-red-50 transition-colors"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
+                          {prop.status === ListingStatus.ACTIVE ? (
+                            <button
+                              onClick={() => setStatusTarget({ id: prop.id, action: 'unavailable', title: prop.title })}
+                              title="Mark rented/unavailable"
+                              className="rounded-lg px-2 py-1.5 text-[10px] font-bold text-blue-600 hover:bg-blue-50 transition-colors"
+                            >
+                              Rented
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => setStatusTarget({ id: prop.id, action: 'reactivate', title: prop.title })}
+                              title="Reactivate listing"
+                              className="rounded-lg px-2 py-1.5 text-[10px] font-bold text-emerald-600 hover:bg-emerald-50 transition-colors"
+                            >
+                              Reactivate
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -298,16 +309,20 @@ function AgentPropertiesView() {
         </div>
       )}
 
-      {/* Delete confirm */}
+      {/* Status confirm */}
       <ConfirmDialog
-        isOpen={!!deleteTarget}
-        onClose={() => setDeleteTarget(null)}
-        onConfirm={handleDelete}
-        title="Delete Listing"
-        message="Are you sure you want to delete this listing? This action cannot be undone."
-        confirmLabel="Delete"
-        variant="danger"
-        isLoading={isDeleting}
+        isOpen={!!statusTarget}
+        onClose={() => setStatusTarget(null)}
+        onConfirm={handleStatusChange}
+        title={statusTarget?.action === 'unavailable' ? 'Mark as Rented/Unavailable' : 'Reactivate Listing'}
+        message={
+          statusTarget?.action === 'unavailable'
+            ? 'This listing will be removed from active search but kept for records, analytics, and future reactivation.'
+            : 'This listing will return to active search and its freshness clock will reset.'
+        }
+        confirmLabel={statusTarget?.action === 'unavailable' ? 'Mark Unavailable' : 'Reactivate'}
+        variant={statusTarget?.action === 'unavailable' ? 'danger' : 'primary'}
+        isLoading={isStatusChanging}
       />
     </div>
   );

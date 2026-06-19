@@ -24,13 +24,25 @@ const SOCIAL = [
 export default async function ContactPage() {
   const content = await getPublicPageContent("contact");
   const hero = content.hero;
+  const formIntro = content.form_intro;
   const support = content.support;
+  const agentSupport = content.agent_support;
+  const socialContent = content.social;
   const operations = content.operations;
   const supportData = (support?.data ?? {}) as {
     supportEmail?: string;
     agentEmail?: string;
     responseTime?: string;
+    businessHours?: string;
   };
+  const agentSupportData = (agentSupport?.data ?? {}) as { agentEmail?: string };
+  const socialLinks = Array.isArray(socialContent?.data?.links)
+    ? (socialContent.data.links as Array<{ label: string; href: string }>).map((item) => ({
+        ...(SOCIAL.find((social) => social.label === item.label) ?? SOCIAL[0]),
+        label: item.label,
+        href: item.href,
+      }))
+    : SOCIAL;
 
   return (
     <>
@@ -61,9 +73,9 @@ export default async function ContactPage() {
           <div className="grid grid-cols-1 gap-12 lg:grid-cols-2">
             {/* Contact form */}
             <div>
-              <h2 className="font-display text-2xl font-bold text-navy-900 mb-2">Send us a Message</h2>
+              <h2 className="font-display text-2xl font-bold text-navy-900 mb-2">{formIntro?.title ?? "Send us a Message"}</h2>
               <p className="text-veriq-muted text-sm mb-8">
-                Fill in the form below and we&apos;ll get back to you through our official support channels.
+                {formIntro?.body ?? "Fill in the form below and we'll get back to you through our official support channels."}
               </p>
 
               <ContactForm />
@@ -78,7 +90,7 @@ export default async function ContactPage() {
                     <Mail className="h-5 w-5" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-navy-900 mb-1">Email Support</h3>
+                    <h3 className="font-semibold text-navy-900 mb-1">{support?.title ?? "Email Support"}</h3>
                     <p className="text-sm text-veriq-muted mb-2">
                       {support?.body ?? "Send us an email and we'll respond through our official support channels."}
                     </p>
@@ -99,7 +111,7 @@ export default async function ContactPage() {
                     </p>
                     <div className="flex items-center gap-1.5">
                       <CheckCircle className="h-4 w-4 text-emerald-500" />
-                      <span className="text-xs text-emerald-600 font-medium">Monday – Friday, 9am – 6pm WAT</span>
+                      <span className="text-xs text-emerald-600 font-medium">{supportData.businessHours ?? "Monday – Friday, 9am – 6pm WAT"}</span>
                     </div>
                   </div>
                 </div>
@@ -111,23 +123,23 @@ export default async function ContactPage() {
                     <Shield className="h-5 w-5" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-navy-900 mb-1">Agent Support</h3>
+                    <h3 className="font-semibold text-navy-900 mb-1">{agentSupport?.title ?? "Agent Support"}</h3>
                     <p className="text-sm text-veriq-muted mb-2">
-                      For agents with listing disputes, payout queries, or verification issues — use the agent support channel.
+                      {agentSupport?.body ?? "For agents with listing disputes, payout queries, or verification issues — use the agent support channel."}
                     </p>
-                    <p className="text-sm font-medium text-veriq-secondary">{supportData.agentEmail ?? "agents@veriqproperty.com"}</p>
+                    <p className="text-sm font-medium text-veriq-secondary">{agentSupportData.agentEmail ?? supportData.agentEmail ?? "agents@veriqproperty.com"}</p>
                   </div>
                 </div>
               </div>
 
               {/* Social media */}
               <div className="rounded-2xl bg-veriq-surface p-6">
-                <h3 className="font-display text-base font-bold text-navy-900 mb-2">Follow & Connect</h3>
+                <h3 className="font-display text-base font-bold text-navy-900 mb-2">{socialContent?.title ?? "Follow & Connect"}</h3>
                 <p className="text-sm text-veriq-muted mb-5">
-                  Stay updated with property intelligence tips, platform news, and market insights.
+                  {socialContent?.body ?? "Stay updated with property intelligence tips, platform news, and market insights."}
                 </p>
                 <div className="grid grid-cols-2 gap-3">
-                  {SOCIAL.map((s) => (
+                  {socialLinks.map((s) => (
                     <a
                       key={s.label}
                       href={s.href}

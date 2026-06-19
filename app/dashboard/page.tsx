@@ -5,13 +5,14 @@ import Link from 'next/link';
 import {
   Search, Lock, ArrowRight, Eye, TrendingUp,
   Clock, Shield, MapPin, Home, ShieldCheck, Users,
-  CheckCircle, AlertCircle, RefreshCw,
+  CheckCircle, AlertCircle, RefreshCw, Star, X,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { consultationsApi, propertiesApi, agentsApi } from '@/lib/api';
 import type { Consultation, Property, Agent } from '@/types';
 import { UserRole, AgentVerificationLevel, ConsultationStatus, ListingStatus } from '@/types';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { useToast } from '@/components/ui/Toast';
 
 // ─── Formatters ───────────────────────────────────────────────────────────
 
@@ -59,6 +60,13 @@ function StatCard({
 function UserDashboard({ userId }: { userId: string }) {
   const [consultations, setConsultations] = useState<Consultation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [ratingTarget, setRatingTarget] = useState<Consultation | null>(null);
+  const [rating, setRating] = useState(5);
+  const [inspectionOccurred, setInspectionOccurred] = useState(true);
+  const [accuracyScore, setAccuracyScore] = useState(100);
+  const [comment, setComment] = useState('');
+  const [submittingRating, setSubmittingRating] = useState(false);
+  const { success, error } = useToast();
 
   useEffect(() => {
     consultationsApi
@@ -73,6 +81,56 @@ function UserDashboard({ userId }: { userId: string }) {
   ).length;
 
   const recentConsultations = consultations.slice(0, 5);
+  const canRate = (consultation: Consultation) =>
+    [ConsultationStatus.PAID, ConsultationStatus.UNLOCKED, ConsultationStatus.EXPIRED].includes(
+      consultation.status,
+    );
+
+  const openRating = (consultation: Consultation) => {
+    setRatingTarget(consultation);
+    setRating(Number(consultation.userSatisfactionRating ?? 5));
+    setInspectionOccurred(consultation.inspectionOccurred ?? true);
+    setAccuracyScore(Number(consultation.listingAccuracyScore ?? 100));
+    setComment(consultation.userFeedbackComment ?? '');
+  };
+
+  const submitRating = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!ratingTarget) return;
+
+    setSubmittingRating(true);
+    try {
+      await agentsApi.recordInspectionOutcome({
+        propertyId: ratingTarget.propertyId,
+        inspectionOccurred,
+        accuracyScore,
+        satisfactionRating: rating,
+        comment: comment.trim() || undefined,
+      });
+
+      const ratedAt = new Date().toISOString();
+      setConsultations((items) =>
+        items.map((item) =>
+          item.id === ratingTarget.id
+            ? {
+                ...item,
+                inspectionOccurred,
+                listingAccuracyScore: accuracyScore,
+                userSatisfactionRating: rating,
+                userFeedbackComment: comment.trim() || null,
+                ratedAt,
+              }
+            : item,
+        ),
+      );
+      success('Thanks. Your agent rating has been recorded.');
+      setRatingTarget(null);
+    } catch (err) {
+      error(err instanceof Error ? err.message : 'Unable to submit rating.');
+    } finally {
+      setSubmittingRating(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -130,27 +188,40 @@ function UserDashboard({ userId }: { userId: string }) {
           ) : (
             <div className="space-y-3">
               {recentConsultations.map((c) => (
-                <div key={c.id} className="flex items-center gap-4 rounded-xl border border-slate-100 p-4">
-                  <div className="h-10 w-10 rounded-xl bg-navy-50 flex items-center justify-center flex-shrink-0">
-                    <Lock className="h-4 w-4 text-veriq-secondary" />
+                <div key={c.id} className="flex flex-col gap-3 rounded-xl border border-slate-100 p-4 sm:flex-row sm:items-center">
+                  <div className="flex min-w-0 flex-1 items-center gap-4">
+                    <div className="h-10 w-10 flex-shrink-0 rounded-xl bg-navy-50 flex items-center justify-center">
+                      <Lock className="h-4 w-4 text-veriq-secondary" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-navy-900 text-sm truncate">
+                        {c.property?.title ?? 'Property Report'}
+                      </p>
+                      <p className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5">
+                        <Clock className="h-2.5 w-2.5" /> {timeAgo(c.createdAt)}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-navy-900 text-sm truncate">
-                      {c.property?.title ?? 'Property Report'}
-                    </p>
-                    <p className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5">
-                      <Clock className="h-2.5 w-2.5" /> {timeAgo(c.createdAt)}
-                    </p>
+                  <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                    <span className={`badge text-[10px] capitalize ${
+                      c.status === ConsultationStatus.UNLOCKED || c.status === ConsultationStatus.PAID
+                        ? 'bg-emerald-100 text-emerald-700'
+                        : c.status === ConsultationStatus.PENDING_PAYMENT
+                        ? 'bg-amber-100 text-amber-700'
+                        : 'bg-slate-100 text-slate-500'
+                    }`}>
+                      {c.status.replace(/_/g, ' ')}
+                    </span>
+                    {canRate(c) && (
+                      <button
+                        type="button"
+                        onClick={() => openRating(c)}
+                        className="rounded-lg border border-gold-100 px-3 py-2 text-[11px] font-bold text-gold-700 hover:bg-gold-50"
+                      >
+                        {c.userSatisfactionRating ? `Rated ${Number(c.userSatisfactionRating).toFixed(1)}/5` : 'Rate agent'}
+                      </button>
+                    )}
                   </div>
-                  <span className={`badge text-[10px] capitalize ${
-                    c.status === ConsultationStatus.UNLOCKED || c.status === ConsultationStatus.PAID
-                      ? 'bg-emerald-100 text-emerald-700'
-                      : c.status === ConsultationStatus.PENDING_PAYMENT
-                      ? 'bg-amber-100 text-amber-700'
-                      : 'bg-slate-100 text-slate-500'
-                  }`}>
-                    {c.status.replace(/_/g, ' ')}
-                  </span>
                 </div>
               ))}
             </div>
@@ -185,6 +256,95 @@ function UserDashboard({ userId }: { userId: string }) {
           </div>
         </div>
       </div>
+
+      {ratingTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy-950/50 px-4 py-6">
+          <form onSubmit={submitRating} className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-gold-600">Agent rating</p>
+                <h3 className="font-display text-lg font-black text-navy-900">
+                  {ratingTarget.property?.title ?? 'Property report'}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setRatingTarget(null)}
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-500 hover:bg-slate-50"
+                aria-label="Close rating dialog"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="space-y-5">
+              <div>
+                <label className="mb-2 block text-sm font-bold text-navy-900">How would you rate this agent?</label>
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5].map((value) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setRating(value)}
+                      className="flex h-11 w-11 items-center justify-center rounded-xl border border-gold-100 hover:bg-gold-50"
+                      aria-label={`Rate ${value} out of 5`}
+                    >
+                      <Star
+                        className={`h-5 w-5 ${value <= rating ? 'fill-gold-500 text-gold-500' : 'text-slate-300'}`}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <label className="flex items-center gap-3 rounded-xl border border-slate-100 p-3 text-sm font-semibold text-navy-800">
+                <input
+                  type="checkbox"
+                  checked={inspectionOccurred}
+                  onChange={(e) => setInspectionOccurred(e.target.checked)}
+                  className="h-4 w-4 rounded border-slate-300 text-veriq-secondary"
+                />
+                Physical inspection happened
+              </label>
+
+              <div>
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <label className="text-sm font-bold text-navy-900">Listing accuracy</label>
+                  <span className="text-sm font-black text-veriq-secondary">{accuracyScore}%</span>
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  value={accuracyScore}
+                  onChange={(e) => setAccuracyScore(Number(e.target.value))}
+                  className="w-full accent-veriq-secondary"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-bold text-navy-900">Comment</label>
+                <textarea
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value.slice(0, 500))}
+                  rows={4}
+                  className="input min-h-28 resize-y"
+                  placeholder="Share how responsive, honest, or helpful the agent was."
+                />
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button type="button" onClick={() => setRatingTarget(null)} className="btn-outline !py-2.5">
+                Cancel
+              </button>
+              <button type="submit" disabled={submittingRating} className="btn-primary !py-2.5 disabled:opacity-60">
+                {submittingRating ? 'Submitting...' : 'Submit rating'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }

@@ -49,6 +49,28 @@ export default async function AboutPage() {
   const content = await getPublicPageContent("about");
   const hero = content.hero;
   const mission = content.mission;
+  const problems = content.problems;
+  const capabilities = content.capabilities;
+  const valuesContent = content.values;
+  const cta = content.cta;
+  const problemsSolved = Array.isArray(problems?.data?.items) ? problems.data.items as string[] : PROBLEMS_SOLVED;
+  const capabilitiesItems = Array.isArray(capabilities?.data?.items)
+    ? (capabilities.data.items as Array<{ title: string; desc: string }>)
+    : [
+        { title: "View Verified Property Previews", desc: "Browse moderated listings with real, accurate visual representation." },
+        { title: "Unlock Intelligence Reports", desc: "Access detailed property intelligence including environmental and accessibility data." },
+        { title: "Compare Agent Trust Performance", desc: "See real metrics: response speed, listing accuracy, and inspection success rates." },
+        { title: "Make Informed Decisions", desc: "Decide whether a property is worth visiting before you ever leave home." },
+        { title: "Connect with Trusted Agents", desc: "Work with agents who have verified track records and accountability." },
+        { title: "Inspect Smarter", desc: "Walk into every inspection with full context — confident, not guessing." },
+      ];
+  const values = Array.isArray(valuesContent?.data?.items)
+    ? (valuesContent.data.items as Array<{ title: string; description: string }>).map((item, index) => ({
+        ...VALUES[index % VALUES.length],
+        title: item.title,
+        description: item.description,
+      }))
+    : VALUES;
   const missionParagraphs = mission?.body
     ? mission.body.split(/\n+/).filter(Boolean)
     : [
@@ -107,10 +129,10 @@ export default async function AboutPage() {
             {/* Problems we solve */}
             <div className="rounded-2xl bg-veriq-surface p-8">
               <h3 className="font-display text-lg font-bold text-navy-900 mb-6">
-                Problems We Solve
+                {problems?.title ?? "Problems We Solve"}
               </h3>
               <ul className="space-y-3">
-                {PROBLEMS_SOLVED.map((problem) => (
+                {problemsSolved.map((problem) => (
                   <li key={problem} className="flex items-start gap-3">
                     <div className="h-5 w-5 rounded-full bg-red-50 flex items-center justify-center flex-shrink-0 mt-0.5">
                       <div className="h-1.5 w-1.5 rounded-full bg-red-400" />
@@ -121,7 +143,7 @@ export default async function AboutPage() {
               </ul>
               <div className="mt-6 pt-6 border-t border-slate-200">
                 <p className="text-xs text-slate-500 italic">
-                  "We reduce these problems through structured property intelligence, freshness verification, trust-based agent performance, and detailed pre-inspection disclosures."
+                  &quot;{problems?.body ?? "We reduce these problems through structured property intelligence, freshness verification, trust-based agent performance, and detailed pre-inspection disclosures."}&quot;
                 </p>
               </div>
             </div>
@@ -134,26 +156,28 @@ export default async function AboutPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-14">
             <h2 className="section-heading mb-4">
-              What You Can Do on <span className="gradient-text">Veriq</span>
+              {capabilities?.title ?? <>What You Can Do on <span className="gradient-text">Veriq</span></>}
             </h2>
           </div>
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {[
-              { icon: <Eye className="h-5 w-5" />, title: "View Verified Property Previews", desc: "Browse moderated listings with real, accurate visual representation.", color: "text-blue-600 bg-blue-50" },
-              { icon: <Shield className="h-5 w-5" />, title: "Unlock Intelligence Reports", desc: "Access detailed property intelligence including environmental and accessibility data.", color: "text-purple-600 bg-purple-50" },
-              { icon: <TrendingUp className="h-5 w-5" />, title: "Compare Agent Trust Performance", desc: "See real metrics: response speed, listing accuracy, and inspection success rates.", color: "text-gold-600 bg-gold-50" },
-              { icon: <CheckCircle className="h-5 w-5" />, title: "Make Informed Decisions", desc: "Decide whether a property is worth visiting before you ever leave home.", color: "text-emerald-600 bg-emerald-50" },
-              { icon: <Users className="h-5 w-5" />, title: "Connect with Trusted Agents", desc: "Work with agents who have verified track records and accountability.", color: "text-indigo-600 bg-indigo-50" },
-              { icon: <Target className="h-5 w-5" />, title: "Inspect Smarter", desc: "Walk into every inspection with full context — confident, not guessing.", color: "text-teal-600 bg-teal-50" },
-            ].map((item) => (
+            {capabilitiesItems.map((item, index) => {
+              const style = [
+                { icon: <Eye className="h-5 w-5" />, color: "text-blue-600 bg-blue-50" },
+                { icon: <Shield className="h-5 w-5" />, color: "text-purple-600 bg-purple-50" },
+                { icon: <TrendingUp className="h-5 w-5" />, color: "text-gold-600 bg-gold-50" },
+                { icon: <CheckCircle className="h-5 w-5" />, color: "text-emerald-600 bg-emerald-50" },
+                { icon: <Users className="h-5 w-5" />, color: "text-indigo-600 bg-indigo-50" },
+                { icon: <Target className="h-5 w-5" />, color: "text-teal-600 bg-teal-50" },
+              ][index % 6];
+              return (
               <div key={item.title} className="card p-6">
-                <div className={`inline-flex h-10 w-10 items-center justify-center rounded-xl ${item.color} mb-4`}>
-                  {item.icon}
+                <div className={`inline-flex h-10 w-10 items-center justify-center rounded-xl ${style.color} mb-4`}>
+                  {style.icon}
                 </div>
                 <h3 className="font-display text-base font-bold text-navy-900 mb-2">{item.title}</h3>
                 <p className="text-sm text-veriq-muted leading-relaxed">{item.desc}</p>
               </div>
-            ))}
+            );})}
           </div>
         </div>
       </section>
@@ -162,11 +186,11 @@ export default async function AboutPage() {
       <section className="py-20 bg-white">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-xl mx-auto mb-14">
-            <h2 className="section-heading mb-4">Our Core Values</h2>
-            <p className="section-subheading">The principles that guide every decision we make.</p>
+            <h2 className="section-heading mb-4">{valuesContent?.title ?? "Our Core Values"}</h2>
+            <p className="section-subheading">{valuesContent?.body ?? "The principles that guide every decision we make."}</p>
           </div>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {VALUES.map((val) => (
+            {values.map((val) => (
               <div key={val.title} className="text-center">
                 <div className={`inline-flex h-14 w-14 items-center justify-center rounded-2xl ${val.color} mb-5`}>
                   {val.icon}
@@ -183,10 +207,10 @@ export default async function AboutPage() {
       <section className="py-16 bg-veriq-surface">
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="font-display text-3xl font-bold text-navy-900 mb-4">
-            Join the Smarter Property Movement
+            {cta?.title ?? "Join the Smarter Property Movement"}
           </h2>
           <p className="text-veriq-muted text-base mb-8">
-            Whether you're a renter, buyer, or agent — Veriq Property is building the trust infrastructure Nigeria's property market needs.
+            {cta?.body ?? "Whether you're a renter, buyer, or agent — Veriq Property is building the trust infrastructure Nigeria's property market needs."}
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <Link href="/properties" className="btn-primary gap-2">

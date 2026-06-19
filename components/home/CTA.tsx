@@ -3,6 +3,19 @@ import { ArrowRight, Shield, Users } from "lucide-react";
 import type { SiteContent } from "@/types";
 
 export function CTA({ content }: { content?: SiteContent }) {
+  const cards = Array.isArray(content?.data?.cards)
+    ? (content.data.cards as Array<{ title: string; desc: string }>).map((card, index) => ({
+        ...[
+          { icon: <Shield className="h-5 w-5" />, color: "from-blue-500/20 to-blue-700/20" },
+          { icon: <Users className="h-5 w-5" />, color: "from-gold-500/20 to-gold-700/20" },
+        ][index % 2],
+        ...card,
+      }))
+    : [
+        { icon: <Shield className="h-5 w-5" />, title: "For Property Seekers", desc: "Unlock verified reports and make informed decisions before visiting.", color: "from-blue-500/20 to-blue-700/20" },
+        { icon: <Users className="h-5 w-5" />, title: "For Agents", desc: "Build trust, earn better visibility, and attract quality-conscious clients.", color: "from-gold-500/20 to-gold-700/20" },
+      ];
+
   return (
     <section className="py-24 bg-veriq-surface">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -44,10 +57,7 @@ export function CTA({ content }: { content?: SiteContent }) {
 
             {/* Feature cards */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {[
-                { icon: <Shield className="h-5 w-5" />, title: "For Property Seekers", desc: "Unlock verified reports and make informed decisions before visiting.", color: "from-blue-500/20 to-blue-700/20" },
-                { icon: <Users className="h-5 w-5" />, title: "For Agents", desc: "Build trust, earn better visibility, and attract quality-conscious clients.", color: "from-gold-500/20 to-gold-700/20" },
-              ].map((card) => (
+              {cards.map((card) => (
                 <div
                   key={card.title}
                   className={`rounded-2xl bg-gradient-to-br ${card.color} border border-white/10 p-5 backdrop-blur-sm`}
