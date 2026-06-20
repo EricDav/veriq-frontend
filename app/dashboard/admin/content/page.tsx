@@ -443,7 +443,9 @@ export default function AdminContentPage() {
             </div>
             <h1 className="font-display text-2xl font-bold text-navy-900">Site Content</h1>
           </div>
-          <p className="text-sm text-veriq-muted">Update static Home, About, and Contact content without changing code.</p>
+          <p className="text-sm text-veriq-muted">
+            Update static Home, About, Contact, FAQ, Privacy, and Terms content without changing code.
+          </p>
         </div>
         <button onClick={load} className="btn-primary !text-sm !py-2.5 flex items-center gap-2">
           <RefreshCw className="h-4 w-4" /> Refresh

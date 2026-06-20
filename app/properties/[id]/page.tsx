@@ -11,10 +11,11 @@ import {
 } from 'lucide-react';
 import { propertiesApi, consultationsApi, chatApi, mediaApi, ApiError } from '@/lib/api';
 import type { ConsultationAccess, MediaItem, Property } from '@/types';
-import { AgentVerificationLevel, AgentTrustTier, FreshnessScore } from '@/types';
+import { AgentVerificationLevel, AgentTrustTier, FreshnessScore, PropertyType } from '@/types';
 import { PageLoader, LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/components/ui/Toast';
+import { AgentRatingButton } from '@/components/agents/AgentRatingButton';
 
 const FRESHNESS_INFO: Record<FreshnessScore, { label: string; cls: string; width: string }> = {
   freshly_verified: { label: 'Freshly verified — within 24 hours', cls: 'bg-emerald-500', width: 'w-full' },
@@ -225,6 +226,9 @@ export default function PropertyDetailPage() {
   const canContactAgent = hasAccess && !!agentContact?.phone;
   const location = [property.area, property.city, property.state].filter(Boolean).join(', ');
   const gradient = 'from-blue-600 to-indigo-800';
+  const coverImageSrc = property.coverImageUrl ? mediaUrl(property.coverImageUrl) : null;
+  const isHostel = property.propertyType === PropertyType.HOSTEL;
+  const isShortStay = property.propertyType === PropertyType.SHORT_STAY;
 
   return (
     <div className="min-h-screen bg-veriq-surface pt-20">
@@ -239,9 +243,17 @@ export default function PropertyDetailPage() {
           <div className="lg:col-span-2 space-y-6">
             {/* Main image */}
             <div className={`relative h-80 rounded-2xl bg-gradient-to-br ${gradient} overflow-hidden`}>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <Home className="h-24 w-24 text-white/10" />
-              </div>
+              {coverImageSrc ? (
+                <img
+                  src={coverImageSrc}
+                  alt={property.title}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Home className="h-24 w-24 text-white/10" />
+                </div>
+              )}
               <div className="absolute top-4 left-4 flex gap-2">
                 <span className={`badge text-xs font-semibold capitalize ${
                   property.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-700'
@@ -402,6 +414,9 @@ export default function PropertyDetailPage() {
                         This agent has not enabled direct contact for unlocked reports.
                       </p>
                     )}
+                    <div className="mt-4">
+                      <AgentRatingButton propertyId={id} propertyTitle={property.title} />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -440,30 +455,49 @@ export default function PropertyDetailPage() {
                     { label: 'Compound Culture', value: property.compoundCulture },
                   ]}
                 />
-                <IntelligenceGrid
-                  title="Hostel Intelligence"
-                  items={[
-                    { label: 'Suitable For', value: property.hostelSuitableFor },
-                    { label: 'Persons Per Room', value: property.hostelPersonsPerRoom },
-                    { label: 'Gender', value: property.hostelGender },
-                    { label: 'Campus Proximity', value: property.hostelCampusProximity },
-                    { label: 'Nearest Campus', value: property.hostelNearestCampus },
-                    { label: 'Distance From Campus', value: property.hostelDistanceFromCampus },
-                    { label: 'Meals Included', value: property.hostelMealsIncluded },
-                    { label: 'Rules', value: property.hostelRulesNotes },
-                  ]}
-                />
+                {isHostel && (
+                  <IntelligenceGrid
+                    title="Hostel Intelligence"
+                    items={[
+                      { label: 'Suitable For', value: property.hostelSuitableFor },
+                      { label: 'Persons Per Room', value: property.hostelPersonsPerRoom },
+                      { label: 'Gender', value: property.hostelGender },
+                      { label: 'Campus Proximity', value: property.hostelCampusProximity },
+                      { label: 'Nearest Campus', value: property.hostelNearestCampus },
+                      { label: 'Distance From Campus', value: property.hostelDistanceFromCampus },
+                      { label: 'Meals Included', value: property.hostelMealsIncluded },
+                      { label: 'Rules', value: property.hostelRulesNotes },
+                    ]}
+                  />
+                )}
+                {isShortStay && (
+                  <IntelligenceGrid
+                    title="Short Stay Intelligence"
+                    items={[
+                      { label: 'Pricing Model', value: property.shortStayPricingModel },
+                      { label: 'Daily Rate', value: property.shortStayDailyRate ? formatNaira(property.shortStayDailyRate) : null },
+                      { label: 'Weekly Rate', value: property.shortStayWeeklyRate ? formatNaira(property.shortStayWeeklyRate) : null },
+                      { label: 'Min Nights', value: property.shortStayMinNights },
+                      { label: 'Max Nights', value: property.shortStayMaxNights },
+                      { label: 'Check-in', value: property.shortStayCheckInTime },
+                      { label: 'Check-out', value: property.shortStayCheckOutTime },
+                      { label: 'Amenities', value: property.shortStayAmenities },
+                      { label: 'House Rules', value: property.shortStayHouseRules },
+                      { label: 'Air Conditioning', value: property.shortStayAC },
+                      { label: 'Internet', value: property.shortStayInternet },
+                      { label: 'Cleanliness', value: property.shortStayCleanliness },
+                      { label: 'Furnishing', value: property.shortStayFurnishing },
+                      { label: 'Kitchen Access', value: property.shortStayKitchen },
+                      { label: 'Agent Note', value: property.shortStayAgentNote },
+                    ]}
+                  />
+                )}
                 <IntelligenceGrid
                   title="Condition & Agent Notes"
                   items={[
                     { label: 'Property Condition', value: property.propertyCondition },
                     { label: 'Known Issues', value: property.knownIssues },
                     { label: 'Agent Observation', value: property.agentObservation },
-                    { label: 'Short Stay Internet', value: property.shortStayInternet },
-                    { label: 'Short Stay Cleanliness', value: property.shortStayCleanliness },
-                    { label: 'Short Stay Furnishing', value: property.shortStayFurnishing },
-                    { label: 'Short Stay Kitchen', value: property.shortStayKitchen },
-                    { label: 'Short Stay Agent Note', value: property.shortStayAgentNote },
                   ]}
                 />
               </div>
@@ -555,7 +589,7 @@ export default function PropertyDetailPage() {
               <p className="text-2xl font-black text-navy-900 mb-1">
                 {formatNaira(property.consultationFee)}
               </p>
-              <p className="text-xs text-veriq-muted">One-time fee for full report access (valid 7 days)</p>
+              <p className="text-xs text-veriq-muted">One-time fee for full report access (valid 48 hours)</p>
             </div>
 
             {/* Refund protection */}

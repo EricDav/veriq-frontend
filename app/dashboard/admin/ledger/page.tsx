@@ -283,9 +283,9 @@ export default function AdminLedgerPage() {
             <SummaryCard
               icon={WalletIcon}
               iconCls="bg-navy-900 text-white"
-              label="Total Wallet Balances"
-              value={summary.wallets.totalBalanceFormatted}
-              sub={`${summary.wallets.walletCount} wallets · platform liability`}
+              label="Customer Wallet Balances"
+              value={summary.wallets.customerBalanceFormatted}
+              sub={`${summary.wallets.walletCount} wallets · excludes agent earnings`}
             />
             <SummaryCard
               icon={TrendingUp}
@@ -344,6 +344,22 @@ export default function AdminLedgerPage() {
                 </div>
               </div>
             )}
+            <div className="mt-4 pt-4 border-t border-slate-100 grid grid-cols-1 gap-4 text-sm sm:grid-cols-3">
+              <div className="flex items-center justify-between sm:flex-col sm:items-start">
+                <span className="text-veriq-muted">Agent wallet balances</span>
+                <span className="font-bold text-navy-900">{summary.wallets.agentBalanceFormatted}</span>
+              </div>
+              <div className="flex items-center justify-between sm:flex-col sm:items-start">
+                <span className="text-veriq-muted">Top-ups minus customer balances</span>
+                <span className="font-bold text-navy-900">{summary.revenue.topUpsLessCustomerBalancesFormatted}</span>
+              </div>
+              <div className="flex items-center justify-between sm:flex-col sm:items-start">
+                <span className="text-veriq-muted">Difference vs Veriq + agent earnings</span>
+                <span className={`font-bold ${Math.abs(summary.revenue.reconciliationDifference) < 1 ? 'text-emerald-600' : 'text-red-600'}`}>
+                  {summary.revenue.reconciliationDifferenceFormatted}
+                </span>
+              </div>
+            </div>
           </div>
         </>
       ) : null}

@@ -11,6 +11,8 @@ const nextConfig = {
       { protocol: "https", hostname: "upload.logistecx.online" },
       { protocol: "https", hostname: "veriqproperty.com" },
       { protocol: "https", hostname: "www.veriqproperty.com" },
+      { protocol: "http", hostname: "localhost" },
+      { protocol: "http", hostname: "127.0.0.1" },
     ],
   },
 };

@@ -24,6 +24,7 @@ import {
 import { PageLoader, LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/components/ui/Toast';
+import { AgentRatingButton } from '@/components/agents/AgentRatingButton';
 
 // ─── Constants ────────────────────────────────────────────────────────────
 
@@ -230,9 +231,18 @@ function MediaGallery({ propertyId }: { propertyId: string }) {
 
 // ─── Quick Intelligence Panel ─────────────────────────────────────────────
 
-function QIRow({ label, value, icon: Icon }: { label: string; value: string | null | undefined; icon?: React.ElementType }) {
-  if (!value) return null;
-  const display = value.replace(/_/g, ' ');
+function displayValue(value: unknown) {
+  if (value === null || value === undefined || value === '') return null;
+  if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+  if (Array.isArray(value)) {
+    return value.length ? value.map((item) => String(item).replace(/_/g, ' ')).join(', ') : null;
+  }
+  return String(value).replace(/_/g, ' ');
+}
+
+function QIRow({ label, value, icon: Icon }: { label: string; value: unknown; icon?: React.ElementType }) {
+  const display = displayValue(value);
+  if (!display) return null;
   return (
     <div className="flex items-center justify-between py-2.5 border-b border-slate-100 last:border-0">
       <div className="flex items-center gap-2 text-xs text-slate-500">
@@ -304,8 +314,11 @@ function QuickIntelligencePanel({ property }: { property: Property }) {
 
 function ShortStayPanel({ property }: { property: Property }) {
   if (property.propertyType !== PropertyType.SHORT_STAY) return null;
-  const hasData = property.shortStayAC || property.shortStayInternet || property.shortStayCleanliness
-    || property.shortStayFurnishing || property.shortStayKitchen;
+  const hasData = property.shortStayPricingModel || property.shortStayDailyRate || property.shortStayWeeklyRate
+    || property.shortStayMinNights || property.shortStayMaxNights || property.shortStayCheckInTime
+    || property.shortStayCheckOutTime || property.shortStayAmenities?.length || property.shortStayHouseRules
+    || property.shortStayAC || property.shortStayInternet || property.shortStayCleanliness
+    || property.shortStayFurnishing || property.shortStayKitchen || property.shortStayAgentNote;
   if (!hasData) return null;
 
   return (
@@ -314,6 +327,15 @@ function ShortStayPanel({ property }: { property: Property }) {
         <Sun className="h-4 w-4 text-amber-500" /> Short Stay Intelligence
       </h2>
       <div className="space-y-0">
+        <QIRow label="Pricing Model" value={property.shortStayPricingModel} icon={Wallet} />
+        <QIRow label="Daily Rate" value={property.shortStayDailyRate ? formatNaira(property.shortStayDailyRate) : null} icon={DollarSign} />
+        <QIRow label="Weekly Rate" value={property.shortStayWeeklyRate ? formatNaira(property.shortStayWeeklyRate) : null} icon={DollarSign} />
+        <QIRow label="Min Nights" value={property.shortStayMinNights} icon={Timer} />
+        <QIRow label="Max Nights" value={property.shortStayMaxNights} icon={Timer} />
+        <QIRow label="Check-in" value={property.shortStayCheckInTime} icon={Clock} />
+        <QIRow label="Check-out" value={property.shortStayCheckOutTime} icon={Clock} />
+        <QIChips label="Amenities" values={property.shortStayAmenities} />
+        <QIRow label="House Rules" value={property.shortStayHouseRules} icon={FileText} />
         <QIRow label="Air Conditioning" value={property.shortStayAC} icon={Sun} />
         <QIRow label="Internet" value={property.shortStayInternet} icon={Wifi} />
         <QIRow label="Cleanliness" value={property.shortStayCleanliness} icon={Star} />
@@ -326,6 +348,32 @@ function ShortStayPanel({ property }: { property: Property }) {
           <p className="text-sm text-navy-800 italic">"{property.shortStayAgentNote}"</p>
         </div>
       )}
+    </div>
+  );
+}
+
+function HostelPanel({ property }: { property: Property }) {
+  if (property.propertyType !== PropertyType.HOSTEL) return null;
+  const hasData = property.hostelSuitableFor?.length || property.hostelPersonsPerRoom
+    || property.hostelGender || property.hostelCampusProximity || property.hostelNearestCampus
+    || property.hostelDistanceFromCampus || property.hostelMealsIncluded || property.hostelRulesNotes;
+  if (!hasData) return null;
+
+  return (
+    <div className="card p-6">
+      <h2 className="font-display text-base font-bold text-navy-900 mb-4 flex items-center gap-2">
+        <Users className="h-4 w-4 text-veriq-secondary" /> Hostel Intelligence
+      </h2>
+      <div className="space-y-0">
+        <QIChips label="Suitable For" values={property.hostelSuitableFor} />
+        <QIRow label="Persons Per Room" value={property.hostelPersonsPerRoom} icon={Users} />
+        <QIRow label="Gender" value={property.hostelGender} icon={Users} />
+        <QIRow label="Campus Proximity" value={property.hostelCampusProximity} icon={MapPin} />
+        <QIRow label="Nearest Campus" value={property.hostelNearestCampus} icon={Building2} />
+        <QIRow label="Distance From Campus" value={property.hostelDistanceFromCampus} icon={MapPin} />
+        <QIRow label="Meals Included" value={property.hostelMealsIncluded} icon={Home} />
+        <QIRow label="Rules" value={property.hostelRulesNotes} icon={FileText} />
+      </div>
     </div>
   );
 }
@@ -459,6 +507,7 @@ export default function DashboardPropertyDetailPage() {
 
   // Hero image — cover or gradient fallback
   const hasCover = !!property.coverImageUrl;
+  const coverImageSrc = hasCover ? mediaUrl(property.coverImageUrl!) : null;
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -477,13 +526,10 @@ export default function DashboardPropertyDetailPage() {
           {/* Hero */}
           <div className="relative h-72 rounded-2xl overflow-hidden bg-gradient-to-br from-blue-600 to-indigo-800">
             {hasCover ? (
-              <Image
-                src={property.coverImageUrl!}
+              <img
+                src={coverImageSrc!}
                 alt={property.title}
-                fill
-                className="object-cover"
-                priority
-                sizes="(max-width: 1024px) 100vw, 66vw"
+                className="h-full w-full object-cover"
               />
             ) : (
               <div className="absolute inset-0 flex items-center justify-center">
@@ -721,6 +767,9 @@ export default function DashboardPropertyDetailPage() {
                       <Phone className="h-4 w-4" /> Call Agent
                     </a>
                   </div>
+                  <div className="mt-2">
+                    <AgentRatingButton propertyId={id} propertyTitle={property.title} className="btn-outline !py-2.5 !text-sm flex w-full items-center justify-center gap-2" />
+                  </div>
                   <p className="mt-3 text-xs text-slate-400">
                     Always physically inspect the property before making any payments or commitments.
                   </p>
@@ -734,6 +783,9 @@ export default function DashboardPropertyDetailPage() {
                   <p className="text-sm text-veriq-muted">
                     This agent has not enabled direct contact for unlocked reports. Use the property intelligence details to decide your next step.
                   </p>
+                  <div className="mt-4">
+                    <AgentRatingButton propertyId={id} propertyTitle={property.title} className="btn-outline !py-2.5 !text-sm flex w-full items-center justify-center gap-2" />
+                  </div>
                 </div>
               )}
 
@@ -747,6 +799,9 @@ export default function DashboardPropertyDetailPage() {
 
               {/* Quick Intelligence */}
               <QuickIntelligencePanel property={property} />
+
+              {/* Hostel Intelligence */}
+              <HostelPanel property={property} />
 
               {/* Short Stay Intelligence */}
               <ShortStayPanel property={property} />

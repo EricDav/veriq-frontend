@@ -181,6 +181,8 @@ import type {
   LoginDto,
   AuthTokens,
   ChangePasswordDto,
+  ForgotPasswordDto,
+  ResetPasswordDto,
   CreateAgentProfileDto,
   SubmitLevel1VerificationDto,
   SubmitLevel2VerificationDto,
@@ -235,6 +237,12 @@ export const authApi = {
 
   changePassword: (dto: ChangePasswordDto) =>
     api.patch<ApiResponse<null>>('/auth/change-password', dto),
+
+  forgotPassword: (dto: ForgotPasswordDto) =>
+    api.post<ApiResponse<null>>('/auth/forgot-password', dto, { public: true }),
+
+  resetPassword: (dto: ResetPasswordDto) =>
+    api.post<ApiResponse<null>>('/auth/reset-password', dto, { public: true }),
 };
 
 // ── Users ────────────────────────────────────────────────────────────────

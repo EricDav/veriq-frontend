@@ -3,9 +3,9 @@
 import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import {
   Home, EyeOff, Eye, Search, RefreshCw,
-  ChevronLeft, ChevronRight, CheckCircle, MapPin, X, User,
+  ChevronLeft, ChevronRight, CheckCircle, MapPin, X, User, MessageCircle,
 } from 'lucide-react';
-import { propertiesApi, mediaApi, ApiError } from '@/lib/api';
+import { propertiesApi, mediaApi, chatApi, ApiError } from '@/lib/api';
 import type { MediaItem, Property } from '@/types';
 import { ListingStatus, UserRole } from '@/types';
 import { useAuth } from '@/context/AuthContext';
@@ -156,6 +156,15 @@ function AdminPropertiesPageInner() {
     } finally {
       setIsActioning(false);
       setPendingAction(null);
+    }
+  };
+
+  const startAgentChat = async (propertyId: string) => {
+    try {
+      const res = await chatApi.startConversation(propertyId);
+      router.push(`/dashboard/chat?conversation=${res.data.id}`);
+    } catch (err) {
+      toastError(err instanceof ApiError ? err.message : 'Failed to start chat with agent');
     }
   };
 
@@ -391,7 +400,7 @@ function AdminPropertiesPageInner() {
             <div className="space-y-6 p-5">
               {viewingProperty.coverImageUrl && (
                 <div className="overflow-hidden rounded-xl border border-slate-100">
-                  <img src={viewingProperty.coverImageUrl} alt={viewingProperty.title} className="h-56 w-full object-cover sm:h-72" />
+                  <img src={mediaUrl(viewingProperty.coverImageUrl)} alt={viewingProperty.title} className="h-56 w-full object-cover sm:h-72" />
                 </div>
               )}
 
@@ -417,6 +426,15 @@ function AdminPropertiesPageInner() {
                 <DetailItem label="Platform Verified" value={viewingProperty.agent?.isPlatformVerified} />
                 <DetailItem label="Contact After Payment" value={viewingProperty.agent?.allowContactAfterPayment} />
               </DetailSection>
+              <div className="-mt-4 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => startAgentChat(viewingProperty.id)}
+                  className="btn-primary !py-2.5 !text-sm flex items-center gap-2"
+                >
+                  <MessageCircle className="h-4 w-4" /> Chat Listing Agent
+                </button>
+              </div>
 
               <DetailSection title="Location">
                 <DetailItem label="State" value={viewingProperty.state} />

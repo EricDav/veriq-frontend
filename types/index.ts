@@ -638,6 +638,10 @@ export interface WalletAdminSummary {
   wallets: {
     totalBalance: number;
     totalBalanceFormatted: string;
+    customerBalance: number;
+    customerBalanceFormatted: string;
+    agentBalance: number;
+    agentBalanceFormatted: string;
     walletCount: number;
   };
   transactions: {
@@ -661,6 +665,12 @@ export interface WalletAdminSummary {
     platformShareFormatted: string;
     agentShare: number;
     agentShareFormatted: string;
+    combinedEarnings: number;
+    combinedEarningsFormatted: string;
+    topUpsLessCustomerBalances: number;
+    topUpsLessCustomerBalancesFormatted: string;
+    reconciliationDifference: number;
+    reconciliationDifferenceFormatted: string;
   };
 }
 
@@ -710,6 +720,16 @@ export interface AuthTokens {
 
 export interface ChangePasswordDto {
   currentPassword: string;
+  newPassword: string;
+}
+
+export interface ForgotPasswordDto {
+  email: string;
+}
+
+export interface ResetPasswordDto {
+  email: string;
+  token: string;
   newPassword: string;
 }
 
