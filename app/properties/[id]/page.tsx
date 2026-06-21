@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import {
   ArrowLeft, MapPin, CheckCircle, Bed, Bath, Lock,
-  Shield, Eye, FileText, Clock, AlertCircle, Home, Wallet, DollarSign,
+  Shield, Eye, FileText, Clock, AlertCircle, Home, Wallet,
   Phone, MessageCircle, X,
 } from 'lucide-react';
 import { propertiesApi, consultationsApi, chatApi, mediaApi, ApiError } from '@/lib/api';
@@ -364,7 +364,7 @@ export default function PropertyDetailPage() {
               {/* Move-in costs */}
               <div className="mt-5 rounded-xl bg-veriq-surface p-4">
                 <h3 className="font-semibold text-navy-900 mb-3 flex items-center gap-2">
-                  <DollarSign className="h-4 w-4 text-veriq-secondary" /> Move-in Estimate
+                  <span className="flex h-4 w-4 items-center justify-center text-sm font-black text-veriq-secondary">₦</span> Move-in Estimate
                 </h3>
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   {[

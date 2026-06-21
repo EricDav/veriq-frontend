@@ -7,7 +7,7 @@ import { useParams, useRouter } from 'next/navigation';
 import {
   ArrowLeft, MapPin, CheckCircle, Bed, Bath, Lock, Unlock,
   Shield, Eye, FileText, Clock, AlertCircle, Home, Wallet,
-  DollarSign, Phone, Zap, Droplets, Wifi, Volume2, Star, MessageCircle,
+  Phone, Zap, Droplets, Wifi, Volume2, Star, MessageCircle,
   ChevronLeft, ChevronRight, X, Play, Timer, RefreshCw,
   Building2, Trees, Sun, Cloud, Car, Users,
 } from 'lucide-react';
@@ -329,8 +329,8 @@ function ShortStayPanel({ property }: { property: Property }) {
       </h2>
       <div className="space-y-0">
         <QIRow label="Pricing Model" value={property.shortStayPricingModel} icon={Wallet} />
-        <QIRow label="Daily Rate" value={property.shortStayDailyRate ? formatNaira(property.shortStayDailyRate) : null} icon={DollarSign} />
-        <QIRow label="Weekly Rate" value={property.shortStayWeeklyRate ? formatNaira(property.shortStayWeeklyRate) : null} icon={DollarSign} />
+        <QIRow label="Daily Rate" value={property.shortStayDailyRate ? formatNaira(property.shortStayDailyRate) : null} icon={Wallet} />
+        <QIRow label="Weekly Rate" value={property.shortStayWeeklyRate ? formatNaira(property.shortStayWeeklyRate) : null} icon={Wallet} />
         <QIRow label="Min Nights" value={property.shortStayMinNights} icon={Timer} />
         <QIRow label="Max Nights" value={property.shortStayMaxNights} icon={Timer} />
         <QIRow label="Check-in" value={property.shortStayCheckInTime} icon={Clock} />
@@ -650,7 +650,7 @@ export default function DashboardPropertyDetailPage() {
             {/* Move-in costs */}
             <div className="mt-5 rounded-xl bg-veriq-surface p-4">
               <h3 className="font-semibold text-navy-900 mb-3 flex items-center gap-2">
-                <DollarSign className="h-4 w-4 text-veriq-secondary" /> Move-in Estimate
+                <span className="flex h-4 w-4 items-center justify-center text-sm font-black text-veriq-secondary">₦</span> Move-in Estimate
               </h3>
               <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-xs">
                 {[
