@@ -838,6 +838,7 @@ export interface CreatePropertyDto {
 
 export interface FilterPropertiesDto {
   q?: string;
+  status?: ListingStatus;
   agentId?: string;
   state?: string;
   city?: string;

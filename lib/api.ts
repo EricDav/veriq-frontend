@@ -377,12 +377,14 @@ export const propertiesApi = {
   getById: (id: string) =>
     api.get<ApiResponse<Property>>(`/properties/${id}`, { public: true }),
 
-  /** Admin: list properties of any status, optionally scoped to one agent */
-  listAdmin: async (params: { page?: number; limit?: number; agentId?: string } = {}) => {
+  /** Admin: list properties of any status, optionally scoped and filtered */
+  listAdmin: async (params: (FilterPropertiesDto & { status?: string }) = {}) => {
     const sp = new URLSearchParams();
-    if (params.page) sp.set('page', String(params.page));
-    if (params.limit) sp.set('limit', String(params.limit));
-    if (params.agentId) sp.set('agentId', params.agentId);
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        sp.set(key, String(value));
+      }
+    });
     const res = await api.get<PaginatedResponse<Property>>(`/properties/admin/all?${sp}`);
     return {
       ...res,
