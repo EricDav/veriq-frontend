@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { FileText, ImageIcon, RefreshCw, Save, ShieldCheck, Upload } from 'lucide-react';
+import { FileText, ImageIcon, Plus, RefreshCw, Save, ShieldCheck, Trash2, Upload } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { siteContentApi, ApiError } from '@/lib/api';
 import { uploadToFileService } from '@/lib/upload';
@@ -10,6 +10,7 @@ import { UserRole } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 import { PageLoader, LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useToast } from '@/components/ui/Toast';
+import { Modal } from '@/components/ui/Modal';
 
 const PRESETS = [
   { page: 'home', section: 'hero', label: 'Home hero' },
@@ -316,6 +317,18 @@ function contentKey(item: Pick<SiteContent, 'page' | 'section'>) {
   return `${item.page}:${item.section}`;
 }
 
+type FAQItem = { q: string; a: string; categories?: string[] };
+type FAQCategory = { label: string; value: string };
+
+function parseDataJson(dataJson: string): Record<string, unknown> | null {
+  if (!dataJson.trim()) return {};
+  try {
+    return JSON.parse(dataJson) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
 export default function AdminContentPage() {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
@@ -327,6 +340,12 @@ export default function AdminContentPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingHero, setIsUploadingHero] = useState(false);
+  const [isFAQQuestionModalOpen, setIsFAQQuestionModalOpen] = useState(false);
+  const [faqQuestionDraft, setFAQQuestionDraft] = useState({
+    q: '',
+    a: '',
+    categories: '',
+  });
 
   useEffect(() => {
     if (!authLoading && user?.role !== UserRole.ADMIN) {
@@ -391,6 +410,81 @@ export default function AdminContentPage() {
     setDataJson(JSON.stringify(next, null, 2));
   };
 
+  const structuredData = useMemo(() => parseDataJson(dataJson), [dataJson]);
+  const isFAQQuestions = form.page === 'faq' && form.section === 'questions';
+
+  const updateStructuredData = (next: Record<string, unknown>) => {
+    setForm((prev) => ({ ...prev, data: next }));
+    setDataJson(JSON.stringify(next, null, 2));
+  };
+
+  const updateFAQItem = (index: number, patch: Partial<FAQItem>) => {
+    const base = structuredData ?? {};
+    const faqs = Array.isArray(base.faqs) ? ([...base.faqs] as FAQItem[]) : [];
+    faqs[index] = { ...(faqs[index] ?? { q: '', a: '', categories: [] }), ...patch };
+    updateStructuredData({ ...base, faqs });
+  };
+
+  const openFAQQuestionModal = () => {
+    if (structuredData === null) {
+      toastError('Fix the metadata JSON before adding a FAQ question.');
+      return;
+    }
+    setFAQQuestionDraft({ q: '', a: '', categories: '' });
+    setIsFAQQuestionModalOpen(true);
+  };
+
+  const addFAQItemFromModal = () => {
+    const question = faqQuestionDraft.q.trim();
+    const answer = faqQuestionDraft.a.trim();
+    if (!question || !answer) {
+      toastError('Question and response are required.');
+      return;
+    }
+    const base = structuredData ?? {};
+    const faqs = Array.isArray(base.faqs) ? ([...base.faqs] as FAQItem[]) : [];
+    updateStructuredData({
+      ...base,
+      faqs: [
+        ...faqs,
+        {
+          q: question,
+          a: answer,
+          categories: faqQuestionDraft.categories
+            .split(',')
+            .map((item) => item.trim())
+            .filter(Boolean),
+        },
+      ],
+    });
+    setIsFAQQuestionModalOpen(false);
+  };
+
+  const removeFAQItem = (index: number) => {
+    const base = structuredData ?? {};
+    const faqs = Array.isArray(base.faqs) ? ([...base.faqs] as FAQItem[]) : [];
+    updateStructuredData({ ...base, faqs: faqs.filter((_, itemIndex) => itemIndex !== index) });
+  };
+
+  const updateFAQCategory = (index: number, patch: Partial<FAQCategory>) => {
+    const base = structuredData ?? {};
+    const categories = Array.isArray(base.categories) ? ([...base.categories] as FAQCategory[]) : [];
+    categories[index] = { ...(categories[index] ?? { label: '', value: '' }), ...patch };
+    updateStructuredData({ ...base, categories });
+  };
+
+  const addFAQCategory = () => {
+    const base = structuredData ?? {};
+    const categories = Array.isArray(base.categories) ? ([...base.categories] as FAQCategory[]) : [];
+    updateStructuredData({ ...base, categories: [...categories, { label: '', value: '' }] });
+  };
+
+  const removeFAQCategory = (index: number) => {
+    const base = structuredData ?? {};
+    const categories = Array.isArray(base.categories) ? ([...base.categories] as FAQCategory[]) : [];
+    updateStructuredData({ ...base, categories: categories.filter((_, itemIndex) => itemIndex !== index) });
+  };
+
   const handleHeroImageUpload = async (file: File | undefined) => {
     if (!file) return;
     setIsUploadingHero(true);
@@ -434,6 +528,7 @@ export default function AdminContentPage() {
   if (user?.role !== UserRole.ADMIN) return null;
 
   return (
+    <>
     <div className="max-w-6xl mx-auto space-y-6">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
@@ -539,15 +634,127 @@ export default function AdminContentPage() {
                 />
               </div>
 
-              <div>
-                <label className="label">Metadata JSON</label>
-                <textarea
-                  value={dataJson}
-                  onChange={(e) => setDataJson(e.target.value)}
-                  className="input min-h-[120px] resize-y font-mono text-xs"
-                  placeholder='{"supportEmail":"support@veriqproperty.com","agentEmail":"agents@veriqproperty.com"}'
-                />
-              </div>
+              {isFAQQuestions && (
+                <div className="space-y-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <h2 className="font-display text-base font-bold text-navy-900">FAQ Questions & Responses</h2>
+                      <p className="text-xs text-slate-500">Edit each question, answer, and category without touching JSON.</p>
+                    </div>
+                    <button type="button" onClick={openFAQQuestionModal} className="btn-primary !py-2 !text-xs inline-flex items-center gap-2">
+                      <Plus className="h-4 w-4" /> Add Question
+                    </button>
+                  </div>
+
+                  {structuredData === null ? (
+                    <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                      Fix the metadata JSON below to use the structured FAQ editor again.
+                    </div>
+                  ) : (
+                    <>
+                      <div className="space-y-3">
+                        {(Array.isArray(structuredData.faqs) ? (structuredData.faqs as FAQItem[]) : []).map((faq, index) => (
+                          <div key={index} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                            <div className="mb-3 flex items-center justify-between gap-3">
+                              <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Question {index + 1}</p>
+                              <button
+                                type="button"
+                                onClick={() => removeFAQItem(index)}
+                                className="rounded-lg border border-red-100 p-2 text-red-500 transition-colors hover:bg-red-50"
+                                aria-label={`Remove question ${index + 1}`}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+                            <div className="space-y-3">
+                              <div>
+                                <label className="label">Question</label>
+                                <input
+                                  value={faq.q ?? ''}
+                                  onChange={(e) => updateFAQItem(index, { q: e.target.value })}
+                                  className="input"
+                                  placeholder="What is Veriq Property?"
+                                />
+                              </div>
+                              <div>
+                                <label className="label">Response</label>
+                                <textarea
+                                  value={faq.a ?? ''}
+                                  onChange={(e) => updateFAQItem(index, { a: e.target.value })}
+                                  className="input min-h-[110px] resize-y"
+                                  placeholder="Write the answer users should see."
+                                />
+                              </div>
+                              <div>
+                                <label className="label">Categories</label>
+                                <input
+                                  value={(faq.categories ?? []).join(', ')}
+                                  onChange={(e) => updateFAQItem(index, {
+                                    categories: e.target.value.split(',').map((item) => item.trim()).filter(Boolean),
+                                  })}
+                                  className="input"
+                                  placeholder="renter, payment"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="rounded-xl border border-slate-200 bg-white p-4">
+                        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                          <div>
+                            <h3 className="text-sm font-bold text-navy-900">FAQ Categories</h3>
+                            <p className="text-xs text-slate-500">These drive the category filter chips on the FAQ page.</p>
+                          </div>
+                          <button type="button" onClick={addFAQCategory} className="btn-outline !py-2 !text-xs inline-flex items-center gap-2">
+                            <Plus className="h-4 w-4" /> Add Category
+                          </button>
+                        </div>
+                        <div className="space-y-2">
+                          {(Array.isArray(structuredData.categories) ? (structuredData.categories as FAQCategory[]) : []).map((category, index) => (
+                            <div key={index} className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_auto]">
+                              <input
+                                value={category.label ?? ''}
+                                onChange={(e) => updateFAQCategory(index, { label: e.target.value })}
+                                className="input"
+                                placeholder="For Renters"
+                              />
+                              <input
+                                value={category.value ?? ''}
+                                onChange={(e) => updateFAQCategory(index, { value: e.target.value })}
+                                className="input"
+                                placeholder="renter"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => removeFAQCategory(index)}
+                                className="rounded-lg border border-red-100 px-3 text-red-500 transition-colors hover:bg-red-50"
+                                aria-label={`Remove category ${index + 1}`}
+                              >
+                                <Trash2 className="mx-auto h-4 w-4" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
+              <details className="rounded-xl border border-slate-200 bg-white p-4" open={!isFAQQuestions}>
+                <summary className="cursor-pointer text-sm font-bold text-navy-900">Advanced Metadata JSON</summary>
+                <div className="mt-3">
+                  <label className="label">Metadata JSON</label>
+                  <textarea
+                    value={dataJson}
+                    onChange={(e) => setDataJson(e.target.value)}
+                    className="input min-h-[120px] resize-y font-mono text-xs"
+                    placeholder='{"supportEmail":"support@veriqproperty.com","agentEmail":"agents@veriqproperty.com"}'
+                  />
+                </div>
+              </details>
 
               {form.section === 'hero' && (
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
@@ -602,5 +809,56 @@ export default function AdminContentPage() {
         </form>
       </div>
     </div>
+
+    <Modal
+      isOpen={isFAQQuestionModalOpen}
+      onClose={() => setIsFAQQuestionModalOpen(false)}
+      title="Add FAQ Question"
+      size="lg"
+    >
+      <div className="space-y-4">
+        <div>
+          <label className="label">Question</label>
+          <input
+            value={faqQuestionDraft.q}
+            onChange={(e) => setFAQQuestionDraft((prev) => ({ ...prev, q: e.target.value }))}
+            className="input"
+            placeholder="What is Veriq Property?"
+            autoFocus
+          />
+        </div>
+        <div>
+          <label className="label">Response</label>
+          <textarea
+            value={faqQuestionDraft.a}
+            onChange={(e) => setFAQQuestionDraft((prev) => ({ ...prev, a: e.target.value }))}
+            className="input min-h-[150px] resize-y"
+            placeholder="Write the answer users should see."
+          />
+        </div>
+        <div>
+          <label className="label">Categories</label>
+          <input
+            value={faqQuestionDraft.categories}
+            onChange={(e) => setFAQQuestionDraft((prev) => ({ ...prev, categories: e.target.value }))}
+            className="input"
+            placeholder="renter, payment"
+          />
+        </div>
+        <div className="flex justify-end gap-3 pt-2">
+          <button
+            type="button"
+            onClick={() => setIsFAQQuestionModalOpen(false)}
+            className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-medium text-navy-700 transition-colors hover:bg-slate-50"
+          >
+            Cancel
+          </button>
+          <button type="button" onClick={addFAQItemFromModal} className="btn-primary">
+            Add Question
+          </button>
+        </div>
+      </div>
+    </Modal>
+    </>
   );
 }

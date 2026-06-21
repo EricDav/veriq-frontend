@@ -214,6 +214,7 @@ import type {
   UpsertBlogPostDto,
   ConsultationPricingRule,
   UpsertConsultationPricingRuleDto,
+  UserRole,
 } from '@/types';
 
 // ── Auth ─────────────────────────────────────────────────────────────────
@@ -248,8 +249,14 @@ export const authApi = {
 // ── Users ────────────────────────────────────────────────────────────────
 
 export const usersApi = {
-  list: (page = 1, limit = 20) =>
-    api.get<PaginatedResponse<User>>(`/users?page=${page}&limit=${limit}`),
+  list: (page = 1, limit = 20, excludeRole?: UserRole) => {
+    const params = new URLSearchParams({
+      page: String(page),
+      limit: String(limit),
+    });
+    if (excludeRole) params.set('excludeRole', excludeRole);
+    return api.get<PaginatedResponse<User>>(`/users?${params.toString()}`);
+  },
 
   getProfile: () => api.get<ApiResponse<User>>('/users/profile'),
 

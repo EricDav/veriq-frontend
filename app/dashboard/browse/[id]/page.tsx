@@ -66,8 +66,9 @@ function formatNaira(amount: number | null | undefined): string {
 }
 
 function mediaUrl(url: string): string {
-  if (url.startsWith('http')) return url;
-  return `${API_BASE}${url}`;
+  if (!url) return '';
+  if (url.startsWith('http') || url.startsWith('blob:') || url.startsWith('data:')) return url;
+  return `${API_BASE}${url.startsWith('/') ? '' : '/'}${url}`;
 }
 
 function useCountdown(expiresAt: string | null) {
@@ -232,7 +233,7 @@ function MediaGallery({ propertyId }: { propertyId: string }) {
 // ─── Quick Intelligence Panel ─────────────────────────────────────────────
 
 function displayValue(value: unknown) {
-  if (value === null || value === undefined || value === '') return null;
+  if (value === null || value === undefined || value === '' || value === false) return null;
   if (typeof value === 'boolean') return value ? 'Yes' : 'No';
   if (Array.isArray(value)) {
     return value.length ? value.map((item) => String(item).replace(/_/g, ' ')).join(', ') : null;
@@ -415,6 +416,7 @@ export default function DashboardPropertyDetailPage() {
   const [accessDetails, setAccessDetails] = useState<ConsultationAccess | null>(null);
   const [isUnlocking, setIsUnlocking] = useState(false);
   const [notFound, setNotFound] = useState(false);
+  const [isCoverPreviewOpen, setIsCoverPreviewOpen] = useState(false);
   const [heroImgIdx, setHeroImgIdx] = useState(0);
 
   const load = useCallback(async () => {
@@ -526,11 +528,29 @@ export default function DashboardPropertyDetailPage() {
           {/* Hero */}
           <div className="relative h-72 rounded-2xl overflow-hidden bg-gradient-to-br from-blue-600 to-indigo-800">
             {hasCover ? (
-              <img
-                src={coverImageSrc!}
-                alt={property.title}
-                className="h-full w-full object-cover"
-              />
+              hasAccess ? (
+                <button
+                  type="button"
+                  onClick={() => setIsCoverPreviewOpen(true)}
+                  className="group absolute inset-0 cursor-zoom-in"
+                  aria-label={`View full cover photo for ${property.title}`}
+                >
+                  <img
+                    src={coverImageSrc!}
+                    alt={property.title}
+                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                  />
+                  <span className="absolute bottom-4 left-4 rounded-lg bg-navy-900/80 px-3 py-2 text-xs font-semibold text-white backdrop-blur-sm opacity-0 transition-opacity group-hover:opacity-100">
+                    View full photo
+                  </span>
+                </button>
+              ) : (
+                <img
+                  src={coverImageSrc!}
+                  alt={property.title}
+                  className="h-full w-full object-cover"
+                />
+              )
             ) : (
               <div className="absolute inset-0 flex items-center justify-center">
                 <Home className="h-20 w-20 text-white/10" />
@@ -557,6 +577,33 @@ export default function DashboardPropertyDetailPage() {
               </div>
             )}
           </div>
+
+          {isCoverPreviewOpen && coverImageSrc && (
+            <div
+              className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4"
+              onClick={() => setIsCoverPreviewOpen(false)}
+            >
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsCoverPreviewOpen(false);
+                }}
+                className="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white/70 transition-colors hover:bg-white/20 hover:text-white"
+                aria-label="Close cover photo"
+              >
+                <X className="h-7 w-7" />
+              </button>
+              <div className="max-h-[86vh] max-w-5xl" onClick={(e) => e.stopPropagation()}>
+                <img
+                  src={coverImageSrc}
+                  alt={property.title}
+                  className="max-h-[86vh] w-auto max-w-full rounded-xl object-contain"
+                />
+                <p className="mt-3 text-center text-sm text-white/70">{property.title}</p>
+              </div>
+            </div>
+          )}
 
           {/* Basic info */}
           <div className="card p-6">

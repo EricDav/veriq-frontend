@@ -51,7 +51,7 @@ export default function AdminUsersPage() {
   const load = useCallback(async () => {
     setIsLoading(true);
     try {
-      const res = await usersApi.list(page, 20);
+      const res = await usersApi.list(page, 20, UserRole.AGENT);
       setUsers(res.data);
       setTotal(res.meta.total);
       setTotalPages(res.meta.pages);
@@ -106,7 +106,6 @@ export default function AdminUsersPage() {
   const counts = {
     total,
     active: users.filter((u) => u.isActive).length,
-    agents: users.filter((u) => u.role === UserRole.AGENT).length,
     admins: users.filter((u) => u.role === UserRole.ADMIN).length,
   };
 
@@ -124,11 +123,10 @@ export default function AdminUsersPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
         {[
           { label: 'Total Users', value: counts.total, cls: 'text-blue-600' },
           { label: 'Active', value: counts.active, cls: 'text-emerald-600' },
-          { label: 'Agents', value: counts.agents, cls: 'text-gold-600' },
           { label: 'Admins', value: counts.admins, cls: 'text-red-600' },
         ].map((s) => (
           <div key={s.label} className="card p-4">

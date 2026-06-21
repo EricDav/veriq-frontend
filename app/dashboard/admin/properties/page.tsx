@@ -48,8 +48,9 @@ const dateTime = (value: string | null | undefined) =>
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api/v1', '') ?? 'http://localhost:3000';
 
 function mediaUrl(url: string) {
-  if (url.startsWith('http')) return url;
-  return `${API_BASE}${url}`;
+  if (!url) return '';
+  if (url.startsWith('http') || url.startsWith('blob:') || url.startsWith('data:')) return url;
+  return `${API_BASE}${url.startsWith('/') ? '' : '/'}${url}`;
 }
 
 function DetailItem({ label, value }: { label: string; value: unknown }) {

@@ -27,6 +27,14 @@ const FRESHNESS_BADGE: Record<FreshnessScore, { label: string; cls: string }> = 
   unverified: { label: 'Unverified', cls: 'bg-slate-100 text-slate-600' },
 };
 
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api/v1', '') ?? 'http://localhost:3000';
+
+function mediaUrl(url: string): string {
+  if (!url) return '';
+  if (url.startsWith('http') || url.startsWith('blob:') || url.startsWith('data:')) return url;
+  return `${API_BASE}${url.startsWith('/') ? '' : '/'}${url}`;
+}
+
 function formatNaira(amount: number): string {
   if (amount >= 1_000_000) {
     return `₦${(amount / 1_000_000).toFixed(1)}M`;
@@ -80,7 +88,7 @@ export function PropertyCard({
         <div className={`relative h-52 bg-gradient-to-br ${gradient} overflow-hidden`}>
           {coverImageUrl ? (
             <Image
-              src={coverImageUrl}
+              src={mediaUrl(coverImageUrl)}
               alt={title}
               fill
               className="object-cover"
