@@ -27,6 +27,10 @@ function ResetPasswordForm() {
       setError('Passwords do not match.');
       return;
     }
+    if (newPassword.length < 6) {
+      setError('Password must be at least 6 characters.');
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -46,7 +50,7 @@ function ResetPasswordForm() {
         <input
           type="password"
           required
-          minLength={8}
+          minLength={6}
           value={newPassword}
           onChange={(e) => setNewPassword(e.target.value)}
           className="w-full rounded-xl border border-white/15 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-white/35 outline-none focus:border-gold-300"
@@ -59,7 +63,7 @@ function ResetPasswordForm() {
         <input
           type="password"
           required
-          minLength={8}
+          minLength={6}
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
           className="w-full rounded-xl border border-white/15 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-white/35 outline-none focus:border-gold-300"
@@ -69,7 +73,7 @@ function ResetPasswordForm() {
       </div>
 
       <p className="text-xs leading-5 text-white/45">
-        Password must include uppercase, lowercase, a number, and a special character.
+        Password must be at least 6 characters.
       </p>
       {error && <p className="rounded-xl bg-red-500/10 p-3 text-sm text-red-100">{error}</p>}
 
