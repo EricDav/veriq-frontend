@@ -260,6 +260,7 @@ export enum ConsultationStatus {
   PAID = 'paid',
   UNLOCKED = 'unlocked',
   EXPIRED = 'expired',
+  REFUND_REQUESTED = 'refund_requested',
   REFUNDED = 'refunded',
 }
 
@@ -422,6 +423,7 @@ export interface Property {
 export interface Consultation {
   id: string;
   userId: string;
+  user?: User;
   propertyId: string;
   property: Property;
   tier: ConsultationTier;
@@ -438,6 +440,17 @@ export interface Consultation {
   userSatisfactionRating: number | null;
   userFeedbackComment: string | null;
   ratedAt: string | null;
+  agentId: string | null;
+  commissionRate: number | null;
+  platformShareAmount: number | null;
+  agentShareAmount: number | null;
+  refundReason: string | null;
+  refundRequestedById: string | null;
+  refundRequestedByRole: string | null;
+  refundRequestedAt: string | null;
+  refundApprovedById: string | null;
+  refundApprovedAt: string | null;
+  agentEarningReversedAt: string | null;
   createdAt: string;
   updatedAt: string;
 }

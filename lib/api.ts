@@ -453,6 +453,26 @@ export const consultationsApi = {
     api.get<PaginatedResponse<Consultation>>(
       `/consultations/my?page=${page}&limit=${limit}`,
     ),
+
+  getPropertyConsultations: (propertyId: string, page = 1, limit = 20) =>
+    api.get<PaginatedResponse<Consultation>>(
+      `/consultations/property/${propertyId}?page=${page}&limit=${limit}`,
+    ),
+
+  initiateRefund: (id: string, dto: { reason?: string }) =>
+    api.post<ApiResponse<{ consultationId: string; status: string }>>(
+      `/consultations/${id}/refund/initiate`,
+      dto,
+    ),
+
+  approveRefund: (id: string, dto: { reason?: string }) =>
+    api.post<ApiResponse<{
+      consultationId: string;
+      status: string;
+      refundedAmount: number;
+      refundedAmountFormatted: string;
+      paymentReference: string;
+    }>>(`/consultations/${id}/refund/approve`, dto),
 };
 
 // ── Chat ──────────────────────────────────────────────────────────────────

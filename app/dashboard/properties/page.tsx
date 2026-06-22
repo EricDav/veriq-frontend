@@ -4,15 +4,15 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import {
   Plus, Eye, Clock, RefreshCw, CheckCircle,
-  AlertCircle, Home, MoreHorizontal, X,
+  AlertCircle, Home, MoreHorizontal, X, ReceiptText,
 } from 'lucide-react';
-import { propertiesApi, agentsApi, ApiError } from '@/lib/api';
-import type { Property, Agent } from '@/types';
-import { AgentVerificationLevel, ListingStatus, FreshnessScore } from '@/types';
+import { propertiesApi, agentsApi, consultationsApi, ApiError } from '@/lib/api';
+import type { Property, Agent, Consultation } from '@/types';
+import { AgentVerificationLevel, ListingStatus, FreshnessScore, ConsultationStatus } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 import { UserRole } from '@/types';
 import { PageLoader, LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { ConfirmDialog } from '@/components/ui/Modal';
+import { ConfirmDialog, Modal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
 
 const FRESHNESS_STYLES: Record<FreshnessScore, string> = {
@@ -30,6 +30,18 @@ const STATUS_STYLES: Record<ListingStatus, string> = {
   taken: 'bg-purple-100 text-purple-700',
   expired: 'bg-red-100 text-red-600',
 };
+
+const REFUNDABLE_STATUSES = new Set<ConsultationStatus>([
+  ConsultationStatus.PAID,
+  ConsultationStatus.UNLOCKED,
+  ConsultationStatus.EXPIRED,
+]);
+
+const formatMoney = (value: number | string | null | undefined) =>
+  `₦${Number(value ?? 0).toLocaleString('en-NG')}`;
+
+const formatDate = (value: string | null | undefined) =>
+  value ? new Date(value).toLocaleString() : 'Not provided';
 
 // ─── User view: consultation history ─────────────────────────────────────
 
@@ -70,6 +82,11 @@ function AgentPropertiesView() {
   const [statusTarget, setStatusTarget] = useState<{ id: string; action: 'unavailable' | 'reactivate'; title: string } | null>(null);
   const [isStatusChanging, setIsStatusChanging] = useState(false);
   const [reconfirmingId, setReconfirmingId] = useState<string | null>(null);
+  const [refundProperty, setRefundProperty] = useState<Property | null>(null);
+  const [refundConsultations, setRefundConsultations] = useState<Consultation[]>([]);
+  const [isLoadingRefunds, setIsLoadingRefunds] = useState(false);
+  const [refundReason, setRefundReason] = useState('');
+  const [refundActionId, setRefundActionId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setIsLoading(true);
@@ -123,6 +140,45 @@ function AgentPropertiesView() {
       toastError(err instanceof ApiError ? err.message : 'Reconfirmation failed');
     } finally {
       setReconfirmingId(null);
+    }
+  };
+
+  const openRefunds = async (property: Property) => {
+    setRefundProperty(property);
+    setRefundReason('');
+    setIsLoadingRefunds(true);
+    try {
+      const res = await consultationsApi.getPropertyConsultations(property.id, 1, 50);
+      setRefundConsultations(res.data);
+    } catch (err) {
+      toastError(err instanceof ApiError ? err.message : 'Failed to load paid unlocks');
+      setRefundConsultations([]);
+    } finally {
+      setIsLoadingRefunds(false);
+    }
+  };
+
+  const requestRefund = async (consultationId: string) => {
+    setRefundActionId(consultationId);
+    try {
+      await consultationsApi.initiateRefund(consultationId, { reason: refundReason.trim() || undefined });
+      success('Refund request sent to admin. The agent earning has been removed from available commission.');
+      setRefundConsultations((prev) =>
+        prev.map((item) =>
+          item.id === consultationId
+            ? {
+                ...item,
+                status: ConsultationStatus.REFUND_REQUESTED,
+                refundReason: refundReason.trim() || item.refundReason,
+                refundRequestedAt: new Date().toISOString(),
+              }
+            : item,
+        ),
+      );
+    } catch (err) {
+      toastError(err instanceof ApiError ? err.message : 'Refund request failed');
+    } finally {
+      setRefundActionId(null);
     }
   };
 
@@ -281,6 +337,13 @@ function AgentPropertiesView() {
                           >
                             <MoreHorizontal className="h-3.5 w-3.5" />
                           </Link>
+                          <button
+                            onClick={() => openRefunds(prop)}
+                            title="View paid unlocks and refunds"
+                            className="rounded-lg p-1.5 text-purple-600 hover:bg-purple-50 transition-colors"
+                          >
+                            <ReceiptText className="h-3.5 w-3.5" />
+                          </button>
                           {prop.status === ListingStatus.ACTIVE ? (
                             <button
                               onClick={() => setStatusTarget({ id: prop.id, action: 'unavailable', title: prop.title })}
@@ -324,6 +387,88 @@ function AgentPropertiesView() {
         variant={statusTarget?.action === 'unavailable' ? 'danger' : 'primary'}
         isLoading={isStatusChanging}
       />
+
+      <Modal
+        isOpen={!!refundProperty}
+        onClose={() => setRefundProperty(null)}
+        title="Paid Unlocks & Refunds"
+        size="lg"
+      >
+        <div className="space-y-4">
+          <div>
+            <p className="text-sm font-bold text-navy-900">{refundProperty?.title}</p>
+            <p className="text-xs text-veriq-muted">Request refunds for users who paid to unlock this listing.</p>
+          </div>
+
+          <div>
+            <label className="label text-xs">Reason for refund</label>
+            <textarea
+              value={refundReason}
+              onChange={(event) => setRefundReason(event.target.value)}
+              className="input min-h-20 resize-none text-sm"
+              maxLength={500}
+              placeholder="Example: property is no longer available, user should be credited."
+            />
+          </div>
+
+          {isLoadingRefunds ? (
+            <div className="flex justify-center py-8">
+              <LoadingSpinner size="md" className="text-veriq-secondary" />
+            </div>
+          ) : refundConsultations.length === 0 ? (
+            <div className="rounded-xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-500">
+              No paid unlocks for this listing yet.
+            </div>
+          ) : (
+            <div className="max-h-[50vh] space-y-3 overflow-y-auto pr-1">
+              {refundConsultations.map((item) => {
+                const userName = item.user
+                  ? `${item.user.firstName} ${item.user.lastName}`.trim() || item.user.email
+                  : 'User';
+                const canRefund = REFUNDABLE_STATUSES.has(item.status);
+                return (
+                  <div key={item.id} className="rounded-xl border border-slate-100 p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-bold text-navy-900">{userName}</p>
+                        <p className="text-xs text-slate-500">{item.user?.email ?? item.userId}</p>
+                        <p className="mt-1 text-xs text-slate-400">Paid {formatDate(item.paidAt ?? item.createdAt)}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-black text-navy-900">{formatMoney(item.feeAmount)}</p>
+                        <span className="badge mt-1 bg-slate-100 text-[10px] text-slate-600">
+                          {item.status.replace(/_/g, ' ')}
+                        </span>
+                      </div>
+                    </div>
+                    {item.refundReason && (
+                      <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                        {item.refundReason}
+                      </p>
+                    )}
+                    <div className="mt-4 flex justify-end">
+                      {canRefund ? (
+                        <button
+                          type="button"
+                          onClick={() => requestRefund(item.id)}
+                          disabled={refundActionId === item.id}
+                          className="rounded-lg bg-veriq-secondary px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-navy-700 disabled:opacity-50"
+                        >
+                          {refundActionId === item.id ? 'Requesting…' : 'Request Refund'}
+                        </button>
+                      ) : (
+                        <span className="text-xs font-semibold text-slate-500">
+                          {item.status === ConsultationStatus.REFUND_REQUESTED ? 'Waiting for admin approval' : 'Closed'}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </Modal>
     </div>
   );
 }
