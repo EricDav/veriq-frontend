@@ -899,7 +899,7 @@ function AdminPropertiesPageInner() {
           <div>
             <p className="text-sm font-bold text-navy-900">{refundProperty?.title}</p>
             <p className="text-xs text-veriq-muted">
-              Approving a refund credits the user wallet and removes report access. If the agent commission is still active, it is reversed first.
+              Only users still within their consultation period are shown. Already-requested refunds remain here for approval.
             </p>
           </div>
 
@@ -920,7 +920,7 @@ function AdminPropertiesPageInner() {
             </div>
           ) : refundConsultations.length === 0 ? (
             <div className="rounded-xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-500">
-              No paid unlocks for this listing yet.
+              No active consultation-period unlocks are eligible for refund.
             </div>
           ) : (
             <div className="max-h-[50vh] space-y-3 overflow-y-auto pr-1">

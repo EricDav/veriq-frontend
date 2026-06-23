@@ -397,7 +397,7 @@ function AgentPropertiesView() {
         <div className="space-y-4">
           <div>
             <p className="text-sm font-bold text-navy-900">{refundProperty?.title}</p>
-            <p className="text-xs text-veriq-muted">Request refunds for users who paid to unlock this listing.</p>
+            <p className="text-xs text-veriq-muted">Only users still within their consultation period are shown. Requested refunds stay visible for admin approval.</p>
           </div>
 
           <div>
@@ -417,7 +417,7 @@ function AgentPropertiesView() {
             </div>
           ) : refundConsultations.length === 0 ? (
             <div className="rounded-xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-500">
-              No paid unlocks for this listing yet.
+              No active consultation-period unlocks are eligible for refund.
             </div>
           ) : (
             <div className="max-h-[50vh] space-y-3 overflow-y-auto pr-1">
