@@ -453,6 +453,7 @@ export interface Consultation {
   refundRejectedById: string | null;
   refundRejectedAt: string | null;
   agentEarningReversedAt: string | null;
+  platformEarningReversedAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -524,6 +525,8 @@ export enum NotificationType {
   REFUND_REQUESTED = 'refund_requested',
   REFUND_APPROVED = 'refund_approved',
   REFUND_REJECTED = 'refund_rejected',
+  WITHDRAWAL_PAID = 'withdrawal_paid',
+  WITHDRAWAL_REJECTED = 'withdrawal_rejected',
 }
 
 export interface AppNotification {
@@ -697,12 +700,19 @@ export interface WalletAdminSummary {
     defaultCommissionPercent: number;
     commissionLabel: string;
     paidConsultations: number;
+    refundedConsultations: number;
     totalConsultationRevenue: number;
     totalConsultationRevenueFormatted: string;
     platformShare: number;
     platformShareFormatted: string;
     agentShare: number;
     agentShareFormatted: string;
+    refundedConsultationRevenue: number;
+    refundedConsultationRevenueFormatted: string;
+    refundedPlatformShare: number;
+    refundedPlatformShareFormatted: string;
+    refundedAgentShare: number;
+    refundedAgentShareFormatted: string;
     combinedEarnings: number;
     combinedEarningsFormatted: string;
     topUpsLessCustomerBalances: number;

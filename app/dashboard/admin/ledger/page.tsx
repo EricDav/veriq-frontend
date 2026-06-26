@@ -316,7 +316,7 @@ export default function AdminLedgerPage() {
             </h2>
             <p className="mb-4 text-xs text-veriq-muted">
               Splits vary by pricing tier and partner-specific rules. These totals use the actual
-              split saved on each paid consultation.
+              split saved on each paid consultation, excluding approved refunds.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
               <div className="flex items-center justify-between sm:flex-col sm:items-start gap-1">
@@ -341,6 +341,27 @@ export default function AdminLedgerPage() {
                 <div className="flex items-center justify-between">
                   <span className="text-veriq-muted">Total refunds</span>
                   <span className="font-bold text-navy-900">{summary.transactions.totalRefundsFormatted}</span>
+                </div>
+              </div>
+            )}
+            {summary.revenue.refundedConsultations > 0 && (
+              <div className="mt-4 pt-4 border-t border-slate-100">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-veriq-muted">
+                  Reversed by approved refunds ({summary.revenue.refundedConsultations})
+                </p>
+                <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-3">
+                  <div className="flex items-center justify-between sm:flex-col sm:items-start gap-1">
+                    <span className="text-veriq-muted">Refunded unlock value</span>
+                    <span className="font-bold text-navy-900">{summary.revenue.refundedConsultationRevenueFormatted}</span>
+                  </div>
+                  <div className="flex items-center justify-between sm:flex-col sm:items-start gap-1">
+                    <span className="text-veriq-muted">Veriq share reversed</span>
+                    <span className="font-bold text-gold-600">{summary.revenue.refundedPlatformShareFormatted}</span>
+                  </div>
+                  <div className="flex items-center justify-between sm:flex-col sm:items-start gap-1">
+                    <span className="text-veriq-muted">Agent share reversed</span>
+                    <span className="font-bold text-purple-600">{summary.revenue.refundedAgentShareFormatted}</span>
+                  </div>
                 </div>
               </div>
             )}
