@@ -176,6 +176,7 @@ import type {
   ChatConversation,
   ChatMessage,
   ChatMessagesPayload,
+  AppNotification,
   MediaItem,
   RegisterDto,
   LoginDto,
@@ -498,6 +499,24 @@ export const chatApi = {
 
   markRead: (conversationId: string) =>
     api.post<ApiResponse<null>>(`/chat/conversations/${conversationId}/read`),
+};
+
+// ── Notifications ─────────────────────────────────────────────────────────
+
+export const notificationsApi = {
+  list: (page = 1, limit = 20) =>
+    api.get<PaginatedResponse<AppNotification>>(
+      `/notifications?page=${page}&limit=${limit}`,
+    ),
+
+  unreadCount: () =>
+    api.get<ApiResponse<{ unread: number }>>('/notifications/unread-count'),
+
+  markRead: (id: string) =>
+    api.patch<ApiResponse<null>>(`/notifications/${id}/read`),
+
+  markAllRead: () =>
+    api.post<ApiResponse<null>>('/notifications/mark-all-read'),
 };
 
 // ── Wallet ────────────────────────────────────────────────────────────────

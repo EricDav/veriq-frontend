@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -10,9 +10,9 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import { useAuth } from '@/context/AuthContext';
-import { UserRole } from '@/types';
+import { UserRole, type AppNotification } from '@/types';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
-import { chatApi } from '@/lib/api';
+import { chatApi, notificationsApi } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import { canUseNotifications, playChatSound, requestNotificationPermission, showChatNotification } from '@/lib/notify';
 
@@ -69,6 +69,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { user, isLoading, isAuthenticated, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [chatUnread, setChatUnread] = useState(0);
+  const [notificationUnread, setNotificationUnread] = useState(0);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [isLoadingNotifications, setIsLoadingNotifications] = useState(false);
   const [notificationPermission, setNotificationPermission] = useState<'default' | 'denied' | 'granted' | 'unsupported'>('unsupported');
 
   useEffect(() => {
@@ -120,6 +124,70 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     };
   }, [isAuthenticated, user?.id]);
 
+  const refreshNotifications = useCallback(async () => {
+    if (user?.role !== UserRole.ADMIN) return;
+    try {
+      const res = await notificationsApi.unreadCount();
+      setNotificationUnread(res.data.unread ?? 0);
+    } catch {
+      setNotificationUnread(0);
+    }
+  }, [user?.role]);
+
+  const loadNotifications = useCallback(async () => {
+    if (user?.role !== UserRole.ADMIN) return;
+    setIsLoadingNotifications(true);
+    try {
+      const [listRes, countRes] = await Promise.all([
+        notificationsApi.list(1, 10),
+        notificationsApi.unreadCount(),
+      ]);
+      setNotifications(listRes.data);
+      setNotificationUnread(countRes.data.unread ?? 0);
+    } catch {
+      setNotifications([]);
+    } finally {
+      setIsLoadingNotifications(false);
+    }
+  }, [user?.role]);
+
+  useEffect(() => {
+    if (!isAuthenticated || user?.role !== UserRole.ADMIN) return;
+    refreshNotifications();
+    const timer = window.setInterval(refreshNotifications, 30000);
+    return () => window.clearInterval(timer);
+  }, [isAuthenticated, user?.role, refreshNotifications]);
+
+  const openNotifications = async () => {
+    if (user?.role !== UserRole.ADMIN) {
+      router.push('/dashboard/chat');
+      return;
+    }
+    const nextOpen = !notificationsOpen;
+    setNotificationsOpen(nextOpen);
+    if (nextOpen) await loadNotifications();
+  };
+
+  const handleNotificationClick = async (notification: AppNotification) => {
+    try {
+      if (!notification.readAt) {
+        await notificationsApi.markRead(notification.id);
+      }
+    } finally {
+      setNotificationsOpen(false);
+      await refreshNotifications();
+      if (notification.actionUrl) router.push(notification.actionUrl);
+    }
+  };
+
+  const markAllNotificationsRead = async () => {
+    await notificationsApi.markAllRead();
+    setNotifications((items) =>
+      items.map((item) => ({ ...item, readAt: item.readAt ?? new Date().toISOString() })),
+    );
+    setNotificationUnread(0);
+  };
+
   const enableNotifications = async () => {
     const permission = await requestNotificationPermission();
     setNotificationPermission(permission as typeof notificationPermission);
@@ -131,6 +199,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const navItems = getNavItems(user?.role);
   const initials = getInitials(user?.firstName, user?.lastName);
   const displayName = user ? `${user.firstName} ${user.lastName}` : 'User';
+  const bellUnread = user?.role === UserRole.ADMIN ? notificationUnread + chatUnread : chatUnread;
 
   const roleBadgeClass =
     user?.role === UserRole.ADMIN
@@ -268,12 +337,71 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <button className="relative rounded-lg p-2 text-slate-600 hover:bg-slate-100">
-              <Bell className="h-5 w-5" />
-              {chatUnread > 0 && (
-                <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-veriq-secondary" />
+            <div className="relative">
+              <button
+                type="button"
+                onClick={openNotifications}
+                className="relative rounded-lg p-2 text-slate-600 hover:bg-slate-100"
+              >
+                <Bell className="h-5 w-5" />
+                {bellUnread > 0 && (
+                  <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-veriq-secondary px-1 text-[10px] font-bold text-white">
+                    {bellUnread > 99 ? '99+' : bellUnread}
+                  </span>
+                )}
+              </button>
+
+              {notificationsOpen && user?.role === UserRole.ADMIN && (
+                <div className="absolute right-0 top-11 z-50 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-card-hover">
+                  <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+                    <div>
+                      <p className="text-sm font-bold text-navy-900">Notifications</p>
+                      <p className="text-[11px] text-slate-400">
+                        {notificationUnread} unread
+                      </p>
+                    </div>
+                    {notificationUnread > 0 && (
+                      <button
+                        type="button"
+                        onClick={markAllNotificationsRead}
+                        className="text-xs font-semibold text-veriq-secondary hover:underline"
+                      >
+                        Mark all read
+                      </button>
+                    )}
+                  </div>
+                  <div className="max-h-96 overflow-y-auto">
+                    {isLoadingNotifications ? (
+                      <div className="px-4 py-8 text-center text-sm text-slate-500">Loading notifications...</div>
+                    ) : notifications.length === 0 ? (
+                      <div className="px-4 py-8 text-center text-sm text-slate-500">No notifications yet.</div>
+                    ) : (
+                      notifications.map((notification) => (
+                        <button
+                          key={notification.id}
+                          type="button"
+                          onClick={() => handleNotificationClick(notification)}
+                          className="block w-full border-b border-slate-50 px-4 py-3 text-left transition-colors hover:bg-slate-50"
+                        >
+                          <div className="flex items-start gap-3">
+                            <span className={`mt-1 h-2 w-2 flex-shrink-0 rounded-full ${
+                              notification.readAt ? 'bg-slate-200' : 'bg-veriq-secondary'
+                            }`} />
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-bold text-navy-900">{notification.title}</p>
+                              <p className="mt-0.5 line-clamp-2 text-xs text-slate-500">{notification.message}</p>
+                              <p className="mt-1 text-[10px] text-slate-400">
+                                {new Date(notification.createdAt).toLocaleString()}
+                              </p>
+                            </div>
+                          </div>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </div>
               )}
-            </button>
+            </div>
             <div className="h-8 w-8 rounded-full bg-veriq-secondary flex items-center justify-center text-white text-xs font-bold">
               {initials}
             </div>

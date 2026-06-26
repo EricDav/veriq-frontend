@@ -516,6 +516,27 @@ export interface ChatMessagesPayload {
   messages: ChatMessage[];
 }
 
+// ─── Notifications ────────────────────────────────────────────────────────
+
+export enum NotificationType {
+  REFUND_REQUESTED = 'refund_requested',
+}
+
+export interface AppNotification {
+  id: string;
+  userId: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  actionUrl: string | null;
+  entityType: string | null;
+  entityId: string | null;
+  metadata: Record<string, unknown> | null;
+  readAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // ─── Wallet ────────────────────────────────────────────────────────────────
 
 export enum WalletTransactionType {
