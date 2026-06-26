@@ -338,6 +338,19 @@ function AdminPropertiesPageInner() {
     }
   };
 
+  const rejectRefund = async (consultationId: string) => {
+    setRefundActionId(consultationId);
+    try {
+      await consultationsApi.rejectRefund(consultationId, { reason: refundReason.trim() || undefined });
+      success('Refund rejected. Agent commission has been restored.');
+      setRefundConsultations((prev) => prev.filter((item) => item.id !== consultationId));
+    } catch (err) {
+      toastError(err instanceof ApiError ? err.message : 'Refund rejection failed');
+    } finally {
+      setRefundActionId(null);
+    }
+  };
+
   const handleApplyFilters = () => {
     setFilters(pendingFilters);
     setSearch(pendingFilters.q ?? '');
@@ -982,16 +995,28 @@ function AdminPropertiesPageInner() {
                         {item.refundReason}
                       </p>
                     )}
-                    <div className="mt-4 flex justify-end">
+                    <div className="mt-4 flex justify-end gap-2">
                       {canRefund ? (
-                        <button
-                          type="button"
-                          onClick={() => approveRefund(item.id)}
-                          disabled={refundActionId === item.id}
-                          className="rounded-lg bg-veriq-secondary px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-navy-700 disabled:opacity-50"
-                        >
-                          {refundActionId === item.id ? 'Approving…' : item.status === ConsultationStatus.REFUND_REQUESTED ? 'Approve Refund' : 'Refund Directly'}
-                        </button>
+                        <>
+                          {item.status === ConsultationStatus.REFUND_REQUESTED && (
+                            <button
+                              type="button"
+                              onClick={() => rejectRefund(item.id)}
+                              disabled={refundActionId === item.id}
+                              className="rounded-lg border border-red-200 px-4 py-2 text-xs font-bold text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"
+                            >
+                              {refundActionId === item.id ? 'Working…' : 'Reject'}
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => approveRefund(item.id)}
+                            disabled={refundActionId === item.id}
+                            className="rounded-lg bg-veriq-secondary px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-navy-700 disabled:opacity-50"
+                          >
+                            {refundActionId === item.id ? 'Working…' : item.status === ConsultationStatus.REFUND_REQUESTED ? 'Approve Refund' : 'Refund Directly'}
+                          </button>
+                        </>
                       ) : (
                         <span className="text-xs font-semibold text-slate-500">Closed</span>
                       )}

@@ -474,6 +474,12 @@ export const consultationsApi = {
       refundedAmountFormatted: string;
       paymentReference: string;
     }>>(`/consultations/${id}/refund/approve`, dto),
+
+  rejectRefund: (id: string, dto: { reason?: string }) =>
+    api.post<ApiResponse<{ consultationId: string; status: string }>>(
+      `/consultations/${id}/refund/reject`,
+      dto,
+    ),
 };
 
 // ── Chat ──────────────────────────────────────────────────────────────────

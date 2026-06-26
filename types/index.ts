@@ -450,6 +450,8 @@ export interface Consultation {
   refundRequestedAt: string | null;
   refundApprovedById: string | null;
   refundApprovedAt: string | null;
+  refundRejectedById: string | null;
+  refundRejectedAt: string | null;
   agentEarningReversedAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -521,6 +523,7 @@ export interface ChatMessagesPayload {
 export enum NotificationType {
   REFUND_REQUESTED = 'refund_requested',
   REFUND_APPROVED = 'refund_approved',
+  REFUND_REJECTED = 'refund_rejected',
 }
 
 export interface AppNotification {
