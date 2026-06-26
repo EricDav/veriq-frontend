@@ -125,17 +125,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [isAuthenticated, user?.id]);
 
   const refreshNotifications = useCallback(async () => {
-    if (user?.role !== UserRole.ADMIN) return;
+    if (!isAuthenticated) return;
     try {
       const res = await notificationsApi.unreadCount();
       setNotificationUnread(res.data.unread ?? 0);
     } catch {
       setNotificationUnread(0);
     }
-  }, [user?.role]);
+  }, [isAuthenticated]);
 
   const loadNotifications = useCallback(async () => {
-    if (user?.role !== UserRole.ADMIN) return;
+    if (!isAuthenticated) return;
     setIsLoadingNotifications(true);
     try {
       const [listRes, countRes] = await Promise.all([
@@ -149,20 +149,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     } finally {
       setIsLoadingNotifications(false);
     }
-  }, [user?.role]);
+  }, [isAuthenticated]);
 
   useEffect(() => {
-    if (!isAuthenticated || user?.role !== UserRole.ADMIN) return;
+    if (!isAuthenticated) return;
     refreshNotifications();
     const timer = window.setInterval(refreshNotifications, 30000);
     return () => window.clearInterval(timer);
-  }, [isAuthenticated, user?.role, refreshNotifications]);
+  }, [isAuthenticated, refreshNotifications]);
 
   const openNotifications = async () => {
-    if (user?.role !== UserRole.ADMIN) {
-      router.push('/dashboard/chat');
-      return;
-    }
     const nextOpen = !notificationsOpen;
     setNotificationsOpen(nextOpen);
     if (nextOpen) await loadNotifications();
@@ -199,7 +195,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const navItems = getNavItems(user?.role);
   const initials = getInitials(user?.firstName, user?.lastName);
   const displayName = user ? `${user.firstName} ${user.lastName}` : 'User';
-  const bellUnread = user?.role === UserRole.ADMIN ? notificationUnread + chatUnread : chatUnread;
+  const bellUnread = notificationUnread + chatUnread;
 
   const roleBadgeClass =
     user?.role === UserRole.ADMIN
@@ -351,7 +347,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 )}
               </button>
 
-              {notificationsOpen && user?.role === UserRole.ADMIN && (
+              {notificationsOpen && (
                 <div className="absolute right-0 top-11 z-50 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-card-hover">
                   <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
                     <div>
