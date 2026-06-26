@@ -520,6 +520,7 @@ export interface ChatMessagesPayload {
 
 export enum NotificationType {
   REFUND_REQUESTED = 'refund_requested',
+  REFUND_APPROVED = 'refund_approved',
 }
 
 export interface AppNotification {
