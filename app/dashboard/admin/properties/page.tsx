@@ -165,6 +165,7 @@ function AdminPropertiesPageInner() {
 
   const agentId = searchParams.get('agentId') ?? undefined;
   const agentName = searchParams.get('agentName') ?? undefined;
+  const refundPropertyId = searchParams.get('refundPropertyId') ?? undefined;
 
   const [properties, setProperties] = useState<Property[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -290,6 +291,27 @@ function AdminPropertiesPageInner() {
       setIsLoadingRefunds(false);
     }
   };
+
+  useEffect(() => {
+    if (!refundPropertyId || user?.role !== UserRole.ADMIN) return;
+    if (refundProperty?.id === refundPropertyId) return;
+
+    let cancelled = false;
+    propertiesApi
+      .getById(refundPropertyId)
+      .then((res) => {
+        if (!cancelled) openRefunds(res.data);
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          toastError(err instanceof ApiError ? err.message : 'Failed to open refund request');
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [refundPropertyId, user?.role]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const approveRefund = async (consultationId: string) => {
     setRefundActionId(consultationId);
