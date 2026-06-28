@@ -348,9 +348,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </button>
 
               {notificationsOpen && (
-                <div className="absolute right-0 top-11 z-50 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-card-hover">
-                  <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
-                    <div>
+                <div className="fixed left-3 right-3 top-[4.25rem] z-50 max-h-[calc(100dvh-5rem)] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-card-hover sm:absolute sm:left-auto sm:right-0 sm:top-11 sm:w-[22rem] sm:max-h-none">
+                  <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-4 py-3">
+                    <div className="min-w-0">
                       <p className="text-sm font-bold text-navy-900">Notifications</p>
                       <p className="text-[11px] text-slate-400">
                         {notificationUnread} unread
@@ -360,13 +360,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       <button
                         type="button"
                         onClick={markAllNotificationsRead}
-                        className="text-xs font-semibold text-veriq-secondary hover:underline"
+                        className="flex-shrink-0 text-xs font-semibold text-veriq-secondary hover:underline"
                       >
                         Mark all read
                       </button>
                     )}
                   </div>
-                  <div className="max-h-96 overflow-y-auto">
+                  <div className="max-h-[calc(100dvh-9rem)] overflow-y-auto sm:max-h-96">
                     {isLoadingNotifications ? (
                       <div className="px-4 py-8 text-center text-sm text-slate-500">Loading notifications...</div>
                     ) : notifications.length === 0 ? (
@@ -384,8 +384,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                               notification.readAt ? 'bg-slate-200' : 'bg-veriq-secondary'
                             }`} />
                             <div className="min-w-0 flex-1">
-                              <p className="text-sm font-bold text-navy-900">{notification.title}</p>
-                              <p className="mt-0.5 line-clamp-2 text-xs text-slate-500">{notification.message}</p>
+                              <p className="break-words text-sm font-bold text-navy-900">{notification.title}</p>
+                              <p className="mt-0.5 break-words text-xs leading-5 text-slate-500 sm:line-clamp-2">{notification.message}</p>
                               <p className="mt-1 text-[10px] text-slate-400">
                                 {new Date(notification.createdAt).toLocaleString()}
                               </p>
