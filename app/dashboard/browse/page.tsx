@@ -166,9 +166,20 @@ export default function BrowsePropertiesPage() {
       }
 
       const res = await propertiesApi.list({ ...currentFilters, page: currentPage, limit: LIMIT });
-      setProperties([...res.data].sort((a, b) => Number(unlocked.has(b.id)) - Number(unlocked.has(a.id))));
-      setTotal(res.meta.total);
-      setTotalPages(res.meta.pages);
+      const visibleIds = new Set(res.data.map((property) => property.id));
+      const paidHiddenProperties =
+        currentPage === 1
+          ? unlockedProperties
+              .filter((property) => !visibleIds.has(property.id))
+              .filter((property) => matchesFilters(property, currentFilters))
+          : [];
+      const merged = [...paidHiddenProperties, ...res.data].sort(
+        (a, b) => Number(unlocked.has(b.id)) - Number(unlocked.has(a.id)),
+      );
+      const totalWithPaidHidden = res.meta.total + paidHiddenProperties.length;
+      setProperties(merged);
+      setTotal(totalWithPaidHidden);
+      setTotalPages(Math.max(1, Math.ceil(totalWithPaidHidden / LIMIT)));
     } catch {
       setProperties([]);
     } finally {

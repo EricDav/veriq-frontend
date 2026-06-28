@@ -6,7 +6,7 @@ import {
   ChevronLeft, ChevronRight, X, Unlock,
 } from 'lucide-react';
 import { PropertyCard } from '@/components/properties/PropertyCard';
-import { agentsApi, locationsApi, propertiesApi } from '@/lib/api';
+import { agentsApi, consultationsApi, locationsApi, propertiesApi } from '@/lib/api';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useAuth } from '@/context/AuthContext';
 import type { Agent, AllowedState, Property, FilterPropertiesDto } from '@/types';
@@ -66,6 +66,45 @@ const HOSTEL_CAMPUS_OPTIONS = [
 const LIMIT = 12;
 type AccessFilter = 'all' | 'unlocked';
 
+function matchesFilters(property: Property, filters: FilterPropertiesDto) {
+  const includes = (value: string | null | undefined, query: string) =>
+    (value ?? '').toLowerCase().includes(query.toLowerCase());
+
+  if (filters.q) {
+    const agentName = property.agent?.user
+      ? `${property.agent.user.firstName ?? ''} ${property.agent.user.lastName ?? ''}`.trim()
+      : '';
+    const agentBusinessName = property.agent?.businessName ?? '';
+    const searchable = [
+      property.title,
+      property.state,
+      property.city,
+      property.area,
+      agentName,
+      agentBusinessName,
+    ];
+    if (!searchable.some((value) => includes(value, filters.q as string))) return false;
+  }
+  if (filters.state && !includes(property.state, filters.state)) return false;
+  if (filters.agentId && property.agentId !== filters.agentId) return false;
+  if (filters.city && !includes(property.city, filters.city)) return false;
+  if (filters.area && !includes(property.area, filters.area)) return false;
+  if (filters.propertyType && property.propertyType !== filters.propertyType) return false;
+  if (filters.freshnessScore && property.freshnessScore !== filters.freshnessScore) return false;
+  if (filters.minRent && property.rentAmount < Number(filters.minRent)) return false;
+  if (filters.maxRent && property.rentAmount > Number(filters.maxRent)) return false;
+  if (filters.minBedrooms && (property.bedrooms ?? 0) < Number(filters.minBedrooms)) return false;
+  if (filters.shortStayPricingModel && property.shortStayPricingModel !== filters.shortStayPricingModel) return false;
+  if (filters.maxDailyRate && Number(property.shortStayDailyRate ?? 0) > Number(filters.maxDailyRate)) return false;
+  if (filters.maxNights && Number(property.shortStayMaxNights ?? 0) > Number(filters.maxNights)) return false;
+  if (filters.hostelGender && property.hostelGender !== filters.hostelGender) return false;
+  if (filters.hostelCampusProximity && property.hostelCampusProximity !== filters.hostelCampusProximity) return false;
+  if (filters.hostelPersonsPerRoom && Number(property.hostelPersonsPerRoom ?? Infinity) > Number(filters.hostelPersonsPerRoom)) return false;
+  if (filters.hostelSuitableFor && !(property.hostelSuitableFor ?? []).includes(filters.hostelSuitableFor)) return false;
+
+  return true;
+}
+
 export default function PropertiesPage() {
   const { isAuthenticated } = useAuth();
   const [properties, setProperties] = useState<Property[]>([]);
@@ -87,13 +126,57 @@ export default function PropertiesPage() {
   const isShortStay = pendingFilters.propertyType === PropertyType.SHORT_STAY;
   const isStandard = !isHostel && !isShortStay;
 
-  const fetchProperties = useCallback(async (currentFilters: FilterPropertiesDto, currentPage: number) => {
+  const fetchProperties = useCallback(async (
+    currentFilters: FilterPropertiesDto,
+    currentPage: number,
+    currentAccessFilter: AccessFilter,
+  ) => {
     setIsLoading(true);
     try {
+      let unlocked = new Set<string>();
+      let unlockedProperties: Property[] = [];
+      if (isAuthenticated) {
+        try {
+          const consultations = await consultationsApi.getMyConsultations(1, 100);
+          const now = Date.now();
+          const activeConsultations = consultations.data.filter((item) =>
+            item.status === 'unlocked' &&
+            item.accessExpiresAt &&
+            new Date(item.accessExpiresAt).getTime() > now &&
+            item.property,
+          );
+          unlocked = new Set(activeConsultations.map((item) => item.propertyId));
+          unlockedProperties = activeConsultations.map((item) => item.property);
+        } catch {
+          unlocked = new Set<string>();
+          unlockedProperties = [];
+        }
+      }
+
+      if (currentAccessFilter === 'unlocked') {
+        const filtered = unlockedProperties.filter((property) => matchesFilters(property, currentFilters));
+        const start = (currentPage - 1) * LIMIT;
+        setProperties(filtered.slice(start, start + LIMIT));
+        setTotal(filtered.length);
+        setTotalPages(Math.max(1, Math.ceil(filtered.length / LIMIT)));
+        return;
+      }
+
       const res = await propertiesApi.list({ ...currentFilters, page: currentPage, limit: LIMIT });
-      setProperties(res.data);
-      setTotal(res.meta.total);
-      setTotalPages(res.meta.pages);
+      const visibleIds = new Set(res.data.map((property) => property.id));
+      const paidHiddenProperties =
+        currentPage === 1
+          ? unlockedProperties
+              .filter((property) => !visibleIds.has(property.id))
+              .filter((property) => matchesFilters(property, currentFilters))
+          : [];
+      const merged = [...paidHiddenProperties, ...res.data].sort(
+        (a, b) => Number(unlocked.has(b.id)) - Number(unlocked.has(a.id)),
+      );
+      const totalWithPaidHidden = res.meta.total + paidHiddenProperties.length;
+      setProperties(merged);
+      setTotal(totalWithPaidHidden);
+      setTotalPages(Math.max(1, Math.ceil(totalWithPaidHidden / LIMIT)));
     } catch {
       setProperties([]);
       setTotal(0);
@@ -101,11 +184,11 @@ export default function PropertiesPage() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [isAuthenticated]);
 
   useEffect(() => {
-    fetchProperties(filters, page);
-  }, [filters, page, fetchProperties]);
+    fetchProperties(filters, page, accessFilter);
+  }, [filters, page, accessFilter, fetchProperties]);
 
   useEffect(() => {
     agentsApi.list(1, 100)
@@ -226,8 +309,10 @@ export default function PropertiesPage() {
                 </button>
                 <button
                   type="button"
-                  disabled
-                  className="flex cursor-not-allowed items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-navy-700 opacity-50"
+                  onClick={() => { setAccessFilter('unlocked'); setPendingAccessFilter('unlocked'); setPage(1); }}
+                  className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+                    accessFilter === 'unlocked' ? 'bg-veriq-secondary text-white' : 'text-navy-700 hover:bg-slate-50'
+                  }`}
                 >
                   <Unlock className="h-4 w-4" />
                   Unlocked

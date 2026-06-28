@@ -14,6 +14,7 @@ import { UserRole } from '@/types';
 import { PageLoader, LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ConfirmDialog, Modal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
+import { PropertyCard } from '@/components/properties/PropertyCard';
 
 const FRESHNESS_STYLES: Record<FreshnessScore, string> = {
   freshly_verified: 'bg-emerald-500',
@@ -46,6 +47,26 @@ const formatDate = (value: string | null | undefined) =>
 // ─── User view: consultation history ─────────────────────────────────────
 
 function UserPropertiesView() {
+  const [consultations, setConsultations] = useState<Consultation[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    consultationsApi
+      .getMyConsultations(1, 100)
+      .then((res) => setConsultations(res.data))
+      .catch(() => setConsultations([]))
+      .finally(() => setIsLoading(false));
+  }, []);
+
+  const now = Date.now();
+  const activeUnlocked = consultations.filter(
+    (item) =>
+      item.status === ConsultationStatus.UNLOCKED &&
+      item.accessExpiresAt &&
+      new Date(item.accessExpiresAt).getTime() > now &&
+      item.property,
+  );
+
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
@@ -58,16 +79,36 @@ function UserPropertiesView() {
         </Link>
       </div>
 
-      <div className="rounded-2xl bg-veriq-surface border border-slate-200 p-8 flex flex-col items-center text-center">
-        <div className="h-16 w-16 rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
-          <Home className="h-8 w-8 text-slate-400" />
+      {isLoading ? (
+        <div className="flex justify-center py-16">
+          <LoadingSpinner size="lg" />
         </div>
-        <h3 className="font-display text-base font-bold text-navy-900 mb-2">No unlocked reports yet</h3>
-        <p className="text-sm text-veriq-muted mb-5 max-w-sm">
-          Browse properties and unlock intelligence reports to access full details and contact agents.
-        </p>
-        <Link href="/properties" className="btn-primary">Browse Properties</Link>
-      </div>
+      ) : activeUnlocked.length > 0 ? (
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+          {activeUnlocked.map((consultation) => (
+            <div key={consultation.id} className="space-y-2">
+              <PropertyCard
+                property={consultation.property}
+                detailHref={`/dashboard/browse/${consultation.propertyId}`}
+              />
+              <p className="rounded-xl bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
+                Access valid until {formatDate(consultation.accessExpiresAt)}
+              </p>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-2xl bg-veriq-surface border border-slate-200 p-8 flex flex-col items-center text-center">
+          <div className="h-16 w-16 rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
+            <Home className="h-8 w-8 text-slate-400" />
+          </div>
+          <h3 className="font-display text-base font-bold text-navy-900 mb-2">No active unlocked reports</h3>
+          <p className="text-sm text-veriq-muted mb-5 max-w-sm">
+            Browse properties and unlock intelligence reports to access full details and contact agents.
+          </p>
+          <Link href="/properties" className="btn-primary">Browse Properties</Link>
+        </div>
+      )}
     </div>
   );
 }
