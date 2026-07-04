@@ -313,6 +313,21 @@ export default function NewPropertyPage() {
   // ── Submit ────────────────────────────────────────────────────────────
   const onSubmit = async (data: FormData) => {
     try {
+      const missingSections = MEDIA_CATEGORIES.filter(({ section }) => (mediaFiles[section] ?? []).length < MIN_IMAGES);
+      if (!coverImageUrl) {
+        toastError('Please upload a cover image before creating the listing.');
+        return;
+      }
+      if (missingSections.length > 0) {
+        const nextErrors = missingSections.reduce<Record<string, string>>((acc, { section, label }) => {
+          acc[section] = `${label} needs at least ${MIN_IMAGES} images.`;
+          return acc;
+        }, {});
+        setMediaErrors((prev) => ({ ...prev, ...nextErrors }));
+        toastError(`Add at least ${MIN_IMAGES} images to every property media category.`);
+        return;
+      }
+
       const payload = {
         ...data,
         ...(isHostel ? { hostelSuitableFor: selectedSuitableFor } : {}),
@@ -331,7 +346,7 @@ export default function NewPropertyPage() {
         const uploads: Promise<unknown>[] = [];
         Object.entries(mediaFiles).forEach(([section, files]) => {
           files.forEach((file) => {
-            uploads.push(mediaApi.upload(propertyId, section, file).catch(() => null));
+            uploads.push(mediaApi.upload(propertyId, section, file));
           });
         });
         await Promise.all(uploads);

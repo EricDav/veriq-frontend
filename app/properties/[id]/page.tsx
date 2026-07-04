@@ -7,7 +7,7 @@ import { useParams, useRouter } from 'next/navigation';
 import {
   ArrowLeft, MapPin, CheckCircle, Bed, Bath, Lock,
   Shield, Eye, FileText, Clock, AlertCircle, Home, Wallet,
-  Phone, MessageCircle, X,
+  Phone, MessageCircle, X, ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import { propertiesApi, consultationsApi, chatApi, mediaApi, ApiError } from '@/lib/api';
 import type { ConsultationAccess, MediaItem, Property } from '@/types';
@@ -32,6 +32,19 @@ const TRUST_TIER_BADGE: Record<AgentTrustTier, { label: string; cls: string }> =
 };
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api/v1', '') ?? 'http://localhost:3000';
+
+const SECTION_LABELS: Record<string, string> = {
+  road_access: 'Road Access',
+  environment: 'Surroundings',
+  living_room: 'Living Room',
+  kitchen: 'Kitchen',
+  bathroom: 'Bathroom',
+  bedroom: 'Bedroom',
+  compound: 'Compound',
+  water_area: 'Water Area',
+  ceiling: 'Ceiling',
+  other: 'Other',
+};
 
 function formatNaira(amount: number | null | undefined): string {
   if (!amount) return '₦0';
@@ -83,6 +96,8 @@ function IntelligenceGrid({ title, items }: { title: string; items: Array<{ labe
 function UnlockedMediaGallery({ propertyId }: { propertyId: string }) {
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeSection, setActiveSection] = useState('all');
+  const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
 
   useEffect(() => {
     mediaApi.getAll(propertyId)
@@ -101,29 +116,104 @@ function UnlockedMediaGallery({ propertyId }: { propertyId: string }) {
 
   if (media.length === 0) return null;
 
+  const sections = ['all', ...Array.from(new Set(media.map((item) => item.section)))];
+  const filtered = activeSection === 'all' ? media : media.filter((item) => item.section === activeSection);
+  const closeLightbox = () => setLightboxIdx(null);
+  const prevImg = () => setLightboxIdx((index) => (index !== null ? Math.max(0, index - 1) : null));
+  const nextImg = () => setLightboxIdx((index) => (index !== null ? Math.min(filtered.length - 1, index + 1) : null));
+
   return (
     <div className="card p-6">
       <h3 className="font-display mb-4 flex items-center gap-2 text-base font-bold text-navy-900">
         <Eye className="h-4 w-4 text-veriq-secondary" /> Full Photo Gallery
       </h3>
+      {sections.length > 2 && (
+        <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
+          {sections.map((section) => (
+            <button
+              key={section}
+              type="button"
+              onClick={() => {
+                setActiveSection(section);
+                setLightboxIdx(null);
+              }}
+              className={`flex-shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-all ${
+                activeSection === section
+                  ? 'bg-navy-900 text-white'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              {section === 'all' ? 'All' : SECTION_LABELS[section] ?? section.replace(/_/g, ' ')}
+            </button>
+          ))}
+        </div>
+      )}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        {media.map((item) => (
-          <div key={item.id} className="relative aspect-[4/3] overflow-hidden rounded-xl bg-slate-100">
+        {filtered.map((item, idx) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => setLightboxIdx(idx)}
+            className="relative aspect-[4/3] overflow-hidden rounded-xl bg-slate-100 text-left transition-opacity hover:opacity-90"
+          >
             <Image
               src={mediaUrl(item.url)}
-              alt={item.caption ?? item.section}
+              alt={item.caption ?? SECTION_LABELS[item.section] ?? item.section}
               fill
               sizes="(max-width: 640px) 50vw, 33vw"
               className="object-cover"
             />
             {(item.caption || item.section) && (
               <div className="absolute inset-x-0 bottom-0 bg-navy-950/70 px-2 py-1 text-[10px] capitalize text-white">
-                {item.caption ?? item.section.replace(/_/g, ' ')}
+                {item.caption ?? SECTION_LABELS[item.section] ?? item.section.replace(/_/g, ' ')}
               </div>
             )}
-          </div>
+          </button>
         ))}
       </div>
+      {lightboxIdx !== null && filtered[lightboxIdx] && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90" onClick={closeLightbox}>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); closeLightbox(); }}
+            className="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white/70 hover:text-white"
+            aria-label="Close image preview"
+          >
+            <X className="h-6 w-6" />
+          </button>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); prevImg(); }}
+            disabled={lightboxIdx === 0}
+            className="absolute left-3 rounded-full bg-white/10 p-2 text-white/70 hover:text-white disabled:opacity-20 sm:left-6"
+            aria-label="Previous image"
+          >
+            <ChevronLeft className="h-7 w-7" />
+          </button>
+          <div className="relative mx-14 w-full max-w-4xl" onClick={(e) => e.stopPropagation()}>
+            <Image
+              src={mediaUrl(filtered[lightboxIdx].url)}
+              alt={filtered[lightboxIdx].caption ?? SECTION_LABELS[filtered[lightboxIdx].section] ?? ''}
+              width={1400}
+              height={950}
+              className="max-h-[80vh] w-full rounded-xl object-contain"
+            />
+            <p className="mt-3 text-center text-sm text-white/70">
+              {filtered[lightboxIdx].caption ?? SECTION_LABELS[filtered[lightboxIdx].section] ?? filtered[lightboxIdx].section.replace(/_/g, ' ')}
+            </p>
+            <p className="mt-1 text-center text-xs text-white/40">{lightboxIdx + 1} / {filtered.length}</p>
+          </div>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); nextImg(); }}
+            disabled={lightboxIdx === filtered.length - 1}
+            className="absolute right-3 rounded-full bg-white/10 p-2 text-white/70 hover:text-white disabled:opacity-20 sm:right-6"
+            aria-label="Next image"
+          >
+            <ChevronRight className="h-7 w-7" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

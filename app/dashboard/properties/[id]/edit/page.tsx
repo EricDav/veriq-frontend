@@ -65,15 +65,19 @@ const PROPERTY_TYPE_OPTIONS = [
   { value: PropertyType.SHORT_STAY, label: 'Short Stay' },
 ];
 
-const MEDIA_CATEGORIES: { section: MediaSection; label: string }[] = [
-  { section: MediaSection.ROAD_ACCESS, label: 'Road Access' },
-  { section: MediaSection.ENVIRONMENT, label: 'Surroundings' },
-  { section: MediaSection.LIVING_ROOM, label: 'Living Room' },
-  { section: MediaSection.KITCHEN, label: 'Kitchen' },
-  { section: MediaSection.BEDROOM, label: 'Bedroom' },
-  { section: MediaSection.BATHROOM, label: 'Bathroom' },
-  { section: MediaSection.COMPOUND, label: 'Compound' },
+const MEDIA_CATEGORIES: { section: MediaSection; label: string; hint: string }[] = [
+  { section: MediaSection.ROAD_ACCESS, label: 'Road Access', hint: 'Photos of the road leading to the property' },
+  { section: MediaSection.ENVIRONMENT, label: 'Surroundings', hint: 'Neighbourhood, nearby landmarks' },
+  { section: MediaSection.LIVING_ROOM, label: 'Living Room', hint: 'Main sitting area' },
+  { section: MediaSection.KITCHEN, label: 'Kitchen', hint: 'Kitchen / cooking area' },
+  { section: MediaSection.BEDROOM, label: 'Bedroom', hint: 'Bedroom(s)' },
+  { section: MediaSection.BATHROOM, label: 'Bathroom', hint: 'Bathroom / toilet' },
+  { section: MediaSection.COMPOUND, label: 'Compound', hint: 'Compound / exterior' },
 ];
+
+const MIN_IMAGES = 2;
+const MAX_IMAGES = 5;
+const REQUIRED_MEDIA_SECTIONS = MEDIA_CATEGORIES.map((category) => category.section);
 
 const chipOptions = {
   hostelSuitableFor: [
@@ -103,6 +107,7 @@ export default function EditListingPage() {
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [isMediaLoading, setIsMediaLoading] = useState(false);
   const [uploadingSection, setUploadingSection] = useState<string | null>(null);
+  const [mediaErrors, setMediaErrors] = useState<Record<string, string>>({});
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   useEffect(() => {
@@ -213,13 +218,24 @@ export default function EditListingPage() {
     });
   };
 
-  const uploadMedia = async (section: string, file?: File) => {
-    if (!file) return;
+  const uploadMedia = async (section: string, files?: FileList | null) => {
+    if (!files?.length) return;
+    const existingCount = media.filter((item) => item.section === section).length;
+    const selectedFiles = Array.from(files).slice(0, Math.max(0, MAX_IMAGES - existingCount));
+    if (selectedFiles.length === 0) {
+      setMediaErrors((prev) => ({ ...prev, [section]: `Max ${MAX_IMAGES} images per category.` }));
+      return;
+    }
     setUploadingSection(section);
     try {
-      const res = await mediaApi.upload(id, section, file);
-      setMedia((prev) => [...prev, res.data as MediaItem]);
-      success('Image uploaded');
+      const uploaded = await Promise.all(selectedFiles.map((file) => mediaApi.upload(id, section, file)));
+      setMedia((prev) => [...prev, ...uploaded.map((res) => res.data as MediaItem)]);
+      setMediaErrors((prev) => {
+        const next = { ...prev };
+        delete next[section];
+        return next;
+      });
+      success(selectedFiles.length === 1 ? 'Image uploaded' : 'Images uploaded');
     } catch (err) {
       toastError(err instanceof ApiError ? err.message : 'Failed to upload image');
     } finally {
@@ -230,6 +246,15 @@ export default function EditListingPage() {
   };
 
   const deleteMedia = async (item: MediaItem) => {
+    const sectionItems = media.filter((m) => m.section === item.section);
+    if (REQUIRED_MEDIA_SECTIONS.includes(item.section as MediaSection) && sectionItems.length <= MIN_IMAGES) {
+      setMediaErrors((prev) => ({
+        ...prev,
+        [item.section]: `Add a replacement first. ${MEDIA_CATEGORIES.find((category) => category.section === item.section)?.label ?? 'This category'} must keep at least ${MIN_IMAGES} images.`,
+      }));
+      toastError(`Add a replacement first. Each category needs at least ${MIN_IMAGES} images.`);
+      return;
+    }
     try {
       await mediaApi.delete(id, item.id);
       setMedia((prev) => prev.filter((m) => m.id !== item.id));
@@ -255,6 +280,22 @@ export default function EditListingPage() {
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!form.coverImageUrl) {
+      toastError('Please upload a cover image before saving changes.');
+      return;
+    }
+    const missingSections = MEDIA_CATEGORIES.filter(({ section }) => media.filter((item) => item.section === section).length < MIN_IMAGES);
+    if (missingSections.length > 0) {
+      setMediaErrors((prev) => ({
+        ...prev,
+        ...missingSections.reduce<Record<string, string>>((acc, { section, label }) => {
+          acc[section] = `${label} needs at least ${MIN_IMAGES} images.`;
+          return acc;
+        }, {}),
+      }));
+      toastError(`Add at least ${MIN_IMAGES} images to every property media category before saving.`);
+      return;
+    }
     setIsSaving(true);
     try {
       const payload = Object.fromEntries(
@@ -612,15 +653,28 @@ export default function EditListingPage() {
             <div className="flex justify-center py-8"><LoadingSpinner size="md" /></div>
           ) : (
             <div className="space-y-5">
-              {MEDIA_CATEGORIES.map(({ section, label }) => {
+              {MEDIA_CATEGORIES.map(({ section, label, hint }) => {
                 const items = media.filter((item) => item.section === section);
+                const err = mediaErrors[section];
+                const canAdd = items.length < MAX_IMAGES;
                 return (
                   <div key={section}>
                     <div className="mb-2 flex items-center justify-between">
-                      <p className="text-sm font-semibold text-navy-800">{label}</p>
-                      <button type="button" onClick={() => fileInputRefs.current[section]?.click()} className="text-xs font-bold text-veriq-secondary hover:underline">
-                        Add image
-                      </button>
+                      <div>
+                        <p className="text-sm font-semibold text-navy-800">{label}</p>
+                        <p className="text-xs text-slate-400">{hint}</p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className={`text-xs ${items.length < MIN_IMAGES ? 'text-amber-500' : 'text-slate-400'}`}>
+                          {items.length}/{MAX_IMAGES}
+                          {items.length < MIN_IMAGES && <span className="ml-1">(min {MIN_IMAGES})</span>}
+                        </span>
+                        {canAdd && (
+                          <button type="button" onClick={() => fileInputRefs.current[section]?.click()} className="text-xs font-bold text-veriq-secondary hover:underline">
+                            Add image
+                          </button>
+                        )}
+                      </div>
                     </div>
                     <div className="flex flex-wrap gap-3">
                       {items.map((item) => (
@@ -635,13 +689,15 @@ export default function EditListingPage() {
                       ))}
                       {items.length === 0 && <p className="text-xs text-slate-400">No images in this category yet.</p>}
                     </div>
+                    {err && <p className="mt-1 text-xs text-red-500">{err}</p>}
                     <input
                       ref={(el) => { fileInputRefs.current[section] = el; }}
                       type="file"
+                      multiple
                       accept="image/*"
                       className="hidden"
                       disabled={uploadingSection === section}
-                      onChange={(e) => uploadMedia(section, e.target.files?.[0])}
+                      onChange={(e) => uploadMedia(section, e.target.files)}
                     />
                   </div>
                 );
