@@ -100,6 +100,7 @@ export default function EditListingPage() {
   const { success, error: toastError } = useToast();
   const [property, setProperty] = useState<Property | null>(null);
   const [form, setForm] = useState<EditForm>({});
+  const [coverImageUrl, setCoverImageUrl] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isCoverUploading, setIsCoverUploading] = useState(false);
@@ -109,6 +110,9 @@ export default function EditListingPage() {
   const [uploadingSection, setUploadingSection] = useState<string | null>(null);
   const [mediaErrors, setMediaErrors] = useState<Record<string, string>>({});
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const coverImageInputRef = useRef<HTMLInputElement | null>(null);
+  const latestCoverImageUrlRef = useRef('');
+  const hasEditedCoverImageRef = useRef(false);
 
   useEffect(() => {
     let mounted = true;
@@ -116,6 +120,14 @@ export default function EditListingPage() {
       .then((res) => {
         if (!mounted) return;
         const p = res.data;
+        const loadedCoverImageUrl = p.coverImageUrl ?? '';
+        if (!hasEditedCoverImageRef.current) {
+          latestCoverImageUrlRef.current = loadedCoverImageUrl;
+          setCoverImageUrl(loadedCoverImageUrl);
+          if (coverImageInputRef.current) {
+            coverImageInputRef.current.value = loadedCoverImageUrl;
+          }
+        }
         setProperty(p);
         setForm({
           title: p.title,
@@ -137,7 +149,7 @@ export default function EditListingPage() {
           legalFee: Number(p.legalFee ?? 0),
           cautionFee: Number(p.cautionFee ?? 0),
           inspectionFee: Number(p.inspectionFee ?? 0),
-          coverImageUrl: p.coverImageUrl ?? '',
+          coverImageUrl: hasEditedCoverImageRef.current ? latestCoverImageUrlRef.current : loadedCoverImageUrl,
           hostelSuitableFor: p.hostelSuitableFor ?? [],
           hostelPersonsPerRoom: p.hostelPersonsPerRoom ?? undefined,
           hostelGender: p.hostelGender ?? undefined,
@@ -269,6 +281,12 @@ export default function EditListingPage() {
     setIsCoverUploading(true);
     try {
       const uploaded = await uploadToFileService(file);
+      hasEditedCoverImageRef.current = true;
+      latestCoverImageUrlRef.current = uploaded.url;
+      if (coverImageInputRef.current) {
+        coverImageInputRef.current.value = uploaded.url;
+      }
+      setCoverImageUrl(uploaded.url);
       update('coverImageUrl', uploaded.url);
       success('Cover image uploaded');
     } catch {
@@ -280,7 +298,8 @@ export default function EditListingPage() {
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.coverImageUrl) {
+    const latestCoverImageUrl = coverImageInputRef.current?.value || latestCoverImageUrlRef.current || coverImageUrl || String(form.coverImageUrl ?? '');
+    if (!latestCoverImageUrl) {
       toastError('Please upload a cover image before saving changes.');
       return;
     }
@@ -301,6 +320,7 @@ export default function EditListingPage() {
       const payload = Object.fromEntries(
         Object.entries(form).filter(([, value]) => value !== ''),
       ) as Partial<CreatePropertyDto>;
+      payload.coverImageUrl = latestCoverImageUrl;
       await propertiesApi.update(id, payload);
       success('Listing updated successfully');
       router.push('/dashboard/properties');
@@ -338,6 +358,7 @@ export default function EditListingPage() {
           <h2 className="font-display flex items-center gap-2 text-base font-bold text-navy-900">
             <Home className="h-4 w-4 text-veriq-secondary" /> Basic Information
           </h2>
+          <input ref={coverImageInputRef} type="hidden" name="coverImageUrl" defaultValue={coverImageUrl} />
 
           <div>
             <label className="label">Property Title *</label>
@@ -354,7 +375,7 @@ export default function EditListingPage() {
             <div className="flex flex-wrap items-center gap-3">
               <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-navy-700 hover:border-veriq-secondary">
                 {isCoverUploading ? <LoadingSpinner size="sm" /> : <Upload className="h-4 w-4" />}
-                {isCoverUploading ? 'Uploading...' : form.coverImageUrl ? 'Replace cover' : 'Upload cover'}
+                {isCoverUploading ? 'Uploading...' : coverImageUrl ? 'Replace cover' : 'Upload cover'}
                 <input
                   type="file"
                   accept="image/*"
@@ -366,8 +387,8 @@ export default function EditListingPage() {
                   }}
                 />
               </label>
-              {form.coverImageUrl && (
-                <a href={normalizeAssetUrl(String(form.coverImageUrl))} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-veriq-secondary hover:underline">
+              {coverImageUrl && (
+                <a href={normalizeAssetUrl(coverImageUrl)} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-veriq-secondary hover:underline">
                   View current cover
                 </a>
               )}

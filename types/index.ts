@@ -817,7 +817,18 @@ export interface SubmitLevel2VerificationDto {
 
 // ─── Property DTOs ────────────────────────────────────────────────────────
 
+export interface CreatePropertyMediaDto {
+  section: MediaSection;
+  url: string;
+  originalName?: string;
+  filename?: string;
+  mimeType?: string;
+  sizeBytes?: number;
+  caption?: string;
+}
+
 export interface CreatePropertyDto {
+  clientRequestId?: string;
   title: string;
   description?: string;
   propertyType: PropertyType;
@@ -882,6 +893,7 @@ export interface CreatePropertyDto {
   shortStayKitchen?: ShortStayKitchen;
   shortStayAgentNote?: string;
   coverImageUrl?: string;
+  propertyMedia?: CreatePropertyMediaDto[];
 }
 
 export interface FilterPropertiesDto {

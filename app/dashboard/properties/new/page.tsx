@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { ArrowLeft, Home, GraduationCap, Camera, X, Upload, Zap, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
-import { propertiesApi, mediaApi, ApiError, locationsApi } from '@/lib/api';
+import { propertiesApi, ApiError, locationsApi } from '@/lib/api';
 import { uploadToFileService } from '@/lib/upload';
 import {
   PropertyType, HostelSuitableFor, HostelGender, HostelCampusProximity,
@@ -18,6 +18,7 @@ import {
   ShortStayAC, ShortStayInternet, ShortStayCleanliness, ShortStayFurnishing, ShortStayKitchen,
   MediaSection,
   type AllowedState,
+  type CreatePropertyMediaDto,
 } from '@/types';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useToast } from '@/components/ui/Toast';
@@ -217,6 +218,11 @@ export default function NewPropertyPage() {
   const [isCoverUploading, setIsCoverUploading] = useState(false);
   const [activeStates, setActiveStates] = useState<AllowedState[]>([]);
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const clientRequestIdRef = useRef(
+    typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+  );
 
   const {
     register,
@@ -328,7 +334,31 @@ export default function NewPropertyPage() {
         return;
       }
 
+      const propertyMedia: CreatePropertyMediaDto[] = [];
+      try {
+        const uploadedMedia = await Promise.all(
+          Object.entries(mediaFiles).flatMap(([section, files]) =>
+            files.map(async (file) => {
+              const uploaded = await uploadToFileService(file);
+              return {
+                section: section as MediaSection,
+                url: uploaded.url,
+                filename: uploaded.name,
+                originalName: file.name,
+                mimeType: uploaded.mime,
+                sizeBytes: uploaded.size,
+              };
+            }),
+          ),
+        );
+        propertyMedia.push(...uploadedMedia);
+      } catch (err) {
+        toastError(err instanceof Error ? err.message : 'One or more property images failed to upload. Please try again.');
+        return;
+      }
+
       const payload = {
+        clientRequestId: clientRequestIdRef.current,
         ...data,
         ...(isHostel ? { hostelSuitableFor: selectedSuitableFor } : {}),
         ...(isShortStay ? { shortStayAmenities: selectedAmenities } : {}),
@@ -336,21 +366,10 @@ export default function NewPropertyPage() {
         bestNetwork,
         securityFeatures,
         knownIssues,
+        propertyMedia,
       };
 
-      const res = await propertiesApi.create(payload);
-      const propertyId = (res as { data: { id: string } }).data?.id;
-
-      // Upload media images if any
-      if (propertyId) {
-        const uploads: Promise<unknown>[] = [];
-        Object.entries(mediaFiles).forEach(([section, files]) => {
-          files.forEach((file) => {
-            uploads.push(mediaApi.upload(propertyId, section, file));
-          });
-        });
-        await Promise.all(uploads);
-      }
+      await propertiesApi.create(payload);
 
       success('Listing created successfully!');
       router.push('/dashboard/properties');
