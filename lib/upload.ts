@@ -1,5 +1,3 @@
-import { getAccessToken } from './auth';
-
 export interface ExternalUploadFile {
   name: string;
   path: string;
@@ -25,22 +23,48 @@ interface ExternalUploadResponse {
 export const UPLOAD_URL =
   process.env.NEXT_PUBLIC_UPLOAD_URL ?? 'https://upload.logistecx.online/upload';
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:3000/api/v1';
+function resolveUploadUrl(value: string | undefined, fallback: File) {
+  if (!value) return '';
+  if (value.startsWith('http://') || value.startsWith('https://')) return value;
+
+  try {
+    const uploadOrigin = new URL(UPLOAD_URL).origin;
+    return `${uploadOrigin}${value.startsWith('/') ? value : `/${value}`}`;
+  } catch {
+    return value || fallback.name;
+  }
+}
+
+function normalizeUploadFile(file: Partial<ExternalUploadFile> | null | undefined, fallback: File): ExternalUploadFile | null {
+  const rawUrl = file?.url ?? file?.path;
+  const url = resolveUploadUrl(rawUrl, fallback);
+  if (!url) return null;
+
+  return {
+    name: file?.name ?? fallback.name,
+    path: file?.path ?? url,
+    url,
+    size: file?.size ?? fallback.size,
+    mime: file?.mime ?? fallback.type,
+  };
+}
 
 function normalizeUploadResponse(body: ExternalUploadResponse | null, fallback: File): ExternalUploadFile | null {
   return (
-    body?.data ??
-    body?.file ??
-    (body?.url
-      ? {
-          url: body.url,
-          name: body.name ?? fallback.name,
-          path: body.path ?? body.url,
-          size: body.size ?? fallback.size,
-          mime: body.mime ?? body.mimetype ?? fallback.type,
-        }
-      : null)
+    normalizeUploadFile(body?.data, fallback) ??
+    normalizeUploadFile(body?.file, fallback) ??
+    normalizeUploadFile(
+      body
+        ? {
+            url: body.url,
+            name: body.name,
+            path: body.path,
+            size: body.size,
+            mime: body.mime ?? body.mimetype,
+          }
+        : null,
+      fallback,
+    )
   );
 }
 
@@ -48,14 +72,8 @@ export async function uploadToFileService(file: File): Promise<ExternalUploadFil
   const formData = new FormData();
   formData.append('file', file);
 
-  const accessToken = getAccessToken();
-  const useBackendProxy = process.env.NEXT_PUBLIC_UPLOAD_DIRECT !== 'true' && !!accessToken;
-  const uploadUrl = useBackendProxy ? `${API_BASE_URL}/uploads/file` : UPLOAD_URL;
-  const headers = useBackendProxy ? { Authorization: `Bearer ${accessToken}` } : undefined;
-
-  const res = await fetch(uploadUrl, {
+  const res = await fetch(UPLOAD_URL, {
     method: 'POST',
-    headers,
     body: formData,
   });
 

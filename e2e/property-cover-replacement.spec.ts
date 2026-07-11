@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 const API_BASE = 'http://localhost:3007/api/v1';
+const UPLOAD_URL = 'https://upload.logistecx.online/upload';
 const propertyId = 'property-cover-regression';
 const replacementCoverUrl = 'https://upload.logistecx.online/file/replacement-cover.webp';
 
@@ -170,8 +171,12 @@ test('agent can replace a property cover image and save the new cover URL', asyn
   });
 
   await page.route(`${API_BASE}/uploads/file`, async (route) => {
+    throw new Error('Cover upload should call the upload service directly, not the backend proxy.');
+  });
+
+  await page.route(UPLOAD_URL, async (route) => {
     expect(route.request().method()).toBe('POST');
-    expect(route.request().headers().authorization).toContain('Bearer ');
+    expect(route.request().headers().authorization).toBeUndefined();
     uploadWasCalled = true;
     await route.fulfill({
       status: 201,
@@ -219,5 +224,7 @@ test('agent can replace a property cover image and save the new cover URL', asyn
   await page.getByRole('button', { name: /save changes/i }).click();
 
   await expect.poll(() => patchPayload).not.toBeNull();
-  expect(patchPayload?.coverImageUrl).toBe(replacementCoverUrl);
+  const savedPayload = patchPayload as Record<string, unknown> | null;
+  expect(savedPayload).not.toBeNull();
+  expect(savedPayload?.coverImageUrl).toBe(replacementCoverUrl);
 });

@@ -168,6 +168,22 @@ const MIN_IMAGES = 2;
 const MAX_IMAGES = 5;
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api/v1', '') ?? 'http://localhost:3000';
 
+type MediaUploadStatus = 'uploading' | 'uploaded' | 'failed';
+
+interface MediaUploadItem {
+  id: string;
+  fileName: string;
+  fileSize: number;
+  fileType: string;
+  previewUrl: string;
+  status: MediaUploadStatus;
+  url?: string;
+  uploadedName?: string;
+  uploadedMime?: string;
+  uploadedSize?: number;
+  error?: string;
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────
 
 function Chip({
@@ -210,9 +226,8 @@ export default function NewPropertyPage() {
   const [securityFeatures, setSecurityFeatures] = useState<string[]>([]);
   const [knownIssues, setKnownIssues] = useState<string[]>([]);
 
-  // ── Media state: { [section]: File[] } ────────────────────────────────
-  const [mediaFiles, setMediaFiles] = useState<Record<string, File[]>>({});
-  const [mediaPreviews, setMediaPreviews] = useState<Record<string, string[]>>({});
+  // ── Media state: files upload immediately and submit only sends uploaded URLs.
+  const [mediaUploads, setMediaUploads] = useState<Record<string, MediaUploadItem[]>>({});
   const [mediaErrors, setMediaErrors] = useState<Record<string, string>>({});
   const [coverUploadError, setCoverUploadError] = useState('');
   const [isCoverUploading, setIsCoverUploading] = useState(false);
@@ -240,6 +255,9 @@ export default function NewPropertyPage() {
   const isHostel = propertyType === PropertyType.HOSTEL;
   const isShortStay = propertyType === PropertyType.SHORT_STAY;
   const isStandard = !isHostel && !isShortStay;
+  const allMediaUploads = Object.values(mediaUploads).flat();
+  const hasPendingMediaUploads = allMediaUploads.some((item) => item.status === 'uploading');
+  const hasFailedMediaUploads = allMediaUploads.some((item) => item.status === 'failed');
 
   useEffect(() => {
     locationsApi.activeStates()
@@ -255,50 +273,117 @@ export default function NewPropertyPage() {
   ) => setter((prev) => prev.includes(val) ? prev.filter((v) => v !== val) : [...prev, val]);
 
   // ── Media handlers ────────────────────────────────────────────────────
+  const updateMediaUpload = (section: string, itemId: string, patch: Partial<MediaUploadItem>) => {
+    setMediaUploads((prev) => ({
+      ...prev,
+      [section]: (prev[section] ?? []).map((item) => (
+        item.id === itemId ? { ...item, ...patch } : item
+      )),
+    }));
+  };
+
+  const uploadMediaItem = async (section: string, itemId: string, file: File) => {
+    try {
+      const uploaded = await uploadToFileService(file);
+      updateMediaUpload(section, itemId, {
+        status: 'uploaded',
+        url: uploaded.url,
+        uploadedName: uploaded.name,
+        uploadedMime: uploaded.mime,
+        uploadedSize: uploaded.size,
+        error: undefined,
+      });
+    } catch (err) {
+      updateMediaUpload(section, itemId, {
+        status: 'failed',
+        error: err instanceof Error ? err.message : 'Upload failed',
+      });
+      const label = MEDIA_CATEGORIES.find((category) => category.section === section)?.label ?? 'This category';
+      setMediaErrors((prev) => ({
+        ...prev,
+        [section]: `${label}: ${file.name} failed to upload.`,
+      }));
+    }
+  };
+
+  const createMediaItem = (file: File, status: MediaUploadStatus, error?: string): MediaUploadItem => ({
+    id: typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    fileName: file.name,
+    fileSize: file.size,
+    fileType: file.type,
+    previewUrl: file.type.startsWith('image/') ? URL.createObjectURL(file) : '',
+    status,
+    error,
+  });
+
   const handleFileAdd = (section: string, files: FileList | null) => {
     if (!files) return;
-    const existing = mediaFiles[section] ?? [];
-    const newFiles: File[] = [];
-    const newPreviews: string[] = [];
-    let errMsg = '';
+    const existing = mediaUploads[section] ?? [];
+    const accepted: Array<{ item: MediaUploadItem; file: File }> = [];
+    const rejected: MediaUploadItem[] = [];
 
     Array.from(files).forEach((file) => {
-      if (existing.length + newFiles.length >= MAX_IMAGES) {
-        errMsg = `Max ${MAX_IMAGES} images per category`;
+      if (existing.length + accepted.length + rejected.length >= MAX_IMAGES) {
+        rejected.push(createMediaItem(file, 'failed', `Max ${MAX_IMAGES} images per category`));
         return;
       }
       if (!ALLOWED_TYPES.includes(file.type)) {
-        errMsg = 'Only JPG, PNG, WEBP allowed';
+        rejected.push(createMediaItem(file, 'failed', 'Only JPG, PNG, WEBP allowed'));
         return;
       }
       if (file.size > MAX_FILE_SIZE) {
-        errMsg = 'Max file size is 10MB';
+        rejected.push(createMediaItem(file, 'failed', 'Max file size is 10MB'));
         return;
       }
-      newFiles.push(file);
-      newPreviews.push(URL.createObjectURL(file));
+      accepted.push({ item: createMediaItem(file, 'uploading'), file });
     });
 
-    setMediaFiles((prev) => ({ ...prev, [section]: [...existing, ...newFiles] }));
-    setMediaPreviews((prev) => ({
+    if (accepted.length === 0 && rejected.length === 0) return;
+
+    setMediaUploads((prev) => ({
       ...prev,
-      [section]: [...(prev[section] ?? []), ...newPreviews],
+      [section]: [...(prev[section] ?? []), ...accepted.map(({ item }) => item), ...rejected],
     }));
-    if (errMsg) setMediaErrors((prev) => ({ ...prev, [section]: errMsg }));
-    else setMediaErrors((prev) => { const next = { ...prev }; delete next[section]; return next; });
+
+    if (rejected.length > 0) {
+      setMediaErrors((prev) => ({
+        ...prev,
+        [section]: rejected.map((item) => `${item.fileName}: ${item.error}`).join(' '),
+      }));
+    } else {
+      setMediaErrors((prev) => { const next = { ...prev }; delete next[section]; return next; });
+    }
+
+    accepted.forEach(({ item, file }) => {
+      uploadMediaItem(section, item.id, file);
+    });
   };
 
-  const handleFileRemove = (section: string, idx: number) => {
-    setMediaFiles((prev) => {
-      const next = [...(prev[section] ?? [])];
-      next.splice(idx, 1);
-      return { ...prev, [section]: next };
+  const handleFileRemove = (section: string, itemId: string) => {
+    const currentItems = mediaUploads[section] ?? [];
+    const removed = currentItems.find((item) => item.id === itemId);
+    if (removed?.previewUrl) URL.revokeObjectURL(removed.previewUrl);
+    const remaining = currentItems.filter((item) => item.id !== itemId);
+
+    setMediaUploads((prev) => {
+      return {
+        ...prev,
+        [section]: remaining,
+      };
     });
-    setMediaPreviews((prev) => {
-      const next = [...(prev[section] ?? [])];
-      URL.revokeObjectURL(next[idx]);
-      next.splice(idx, 1);
-      return { ...prev, [section]: next };
+    setMediaErrors((current) => {
+      const failed = remaining.filter((item) => item.status === 'failed');
+      if (failed.length === 0) {
+        const next = { ...current };
+        delete next[section];
+        return next;
+      }
+      return {
+        ...current,
+        [section]: failed.map((item) => `${item.fileName}: ${item.error ?? 'Upload failed'}`).join(' '),
+      };
     });
   };
 
@@ -319,9 +404,27 @@ export default function NewPropertyPage() {
   // ── Submit ────────────────────────────────────────────────────────────
   const onSubmit = async (data: FormData) => {
     try {
-      const missingSections = MEDIA_CATEGORIES.filter(({ section }) => (mediaFiles[section] ?? []).length < MIN_IMAGES);
+      const missingSections = MEDIA_CATEGORIES.filter(({ section }) => (
+        (mediaUploads[section] ?? []).filter((item) => item.status === 'uploaded').length < MIN_IMAGES
+      ));
       if (!coverImageUrl) {
         toastError('Please upload a cover image before creating the listing.');
+        return;
+      }
+      if (hasPendingMediaUploads) {
+        toastError('Some property images are still uploading. Please wait for them to finish.');
+        return;
+      }
+      if (hasFailedMediaUploads) {
+        const nextErrors = MEDIA_CATEGORIES.reduce<Record<string, string>>((acc, { section, label }) => {
+          const failed = (mediaUploads[section] ?? []).filter((item) => item.status === 'failed');
+          if (failed.length > 0) {
+            acc[section] = `${label}: ${failed.map((item) => `${item.fileName} (${item.error ?? 'Upload failed'})`).join(', ')}`;
+          }
+          return acc;
+        }, {});
+        setMediaErrors((prev) => ({ ...prev, ...nextErrors }));
+        toastError('Fix or remove failed property image uploads before creating the listing.');
         return;
       }
       if (missingSections.length > 0) {
@@ -334,28 +437,18 @@ export default function NewPropertyPage() {
         return;
       }
 
-      const propertyMedia: CreatePropertyMediaDto[] = [];
-      try {
-        const uploadedMedia = await Promise.all(
-          Object.entries(mediaFiles).flatMap(([section, files]) =>
-            files.map(async (file) => {
-              const uploaded = await uploadToFileService(file);
-              return {
-                section: section as MediaSection,
-                url: uploaded.url,
-                filename: uploaded.name,
-                originalName: file.name,
-                mimeType: uploaded.mime,
-                sizeBytes: uploaded.size,
-              };
-            }),
-          ),
-        );
-        propertyMedia.push(...uploadedMedia);
-      } catch (err) {
-        toastError(err instanceof Error ? err.message : 'One or more property images failed to upload. Please try again.');
-        return;
-      }
+      const propertyMedia: CreatePropertyMediaDto[] = Object.entries(mediaUploads).flatMap(([section, items]) =>
+        items
+          .filter((item) => item.status === 'uploaded' && item.url)
+          .map((item) => ({
+            section: section as MediaSection,
+            url: item.url!,
+            filename: item.uploadedName ?? item.fileName,
+            originalName: item.fileName,
+            mimeType: item.uploadedMime ?? item.fileType,
+            sizeBytes: item.uploadedSize ?? item.fileSize,
+          })),
+      );
 
       const payload = {
         clientRequestId: clientRequestIdRef.current,
@@ -780,10 +873,12 @@ export default function NewPropertyPage() {
 
           <div className="space-y-5">
             {MEDIA_CATEGORIES.map(({ section, label, hint }) => {
-              const files = mediaFiles[section] ?? [];
-              const previews = mediaPreviews[section] ?? [];
+              const items = mediaUploads[section] ?? [];
+              const uploadedCount = items.filter((item) => item.status === 'uploaded').length;
+              const uploadingCount = items.filter((item) => item.status === 'uploading').length;
+              const failedCount = items.filter((item) => item.status === 'failed').length;
               const err = mediaErrors[section];
-              const canAdd = files.length < MAX_IMAGES;
+              const canAdd = items.length < MAX_IMAGES;
 
               return (
                 <div key={section}>
@@ -793,8 +888,10 @@ export default function NewPropertyPage() {
                       <p className="text-xs text-slate-400">{hint}</p>
                     </div>
                     <span className="text-xs text-slate-400">
-                      {files.length}/{MAX_IMAGES}
-                      {files.length < MIN_IMAGES && (
+                      {uploadedCount}/{MAX_IMAGES} uploaded
+                      {uploadingCount > 0 && <span className="ml-1 text-blue-500">({uploadingCount} uploading)</span>}
+                      {failedCount > 0 && <span className="ml-1 text-red-500">({failedCount} failed)</span>}
+                      {uploadedCount < MIN_IMAGES && (
                         <span className="ml-1 text-amber-500">(min {MIN_IMAGES})</span>
                       )}
                     </span>
@@ -802,14 +899,47 @@ export default function NewPropertyPage() {
 
                   <div className="flex flex-wrap gap-3">
                     {/* Previews */}
-                    {previews.map((src, idx) => (
-                      <div key={idx} className="relative w-20 h-20 rounded-xl overflow-hidden border border-slate-200 group">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={src} alt="" className="w-full h-full object-cover" />
+                    {items.map((item) => (
+                      <div
+                        key={item.id}
+                        title={item.status === 'failed' ? `${item.fileName}: ${item.error ?? 'Upload failed'}` : item.fileName}
+                        className={`group relative h-24 w-24 overflow-hidden rounded-xl border ${
+                          item.status === 'failed'
+                            ? 'border-red-300 bg-red-50'
+                            : item.status === 'uploading'
+                              ? 'border-blue-200 bg-blue-50'
+                              : 'border-emerald-200 bg-white'
+                        }`}
+                      >
+                        {item.previewUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={item.previewUrl} alt={item.fileName} className="h-full w-full object-cover" />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center px-2 text-center text-[10px] font-semibold text-slate-500">
+                            {item.fileName}
+                          </div>
+                        )}
+                        <div className={`absolute inset-x-0 bottom-0 px-1.5 py-1 text-[10px] font-bold text-white ${
+                          item.status === 'failed'
+                            ? 'bg-red-600'
+                            : item.status === 'uploading'
+                              ? 'bg-blue-600'
+                              : 'bg-emerald-600'
+                        }`}>
+                          {item.status === 'uploading' && 'Uploading'}
+                          {item.status === 'uploaded' && 'Uploaded'}
+                          {item.status === 'failed' && 'Failed'}
+                        </div>
+                        {item.status === 'uploading' && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-white/55">
+                            <LoadingSpinner size="sm" />
+                          </div>
+                        )}
                         <button
                           type="button"
-                          onClick={() => handleFileRemove(section, idx)}
-                          className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => handleFileRemove(section, item.id)}
+                          aria-label={`Remove ${item.fileName}`}
+                          className="absolute right-1 top-1 rounded-full bg-black/70 p-0.5 text-white opacity-0 transition-opacity group-hover:opacity-100"
                         >
                           <X className="h-3 w-3" />
                         </button>
@@ -839,6 +969,15 @@ export default function NewPropertyPage() {
                   </div>
 
                   {err && <p className="text-xs text-red-500 mt-1">{err}</p>}
+                  {items.some((item) => item.status === 'failed') && (
+                    <div className="mt-2 space-y-1">
+                      {items.filter((item) => item.status === 'failed').map((item) => (
+                        <p key={item.id} className="text-xs font-medium text-red-600">
+                          {item.fileName}: {item.error ?? 'Upload failed'}
+                        </p>
+                      ))}
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -1089,11 +1228,11 @@ export default function NewPropertyPage() {
           </Link>
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || isCoverUploading || hasPendingMediaUploads}
             className="btn-primary flex items-center gap-2"
           >
             {isSubmitting && <LoadingSpinner size="sm" />}
-            {isSubmitting ? 'Creating…' : 'Create Listing'}
+            {hasPendingMediaUploads ? 'Uploading images...' : isSubmitting ? 'Creating...' : 'Create Listing'}
           </button>
         </div>
       </form>
