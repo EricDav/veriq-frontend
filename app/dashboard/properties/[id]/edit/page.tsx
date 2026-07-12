@@ -680,18 +680,22 @@ export default function EditListingPage() {
                 const canAdd = items.length < MAX_IMAGES;
                 return (
                   <div key={section}>
-                    <div className="mb-2 flex items-center justify-between">
-                      <div>
+                    <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="min-w-0">
                         <p className="text-sm font-semibold text-navy-800">{label}</p>
                         <p className="text-xs text-slate-400">{hint}</p>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <span className={`text-xs ${items.length < MIN_IMAGES ? 'text-amber-500' : 'text-slate-400'}`}>
-                          {items.length}/{MAX_IMAGES}
-                          {items.length < MIN_IMAGES && <span className="ml-1">(min {MIN_IMAGES})</span>}
+                      <div className="flex flex-wrap items-center gap-1.5 sm:justify-end">
+                        <span className={`rounded-full px-2 py-1 text-[11px] font-bold ${
+                          items.length < MIN_IMAGES ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700'
+                        }`}>
+                          {items.length}/{MAX_IMAGES} uploaded
+                        </span>
+                        <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-600">
+                          min {MIN_IMAGES}
                         </span>
                         {canAdd && (
-                          <button type="button" onClick={() => fileInputRefs.current[section]?.click()} className="text-xs font-bold text-veriq-secondary hover:underline">
+                          <button type="button" onClick={() => fileInputRefs.current[section]?.click()} className="rounded-full bg-veriq-secondary/10 px-2 py-1 text-[11px] font-bold text-veriq-secondary hover:bg-veriq-secondary/15">
                             Add image
                           </button>
                         )}

@@ -19,7 +19,7 @@ import {
   RoadAccess, RoadAccessRain, NetworkQuality, NoiseLevel,
   SecurityFeel, PropertyCondition, CompoundCulture, PropertyType,
   ShortStayAC, ShortStayInternet, ShortStayCleanliness,
-  ShortStayFurnishing, ShortStayKitchen,
+  ShortStayFurnishing, ShortStayKitchen, UserRole,
 } from '@/types';
 import { PageLoader, LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useAuth } from '@/context/AuthContext';
@@ -385,17 +385,17 @@ function AccessTimer({ expiresAt }: { expiresAt: string }) {
   const { timeLeft, isExpired } = useCountdown(expiresAt);
 
   return (
-    <div className={`rounded-xl border px-4 py-3 flex items-center gap-3 ${
+    <div className={`flex w-full items-center gap-3 rounded-xl border px-4 py-3 ${
       isExpired
         ? 'bg-red-50 border-red-200'
         : 'bg-emerald-50 border-emerald-200'
     }`}>
       <Timer className={`h-4 w-4 flex-shrink-0 ${isExpired ? 'text-red-500' : 'text-emerald-600'}`} />
-      <div>
+      <div className="min-w-0">
         <p className={`text-xs font-semibold ${isExpired ? 'text-red-700' : 'text-emerald-700'}`}>
           {isExpired ? 'Access Expired' : 'Access expires in'}
         </p>
-        {!isExpired && <p className="text-sm font-bold text-navy-900">{timeLeft}</p>}
+        {!isExpired && <p className="break-words text-sm font-bold text-navy-900">{timeLeft}</p>}
       </div>
     </div>
   );
@@ -406,7 +406,7 @@ function AccessTimer({ expiresAt }: { expiresAt: string }) {
 export default function DashboardPropertyDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const { isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
   const { success, error: toastError } = useToast();
 
   const [property, setProperty] = useState<Property | null>(null);
@@ -418,12 +418,27 @@ export default function DashboardPropertyDetailPage() {
   const [notFound, setNotFound] = useState(false);
   const [isCoverPreviewOpen, setIsCoverPreviewOpen] = useState(false);
   const [heroImgIdx, setHeroImgIdx] = useState(0);
+  const [viewAsUser, setViewAsUser] = useState(false);
 
   const load = useCallback(async () => {
     setIsLoading(true);
+    setNotFound(false);
     try {
       const res = await propertiesApi.getById(id);
-      setProperty(res.data);
+      const loadedProperty = res.data;
+      setProperty(loadedProperty);
+
+      const isOwnListing =
+        !!user?.id &&
+        (loadedProperty.agent?.userId === user.id || loadedProperty.agent?.user?.id === user.id);
+
+      if (isOwnListing) {
+        setHasAccess(false);
+        setAccessDetails(null);
+        setConsultation(null);
+        return;
+      }
+
       if (isAuthenticated) {
         try {
           const accessRes = await consultationsApi.checkAccess(id);
@@ -441,19 +456,27 @@ export default function DashboardPropertyDetailPage() {
         } catch {
           // no access yet — ok
         }
+      } else {
+        setHasAccess(false);
+        setAccessDetails(null);
+        setConsultation(null);
       }
     } catch {
       setNotFound(true);
     } finally {
       setIsLoading(false);
     }
-  }, [id, isAuthenticated]);
+  }, [id, isAuthenticated, user?.id]);
 
-  useEffect(() => { if (id) load(); }, [id, load]);
+  useEffect(() => { if (id && !isAuthLoading) load(); }, [id, isAuthLoading, load]);
 
   // ── Wallet unlock flow ──
   const handleUnlock = useCallback(async () => {
     if (!isAuthenticated) { toastError('Please log in to unlock this report.'); return; }
+    if (property?.agent?.userId === user?.id || property?.agent?.user?.id === user?.id) {
+      toastError('Agents cannot unlock their own listings.');
+      return;
+    }
 
     setIsUnlocking(true);
     try {
@@ -472,7 +495,7 @@ export default function DashboardPropertyDetailPage() {
     } finally {
       setIsUnlocking(false);
     }
-  }, [id, isAuthenticated, load, success, toastError]);
+  }, [id, isAuthenticated, load, property?.agent?.user?.id, property?.agent?.userId, success, toastError, user?.id]);
 
   const handleStartChat = useCallback(async () => {
     if (!isAuthenticated) { toastError('Please log in to chat with this agent.'); return; }
@@ -505,7 +528,10 @@ export default function DashboardPropertyDetailPage() {
   const location = [property.area, property.city, property.state].filter(Boolean).join(', ');
   const isShortStay = property.propertyType === PropertyType.SHORT_STAY;
   const agentContact = accessDetails?.agentContact;
-  const canContactAgent = hasAccess && !!agentContact?.phone;
+  const isOwnListing = !!user?.id && user.role === UserRole.AGENT && (agent?.userId === user.id || agent?.user?.id === user.id);
+  const ownerFullAccess = isOwnListing && !viewAsUser;
+  const hasFullAccess = hasAccess || ownerFullAccess;
+  const canContactAgent = hasAccess && !isOwnListing && !!agentContact?.phone;
 
   // Hero image — cover or gradient fallback
   const hasCover = !!property.coverImageUrl;
@@ -521,6 +547,39 @@ export default function DashboardPropertyDetailPage() {
         <ArrowLeft className="h-4 w-4" /> Back to Browse
       </Link>
 
+      {isOwnListing && (
+        <div className="mb-6 rounded-2xl border border-blue-100 bg-blue-50 p-4">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-bold text-navy-900">You are viewing your own listing</p>
+              <p className="mt-0.5 text-xs text-blue-800">
+                Owner view shows all private details by default. Switch to user preview to see the locked renter experience.
+              </p>
+            </div>
+            <div className="flex rounded-xl bg-white p-1 shadow-sm">
+              <button
+                type="button"
+                onClick={() => setViewAsUser(false)}
+                className={`rounded-lg px-3 py-2 text-xs font-bold transition-colors ${
+                  !viewAsUser ? 'bg-navy-900 text-white' : 'text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                Owner view
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewAsUser(true)}
+                className={`rounded-lg px-3 py-2 text-xs font-bold transition-colors ${
+                  viewAsUser ? 'bg-navy-900 text-white' : 'text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                View as user
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         {/* ── Left ── */}
         <div className="lg:col-span-2 space-y-6">
@@ -528,7 +587,7 @@ export default function DashboardPropertyDetailPage() {
           {/* Hero */}
           <div className="relative h-72 rounded-2xl overflow-hidden bg-gradient-to-br from-blue-600 to-indigo-800">
             {hasCover ? (
-              hasAccess ? (
+              hasFullAccess ? (
                 <button
                   type="button"
                   onClick={() => setIsCoverPreviewOpen(true)}
@@ -570,7 +629,7 @@ export default function DashboardPropertyDetailPage() {
               )}
             </div>
             {/* Lock overlay for non-unlocked */}
-            {!hasAccess && (
+            {!hasFullAccess && (
               <div className="absolute bottom-4 right-4 flex items-center gap-1.5 rounded-lg bg-navy-900/80 backdrop-blur-sm px-3 py-2">
                 <Lock className="h-3.5 w-3.5 text-amber-400" />
                 <span className="text-xs font-semibold text-white">Full gallery unlocked after payment</span>
@@ -721,7 +780,7 @@ export default function DashboardPropertyDetailPage() {
           </div>
 
           {/* ── Intelligence Report Block ── */}
-          {!hasAccess ? (
+          {!hasFullAccess ? (
             /* Lock panel */
             <div className="card p-6 border-2 border-dashed border-amber-300 bg-amber-50/40">
               <div className="flex items-start gap-4">
@@ -736,6 +795,11 @@ export default function DashboardPropertyDetailPage() {
                     Unlock the complete property intelligence report to access full photo gallery, environmental data,
                     utility disclosures, and direct agent consultation — valid for 48 hours.
                   </p>
+                  {isOwnListing && viewAsUser && (
+                    <p className="mb-4 rounded-xl border border-blue-100 bg-white px-3 py-2 text-xs font-semibold text-blue-800">
+                      Preview mode only: agents cannot unlock or pay for their own listings.
+                    </p>
+                  )}
                   <div className="grid grid-cols-2 gap-3 mb-5">
                     {[
                       { icon: Eye, label: 'Full photo gallery' },
@@ -760,7 +824,7 @@ export default function DashboardPropertyDetailPage() {
                     </div>
                     <button
                       onClick={handleUnlock}
-                      disabled={isUnlocking}
+                      disabled={isUnlocking || isOwnListing}
                       className="btn-gold flex items-center gap-2"
                     >
                       {isUnlocking ? (
@@ -768,7 +832,7 @@ export default function DashboardPropertyDetailPage() {
                       ) : (
                         <Lock className="h-4 w-4" />
                       )}
-                      {isUnlocking ? 'Unlocking…' : 'Unlock Intelligence Report'}
+                      {isOwnListing ? 'Own listing cannot be unlocked' : isUnlocking ? 'Unlocking…' : 'Unlock Intelligence Report'}
                     </button>
                   </div>
                 </div>
@@ -778,17 +842,27 @@ export default function DashboardPropertyDetailPage() {
             /* Post-unlock content */
             <div className="space-y-6">
               {/* Unlocked header */}
-              <div className="rounded-2xl border-2 border-emerald-200 bg-emerald-50 p-5 flex items-start gap-3">
-                <Unlock className="h-5 w-5 text-emerald-600 flex-shrink-0 mt-0.5" />
-                <div className="flex-1">
-                  <p className="font-semibold text-emerald-800 mb-0.5">Intelligence Report Unlocked</p>
-                  <p className="text-xs text-emerald-700">
-                    You have full access. Contact the agent to arrange an inspection.
-                  </p>
+              <div className="rounded-2xl border-2 border-emerald-200 bg-emerald-50 p-5">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="flex items-start gap-3">
+                    <Unlock className="mt-0.5 h-5 w-5 flex-shrink-0 text-emerald-600" />
+                    <div className="min-w-0">
+                      <p className="mb-0.5 font-semibold text-emerald-800">
+                        {isOwnListing ? 'Owner Full Details' : 'Intelligence Report Unlocked'}
+                      </p>
+                      <p className="text-xs text-emerald-700">
+                        {isOwnListing
+                          ? 'This is your listing, so all report details are visible without unlocking.'
+                          : 'You have full access. Contact the agent to arrange an inspection.'}
+                      </p>
+                    </div>
+                  </div>
+                  {!isOwnListing && consultation?.accessExpiresAt && (
+                    <div className="w-full sm:w-auto sm:flex-shrink-0">
+                      <AccessTimer expiresAt={consultation.accessExpiresAt} />
+                    </div>
+                  )}
                 </div>
-                {consultation?.accessExpiresAt && (
-                  <AccessTimer expiresAt={consultation.accessExpiresAt} />
-                )}
               </div>
 
               {/* Agent contact */}
@@ -822,7 +896,7 @@ export default function DashboardPropertyDetailPage() {
                   </p>
                 </div>
               )}
-              {hasAccess && !canContactAgent && (
+              {hasAccess && !isOwnListing && !canContactAgent && (
                 <div className="card p-5">
                   <h3 className="font-display text-sm font-bold text-navy-900 mb-2 flex items-center gap-2">
                     <MessageCircle className="h-4 w-4 text-slate-400" /> Agent Contact
@@ -898,12 +972,12 @@ export default function DashboardPropertyDetailPage() {
             {agent?.bio && (
               <p className="text-xs text-veriq-muted italic mb-4 leading-relaxed">"{agent.bio}"</p>
             )}
-            {!hasAccess && (
+            {!hasFullAccess && (
               <p className="text-[11px] text-slate-400">
                 Phone number revealed after unlocking the report.
               </p>
             )}
-            {hasAccess && !agentContact && (
+            {hasAccess && !isOwnListing && !agentContact && (
               <p className="text-[11px] text-slate-400">
                 This agent has disabled direct contact after payment.
               </p>
@@ -935,7 +1009,7 @@ export default function DashboardPropertyDetailPage() {
           </div>
 
           {/* Access fee / timer */}
-          {!hasAccess ? (
+          {!hasFullAccess ? (
             <div className="card p-5 bg-gradient-to-br from-navy-50 to-blue-50 border-blue-100">
               <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Intelligence Access Fee</p>
               <p className="text-2xl font-black text-navy-900 mb-0.5">
@@ -943,7 +1017,7 @@ export default function DashboardPropertyDetailPage() {
               </p>
               <p className="text-xs text-veriq-muted">One-time fee — valid 48 hours</p>
             </div>
-          ) : consultation?.accessExpiresAt ? (
+          ) : !isOwnListing && consultation?.accessExpiresAt ? (
             <AccessTimer expiresAt={consultation.accessExpiresAt} />
           ) : null}
 

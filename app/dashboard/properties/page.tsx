@@ -44,6 +44,73 @@ const formatMoney = (value: number | string | null | undefined) =>
 const formatDate = (value: string | null | undefined) =>
   value ? new Date(value).toLocaleString() : 'Not provided';
 
+const HOUR_MS = 60 * 60 * 1000;
+
+const getHideTimerMeta = (
+  expiresAt: string | null | undefined,
+  status: ListingStatus,
+  nowMs: number,
+) => {
+  if (status !== ListingStatus.ACTIVE) {
+    const labelByStatus: Partial<Record<ListingStatus, string>> = {
+      [ListingStatus.HIDDEN]: 'Hidden',
+      [ListingStatus.OCCUPIED]: 'Unavailable',
+      [ListingStatus.TAKEN]: 'Unavailable',
+      [ListingStatus.EXPIRED]: 'Expired',
+      [ListingStatus.PENDING]: 'Pending',
+    };
+
+    return {
+      label: labelByStatus[status] ?? 'Inactive',
+      title: 'Only active listings have a hide countdown.',
+      className: 'bg-slate-100 text-slate-600',
+    };
+  }
+
+  if (!expiresAt) {
+    return {
+      label: 'No hide timer',
+      title: 'This active listing does not have an expiry time set.',
+      className: 'bg-slate-100 text-slate-600',
+    };
+  }
+
+  const expiresAtMs = new Date(expiresAt).getTime();
+
+  if (!Number.isFinite(expiresAtMs)) {
+    return {
+      label: 'Timer unavailable',
+      title: 'The listing expiry time could not be read.',
+      className: 'bg-slate-100 text-slate-600',
+    };
+  }
+
+  const remainingHours = Math.ceil((expiresAtMs - nowMs) / HOUR_MS);
+
+  if (remainingHours <= 0) {
+    return {
+      label: 'Due to hide',
+      title: `This listing was due to hide at ${formatDate(expiresAt)}.`,
+      className: 'bg-red-50 text-red-700',
+    };
+  }
+
+  const days = Math.floor(remainingHours / 24);
+  const hours = remainingHours % 24;
+  const label = days > 0 ? `${days}d ${hours}h left` : `${remainingHours}h left`;
+  const className = remainingHours <= 6
+    ? 'bg-red-50 text-red-700'
+    : remainingHours <= 24
+      ? 'bg-amber-50 text-amber-700'
+      : 'bg-emerald-50 text-emerald-700';
+
+  return {
+    label,
+    title: `This listing will be hidden at ${formatDate(expiresAt)} unless it is refreshed.`,
+    className,
+  };
+};
+
 // ─── User view: consultation history ─────────────────────────────────────
 
 function UserPropertiesView() {
@@ -120,6 +187,7 @@ function AgentPropertiesView() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [agent, setAgent] = useState<Agent | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [nowMs, setNowMs] = useState(() => Date.now());
   const [statusTarget, setStatusTarget] = useState<{ id: string; action: 'unavailable' | 'reactivate'; title: string } | null>(null);
   const [isStatusChanging, setIsStatusChanging] = useState(false);
   const [reconfirmingId, setReconfirmingId] = useState<string | null>(null);
@@ -153,6 +221,11 @@ function AgentPropertiesView() {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => setNowMs(Date.now()), 60_000);
+    return () => window.clearInterval(intervalId);
+  }, []);
 
   const handleStatusChange = async () => {
     if (!statusTarget) return;
@@ -308,6 +381,8 @@ function AgentPropertiesView() {
                     verification_expiring: '40%',
                     unverified: '10%',
                   };
+                  const hideTimer = getHideTimerMeta(prop.expiresAt, prop.status, nowMs);
+
                   return (
                     <tr key={prop.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-6 py-4">
@@ -317,6 +392,13 @@ function AgentPropertiesView() {
                         <p className="text-[10px] text-slate-400 capitalize mt-0.5">
                           {prop.propertyType.replace(/_/g, ' ')} · {prop.bedrooms}bd {prop.bathrooms}ba
                         </p>
+                        <div
+                          className={`mt-2 inline-flex max-w-[200px] items-center gap-1 rounded-full px-2 py-1 text-[10px] font-bold ${hideTimer.className}`}
+                          title={hideTimer.title}
+                        >
+                          <Clock className="h-3 w-3 flex-shrink-0" />
+                          <span className="truncate">{hideTimer.label}</span>
+                        </div>
                       </td>
                       <td className="px-4 py-4">
                         <p className="font-semibold text-navy-900 text-xs">

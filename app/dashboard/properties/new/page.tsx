@@ -882,19 +882,31 @@ export default function NewPropertyPage() {
 
               return (
                 <div key={section}>
-                  <div className="flex items-center justify-between mb-2">
-                    <div>
+                  <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="min-w-0">
                       <p className="text-sm font-semibold text-navy-800">{label}</p>
                       <p className="text-xs text-slate-400">{hint}</p>
                     </div>
-                    <span className="text-xs text-slate-400">
-                      {uploadedCount}/{MAX_IMAGES} uploaded
-                      {uploadingCount > 0 && <span className="ml-1 text-blue-500">({uploadingCount} uploading)</span>}
-                      {failedCount > 0 && <span className="ml-1 text-red-500">({failedCount} failed)</span>}
-                      {uploadedCount < MIN_IMAGES && (
-                        <span className="ml-1 text-amber-500">(min {MIN_IMAGES})</span>
+                    <div className="flex flex-wrap items-center gap-1.5 sm:justify-end">
+                      <span className={`rounded-full px-2 py-1 text-[11px] font-bold ${
+                        uploadedCount < MIN_IMAGES ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700'
+                      }`}>
+                        {uploadedCount}/{MAX_IMAGES} uploaded
+                      </span>
+                      <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-600">
+                        min {MIN_IMAGES}
+                      </span>
+                      {uploadingCount > 0 && (
+                        <span className="rounded-full bg-blue-50 px-2 py-1 text-[11px] font-bold text-blue-700">
+                          {uploadingCount} uploading
+                        </span>
                       )}
-                    </span>
+                      {failedCount > 0 && (
+                        <span className="rounded-full bg-red-50 px-2 py-1 text-[11px] font-bold text-red-700">
+                          {failedCount} failed
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   <div className="flex flex-wrap gap-3">

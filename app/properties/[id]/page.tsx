@@ -72,6 +72,54 @@ function pretty(value: unknown) {
   return String(value).replace(/_/g, ' ');
 }
 
+function useCountdown(expiresAt: string | null | undefined) {
+  const [timeLeft, setTimeLeft] = useState('');
+  const [isExpired, setIsExpired] = useState(false);
+
+  useEffect(() => {
+    if (!expiresAt) return;
+
+    const update = () => {
+      const diff = new Date(expiresAt).getTime() - Date.now();
+      if (diff <= 0) {
+        setIsExpired(true);
+        setTimeLeft('Expired');
+        return;
+      }
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      setTimeLeft(`${hours}h ${minutes}m`);
+      setIsExpired(false);
+    };
+
+    update();
+    const interval = window.setInterval(update, 60_000);
+    return () => window.clearInterval(interval);
+  }, [expiresAt]);
+
+  return { timeLeft, isExpired };
+}
+
+function AccessTimer({ expiresAt }: { expiresAt: string }) {
+  const { timeLeft, isExpired } = useCountdown(expiresAt);
+
+  return (
+    <div className={`flex w-full items-center gap-3 rounded-xl border px-4 py-3 ${
+      isExpired
+        ? 'border-red-200 bg-red-50'
+        : 'border-emerald-200 bg-emerald-50'
+    }`}>
+      <Clock className={`h-4 w-4 flex-shrink-0 ${isExpired ? 'text-red-500' : 'text-emerald-600'}`} />
+      <div className="min-w-0">
+        <p className={`text-xs font-semibold ${isExpired ? 'text-red-700' : 'text-emerald-700'}`}>
+          {isExpired ? 'Access Expired' : 'Access expires in'}
+        </p>
+        {!isExpired && <p className="break-words text-sm font-bold text-navy-900">{timeLeft}</p>}
+      </div>
+    </div>
+  );
+}
+
 function IntelligenceGrid({ title, items }: { title: string; items: Array<{ label: string; value: unknown }> }) {
   const visibleItems = items.filter((item) => hasDisplayValue(item.value));
   if (visibleItems.length === 0) return null;
@@ -221,7 +269,7 @@ function UnlockedMediaGallery({ propertyId }: { propertyId: string }) {
 export default function PropertyDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const { isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
   const { success, error: toastError } = useToast();
 
   const [property, setProperty] = useState<Property | null>(null);
@@ -235,9 +283,21 @@ export default function PropertyDetailPage() {
   useEffect(() => {
     async function load() {
       setIsLoading(true);
+      setNotFound(false);
       try {
         const res = await propertiesApi.getById(id);
-        setProperty(res.data);
+        const loadedProperty = res.data;
+        setProperty(loadedProperty);
+
+        const isOwnListing =
+          !!user?.id &&
+          (loadedProperty.agent?.userId === user.id || loadedProperty.agent?.user?.id === user.id);
+
+        if (isOwnListing) {
+          setHasAccess(true);
+          setAccessDetails(null);
+          return;
+        }
 
         // Check if user already has access
         if (isAuthenticated) {
@@ -248,6 +308,9 @@ export default function PropertyDetailPage() {
           } catch {
             // Ignore — means no access
           }
+        } else {
+          setHasAccess(false);
+          setAccessDetails(null);
         }
       } catch {
         setNotFound(true);
@@ -255,8 +318,8 @@ export default function PropertyDetailPage() {
         setIsLoading(false);
       }
     }
-    if (id) load();
-  }, [id, isAuthenticated]);
+    if (id && !isAuthLoading) load();
+  }, [id, isAuthenticated, isAuthLoading, user?.id]);
 
   const handleUnlock = async () => {
     if (!isAuthenticated) {
@@ -321,7 +384,9 @@ export default function PropertyDetailPage() {
   const freshness = FRESHNESS_INFO[property.freshnessScore] ?? FRESHNESS_INFO.unverified;
   const tierBadge = TRUST_TIER_BADGE[agent?.trustTier ?? AgentTrustTier.BRONZE] ?? TRUST_TIER_BADGE.bronze;
   const agentContact = accessDetails?.agentContact;
-  const canContactAgent = hasAccess && !!agentContact?.phone;
+  const isOwnListing = !!user?.id && (agent?.userId === user.id || agent?.user?.id === user.id);
+  const hasFullAccess = hasAccess || isOwnListing;
+  const canContactAgent = hasAccess && !isOwnListing && !!agentContact?.phone;
   const location = [property.area, property.city, property.state].filter(Boolean).join(', ');
   const gradient = 'from-blue-600 to-indigo-800';
   const coverImageSrc = property.coverImageUrl ? mediaUrl(property.coverImageUrl) : null;
@@ -342,7 +407,7 @@ export default function PropertyDetailPage() {
             {/* Main image */}
             <div className={`relative h-80 rounded-2xl bg-gradient-to-br ${gradient} overflow-hidden`}>
               {coverImageSrc ? (
-                hasAccess ? (
+                hasFullAccess ? (
                   <button
                     type="button"
                     onClick={() => setIsCoverPreviewOpen(true)}
@@ -486,7 +551,27 @@ export default function PropertyDetailPage() {
             </div>
 
             {/* Intelligence report lock */}
-            {!hasAccess ? (
+            {isOwnListing ? (
+              <div className="card border-2 border-blue-100 bg-blue-50/60 p-6">
+                <div className="flex items-start gap-4">
+                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-blue-100">
+                    <Eye className="h-6 w-6 text-blue-700" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-display mb-1 text-base font-bold text-navy-900">Owner Preview</h3>
+                    <p className="mb-4 text-sm text-veriq-muted">
+                      This is your own listing, so the full intelligence report, gallery, and private listing details are visible without unlocking.
+                    </p>
+                    <Link
+                      href={`/dashboard/properties/${property.id}/edit`}
+                      className="btn-primary inline-flex items-center gap-2 !py-2.5 !text-sm"
+                    >
+                      <FileText className="h-4 w-4" /> Edit Listing
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            ) : !hasFullAccess ? (
               <div className="card p-6 border-2 border-dashed border-gold-300 bg-gold-50/50">
                 <div className="flex items-start gap-4">
                   <div className="h-12 w-12 rounded-2xl bg-gold-100 flex items-center justify-center flex-shrink-0">
@@ -542,6 +627,11 @@ export default function PropertyDetailPage() {
                     <p className="text-sm text-veriq-muted">
                       You have full access to this property&apos;s intelligence report. Contact the agent directly to arrange an inspection.
                     </p>
+                    {accessDetails?.accessExpiresAt && (
+                      <div className="mt-4 w-full max-w-sm">
+                        <AccessTimer expiresAt={accessDetails.accessExpiresAt} />
+                      </div>
+                    )}
                     {canContactAgent && (
                       <div className="mt-4 flex flex-wrap gap-2">
                         <button type="button" onClick={handleStartChat} className="btn-primary !py-2.5 !text-sm flex items-center gap-2">
@@ -565,7 +655,7 @@ export default function PropertyDetailPage() {
               </div>
             )}
 
-            {hasAccess && (
+            {hasFullAccess && (
               <div className="space-y-5">
                 <UnlockedMediaGallery propertyId={id} />
                 <IntelligenceGrid
@@ -692,12 +782,12 @@ export default function PropertyDetailPage() {
                 <p className="text-xs text-veriq-muted italic mb-4 leading-relaxed">"{agent.bio}"</p>
               )}
 
-              {!hasAccess && (
+              {!hasFullAccess && (
                 <p className="text-[11px] text-slate-400">
                   Unlock the intelligence report to contact this agent directly.
                 </p>
               )}
-              {hasAccess && !agentContact && (
+              {hasAccess && !isOwnListing && !agentContact && (
                 <p className="text-[11px] text-slate-400">
                   This agent has disabled direct contact after payment.
                 </p>
@@ -726,27 +816,31 @@ export default function PropertyDetailPage() {
               </p>
             </div>
 
-            {/* Consultation fee info */}
-            <div className="card p-5 bg-gradient-to-br from-navy-50 to-blue-50 border-blue-100">
-              <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Intelligence Access Fee</p>
-              <p className="text-2xl font-black text-navy-900 mb-1">
-                {formatNaira(property.consultationFee)}
-              </p>
-              <p className="text-xs text-veriq-muted">One-time fee for full report access (valid 48 hours)</p>
-            </div>
-
-            {/* Refund protection */}
-            <div className="rounded-2xl bg-navy-900 p-5">
-              <div className="flex items-start gap-3">
-                <Shield className="h-5 w-5 text-gold-400 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-white text-sm font-semibold mb-1">Refund Protection</p>
-                  <p className="text-slate-400 text-xs leading-relaxed">
-                    If this property is unavailable after you unlock the report, you may qualify for a credit toward a similar available property.
+            {!isOwnListing && (
+              <>
+                {/* Consultation fee info */}
+                <div className="card p-5 bg-gradient-to-br from-navy-50 to-blue-50 border-blue-100">
+                  <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Intelligence Access Fee</p>
+                  <p className="text-2xl font-black text-navy-900 mb-1">
+                    {formatNaira(property.consultationFee)}
                   </p>
+                  <p className="text-xs text-veriq-muted">One-time fee for full report access (valid 48 hours)</p>
                 </div>
-              </div>
-            </div>
+
+                {/* Refund protection */}
+                <div className="rounded-2xl bg-navy-900 p-5">
+                  <div className="flex items-start gap-3">
+                    <Shield className="h-5 w-5 text-gold-400 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-white text-sm font-semibold mb-1">Refund Protection</p>
+                      <p className="text-slate-400 text-xs leading-relaxed">
+                        If this property is unavailable after you unlock the report, you may qualify for a credit toward a similar available property.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
 
             {/* Disclaimer */}
             <div className="flex items-start gap-2 rounded-xl bg-amber-50 border border-amber-100 p-4">
