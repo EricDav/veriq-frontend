@@ -659,20 +659,23 @@ export const communityApi = {
     Object.entries(filters).forEach(([key, value]) => {
       if (value) params.set(key, value);
     });
-    return api.get<ApiResponse<Street[]>>(`/community/streets/search?${params}`, { public: true });
+    return api.get<ApiResponse<Street[]>>(`/community/streets/search?${params}`);
   },
 
   popularStreets: () =>
-    api.get<ApiResponse<Street[]>>('/community/streets/popular', { public: true }),
+    api.get<ApiResponse<Street[]>>('/community/streets/popular'),
 
   getStreet: (id: string) =>
-    api.get<ApiResponse<StreetIntelligencePayload>>(`/community/streets/${id}`, { public: true }),
+    api.get<ApiResponse<StreetIntelligencePayload>>(`/community/streets/${id}`),
 
   createStreet: (dto: CreateStreetDto) =>
     api.post<ApiResponse<Street>>('/community/streets', dto),
 
   myStatus: () =>
     api.get<ApiResponse<ContributorProfile>>('/community/me/status'),
+
+  join: () =>
+    api.post<ApiResponse<ContributorProfile>>('/community/join', {}),
 
   myContributions: () =>
     api.get<ApiResponse<StreetContribution[]>>('/community/me/contributions'),

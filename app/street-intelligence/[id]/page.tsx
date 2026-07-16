@@ -7,6 +7,7 @@ import { ArrowLeft, BarChart3, MapPin, Users } from 'lucide-react';
 import { communityApi } from '@/lib/api';
 import type { StreetIntelligencePayload } from '@/types';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { CommunityMembershipGate } from '@/components/community/CommunityMembershipGate';
 
 function RatingDots({ level, maxLevel }: { level: number | null; maxLevel: number }) {
   if (!level) {
@@ -21,7 +22,7 @@ function RatingDots({ level, maxLevel }: { level: number | null; maxLevel: numbe
   );
 }
 
-export default function StreetResultPage() {
+function StreetResult() {
   const { id } = useParams<{ id: string }>();
   const [payload, setPayload] = useState<StreetIntelligencePayload | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -120,4 +121,8 @@ export default function StreetResultPage() {
       </main>
     </div>
   );
+}
+
+export default function StreetResultPage() {
+  return <CommunityMembershipGate><StreetResult /></CommunityMembershipGate>;
 }

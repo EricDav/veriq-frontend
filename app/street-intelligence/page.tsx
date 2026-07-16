@@ -6,8 +6,9 @@ import { ArrowRight, MapPin, Search, Users, ShieldCheck } from 'lucide-react';
 import { communityApi } from '@/lib/api';
 import type { Street } from '@/types';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { CommunityMembershipGate } from '@/components/community/CommunityMembershipGate';
 
-export default function StreetIntelligencePage() {
+function StreetIntelligenceBrowser() {
   const [popular, setPopular] = useState<Street[]>([]);
   const [results, setResults] = useState<Street[]>([]);
   const [q, setQ] = useState('');
@@ -121,4 +122,8 @@ export default function StreetIntelligencePage() {
       </main>
     </div>
   );
+}
+
+export default function StreetIntelligencePage() {
+  return <CommunityMembershipGate><StreetIntelligenceBrowser /></CommunityMembershipGate>;
 }

@@ -357,6 +357,10 @@ export default function PropertyDetailPage() {
       window.location.href = `/auth/login?redirect=/properties/${id}`;
       return;
     }
+    if (freeUnlock?.eligibility?.reason === 'community_membership_required') {
+      window.location.href = '/dashboard/community';
+      return;
+    }
     setIsUnlocking(true);
     try {
       await communityApi.unlockFreeProperty(id);
@@ -626,7 +630,7 @@ export default function PropertyDetailPage() {
                             <p className="mt-1 text-xs text-emerald-700">Active contributors can open this report without wallet payment.</p>
                           </div>
                           <button type="button" onClick={handleFreeUnlock} disabled={isUnlocking} className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-60">
-                            {isUnlocking ? 'Claiming…' : 'Claim Free Unlock'}
+                            {isUnlocking ? 'Claiming…' : freeUnlock.eligibility?.reason === 'community_membership_required' ? 'Join Community to Unlock' : 'Claim Free Unlock'}
                           </button>
                         </div>
                       </div>

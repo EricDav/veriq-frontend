@@ -214,11 +214,20 @@ test('admin can moderate proposed streets and pending contributions', async ({ c
 
   let streetReviewPayload: Record<string, unknown> | null = null;
   let contributionReviewPayload: Record<string, unknown> | null = null;
+  let campaignPayload: Record<string, unknown> | null = null;
 
   await page.route(`${API_BASE}/community/admin/analytics`, async (route) => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ statusCode: 200, message: 'Analytics', data: { totalProposedStreets: 1, activeCampaigns: 0 } }) });
   });
+  await page.route(`${API_BASE}/properties/admin/all?*`, async (route) => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ statusCode: 200, message: 'Properties', data: [propertyFixture()], meta: { total: 1, page: 1, limit: 100, pages: 1 } }) });
+  });
   await page.route(`${API_BASE}/community/admin/free-unlocks`, async (route) => {
+    if (route.request().method() === 'POST') {
+      campaignPayload = route.request().postDataJSON();
+      await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ statusCode: 201, message: 'Campaign created', data: { id: 'campaign-1', ...campaignPayload } }) });
+      return;
+    }
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ statusCode: 200, message: 'Campaigns', data: [] }) });
   });
   await page.route(`${API_BASE}/community/admin/streets`, async (route) => {
@@ -240,6 +249,13 @@ test('admin can moderate proposed streets and pending contributions', async ({ c
   await expect(page.getByRole('heading', { name: 'Street Moderation' })).toBeVisible();
   await expect(page.getByText('Pipeline Road').first()).toBeVisible();
 
+  await page.getByRole('combobox').first().selectOption(propertyId);
+  await page.locator('input[type="datetime-local"]').first().fill('2026-07-16T09:00');
+  await page.locator('input[type="datetime-local"]').nth(1).fill('2026-07-20T09:00');
+  await page.getByRole('button', { name: 'Create Campaign' }).click();
+  await expect.poll(() => campaignPayload).not.toBeNull();
+  expect((campaignPayload as { propertyId?: string } | null)?.propertyId).toBe(propertyId);
+
   await page.getByRole('button', { name: 'Approve' }).first().click();
   await expect.poll(() => streetReviewPayload).not.toBeNull();
   expect((streetReviewPayload as { status?: string } | null)?.status).toBe('approved');
@@ -247,4 +263,36 @@ test('admin can moderate proposed streets and pending contributions', async ({ c
   await page.getByRole('button', { name: 'Flag' }).click();
   await expect.poll(() => contributionReviewPayload).not.toBeNull();
   expect((contributionReviewPayload as { status?: string } | null)?.status).toBe('flagged');
+});
+
+test('non-member joins before browsing street intelligence', async ({ context, page }) => {
+  await seedAuth(context, page, 'user');
+  await mockSharedShell(page, 'user');
+
+  let joined = false;
+  await page.route(`${API_BASE}/community/me/status`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ statusCode: 200, message: 'Status', data: { id: 'profile-1', userId: 'renter-user-1', joinedAt: joined ? new Date().toISOString() : null, contributorStatus: 'not_active' } }),
+    });
+  });
+  await page.route(`${API_BASE}/community/join`, async (route) => {
+    joined = true;
+    await route.fulfill({
+      status: 201,
+      contentType: 'application/json',
+      body: JSON.stringify({ statusCode: 201, message: 'Joined', data: { id: 'profile-1', userId: 'renter-user-1', joinedAt: new Date().toISOString(), contributorStatus: 'not_active' } }),
+    });
+  });
+  await page.route(`${API_BASE}/community/streets/popular`, async (route) => {
+    expect(joined).toBe(true);
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ statusCode: 200, message: 'Streets', data: [] }) });
+  });
+
+  await page.goto('/street-intelligence');
+  await expect(page.getByRole('heading', { name: 'Join the Contributor Community' })).toBeVisible();
+  await page.getByRole('button', { name: 'Become a member' }).click();
+  await expect(page.getByRole('heading', { name: 'Street Intelligence' })).toBeVisible();
+  await expect.poll(() => joined).toBe(true);
 });

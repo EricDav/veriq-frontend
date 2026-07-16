@@ -2,12 +2,13 @@
 
 import React, { useEffect, useState } from 'react';
 import { BarChart3, CheckCircle, Flag, Gift, MapPin, Plus, RefreshCw, XCircle } from 'lucide-react';
-import { communityApi } from '@/lib/api';
+import { communityApi, propertiesApi } from '@/lib/api';
 import {
   ContributionStatus,
   FreeUnlockAgreementType,
   StreetStatus,
   type FreeUnlockCampaign,
+  type Property,
   type Street,
   type StreetContribution,
 } from '@/types';
@@ -20,6 +21,7 @@ export default function AdminCommunityPage() {
   const [campaigns, setCampaigns] = useState<FreeUnlockCampaign[]>([]);
   const [streets, setStreets] = useState<Street[]>([]);
   const [contributions, setContributions] = useState<StreetContribution[]>([]);
+  const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [reviewingId, setReviewingId] = useState<string | null>(null);
@@ -38,9 +40,10 @@ export default function AdminCommunityPage() {
   const load = async () => {
     setLoading(true);
     try {
-      const [analyticsRes, campaignsRes] = await Promise.all([
+      const [analyticsRes, campaignsRes, propertiesRes] = await Promise.all([
         communityApi.adminAnalytics(),
         communityApi.adminCampaigns(),
+        propertiesApi.listAdmin({ page: 1, limit: 100 }),
       ]);
       const [streetsRes, contributionsRes] = await Promise.all([
         communityApi.adminStreets(),
@@ -48,6 +51,7 @@ export default function AdminCommunityPage() {
       ]);
       setAnalytics(analyticsRes.data as Record<string, unknown>);
       setCampaigns(campaignsRes.data);
+      setProperties(propertiesRes.data);
       setStreets(streetsRes.data);
       setContributions(contributionsRes.data);
     } catch (err) {
@@ -147,7 +151,12 @@ export default function AdminCommunityPage() {
           <h2 className="font-display flex items-center gap-2 text-base font-bold text-navy-900">
             <Gift className="h-4 w-4 text-gold-500" /> Create Free Unlock Campaign
           </h2>
-          <input className="input" required placeholder="Property ID" value={form.propertyId} onChange={(e) => setForm((s) => ({ ...s, propertyId: e.target.value }))} />
+          <select className="input" required value={form.propertyId} onChange={(e) => setForm((s) => ({ ...s, propertyId: e.target.value }))}>
+            <option value="">Select a property</option>
+            {properties.map((property) => (
+              <option key={property.id} value={property.id}>{property.title} - {property.area}, {property.state}</option>
+            ))}
+          </select>
           <div className="grid grid-cols-2 gap-3">
             <input className="input" required type="datetime-local" value={form.startDate} onChange={(e) => setForm((s) => ({ ...s, startDate: e.target.value }))} />
             <input className="input" required type="datetime-local" value={form.endDate} onChange={(e) => setForm((s) => ({ ...s, endDate: e.target.value }))} />

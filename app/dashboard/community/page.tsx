@@ -52,6 +52,7 @@ export default function CommunityDashboardPage() {
   const [activeStates, setActiveStates] = useState<AllowedState[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [joining, setJoining] = useState(false);
 
   const [streetMode, setStreetMode] = useState<'existing' | 'new'>(preselectedStreetId ? 'existing' : 'new');
   const [streetId, setStreetId] = useState(preselectedStreetId);
@@ -63,15 +64,16 @@ export default function CommunityDashboardPage() {
   const load = async () => {
     setLoading(true);
     try {
-      const [statusRes, categoriesRes, popularRes, contributionsRes, referralRes, statesRes] = await Promise.all([
-        communityApi.myStatus(),
+      const statusRes = await communityApi.myStatus();
+      setProfile(statusRes.data);
+      if (!statusRes.data.joinedAt) return;
+      const [categoriesRes, popularRes, contributionsRes, referralRes, statesRes] = await Promise.all([
         communityApi.categories(),
         communityApi.popularStreets(),
         communityApi.myContributions(),
         communityApi.referralCode(),
         locationsApi.activeStates(),
       ]);
-      setProfile(statusRes.data);
       setCategories(categoriesRes.data.filter((category) => category.isActive));
       setPopular(popularRes.data);
       setContributions(contributionsRes.data);
@@ -81,6 +83,19 @@ export default function CommunityDashboardPage() {
       error(err instanceof Error ? err.message : 'Unable to load community dashboard');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const join = async () => {
+    setJoining(true);
+    try {
+      await communityApi.join();
+      success('Welcome to the Contributor Community.');
+      await load();
+    } catch (err) {
+      error(err instanceof Error ? err.message : 'Unable to join the community.');
+    } finally {
+      setJoining(false);
     }
   };
 
@@ -146,6 +161,21 @@ export default function CommunityDashboardPage() {
 
   if (loading) {
     return <div className="flex justify-center py-20"><LoadingSpinner size="lg" /></div>;
+  }
+
+  if (!profile?.joinedAt) {
+    return (
+      <div className="mx-auto max-w-xl py-12 text-center">
+        <div className="card p-8">
+          <Users className="mx-auto h-10 w-10 text-emerald-600" />
+          <h1 className="mt-4 font-display text-2xl font-black text-navy-900">Contributor Community</h1>
+          <p className="mt-3 text-sm leading-6 text-veriq-muted">Join the community to browse street intelligence, contribute local knowledge, and claim eligible Free Unlock properties.</p>
+          <button type="button" onClick={join} disabled={joining} className="btn-primary mt-6 justify-center">
+            {joining ? <LoadingSpinner size="sm" /> : <><UserPlus className="h-4 w-4" /> Become a member</>}
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (

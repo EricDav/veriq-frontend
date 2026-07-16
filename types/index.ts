@@ -528,6 +528,7 @@ export interface ContributorProfile {
   id: string;
   userId: string;
   contributorStatus: ContributorStatus;
+  joinedAt: string | null;
   activatedAt: string | null;
   expiresAt: string | null;
   totalContributedStreets: number;
