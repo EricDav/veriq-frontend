@@ -9,10 +9,10 @@ import {
   Shield, Eye, FileText, Clock, AlertCircle, Home, Wallet,
   Phone, Zap, Droplets, Wifi, Volume2, Star, MessageCircle,
   ChevronLeft, ChevronRight, X, Play, Timer, RefreshCw,
-  Building2, Trees, Sun, Cloud, Car, Users,
+  Building2, Trees, Sun, Cloud, Car, Users, Gift,
 } from 'lucide-react';
-import { propertiesApi, consultationsApi, mediaApi, chatApi, ApiError } from '@/lib/api';
-import type { ConsultationAccess, Property, Consultation, MediaItem } from '@/types';
+import { propertiesApi, consultationsApi, mediaApi, chatApi, communityApi, ApiError } from '@/lib/api';
+import type { ConsultationAccess, Property, Consultation, MediaItem, FreeUnlockStatus } from '@/types';
 import {
   AgentVerificationLevel, AgentTrustTier, FreshnessScore,
   FloodRisk, ElectricitySituation, WaterAvailability, WaterSource,
@@ -415,6 +415,7 @@ export default function DashboardPropertyDetailPage() {
   const [hasAccess, setHasAccess] = useState(false);
   const [accessDetails, setAccessDetails] = useState<ConsultationAccess | null>(null);
   const [isUnlocking, setIsUnlocking] = useState(false);
+  const [freeUnlock, setFreeUnlock] = useState<FreeUnlockStatus | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [isCoverPreviewOpen, setIsCoverPreviewOpen] = useState(false);
   const [heroImgIdx, setHeroImgIdx] = useState(0);
@@ -427,6 +428,7 @@ export default function DashboardPropertyDetailPage() {
       const res = await propertiesApi.getById(id);
       const loadedProperty = res.data;
       setProperty(loadedProperty);
+      communityApi.freeUnlockStatus(id).then((statusRes) => setFreeUnlock(statusRes.data)).catch(() => setFreeUnlock(null));
 
       const isOwnListing =
         !!user?.id &&
@@ -492,6 +494,28 @@ export default function DashboardPropertyDetailPage() {
       await load();
     } catch (err) {
       toastError(err instanceof ApiError || err instanceof Error ? err.message : 'Failed to unlock report.');
+    } finally {
+      setIsUnlocking(false);
+    }
+  }, [id, isAuthenticated, load, property?.agent?.user?.id, property?.agent?.userId, success, toastError, user?.id]);
+
+  const handleFreeUnlock = useCallback(async () => {
+    if (!isAuthenticated) { toastError('Please log in to claim a Free Unlock.'); return; }
+    if (property?.agent?.userId === user?.id || property?.agent?.user?.id === user?.id) {
+      toastError('Agents cannot unlock their own listings.');
+      return;
+    }
+
+    setIsUnlocking(true);
+    try {
+      await communityApi.unlockFreeProperty(id);
+      const accessRes = await consultationsApi.checkAccess(id);
+      setHasAccess(accessRes.data?.hasAccess ?? true);
+      setAccessDetails(accessRes.data ?? null);
+      success('Free Unlock claimed. Intelligence report unlocked!');
+      await load();
+    } catch (err) {
+      toastError(err instanceof ApiError || err instanceof Error ? err.message : 'Unable to claim Free Unlock.');
     } finally {
       setIsUnlocking(false);
     }
@@ -815,6 +839,21 @@ export default function DashboardPropertyDetailPage() {
                     ))}
                   </div>
                   <div className="flex items-center gap-4 flex-wrap">
+                    {freeUnlock?.available && !isOwnListing && (
+                      <div className="w-full rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <div>
+                            <p className="flex items-center gap-2 text-sm font-black text-emerald-800">
+                              <Gift className="h-4 w-4" /> Free Unlock Available
+                            </p>
+                            <p className="mt-1 text-xs text-emerald-700">Active contributors can open this report without wallet payment.</p>
+                          </div>
+                          <button type="button" onClick={handleFreeUnlock} disabled={isUnlocking} className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-60">
+                            {isUnlocking ? 'Claiming…' : 'Claim Free Unlock'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
                     <div className="flex items-center gap-1.5">
                       <Wallet className="h-4 w-4 text-amber-500" />
                       <span className="text-base font-black text-navy-900">

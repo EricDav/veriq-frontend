@@ -7,10 +7,10 @@ import { useParams, useRouter } from 'next/navigation';
 import {
   ArrowLeft, MapPin, CheckCircle, Bed, Bath, Lock,
   Shield, Eye, FileText, Clock, AlertCircle, Home, Wallet,
-  Phone, MessageCircle, X, ChevronLeft, ChevronRight,
+  Phone, MessageCircle, X, ChevronLeft, ChevronRight, Gift,
 } from 'lucide-react';
-import { propertiesApi, consultationsApi, chatApi, mediaApi, ApiError } from '@/lib/api';
-import type { ConsultationAccess, MediaItem, Property } from '@/types';
+import { propertiesApi, consultationsApi, chatApi, mediaApi, communityApi, ApiError } from '@/lib/api';
+import type { ConsultationAccess, FreeUnlockStatus, MediaItem, Property } from '@/types';
 import { AgentVerificationLevel, AgentTrustTier, FreshnessScore, PropertyType } from '@/types';
 import { PageLoader, LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useAuth } from '@/context/AuthContext';
@@ -277,6 +277,7 @@ export default function PropertyDetailPage() {
   const [hasAccess, setHasAccess] = useState(false);
   const [accessDetails, setAccessDetails] = useState<ConsultationAccess | null>(null);
   const [isUnlocking, setIsUnlocking] = useState(false);
+  const [freeUnlock, setFreeUnlock] = useState<FreeUnlockStatus | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [isCoverPreviewOpen, setIsCoverPreviewOpen] = useState(false);
 
@@ -288,6 +289,7 @@ export default function PropertyDetailPage() {
         const res = await propertiesApi.getById(id);
         const loadedProperty = res.data;
         setProperty(loadedProperty);
+        communityApi.freeUnlockStatus(id).then((statusRes) => setFreeUnlock(statusRes.data)).catch(() => setFreeUnlock(null));
 
         const isOwnListing =
           !!user?.id &&
@@ -345,6 +347,25 @@ export default function PropertyDetailPage() {
       } else {
         toastError('Failed to unlock report. Please try again.');
       }
+    } finally {
+      setIsUnlocking(false);
+    }
+  };
+
+  const handleFreeUnlock = async () => {
+    if (!isAuthenticated) {
+      window.location.href = `/auth/login?redirect=/properties/${id}`;
+      return;
+    }
+    setIsUnlocking(true);
+    try {
+      await communityApi.unlockFreeProperty(id);
+      const accessRes = await consultationsApi.checkAccess(id);
+      setHasAccess(accessRes.data?.hasAccess ?? true);
+      setAccessDetails(accessRes.data ?? null);
+      success('Free Unlock claimed. Intelligence report unlocked!');
+    } catch (err) {
+      toastError(err instanceof ApiError || err instanceof Error ? err.message : 'Unable to claim Free Unlock.');
     } finally {
       setIsUnlocking(false);
     }
@@ -595,6 +616,21 @@ export default function PropertyDetailPage() {
                         </div>
                       ))}
                     </div>
+                    {freeUnlock?.available && (
+                      <div className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <div>
+                            <p className="flex items-center gap-2 text-sm font-black text-emerald-800">
+                              <Gift className="h-4 w-4" /> Free Unlock Available
+                            </p>
+                            <p className="mt-1 text-xs text-emerald-700">Active contributors can open this report without wallet payment.</p>
+                          </div>
+                          <button type="button" onClick={handleFreeUnlock} disabled={isUnlocking} className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-60">
+                            {isUnlocking ? 'Claiming…' : 'Claim Free Unlock'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
                     <div className="flex items-center gap-3">
                       <div className="flex items-center gap-1.5 text-sm font-bold text-navy-900">
                         <Wallet className="h-4 w-4 text-gold-500" />

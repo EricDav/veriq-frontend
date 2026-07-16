@@ -6,6 +6,58 @@ export enum UserRole {
   ADMIN = 'admin',
 }
 
+export enum ContributorStatus {
+  NOT_ACTIVE = 'not_active',
+  ACTIVE = 'active',
+  EXPIRED = 'expired',
+  SUSPENDED = 'suspended',
+}
+
+export enum StreetStatus {
+  PENDING = 'pending',
+  APPROVED = 'approved',
+  REJECTED = 'rejected',
+  DISABLED = 'disabled',
+}
+
+export enum ContributionStatus {
+  PENDING = 'pending',
+  APPROVED = 'approved',
+  REJECTED = 'rejected',
+  FLAGGED = 'flagged',
+  ARCHIVED = 'archived',
+}
+
+export enum StreetRelationshipType {
+  CURRENTLY_LIVE = 'currently_live',
+  CURRENTLY_WORK = 'currently_work',
+  PREVIOUSLY_LIVED = 'previously_lived',
+  PREVIOUSLY_WORKED = 'previously_worked',
+}
+
+export enum StreetRelationshipRecency {
+  CURRENT = 'current',
+  LESS_THAN_3_MONTHS = 'less_than_3_months',
+  THREE_TO_SIX_MONTHS = 'three_to_six_months',
+  SIX_TO_TWELVE_MONTHS = 'six_to_twelve_months',
+  MORE_THAN_TWELVE_MONTHS = 'more_than_twelve_months',
+}
+
+export enum FreeUnlockCampaignStatus {
+  ACTIVE = 'active',
+  PAUSED = 'paused',
+  EXPIRED = 'expired',
+  LIMIT_REACHED = 'limit_reached',
+}
+
+export enum FreeUnlockAgreementType {
+  AGENT_SPONSORED = 'agent_sponsored',
+  VERIQ_PROMOTIONAL_CAMPAIGN = 'veriq_promotional_campaign',
+  PARTNERSHIP = 'partnership',
+  COMPLIMENTARY = 'complimentary',
+  OTHER = 'other',
+}
+
 export enum AgentVerificationLevel {
   NONE = 0,
   BASIC = 1,
@@ -470,6 +522,153 @@ export interface ConsultationAccess {
     phone: string;
     businessName: string | null;
   } | null;
+}
+
+export interface ContributorProfile {
+  id: string;
+  userId: string;
+  contributorStatus: ContributorStatus;
+  activatedAt: string | null;
+  expiresAt: string | null;
+  totalContributedStreets: number;
+  totalSuccessfulReferrals: number;
+  trustScore: number;
+  suspendedAt: string | null;
+  suspensionReason: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Street {
+  id: string;
+  state: string;
+  city: string;
+  area: string;
+  streetName: string;
+  normalisedStreetName: string;
+  landmark: string | null;
+  status: StreetStatus;
+  isPopular: boolean;
+  popularRank: number;
+  createdByUserId: string | null;
+  approvedByAdminId: string | null;
+  approvedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface IntelligenceOption {
+  id: string;
+  categoryId: string;
+  label: string;
+  numericRank: number;
+  sortOrder: number;
+  isActive: boolean;
+}
+
+export interface IntelligenceCategory {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  sortOrder: number;
+  isActive: boolean;
+  isPositiveScale: boolean;
+  options: IntelligenceOption[];
+}
+
+export interface StreetIntelligenceResult {
+  categoryId: string;
+  category: string;
+  slug: string;
+  result: string | null;
+  status: 'available' | 'insufficient_data' | 'mixed';
+  contributors: number;
+  level: number | null;
+  maxLevel: number;
+  isPositiveScale: boolean;
+}
+
+export interface StreetIntelligencePayload {
+  street: Street;
+  contributors: number;
+  lastUpdated: string | null;
+  sourceNotice: string;
+  results: StreetIntelligenceResult[];
+}
+
+export interface ContributionAnswerDto {
+  categoryId: string;
+  optionId: string;
+}
+
+export interface CreateStreetDto {
+  state: string;
+  city: string;
+  area: string;
+  streetName: string;
+  landmark?: string;
+}
+
+export interface CreateContributionDto {
+  streetId?: string;
+  street?: CreateStreetDto;
+  relationshipType: StreetRelationshipType;
+  relationshipRecency: StreetRelationshipRecency;
+  answers: ContributionAnswerDto[];
+}
+
+export interface StreetContribution {
+  id: string;
+  userId: string;
+  streetId: string;
+  street?: Street;
+  relationshipType: StreetRelationshipType;
+  relationshipRecency: StreetRelationshipRecency;
+  status: ContributionStatus;
+  submittedAt: string;
+  lastUpdatedAt: string | null;
+  lastConfirmedAt: string | null;
+  validUntil: string;
+  lastRewardedAt: string | null;
+  nextRewardEligibleAt: string | null;
+  answers?: Array<{
+    id: string;
+    categoryId: string;
+    optionId: string;
+    category?: IntelligenceCategory;
+    option?: IntelligenceOption;
+  }>;
+}
+
+export interface FreeUnlockCampaign {
+  id: string;
+  propertyId: string;
+  property?: Property;
+  status: FreeUnlockCampaignStatus;
+  agreementType: FreeUnlockAgreementType;
+  sponsoringAgentId: string | null;
+  startDate: string;
+  endDate: string;
+  maximumUnlocks: number | null;
+  unlockCount: number;
+  maximumUnlocksPerUser: number | null;
+  amountPaid: number | null;
+  paymentStatus: string | null;
+  internalNote: string | null;
+  autoReturnToPaid: boolean;
+  approvedByAdminId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FreeUnlockStatus {
+  available: boolean;
+  campaign?: FreeUnlockCampaign;
+  eligibility?: {
+    eligible: boolean;
+    reason: string | null;
+  };
 }
 
 export interface RecordInspectionOutcomeDto {

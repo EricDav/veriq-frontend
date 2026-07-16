@@ -21,6 +21,7 @@ import { canUseNotifications, playChatSound, requestNotificationPermission, show
 const USER_NAV = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { label: 'Browse Properties', href: '/dashboard/browse', icon: Search },
+  { label: 'Community', href: '/dashboard/community', icon: Users },
   { label: 'Saved', href: '/dashboard/saved', icon: Heart },
   { label: 'Chats', href: '/dashboard/chat', icon: MessageCircle },
   { label: 'Wallet', href: '/dashboard/wallet', icon: Wallet },
@@ -30,6 +31,7 @@ const USER_NAV = [
 const AGENT_NAV = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { label: 'Browse Properties', href: '/dashboard/browse', icon: Search },
+  { label: 'Community', href: '/dashboard/community', icon: Users },
   { label: 'My Listings', href: '/dashboard/properties', icon: Home },
   { label: 'Agent Profile', href: '/dashboard/agent', icon: TrendingUp },
   { label: 'Chats', href: '/dashboard/chat', icon: MessageCircle },
@@ -42,6 +44,7 @@ const ADMIN_NAV = [
   { label: 'Agents', href: '/dashboard/admin/agents', icon: ShieldCheck },
   { label: 'Users', href: '/dashboard/admin/users', icon: Users },
   { label: 'Properties', href: '/dashboard/admin/properties', icon: Home },
+  { label: 'Community', href: '/dashboard/admin/community', icon: Users },
   { label: 'Pricing', href: '/dashboard/admin/pricing', icon: Settings2 },
   { label: 'Allowed States', href: '/dashboard/admin/states', icon: MapPin },
   { label: 'Blogs', href: '/dashboard/admin/blogs', icon: BookOpen },

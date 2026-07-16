@@ -216,6 +216,17 @@ import type {
   ConsultationPricingRule,
   UpsertConsultationPricingRuleDto,
   UserRole,
+  ContributorProfile,
+  Street,
+  StreetIntelligencePayload,
+  IntelligenceCategory,
+  CreateContributionDto,
+  StreetContribution,
+  CreateStreetDto,
+  FreeUnlockCampaign,
+  FreeUnlockStatus,
+  StreetStatus,
+  ContributionStatus,
 } from '@/types';
 
 // ── Auth ─────────────────────────────────────────────────────────────────
@@ -635,6 +646,92 @@ export const contactSubmissionsApi = {
 
   update: (id: string, status: ContactSubmissionStatus) =>
     api.patch<ApiResponse<ContactSubmission>>(`/contact-submissions/${id}`, { status }),
+};
+
+// ── Community / Street Intelligence ──────────────────────────────────────
+
+export const communityApi = {
+  categories: () =>
+    api.get<ApiResponse<IntelligenceCategory[]>>('/community/categories', { public: true }),
+
+  searchStreets: (filters: { q?: string; state?: string; city?: string; area?: string } = {}) => {
+    const params = new URLSearchParams();
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value) params.set(key, value);
+    });
+    return api.get<ApiResponse<Street[]>>(`/community/streets/search?${params}`, { public: true });
+  },
+
+  popularStreets: () =>
+    api.get<ApiResponse<Street[]>>('/community/streets/popular', { public: true }),
+
+  getStreet: (id: string) =>
+    api.get<ApiResponse<StreetIntelligencePayload>>(`/community/streets/${id}`, { public: true }),
+
+  createStreet: (dto: CreateStreetDto) =>
+    api.post<ApiResponse<Street>>('/community/streets', dto),
+
+  myStatus: () =>
+    api.get<ApiResponse<ContributorProfile>>('/community/me/status'),
+
+  myContributions: () =>
+    api.get<ApiResponse<StreetContribution[]>>('/community/me/contributions'),
+
+  createContribution: (dto: CreateContributionDto) =>
+    api.post<ApiResponse<StreetContribution>>('/community/contributions', dto),
+
+  updateContribution: (id: string, dto: CreateContributionDto) =>
+    api.patch<ApiResponse<StreetContribution>>(`/community/contributions/${id}`, dto),
+
+  confirmContribution: (id: string) =>
+    api.post<ApiResponse<StreetContribution>>(`/community/contributions/${id}/confirm`, {}),
+
+  referralCode: () =>
+    api.get<ApiResponse<{ referralCode: string }>>('/community/referrals/code'),
+
+  freeUnlockStatus: (propertyId: string) =>
+    api.get<ApiResponse<FreeUnlockStatus>>(`/community/free-unlocks/${propertyId}/status`),
+
+  unlockFreeProperty: (propertyId: string) =>
+    api.post<ApiResponse<unknown>>(`/community/free-unlocks/${propertyId}/unlock`, {}),
+
+  adminSettings: () =>
+    api.get<ApiResponse<unknown>>('/community/admin/settings'),
+
+  adminAnalytics: () =>
+    api.get<ApiResponse<unknown>>('/community/admin/analytics'),
+
+  adminCampaigns: () =>
+    api.get<ApiResponse<FreeUnlockCampaign[]>>('/community/admin/free-unlocks'),
+
+  adminStreets: (status?: StreetStatus) =>
+    api.get<ApiResponse<Street[]>>(`/community/admin/streets${status ? `?status=${status}` : ''}`),
+
+  adminContributions: (status?: ContributionStatus) =>
+    api.get<ApiResponse<StreetContribution[]>>(`/community/admin/contributions${status ? `?status=${status}` : ''}`),
+
+  reviewStreet: (id: string, dto: { status: StreetStatus; isPopular?: boolean; popularRank?: number }) =>
+    api.patch<ApiResponse<Street>>(`/community/admin/streets/${id}/review`, dto),
+
+  reviewContribution: (id: string, dto: { status: ContributionStatus; reviewNote?: string }) =>
+    api.patch<ApiResponse<StreetContribution>>(`/community/admin/contributions/${id}/review`, dto),
+
+  createCampaign: (dto: {
+    propertyId: string;
+    startDate: string;
+    endDate: string;
+    maximumUnlocks?: number;
+    maximumUnlocksPerUser?: number;
+    sponsoringAgentId?: string;
+    agreementType?: string;
+    amountPaid?: number;
+    paymentStatus?: string;
+    internalNote?: string;
+    autoReturnToPaid?: boolean;
+  }) => api.post<ApiResponse<FreeUnlockCampaign>>('/community/admin/free-unlocks', dto),
+
+  updateCampaign: (id: string, dto: Partial<FreeUnlockCampaign>) =>
+    api.patch<ApiResponse<FreeUnlockCampaign>>(`/community/admin/free-unlocks/${id}`, dto),
 };
 
 // ── Blogs ─────────────────────────────────────────────────────────────────

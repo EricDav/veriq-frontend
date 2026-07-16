@@ -1,7 +1,11 @@
+'use client';
+
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { MapPin, CheckCircle, Bed, Bath, Lock, Shield, Home } from 'lucide-react';
-import type { Property } from '@/types';
+import { MapPin, CheckCircle, Bed, Bath, Lock, Shield, Home, Gift } from 'lucide-react';
+import { communityApi } from '@/lib/api';
+import type { FreeUnlockStatus, Property } from '@/types';
 import { AgentVerificationLevel, FreshnessScore } from '@/types';
 
 // Colour gradient pool keyed by property type for visual variety
@@ -53,6 +57,7 @@ export function PropertyCard({
   /** Override the link destination (e.g. /dashboard/browse/:id) */
   detailHref?: string;
 }) {
+  const [freeUnlock, setFreeUnlock] = useState<FreeUnlockStatus | null>(null);
   const {
     id,
     title,
@@ -80,6 +85,21 @@ export function PropertyCard({
     (agent?.verificationLevel ?? 0) >= AgentVerificationLevel.BASIC;
   const location = [area, city, state].filter(Boolean).join(', ');
   const isActive = status === 'active';
+
+  useEffect(() => {
+    let cancelled = false;
+    communityApi
+      .freeUnlockStatus(id)
+      .then((res) => {
+        if (!cancelled) setFreeUnlock(res.data);
+      })
+      .catch(() => {
+        if (!cancelled) setFreeUnlock(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
 
   return (
     <Link href={detailHref ?? `/properties/${id}`} className="group block">
@@ -124,10 +144,17 @@ export function PropertyCard({
             </div>
           )}
 
+          {freeUnlock?.available && (
+            <div className="absolute top-12 right-3 flex items-center gap-1 rounded-full bg-emerald-500 px-2.5 py-1 text-white shadow-sm">
+              <Gift className="h-3 w-3" />
+              <span className="text-xs font-bold">Free Unlock</span>
+            </div>
+          )}
+
           {/* Unlock report CTA */}
           <div className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-lg bg-navy-900/80 backdrop-blur-sm px-3 py-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-            <Lock className="h-3 w-3 text-gold-400" />
-            <span className="text-xs font-semibold text-white">Unlock Report</span>
+            {freeUnlock?.available ? <Gift className="h-3 w-3 text-emerald-300" /> : <Lock className="h-3 w-3 text-gold-400" />}
+            <span className="text-xs font-semibold text-white">{freeUnlock?.available ? 'Claim Free Unlock' : 'Unlock Report'}</span>
           </div>
 
           {/* Type label */}
