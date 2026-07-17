@@ -14,6 +14,7 @@ const TikTokIcon = () => (
 const FOOTER_LINKS = {
   Platform: [
     { label: "Browse Properties", href: "/properties" },
+    { label: "Community Intelligence", href: "/street-intelligence" },
     { label: "How It Works", href: "/#how-it-works" },
     { label: "Trust Scores", href: "/#features" },
     { label: "For Agents", href: "/auth/register?role=agent" },
