@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { BarChart3, CheckCircle, Flag, Gift, MapPin, Plus, RefreshCw, XCircle } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+import { BarChart3, CheckCircle, Flag, Gift, MapPin, Plus, RefreshCw, XCircle, Trash2, Save, Pencil } from 'lucide-react';
 import { communityApi, propertiesApi } from '@/lib/api';
 import {
   ContributionStatus,
@@ -9,6 +10,7 @@ import {
   StreetStatus,
   type FreeUnlockCampaign,
   type Property,
+  type CommunityLocation,
   type Street,
   type StreetContribution,
 } from '@/types';
@@ -16,12 +18,20 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useToast } from '@/components/ui/Toast';
 
 export default function AdminCommunityPage() {
+  const searchParams = useSearchParams();
+  const requestedPropertyId = searchParams.get('propertyId') ?? '';
   const { success, error } = useToast();
   const [analytics, setAnalytics] = useState<Record<string, unknown> | null>(null);
   const [campaigns, setCampaigns] = useState<FreeUnlockCampaign[]>([]);
   const [streets, setStreets] = useState<Street[]>([]);
   const [contributions, setContributions] = useState<StreetContribution[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
+  const [hierarchy, setHierarchy] = useState<CommunityLocation[]>([]);
+  const [locationName, setLocationName] = useState('');
+  const [areaName, setAreaName] = useState('');
+  const [areaLocationId, setAreaLocationId] = useState('');
+  const [streetEdit, setStreetEdit] = useState({ streetId: '', locationId: '', areaId: '', streetName: '', latitude: '', longitude: '' });
+  const [merge, setMerge] = useState({ sourceStreetId: '', targetStreetId: '' });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [reviewingId, setReviewingId] = useState<string | null>(null);
@@ -45,21 +55,32 @@ export default function AdminCommunityPage() {
         communityApi.adminCampaigns(),
         propertiesApi.listAdmin({ page: 1, limit: 100 }),
       ]);
-      const [streetsRes, contributionsRes] = await Promise.all([
+      const [streetsRes, contributionsRes, hierarchyRes] = await Promise.all([
         communityApi.adminStreets(),
         communityApi.adminContributions(),
+        communityApi.adminLocations(),
       ]);
       setAnalytics(analyticsRes.data as Record<string, unknown>);
       setCampaigns(campaignsRes.data);
       setProperties(propertiesRes.data);
       setStreets(streetsRes.data);
       setContributions(contributionsRes.data);
+      setHierarchy(hierarchyRes.data);
     } catch (err) {
       error(err instanceof Error ? err.message : 'Unable to load community admin tools');
     } finally {
       setLoading(false);
     }
   };
+
+  const runHierarchyAction = async (action: () => Promise<unknown>, message: string) => {
+    setSaving(true);
+    try { await action(); success(message); await load(); }
+    catch (err) { error(err instanceof Error ? err.message : 'Unable to update location hierarchy'); }
+    finally { setSaving(false); }
+  };
+
+  const selectedEditLocation = hierarchy.find((item) => item.id === streetEdit.locationId);
 
   const reviewStreet = async (street: Street, status: StreetStatus) => {
     setReviewingId(street.id);
@@ -95,6 +116,23 @@ export default function AdminCommunityPage() {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (!requestedPropertyId || !properties.some((property) => property.id === requestedPropertyId)) return;
+    const start = new Date();
+    const end = new Date(start.getTime() + 7 * 86_400_000);
+    const toLocalInput = (date: Date) => {
+      const local = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
+      return local.toISOString().slice(0, 16);
+    };
+    setForm((current) => ({
+      ...current,
+      propertyId: requestedPropertyId,
+      startDate: current.startDate || toLocalInput(start),
+      endDate: current.endDate || toLocalInput(end),
+    }));
+    window.setTimeout(() => document.getElementById('free-unlocks')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
+  }, [properties, requestedPropertyId]);
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -146,11 +184,51 @@ export default function AdminCommunityPage() {
         ))}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[420px_1fr]">
+      <section className="space-y-4">
+        <div>
+          <h2 className="font-display text-lg font-bold text-navy-900">Rivers Location Directory</h2>
+          <p className="mt-1 text-xs text-veriq-muted">Manage State → Location → Area/Neighbourhood → Street data used by search and contributions.</p>
+        </div>
+        <div className="grid gap-6 xl:grid-cols-2">
+          <div className="card space-y-5 p-5">
+            <form onSubmit={(event) => { event.preventDefault(); void runHierarchyAction(() => communityApi.createLocation({ state: 'Rivers', name: locationName }), 'Location added.'); setLocationName(''); }} className="flex gap-2">
+              <input className="input" value={locationName} onChange={(event) => setLocationName(event.target.value)} placeholder="New Rivers location" required />
+              <button className="btn-primary !px-3" disabled={saving} title="Add location"><Plus className="h-4 w-4" /></button>
+            </form>
+            <form onSubmit={(event) => { event.preventDefault(); void runHierarchyAction(() => communityApi.createArea({ locationId: areaLocationId, name: areaName }), 'Area added.'); setAreaName(''); }} className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
+              <select className="input" value={areaLocationId} onChange={(event) => setAreaLocationId(event.target.value)} required><option value="">Location</option>{hierarchy.filter((item) => item.isActive).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
+              <input className="input" value={areaName} onChange={(event) => setAreaName(event.target.value)} placeholder="New area / neighbourhood" required />
+              <button className="btn-primary !px-3" disabled={saving} title="Add area"><Plus className="h-4 w-4" /></button>
+            </form>
+            <div className="max-h-80 space-y-3 overflow-y-auto">
+              {hierarchy.map((location) => <div key={location.id} className="rounded-lg border border-slate-100 p-3">
+                <div className="flex items-center justify-between"><p className="font-bold text-navy-900">{location.name}</p><div><button type="button" onClick={() => { const name = window.prompt('Location name', location.name); if (name?.trim()) void runHierarchyAction(() => communityApi.updateLocation(location.id, { state: 'Rivers', name: name.trim() }), 'Location updated.'); }} title="Edit location" className="p-1 text-blue-600"><Pencil className="h-4 w-4" /></button><button type="button" onClick={() => runHierarchyAction(() => communityApi.deleteLocation(location.id), 'Location removed.')} title="Remove location" className="p-1 text-rose-600"><Trash2 className="h-4 w-4" /></button></div></div>
+                <div className="mt-2 flex flex-wrap gap-2">{location.areas?.map((area) => <span key={area.id} className="inline-flex items-center gap-1 rounded bg-slate-100 px-2 py-1 text-xs text-slate-600">{area.name}<button type="button" onClick={() => { const name = window.prompt('Area / neighbourhood name', area.name); if (name?.trim()) void runHierarchyAction(() => communityApi.updateArea(area.id, { locationId: location.id, name: name.trim() }), 'Area updated.'); }} title="Edit area"><Pencil className="h-3 w-3 text-blue-500" /></button><button type="button" onClick={() => runHierarchyAction(() => communityApi.deleteArea(area.id), 'Area removed.')} title="Remove area"><Trash2 className="h-3 w-3 text-rose-500" /></button></span>)}</div>
+              </div>)}
+            </div>
+          </div>
+
+          <div className="card space-y-4 p-5">
+            <h3 className="font-display font-bold text-navy-900">Edit or Move Street</h3>
+            <select className="input" value={streetEdit.streetId} onChange={(event) => { const item = streets.find((street) => street.id === event.target.value); setStreetEdit({ streetId: event.target.value, locationId: item?.locationId ?? '', areaId: item?.areaId ?? '', streetName: item?.streetName ?? '', latitude: item?.latitude?.toString() ?? '', longitude: item?.longitude?.toString() ?? '' }); }}><option value="">Select street</option>{streets.map((street) => <option key={street.id} value={street.id}>{street.streetName} — {street.area}, {street.city}</option>)}</select>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <select className="input" value={streetEdit.locationId} onChange={(event) => setStreetEdit((current) => ({ ...current, locationId: event.target.value, areaId: '' }))} disabled={!streetEdit.streetId}><option value="">Location</option>{hierarchy.filter((item) => item.isActive).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
+              <select className="input" value={streetEdit.areaId} onChange={(event) => setStreetEdit((current) => ({ ...current, areaId: event.target.value }))} disabled={!streetEdit.locationId}><option value="">Area / neighbourhood</option>{selectedEditLocation?.areas?.filter((item) => item.isActive).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
+              <input className="input" value={streetEdit.streetName} onChange={(event) => setStreetEdit((current) => ({ ...current, streetName: event.target.value }))} placeholder="Street name" disabled={!streetEdit.streetId} />
+              <div className="grid grid-cols-2 gap-2"><input className="input" type="number" step="any" value={streetEdit.latitude} onChange={(event) => setStreetEdit((current) => ({ ...current, latitude: event.target.value }))} placeholder="Latitude" /><input className="input" type="number" step="any" value={streetEdit.longitude} onChange={(event) => setStreetEdit((current) => ({ ...current, longitude: event.target.value }))} placeholder="Longitude" /></div>
+            </div>
+            <div className="flex gap-2"><button type="button" className="btn-primary !py-2 !text-xs" disabled={!streetEdit.streetId || !streetEdit.locationId || !streetEdit.areaId || saving} onClick={() => runHierarchyAction(() => communityApi.updateStreetAdmin(streetEdit.streetId, { locationId: streetEdit.locationId, areaId: streetEdit.areaId, streetName: streetEdit.streetName, latitude: streetEdit.latitude ? Number(streetEdit.latitude) : undefined, longitude: streetEdit.longitude ? Number(streetEdit.longitude) : undefined }), 'Street updated.')}><Save className="h-3.5 w-3.5" /> Save Street</button><button type="button" className="rounded-lg bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700" disabled={!streetEdit.streetId || saving} onClick={() => runHierarchyAction(() => communityApi.deleteStreetAdmin(streetEdit.streetId), 'Street deleted.')}><Trash2 className="mr-1 inline h-3.5 w-3.5" /> Delete</button></div>
+            <div className="border-t border-slate-100 pt-4"><p className="mb-2 text-xs font-bold text-navy-900">Merge duplicate street</p><div className="grid gap-2 sm:grid-cols-2"><select className="input" value={merge.sourceStreetId} onChange={(event) => setMerge((current) => ({ ...current, sourceStreetId: event.target.value }))}><option value="">Duplicate source</option>{streets.map((street) => <option key={street.id} value={street.id}>{street.streetName} — {street.area}</option>)}</select><select className="input" value={merge.targetStreetId} onChange={(event) => setMerge((current) => ({ ...current, targetStreetId: event.target.value }))}><option value="">Keep target</option>{streets.map((street) => <option key={street.id} value={street.id}>{street.streetName} — {street.area}</option>)}</select></div><button type="button" className="btn-outline mt-2 !py-2 !text-xs" disabled={!merge.sourceStreetId || !merge.targetStreetId || saving} onClick={() => runHierarchyAction(() => communityApi.mergeStreets(merge.sourceStreetId, merge.targetStreetId), 'Streets merged.')}><RefreshCw className="h-3.5 w-3.5" /> Merge Streets</button></div>
+          </div>
+        </div>
+      </section>
+
+      <div id="free-unlocks" className="scroll-mt-24 grid gap-6 lg:grid-cols-[420px_1fr]">
         <form onSubmit={submit} className="card space-y-4 p-6">
           <h2 className="font-display flex items-center gap-2 text-base font-bold text-navy-900">
             <Gift className="h-4 w-4 text-gold-500" /> Create Free Unlock Campaign
           </h2>
+          <p className="text-xs leading-5 text-veriq-muted">Choose the property, campaign dates, and how many community members can unlock it at no cost.</p>
           <select className="input" required value={form.propertyId} onChange={(e) => setForm((s) => ({ ...s, propertyId: e.target.value }))}>
             <option value="">Select a property</option>
             {properties.map((property) => (

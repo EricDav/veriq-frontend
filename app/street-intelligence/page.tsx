@@ -2,27 +2,47 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ArrowRight, MapPin, Search, Users, ShieldCheck } from 'lucide-react';
+import { ArrowRight, MapPin, Search, Users, ShieldCheck, Navigation } from 'lucide-react';
 import { communityApi } from '@/lib/api';
-import type { Street } from '@/types';
+import type { CommunityArea, CommunityLocation, Street } from '@/types';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { CommunityMembershipGate } from '@/components/community/CommunityMembershipGate';
 
 function StreetIntelligenceBrowser() {
-  const [popular, setPopular] = useState<Street[]>([]);
   const [results, setResults] = useState<Street[]>([]);
+  const [states, setStates] = useState<string[]>([]);
+  const [cities, setCities] = useState<string[]>([]);
+  const [areas, setAreas] = useState<string[]>([]);
+  const [locations, setLocations] = useState<CommunityLocation[]>([]);
+  const [areaRecords, setAreaRecords] = useState<CommunityArea[]>([]);
+  const [state, setState] = useState('');
+  const [city, setCity] = useState('');
+  const [area, setArea] = useState('');
   const [q, setQ] = useState('');
-  const [location, setLocation] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
+  const [locationError, setLocationError] = useState('');
 
   useEffect(() => {
-    communityApi
-      .popularStreets()
-      .then((res) => setPopular(res.data))
-      .catch(() => setPopular([]))
+    communityApi.streetLocations()
+      .then((res) => setStates(res.data.states))
+      .catch(() => setStates([]))
       .finally(() => setIsLoading(false));
   }, []);
+
+  useEffect(() => {
+    setCity(''); setArea(''); setCities([]); setAreas([]); setResults([]); setHasSearched(false);
+    if (!state) return;
+    communityApi.streetLocations({ state }).then((res) => { setCities(res.data.cities); setLocations(res.data.locations); }).catch(() => { setCities([]); setLocations([]); });
+  }, [state]);
+
+  useEffect(() => {
+    setArea(''); setAreas([]); setResults([]); setHasSearched(false);
+    if (!state || !city) return;
+    communityApi.streetLocations({ state, city }).then((res) => { setAreas(res.data.areas); setAreaRecords(res.data.areaRecords); }).catch(() => { setAreas([]); setAreaRecords([]); });
+  }, [city, state]);
 
   const search = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -30,17 +50,31 @@ function StreetIntelligenceBrowser() {
     try {
       const res = await communityApi.searchStreets({
         q: q.trim() || undefined,
-        area: location.trim() || undefined,
+        state,
+        city: city || undefined,
+        area: area || undefined,
+        locationId: locations.find((item) => item.name === city)?.id,
+        areaId: areaRecords.find((item) => item.name === area)?.id,
       });
       setResults(res.data);
     } catch {
       setResults([]);
     } finally {
+      setHasSearched(true);
       setIsSearching(false);
     }
   };
 
-  const visible = results.length > 0 ? results : popular;
+  const useCurrentLocation = () => {
+    setLocationError('');
+    if (!navigator.geolocation) { setLocationError('Current location is not supported by this device.'); return; }
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(async ({ coords }) => {
+      try { const response = await communityApi.nearbyStreets(coords.latitude, coords.longitude); setResults(response.data); setHasSearched(true); }
+      catch (error) { setLocationError(error instanceof Error ? error.message : 'Unable to suggest nearby streets.'); }
+      finally { setIsLocating(false); }
+    }, () => { setLocationError('Location permission was denied or unavailable.'); setIsLocating(false); }, { enableHighAccuracy: true, timeout: 10_000 });
+  };
 
   return (
     <div className="min-h-screen bg-veriq-surface pt-24">
@@ -56,30 +90,41 @@ function StreetIntelligenceBrowser() {
           </p>
         </div>
 
-        <form onSubmit={search} className="mb-8 grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 sm:grid-cols-[1fr_220px_auto]">
+        <form onSubmit={search} className="mb-8 grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_1.2fr_auto]">
+          <select aria-label="State" value={state} onChange={(event) => setState(event.target.value)} className="input" required>
+            <option value="">Select state</option>
+            {states.map((item) => <option key={item} value={item}>{item}</option>)}
+          </select>
+          <select aria-label="Location" value={city} onChange={(event) => setCity(event.target.value)} className="input" disabled={!state} required>
+            <option value="">Select location</option>
+            {cities.map((item) => <option key={item} value={item}>{item}</option>)}
+          </select>
+          <select aria-label="Area" value={area} onChange={(event) => setArea(event.target.value)} className="input" disabled={!city}>
+            <option value="">All areas</option>
+            {areas.map((item) => <option key={item} value={item}>{item}</option>)}
+          </select>
           <label className="relative block">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input
               value={q}
               onChange={(event) => setQ(event.target.value)}
               className="input pl-9"
-              placeholder="Search for a street"
+              placeholder="Street name (optional)"
+              disabled={!city}
             />
           </label>
-          <input
-            value={location}
-            onChange={(event) => setLocation(event.target.value)}
-            className="input"
-            placeholder="Area or neighbourhood"
-          />
-          <button type="submit" className="btn-primary justify-center" disabled={isSearching}>
+          <button type="submit" className="btn-primary justify-center" disabled={isSearching || !state || !city}>
             {isSearching ? <LoadingSpinner size="sm" /> : 'Search'}
           </button>
         </form>
+        <div className="-mt-5 mb-8 flex flex-wrap items-center gap-3">
+          <button type="button" onClick={useCurrentLocation} disabled={isLocating} className="btn-outline !py-2 !text-xs"><Navigation className="h-3.5 w-3.5" /> {isLocating ? 'Finding nearby streets...' : 'Use My Current Location'}</button>
+          {locationError && <p className="text-xs text-rose-600">{locationError}</p>}
+        </div>
 
         <div className="mb-4 flex items-center justify-between">
           <h2 className="font-display text-lg font-bold text-navy-900">
-            {results.length > 0 ? 'Search results' : 'Popular streets'}
+            {hasSearched ? 'Search results' : 'Choose a location'}
           </h2>
           <Link href="/dashboard/community" className="text-xs font-bold text-veriq-secondary hover:underline">
             Contribute intelligence
@@ -90,7 +135,13 @@ function StreetIntelligenceBrowser() {
           <div className="flex justify-center py-16">
             <LoadingSpinner size="lg" />
           </div>
-        ) : visible.length === 0 ? (
+        ) : !hasSearched ? (
+          <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center">
+            <MapPin className="mx-auto mb-3 h-10 w-10 text-slate-300" />
+            <p className="font-bold text-navy-900">Start with a state</p>
+            <p className="mt-1 text-sm text-veriq-muted">Select Rivers State and a supported location before searching for a street.</p>
+          </div>
+        ) : results.length === 0 ? (
           <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center">
             <MapPin className="mx-auto mb-3 h-10 w-10 text-slate-300" />
             <p className="font-bold text-navy-900">No streets found yet</p>
@@ -98,7 +149,7 @@ function StreetIntelligenceBrowser() {
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {visible.map((street) => (
+            {results.map((street) => (
               <Link key={street.id} href={`/street-intelligence/${street.id}`} className="card group p-5">
                 <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
                   <MapPin className="h-5 w-5" />

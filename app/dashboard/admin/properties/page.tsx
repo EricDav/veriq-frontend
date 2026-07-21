@@ -5,6 +5,7 @@ import {
   Home, EyeOff, Eye, Search, RefreshCw,
   ChevronLeft, ChevronRight, CheckCircle, MapPin, X, User, MessageCircle,
   SlidersHorizontal, ReceiptText,
+  Gift,
 } from 'lucide-react';
 import { propertiesApi, mediaApi, chatApi, agentsApi, locationsApi, consultationsApi, ApiError } from '@/lib/api';
 import type { Agent, AllowedState, Consultation, FilterPropertiesDto, MediaItem, Property } from '@/types';
@@ -452,9 +453,14 @@ function AdminPropertiesPageInner() {
               : `${total} listings in the platform`}
           </p>
         </div>
-        <button onClick={load} className="btn-primary !text-sm !py-2.5 flex items-center gap-2">
-          <RefreshCw className="h-4 w-4" /> Refresh
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/dashboard/admin/community#free-unlocks" className="btn-outline !text-sm !py-2.5 flex items-center gap-2">
+            <Gift className="h-4 w-4" /> Manage Free Unlocks
+          </Link>
+          <button onClick={load} className="btn-primary !text-sm !py-2.5 flex items-center gap-2">
+            <RefreshCw className="h-4 w-4" /> Refresh
+          </button>
+        </div>
       </div>
 
       {/* Agent filter banner */}
@@ -869,6 +875,13 @@ function AdminPropertiesPageInner() {
                           >
                             <ReceiptText className="h-3.5 w-3.5" />
                           </button>
+                          <Link
+                            href={`/dashboard/admin/community?propertyId=${encodeURIComponent(prop.id)}#free-unlocks`}
+                            className="flex items-center gap-1.5 rounded-lg border border-amber-200 px-3 py-1.5 text-[10px] font-bold text-amber-700 hover:bg-amber-50"
+                            title="Make this property free to unlock"
+                          >
+                            <Gift className="h-3 w-3" /> Make Free
+                          </Link>
                           {isHidden ? (
                             <button
                               onClick={() => setPendingAction({ propertyId: prop.id, type: 'unhide', title: prop.title })}

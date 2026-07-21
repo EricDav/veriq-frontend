@@ -165,7 +165,7 @@ test('renter sees Free Unlock and can claim it from property details', async ({ 
   });
 
   await page.goto('/properties');
-  await expect(page.getByText('Free Unlock')).toBeVisible();
+  await expect(page.getByText('Free Unlock', { exact: true })).toBeVisible();
 
   await page.goto(`/properties/${propertyId}`);
   await expect(page.getByText('Free Unlock Available')).toBeVisible();
@@ -215,6 +215,7 @@ test('admin can moderate proposed streets and pending contributions', async ({ c
   let streetReviewPayload: Record<string, unknown> | null = null;
   let contributionReviewPayload: Record<string, unknown> | null = null;
   let campaignPayload: Record<string, unknown> | null = null;
+  let locationPayload: Record<string, unknown> | null = null;
 
   await page.route(`${API_BASE}/community/admin/analytics`, async (route) => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ statusCode: 200, message: 'Analytics', data: { totalProposedStreets: 1, activeCampaigns: 0 } }) });
@@ -236,6 +237,14 @@ test('admin can moderate proposed streets and pending contributions', async ({ c
   await page.route(`${API_BASE}/community/admin/contributions`, async (route) => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ statusCode: 200, message: 'Contributions', data: [contribution] }) });
   });
+  await page.route(`${API_BASE}/community/admin/locations`, async (route) => {
+    if (route.request().method() === 'POST') {
+      locationPayload = route.request().postDataJSON();
+      await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ statusCode: 201, message: 'Location saved', data: { id: 'location-2', ...locationPayload } }) });
+      return;
+    }
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ statusCode: 200, message: 'Hierarchy', data: [{ id: 'location-1', state: 'Rivers', name: 'Port Harcourt', normalisedName: 'port harcourt', isActive: true, latitude: null, longitude: null, areas: [{ id: 'area-1', locationId: 'location-1', name: 'Choba', normalisedName: 'choba', isActive: true, latitude: null, longitude: null }] }] }) });
+  });
   await page.route(`${API_BASE}/community/admin/streets/${street.id}/review`, async (route) => {
     streetReviewPayload = route.request().postDataJSON();
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ statusCode: 200, message: 'Street reviewed', data: { ...street, ...streetReviewPayload } }) });
@@ -247,9 +256,13 @@ test('admin can moderate proposed streets and pending contributions', async ({ c
 
   await page.goto('/dashboard/admin/community');
   await expect(page.getByRole('heading', { name: 'Street Moderation' })).toBeVisible();
-  await expect(page.getByText('Pipeline Road').first()).toBeVisible();
+  await expect(page.getByText('Pipeline Road', { exact: true }).first()).toBeVisible();
+  await page.getByPlaceholder('New Rivers location').fill('Tai');
+  await page.getByTitle('Add location').click();
+  await expect.poll(() => locationPayload).not.toBeNull();
+  expect(locationPayload).toEqual(expect.objectContaining({ state: 'Rivers', name: 'Tai' }));
 
-  await page.getByRole('combobox').first().selectOption(propertyId);
+  await page.locator('#free-unlocks select').first().selectOption(propertyId);
   await page.locator('input[type="datetime-local"]').first().fill('2026-07-16T09:00');
   await page.locator('input[type="datetime-local"]').nth(1).fill('2026-07-20T09:00');
   await page.getByRole('button', { name: 'Create Campaign' }).click();
@@ -265,34 +278,102 @@ test('admin can moderate proposed streets and pending contributions', async ({ c
   expect((contributionReviewPayload as { status?: string } | null)?.status).toBe('flagged');
 });
 
-test('non-member joins before browsing street intelligence', async ({ context, page }) => {
+test('non-member is directed to contribute before browsing street intelligence', async ({ context, page }) => {
   await seedAuth(context, page, 'user');
   await mockSharedShell(page, 'user');
 
-  let joined = false;
   await page.route(`${API_BASE}/community/me/status`, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ statusCode: 200, message: 'Status', data: { id: 'profile-1', userId: 'renter-user-1', joinedAt: joined ? new Date().toISOString() : null, contributorStatus: 'not_active' } }),
+      body: JSON.stringify({ statusCode: 200, message: 'Status', data: { id: 'profile-1', userId: 'renter-user-1', joinedAt: null, contributorStatus: 'not_active' } }),
     });
-  });
-  await page.route(`${API_BASE}/community/join`, async (route) => {
-    joined = true;
-    await route.fulfill({
-      status: 201,
-      contentType: 'application/json',
-      body: JSON.stringify({ statusCode: 201, message: 'Joined', data: { id: 'profile-1', userId: 'renter-user-1', joinedAt: new Date().toISOString(), contributorStatus: 'not_active' } }),
-    });
-  });
-  await page.route(`${API_BASE}/community/streets/popular`, async (route) => {
-    expect(joined).toBe(true);
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ statusCode: 200, message: 'Streets', data: [] }) });
   });
 
   await page.goto('/street-intelligence');
   await expect(page.getByRole('heading', { name: 'Join the Contributor Community' })).toBeVisible();
-  await page.getByRole('button', { name: 'Become a member' }).click();
-  await expect(page.getByRole('heading', { name: 'Street Intelligence' })).toBeVisible();
-  await expect.poll(() => joined).toBe(true);
+  await expect(page.getByRole('link', { name: 'Contribute to Join' })).toHaveAttribute('href', '/dashboard/community#contribute');
+});
+
+test('member filters street intelligence by state, city and area before street name', async ({ context, page }) => {
+  await seedAuth(context, page, 'user');
+  await mockSharedShell(page, 'user');
+  await page.route(`${API_BASE}/community/me/status`, async (route) => route.fulfill({
+    status: 200, contentType: 'application/json',
+    body: JSON.stringify({ statusCode: 200, message: 'Status', data: { id: 'profile-1', userId: 'renter-user-1', joinedAt: new Date().toISOString(), contributorStatus: 'active' } }),
+  }));
+  await page.route(`${API_BASE}/community/streets/locations**`, async (route) => {
+    const url = new URL(route.request().url());
+    const state = url.searchParams.get('state');
+    const city = url.searchParams.get('city');
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
+      statusCode: 200, message: 'Locations', data: {
+        states: ['Rivers'],
+        cities: state === 'Rivers' ? ['Port Harcourt'] : state === 'Lagos' ? ['Lagos'] : [],
+        areas: city === 'Port Harcourt' ? ['Choba'] : city === 'Lagos' ? ['Ikeja'] : [],
+        locations: state === 'Rivers' ? [{ id: 'location-1', state: 'Rivers', name: 'Port Harcourt', normalisedName: 'port harcourt', isActive: true, latitude: null, longitude: null }] : [],
+        areaRecords: city === 'Port Harcourt' ? [{ id: 'area-1', locationId: 'location-1', name: 'Choba', normalisedName: 'choba', isActive: true, latitude: null, longitude: null }] : [],
+      },
+    }) });
+  });
+  let searchUrl = '';
+  await page.route(`${API_BASE}/community/streets/search**`, async (route) => {
+    searchUrl = route.request().url();
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
+      statusCode: 200, message: 'Streets', data: [{
+        id: 'rivers-unity', streetName: 'Unity Road', normalisedStreetName: 'unity road', state: 'Rivers', city: 'Port Harcourt', area: 'Choba',
+        landmark: null, status: 'approved', isPopular: true, popularRank: 1, createdByUserId: null, approvedByAdminId: 'admin-user-1', approvedAt: new Date().toISOString(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+      }],
+    }) });
+  });
+
+  await page.goto('/street-intelligence');
+  await expect(page.getByRole('button', { name: 'Search' })).toBeDisabled();
+  await page.getByLabel('State').selectOption('Rivers');
+  await page.getByLabel('Location').selectOption('Port Harcourt');
+  await page.getByLabel('Area').selectOption('Choba');
+  await page.getByPlaceholder('Street name (optional)').fill('Unity');
+  await page.getByRole('button', { name: 'Search' }).click();
+
+  await expect(page.getByText('Unity Road')).toBeVisible();
+  await expect(page.getByText('Choba, Port Harcourt, Rivers')).toBeVisible();
+  expect(searchUrl).toContain('state=Rivers');
+  expect(searchUrl).toContain('city=Port+Harcourt');
+  expect(searchUrl).toContain('area=Choba');
+  expect(searchUrl).toContain('locationId=location-1');
+});
+
+test('contributor can load and save an update to previous street intelligence', async ({ context, page }) => {
+  await seedAuth(context, page, 'user');
+  await mockSharedShell(page, 'user');
+  const category = {
+    id: 'cat-electricity', slug: 'electricity', name: 'Electricity', description: null, sortOrder: 1, isActive: true, isPositiveScale: true,
+    options: [
+      { id: 'opt-poor', categoryId: 'cat-electricity', label: 'Poor', numericRank: 2, sortOrder: 1, isActive: true },
+      { id: 'opt-good', categoryId: 'cat-electricity', label: 'Good', numericRank: 4, sortOrder: 2, isActive: true },
+    ],
+  };
+  const street = { id: 'street-1', state: 'Rivers', city: 'Port Harcourt', area: 'Choba', streetName: 'Unity Road', normalisedStreetName: 'unity road', landmark: null, status: 'approved', isPopular: true, popularRank: 1, createdByUserId: null, approvedByAdminId: null, approvedAt: null, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+  const contribution = { id: 'contribution-1', userId: 'renter-user-1', streetId: street.id, street, relationshipType: 'currently_live', relationshipRecency: 'current', status: 'approved', submittedAt: new Date().toISOString(), lastUpdatedAt: new Date().toISOString(), lastConfirmedAt: null, validUntil: new Date(Date.now() + 86_400_000).toISOString(), lastRewardedAt: null, nextRewardEligibleAt: null, answers: [{ id: 'answer-1', categoryId: category.id, optionId: 'opt-poor' }] };
+  await page.route(`${API_BASE}/community/me/status`, async (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ statusCode: 200, message: 'Status', data: { id: 'profile-1', userId: 'renter-user-1', joinedAt: new Date().toISOString(), contributorStatus: 'active' } }) }));
+  await page.route(`${API_BASE}/community/categories`, async (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ statusCode: 200, message: 'Categories', data: [category] }) }));
+  await page.route(`${API_BASE}/community/streets/popular`, async (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ statusCode: 200, message: 'Streets', data: [street] }) }));
+  await page.route(`${API_BASE}/community/me/contributions`, async (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ statusCode: 200, message: 'Contributions', data: [contribution] }) }));
+  await page.route(`${API_BASE}/community/referrals/code`, async (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ statusCode: 200, message: 'Referral', data: { referralCode: 'VRQ-TEST' } }) }));
+  await page.route(`${API_BASE}/locations/states/active`, async (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ statusCode: 200, message: 'States', data: [{ id: 'state-1', name: 'Rivers', isActive: true }] }) }));
+  await page.route(`${API_BASE}/community/streets/locations**`, async (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ statusCode: 200, message: 'Locations', data: { states: ['Rivers'], cities: ['Port Harcourt'], areas: ['Choba'], locations: [{ id: 'location-1', state: 'Rivers', name: 'Port Harcourt', normalisedName: 'port harcourt', isActive: true, latitude: null, longitude: null }], areaRecords: [{ id: 'area-1', locationId: 'location-1', name: 'Choba', normalisedName: 'choba', isActive: true, latitude: null, longitude: null }] } }) }));
+  let updatePayload: Record<string, unknown> | null = null;
+  await page.route(`${API_BASE}/community/contributions/${contribution.id}`, async (route) => {
+    updatePayload = route.request().postDataJSON();
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ statusCode: 200, message: 'Updated', data: contribution }) });
+  });
+
+  await page.goto('/dashboard/community');
+  await page.getByRole('button', { name: 'Update' }).click();
+  await expect(page.getByRole('heading', { name: 'Update Street Intelligence' })).toBeVisible();
+  await page.getByRole('button', { name: 'Good' }).click();
+  await page.getByRole('button', { name: 'Save Intelligence Update' }).click();
+  await expect.poll(() => updatePayload).not.toBeNull();
+  expect(updatePayload).not.toHaveProperty('streetId');
+  expect((updatePayload as { answers?: Array<{ optionId: string }> } | null)?.answers?.[0].optionId).toBe('opt-good');
 });

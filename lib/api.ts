@@ -654,7 +654,7 @@ export const communityApi = {
   categories: () =>
     api.get<ApiResponse<IntelligenceCategory[]>>('/community/categories', { public: true }),
 
-  searchStreets: (filters: { q?: string; state?: string; city?: string; area?: string } = {}) => {
+  searchStreets: (filters: { q?: string; state?: string; city?: string; area?: string; locationId?: string; areaId?: string } = {}) => {
     const params = new URLSearchParams();
     Object.entries(filters).forEach(([key, value]) => {
       if (value) params.set(key, value);
@@ -665,6 +665,16 @@ export const communityApi = {
   popularStreets: () =>
     api.get<ApiResponse<Street[]>>('/community/streets/popular'),
 
+  streetLocations: (filters: { state?: string; city?: string } = {}) => {
+    const params = new URLSearchParams();
+    if (filters.state) params.set('state', filters.state);
+    if (filters.city) params.set('city', filters.city);
+    return api.get<ApiResponse<{ states: string[]; cities: string[]; areas: string[]; locations: import('@/types').CommunityLocation[]; areaRecords: import('@/types').CommunityArea[] }>>(`/community/streets/locations?${params}`);
+  },
+
+  nearbyStreets: (latitude: number, longitude: number) =>
+    api.get<ApiResponse<Street[]>>(`/community/streets/nearby?latitude=${encodeURIComponent(latitude)}&longitude=${encodeURIComponent(longitude)}`),
+
   getStreet: (id: string) =>
     api.get<ApiResponse<StreetIntelligencePayload>>(`/community/streets/${id}`),
 
@@ -673,9 +683,6 @@ export const communityApi = {
 
   myStatus: () =>
     api.get<ApiResponse<ContributorProfile>>('/community/me/status'),
-
-  join: () =>
-    api.post<ApiResponse<ContributorProfile>>('/community/join', {}),
 
   myContributions: () =>
     api.get<ApiResponse<StreetContribution[]>>('/community/me/contributions'),
@@ -712,6 +719,17 @@ export const communityApi = {
 
   adminContributions: (status?: ContributionStatus) =>
     api.get<ApiResponse<StreetContribution[]>>(`/community/admin/contributions${status ? `?status=${status}` : ''}`),
+
+  adminLocations: () => api.get<ApiResponse<import('@/types').CommunityLocation[]>>('/community/admin/locations'),
+  createLocation: (dto: { state: string; name: string; isActive?: boolean }) => api.post<ApiResponse<import('@/types').CommunityLocation>>('/community/admin/locations', dto),
+  updateLocation: (id: string, dto: { state: string; name: string; isActive?: boolean }) => api.patch<ApiResponse<import('@/types').CommunityLocation>>(`/community/admin/locations/${id}`, dto),
+  deleteLocation: (id: string) => api.delete<ApiResponse<null>>(`/community/admin/locations/${id}`),
+  createArea: (dto: { locationId: string; name: string; isActive?: boolean }) => api.post<ApiResponse<import('@/types').CommunityArea>>('/community/admin/areas', dto),
+  updateArea: (id: string, dto: { locationId: string; name: string; isActive?: boolean }) => api.patch<ApiResponse<import('@/types').CommunityArea>>(`/community/admin/areas/${id}`, dto),
+  deleteArea: (id: string) => api.delete<ApiResponse<null>>(`/community/admin/areas/${id}`),
+  updateStreetAdmin: (id: string, dto: { locationId?: string; areaId?: string; streetName?: string; landmark?: string; latitude?: number; longitude?: number; isPopular?: boolean; popularRank?: number }) => api.patch<ApiResponse<Street>>(`/community/admin/streets/${id}`, dto),
+  deleteStreetAdmin: (id: string) => api.delete<ApiResponse<null>>(`/community/admin/streets/${id}`),
+  mergeStreets: (sourceStreetId: string, targetStreetId: string) => api.post<ApiResponse<Street>>('/community/admin/streets/merge', { sourceStreetId, targetStreetId }),
 
   reviewStreet: (id: string, dto: { status: StreetStatus; isPopular?: boolean; popularRank?: number }) =>
     api.patch<ApiResponse<Street>>(`/community/admin/streets/${id}/review`, dto),

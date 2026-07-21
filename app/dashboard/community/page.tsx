@@ -3,10 +3,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { CheckCircle, Clock, Copy, MapPin, RefreshCw, Send, UserPlus, Users } from 'lucide-react';
+import { CheckCircle, Clock, Copy, MapPin, RefreshCw, Send, UserPlus, Users, X } from 'lucide-react';
 import { communityApi, locationsApi } from '@/lib/api';
 import {
   type AllowedState,
+  type CommunityArea,
+  type CommunityLocation,
   ContributorStatus,
   StreetRelationshipRecency,
   StreetRelationshipType,
@@ -52,7 +54,18 @@ export default function CommunityDashboardPage() {
   const [activeStates, setActiveStates] = useState<AllowedState[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [joining, setJoining] = useState(false);
+  const [editingContributionId, setEditingContributionId] = useState<string | null>(null);
+  const [existingStates, setExistingStates] = useState<string[]>([]);
+  const [existingCities, setExistingCities] = useState<string[]>([]);
+  const [existingAreas, setExistingAreas] = useState<string[]>([]);
+  const [existingStreets, setExistingStreets] = useState<Street[]>([]);
+  const [existingLocations, setExistingLocations] = useState<CommunityLocation[]>([]);
+  const [existingAreaRecords, setExistingAreaRecords] = useState<CommunityArea[]>([]);
+  const [newLocations, setNewLocations] = useState<CommunityLocation[]>([]);
+  const [newAreas, setNewAreas] = useState<CommunityArea[]>([]);
+  const [existingState, setExistingState] = useState('');
+  const [existingCity, setExistingCity] = useState('');
+  const [existingArea, setExistingArea] = useState('');
 
   const [streetMode, setStreetMode] = useState<'existing' | 'new'>(preselectedStreetId ? 'existing' : 'new');
   const [streetId, setStreetId] = useState(preselectedStreetId);
@@ -66,36 +79,26 @@ export default function CommunityDashboardPage() {
     try {
       const statusRes = await communityApi.myStatus();
       setProfile(statusRes.data);
-      if (!statusRes.data.joinedAt) return;
-      const [categoriesRes, popularRes, contributionsRes, referralRes, statesRes] = await Promise.all([
+      const [categoriesRes, contributionsRes, referralRes, statesRes, streetLocationsRes] = await Promise.all([
         communityApi.categories(),
-        communityApi.popularStreets(),
         communityApi.myContributions(),
         communityApi.referralCode(),
         locationsApi.activeStates(),
+        communityApi.streetLocations(),
       ]);
       setCategories(categoriesRes.data.filter((category) => category.isActive));
-      setPopular(popularRes.data);
       setContributions(contributionsRes.data);
       setReferralCode(referralRes.data.referralCode);
       setActiveStates(statesRes.data);
+      setExistingStates(streetLocationsRes.data.states);
+      if (statusRes.data.joinedAt) {
+        const popularRes = await communityApi.popularStreets();
+        setPopular(popularRes.data);
+      }
     } catch (err) {
       error(err instanceof Error ? err.message : 'Unable to load community dashboard');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const join = async () => {
-    setJoining(true);
-    try {
-      await communityApi.join();
-      success('Welcome to the Contributor Community.');
-      await load();
-    } catch (err) {
-      error(err instanceof Error ? err.message : 'Unable to join the community.');
-    } finally {
-      setJoining(false);
     }
   };
 
@@ -118,6 +121,47 @@ export default function CommunityDashboardPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    if (!preselectedStreetId || !popular.length || existingState) return;
+    const selected = popular.find((item) => item.id === preselectedStreetId);
+    if (!selected) return;
+    setExistingState(selected.state); setExistingCity(selected.city); setExistingArea(selected.area);
+    setExistingCities([selected.city]); setExistingAreas([selected.area]); setExistingStreets([selected]);
+  }, [existingState, popular, preselectedStreetId]);
+
+  useEffect(() => {
+    if (editingContributionId) return;
+    setExistingCity(''); setExistingArea(''); setExistingCities([]); setExistingAreas([]); setStreetId('');
+    if (!existingState) return;
+    communityApi.streetLocations({ state: existingState }).then((res) => { setExistingCities(res.data.cities); setExistingLocations(res.data.locations); }).catch(() => { setExistingCities([]); setExistingLocations([]); });
+  }, [editingContributionId, existingState]);
+
+  useEffect(() => {
+    if (editingContributionId) return;
+    setExistingArea(''); setExistingAreas([]); setStreetId('');
+    if (!existingState || !existingCity) return;
+    communityApi.streetLocations({ state: existingState, city: existingCity }).then((res) => { setExistingAreas(res.data.areas); setExistingAreaRecords(res.data.areaRecords); }).catch(() => { setExistingAreas([]); setExistingAreaRecords([]); });
+  }, [editingContributionId, existingCity, existingState]);
+
+  useEffect(() => {
+    if (editingContributionId || !existingState || !existingCity) return;
+    communityApi.searchStreets({ state: existingState, city: existingCity, area: existingArea || undefined, locationId: existingLocations.find((item) => item.name === existingCity)?.id, areaId: existingAreaRecords.find((item) => item.name === existingArea)?.id })
+      .then((res) => setExistingStreets(res.data))
+      .catch(() => setExistingStreets([]));
+  }, [editingContributionId, existingArea, existingAreaRecords, existingCity, existingLocations, existingState]);
+
+  useEffect(() => {
+    setStreet((current) => ({ ...current, city: '', area: '' })); setNewLocations([]); setNewAreas([]);
+    if (!street.state) return;
+    communityApi.streetLocations({ state: street.state }).then((res) => setNewLocations(res.data.locations)).catch(() => setNewLocations([]));
+  }, [street.state]);
+
+  useEffect(() => {
+    setStreet((current) => ({ ...current, area: '' })); setNewAreas([]);
+    if (!street.state || !street.city) return;
+    communityApi.streetLocations({ state: street.state, city: street.city }).then((res) => setNewAreas(res.data.areaRecords)).catch(() => setNewAreas([]));
+  }, [street.city, street.state]);
+
   const answeredAll = useMemo(
     () => categories.length > 0 && categories.every((category) => answers[category.id]),
     [answers, categories],
@@ -136,17 +180,52 @@ export default function CommunityDashboardPage() {
         relationshipRecency,
         answers: categories.map((category) => ({ categoryId: category.id, optionId: answers[category.id] })),
       };
-      if (streetMode === 'existing') dto.streetId = streetId;
-      else dto.street = { ...street };
-      await communityApi.createContribution(dto);
-      success('Street Intelligence submitted. Community Contributor access is active.');
+      if (!editingContributionId) {
+        if (streetMode === 'existing') dto.streetId = streetId;
+      else dto.street = { ...street, locationId: newLocations.find((item) => item.name === street.city)?.id, areaId: newAreas.find((item) => item.name === street.area)?.id };
+      }
+      if (editingContributionId) {
+        await communityApi.updateContribution(editingContributionId, dto);
+        success('Street Intelligence updated successfully.');
+      } else {
+        await communityApi.createContribution(dto);
+        success('Street Intelligence submitted. Community Contributor access is active.');
+      }
       setAnswers({});
+      setEditingContributionId(null);
       await load();
     } catch (err) {
       error(err instanceof Error ? err.message : 'Unable to submit Street Intelligence');
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const editContribution = (item: StreetContribution) => {
+    if (!item.street) {
+      error('Street details are unavailable for this contribution.');
+      return;
+    }
+    setEditingContributionId(item.id);
+    setStreetMode('existing');
+    setStreetId(item.streetId);
+    setExistingState(item.street.state);
+    setExistingCity(item.street.city);
+    setExistingArea(item.street.area);
+    setExistingCities([item.street.city]);
+    setExistingAreas([item.street.area]);
+    setExistingStreets([item.street]);
+    if (item.street.locationId) setExistingLocations([{ id: item.street.locationId, state: item.street.state, name: item.street.city, normalisedName: item.street.city.toLowerCase(), isActive: true, latitude: null, longitude: null }]);
+    if (item.street.areaId) setExistingAreaRecords([{ id: item.street.areaId, locationId: item.street.locationId ?? '', name: item.street.area, normalisedName: item.street.area.toLowerCase(), isActive: true, latitude: null, longitude: null }]);
+    setRelationshipType(item.relationshipType);
+    setRelationshipRecency(item.relationshipRecency);
+    setAnswers(Object.fromEntries((item.answers ?? []).map((answer) => [answer.categoryId, answer.optionId])));
+    document.getElementById('contribute')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const cancelEdit = () => {
+    setEditingContributionId(null);
+    setStreetId(''); setExistingState(''); setExistingCity(''); setExistingArea(''); setAnswers({});
   };
 
   const confirm = async (id: string) => {
@@ -163,27 +242,19 @@ export default function CommunityDashboardPage() {
     return <div className="flex justify-center py-20"><LoadingSpinner size="lg" /></div>;
   }
 
-  if (!profile?.joinedAt) {
-    return (
-      <div className="mx-auto max-w-xl py-12 text-center">
-        <div className="card p-8">
-          <Users className="mx-auto h-10 w-10 text-emerald-600" />
-          <h1 className="mt-4 font-display text-2xl font-black text-navy-900">Contributor Community</h1>
-          <p className="mt-3 text-sm leading-6 text-veriq-muted">Join the community to browse street intelligence, contribute local knowledge, and claim eligible Free Unlock properties.</p>
-          <button type="button" onClick={join} disabled={joining} className="btn-primary mt-6 justify-center">
-            {joining ? <LoadingSpinner size="sm" /> : <><UserPlus className="h-4 w-4" /> Become a member</>}
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <div>
         <h1 className="font-display text-2xl font-black text-navy-900">Community Contributor</h1>
         <p className="mt-1 text-sm text-veriq-muted">Share reliable street-level intelligence and unlock Community Benefits.</p>
       </div>
+
+      {!profile?.joinedAt && (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+          <p className="font-bold">Contribute your first Street Intelligence report to join.</p>
+          <p className="mt-1 text-xs leading-5 text-emerald-800">Choose an existing street or submit a missing street below. Your community membership starts when the contribution is submitted.</p>
+        </div>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="card p-5">
@@ -205,22 +276,39 @@ export default function CommunityDashboardPage() {
       <div className="grid gap-6 lg:grid-cols-2">
         <form id="contribute" onSubmit={submit} className="card space-y-5 p-6">
           <div>
-            <h2 className="font-display text-base font-bold text-navy-900">Contribute Street Intelligence</h2>
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="font-display text-base font-bold text-navy-900">{editingContributionId ? 'Update Street Intelligence' : 'Contribute Street Intelligence'}</h2>
+              {editingContributionId && <button type="button" onClick={cancelEdit} className="text-xs font-bold text-slate-500"><X className="mr-1 inline h-3.5 w-3.5" /> Cancel</button>}
+            </div>
             <p className="mt-1 text-xs text-veriq-muted">No photos or videos. Just one answer per approved street category.</p>
           </div>
 
-          <div className="flex rounded-xl bg-slate-100 p-1">
+          <div className={`flex rounded-xl bg-slate-100 p-1 ${editingContributionId ? 'pointer-events-none opacity-60' : ''}`}>
             <button type="button" onClick={() => setStreetMode('existing')} className={`flex-1 rounded-lg px-3 py-2 text-xs font-bold ${streetMode === 'existing' ? 'bg-white text-navy-900 shadow-sm' : 'text-slate-500'}`}>Select street</button>
             <button type="button" onClick={() => setStreetMode('new')} className={`flex-1 rounded-lg px-3 py-2 text-xs font-bold ${streetMode === 'new' ? 'bg-white text-navy-900 shadow-sm' : 'text-slate-500'}`}>Add new street</button>
           </div>
 
           {streetMode === 'existing' ? (
-            <select value={streetId} onChange={(event) => setStreetId(event.target.value)} className="input" required>
-              <option value="">Choose a popular street</option>
-              {popular.map((item) => (
-                <option key={item.id} value={item.id}>{item.streetName} - {item.area}, {item.city}</option>
-              ))}
-            </select>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <select aria-label="State" value={existingState} onChange={(event) => setExistingState(event.target.value)} className="input" required disabled={Boolean(editingContributionId)}>
+                <option value="">Select state</option>
+                {existingStates.map((item) => <option key={item} value={item}>{item}</option>)}
+              </select>
+              <select aria-label="Location" value={existingCity} onChange={(event) => setExistingCity(event.target.value)} className="input" required disabled={!existingState || Boolean(editingContributionId)}>
+                <option value="">Select location</option>
+                {existingCities.map((item) => <option key={item} value={item}>{item}</option>)}
+              </select>
+              <select aria-label="Area" value={existingArea} onChange={(event) => setExistingArea(event.target.value)} className="input" disabled={!existingCity || Boolean(editingContributionId)}>
+                <option value="">All areas</option>
+                {existingAreas.map((item) => <option key={item} value={item}>{item}</option>)}
+              </select>
+              <select aria-label="Street" value={streetId} onChange={(event) => setStreetId(event.target.value)} className="input" required disabled={!existingCity || Boolean(editingContributionId)}>
+                <option value="">Select street</option>
+                {existingStreets.map((item) => (
+                  <option key={item.id} value={item.id}>{item.streetName} - {item.area}, {item.state}</option>
+                ))}
+              </select>
+            </div>
           ) : (
             <div className="grid gap-3 sm:grid-cols-2">
               <select className="input" value={street.state} onChange={(e) => setStreet((s) => ({ ...s, state: e.target.value }))} required>
@@ -229,8 +317,14 @@ export default function CommunityDashboardPage() {
                   <option key={stateOption.id} value={stateOption.name}>{stateOption.name}</option>
                 ))}
               </select>
-              <input className="input" placeholder="City" value={street.city} onChange={(e) => setStreet((s) => ({ ...s, city: e.target.value }))} required />
-              <input className="input" placeholder="Area or neighbourhood" value={street.area} onChange={(e) => setStreet((s) => ({ ...s, area: e.target.value }))} required />
+              <select className="input" aria-label="Location" value={street.city} onChange={(e) => setStreet((s) => ({ ...s, city: e.target.value }))} required disabled={!street.state}>
+                <option value="">Select location</option>
+                {newLocations.map((item) => <option key={item.id} value={item.name}>{item.name}</option>)}
+              </select>
+              <select className="input" aria-label="Area or Neighbourhood" value={street.area} onChange={(e) => setStreet((s) => ({ ...s, area: e.target.value }))} required disabled={!street.city}>
+                <option value="">Select area / neighbourhood</option>
+                {newAreas.map((item) => <option key={item.id} value={item.name}>{item.name}</option>)}
+              </select>
               <input className="input" placeholder="Street name" value={street.streetName} onChange={(e) => setStreet((s) => ({ ...s, streetName: e.target.value }))} required />
               <input className="input sm:col-span-2" placeholder="Nearby landmark (optional)" value={street.landmark} onChange={(e) => setStreet((s) => ({ ...s, landmark: e.target.value }))} />
             </div>
@@ -270,7 +364,7 @@ export default function CommunityDashboardPage() {
           </div>
 
           <button type="submit" className="btn-primary w-full justify-center" disabled={submitting}>
-            {submitting ? <LoadingSpinner size="sm" /> : <><Send className="h-4 w-4" /> Submit Intelligence</>}
+            {submitting ? <LoadingSpinner size="sm" /> : <><Send className="h-4 w-4" /> {editingContributionId ? 'Save Intelligence Update' : 'Submit Intelligence'}</>}
           </button>
         </form>
 
@@ -322,7 +416,7 @@ export default function CommunityDashboardPage() {
                       <button type="button" onClick={() => confirm(item.id)} className="rounded-lg bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700">
                         <CheckCircle className="mr-1 inline h-3.5 w-3.5" /> Confirm
                       </button>
-                      <button type="button" className="rounded-lg bg-blue-50 px-3 py-2 text-xs font-bold text-blue-700">
+                      <button type="button" onClick={() => editContribution(item)} className="rounded-lg bg-blue-50 px-3 py-2 text-xs font-bold text-blue-700">
                         <RefreshCw className="mr-1 inline h-3.5 w-3.5" /> Update
                       </button>
                     </div>

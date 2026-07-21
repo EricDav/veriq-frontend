@@ -545,9 +545,13 @@ export interface Street {
   state: string;
   city: string;
   area: string;
+  locationId: string | null;
+  areaId: string | null;
   streetName: string;
   normalisedStreetName: string;
   landmark: string | null;
+  latitude: number | null;
+  longitude: number | null;
   status: StreetStatus;
   isPopular: boolean;
   popularRank: number;
@@ -556,6 +560,16 @@ export interface Street {
   approvedAt: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface CommunityArea {
+  id: string; locationId: string; name: string; normalisedName: string; isActive: boolean;
+  latitude: number | null; longitude: number | null;
+}
+
+export interface CommunityLocation {
+  id: string; state: string; name: string; normalisedName: string; isActive: boolean;
+  latitude: number | null; longitude: number | null; areas?: CommunityArea[];
 }
 
 export interface IntelligenceOption {
@@ -609,6 +623,10 @@ export interface CreateStreetDto {
   area: string;
   streetName: string;
   landmark?: string;
+  locationId?: string;
+  areaId?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface CreateContributionDto {
