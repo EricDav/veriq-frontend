@@ -740,6 +740,7 @@ export interface ChatMessagesPayload {
 // ─── Notifications ────────────────────────────────────────────────────────
 
 export enum NotificationType {
+  STREET_PENDING_REVIEW = 'street_pending_review',
   REFUND_REQUESTED = 'refund_requested',
   REFUND_APPROVED = 'refund_approved',
   REFUND_REJECTED = 'refund_rejected',

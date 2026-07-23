@@ -183,6 +183,8 @@ test('admin can moderate proposed streets and pending contributions', async ({ c
     state: 'Rivers',
     city: 'Port Harcourt',
     area: 'Choba',
+    locationId: 'location-1',
+    areaId: 'area-1',
     streetName: 'Pipeline Road',
     normalisedStreetName: 'pipeline road',
     landmark: 'Near campus',
@@ -194,6 +196,23 @@ test('admin can moderate proposed streets and pending contributions', async ({ c
     approvedAt: null,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
+  };
+  const approvedStreet = {
+    ...street,
+    id: 'street-approved',
+    streetName: 'Approved Avenue',
+    normalisedStreetName: 'approved avenue',
+    status: 'approved',
+    approvedByAdminId: 'admin-user-1',
+    approvedAt: new Date().toISOString(),
+  };
+  const olderPendingStreet = {
+    ...street,
+    id: 'street-older-pending',
+    streetName: 'Old Market Road',
+    normalisedStreetName: 'old market road',
+    createdAt: new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString(),
   };
   const contribution = {
     id: 'contribution-1',
@@ -220,6 +239,12 @@ test('admin can moderate proposed streets and pending contributions', async ({ c
   await page.route(`${API_BASE}/community/admin/analytics`, async (route) => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ statusCode: 200, message: 'Analytics', data: { totalProposedStreets: 1, activeCampaigns: 0 } }) });
   });
+  await page.route(`${API_BASE}/locations/states`, async (route) => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ statusCode: 200, message: 'States', data: [
+      { id: 'state-lagos', name: 'Lagos', isActive: false },
+      { id: 'state-rivers', name: 'Rivers', isActive: true },
+    ] }) });
+  });
   await page.route(`${API_BASE}/properties/admin/all?*`, async (route) => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ statusCode: 200, message: 'Properties', data: [propertyFixture()], meta: { total: 1, page: 1, limit: 100, pages: 1 } }) });
   });
@@ -231,8 +256,8 @@ test('admin can moderate proposed streets and pending contributions', async ({ c
     }
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ statusCode: 200, message: 'Campaigns', data: [] }) });
   });
-  await page.route(`${API_BASE}/community/admin/streets`, async (route) => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ statusCode: 200, message: 'Streets', data: [street] }) });
+  await page.route(`${API_BASE}/community/admin/streets**`, async (route) => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ statusCode: 200, message: 'Streets', data: [street, approvedStreet, olderPendingStreet] }) });
   });
   await page.route(`${API_BASE}/community/admin/contributions`, async (route) => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ statusCode: 200, message: 'Contributions', data: [contribution] }) });
@@ -243,7 +268,10 @@ test('admin can moderate proposed streets and pending contributions', async ({ c
       await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ statusCode: 201, message: 'Location saved', data: { id: 'location-2', ...locationPayload } }) });
       return;
     }
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ statusCode: 200, message: 'Hierarchy', data: [{ id: 'location-1', state: 'Rivers', name: 'Port Harcourt', normalisedName: 'port harcourt', isActive: true, latitude: null, longitude: null, areas: [{ id: 'area-1', locationId: 'location-1', name: 'Choba', normalisedName: 'choba', isActive: true, latitude: null, longitude: null }] }] }) });
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ statusCode: 200, message: 'Hierarchy', data: [
+      { id: 'location-1', state: 'Rivers', name: 'Port Harcourt', normalisedName: 'port harcourt', isActive: true, latitude: null, longitude: null, areas: [{ id: 'area-1', locationId: 'location-1', name: 'Choba', normalisedName: 'choba', isActive: true, latitude: null, longitude: null }] },
+      { id: 'location-lagos', state: 'Lagos', name: 'Ikeja', normalisedName: 'ikeja', isActive: true, latitude: null, longitude: null, areas: [] },
+    ] }) });
   });
   await page.route(`${API_BASE}/community/admin/streets/${street.id}/review`, async (route) => {
     streetReviewPayload = route.request().postDataJSON();
@@ -255,8 +283,32 @@ test('admin can moderate proposed streets and pending contributions', async ({ c
   });
 
   await page.goto('/dashboard/admin/community');
+  const streetModeration = page.getByTestId('street-moderation');
   await expect(page.getByRole('heading', { name: 'Street Moderation' })).toBeVisible();
-  await expect(page.getByText('Pipeline Road', { exact: true }).first()).toBeVisible();
+  await expect(streetModeration.getByText('1 pending', { exact: true })).toBeVisible();
+  await expect(streetModeration.getByText('Showing streets added in the past 48 hours', { exact: true })).toBeVisible();
+  await expect(streetModeration.getByText('Pipeline Road', { exact: true })).toBeVisible();
+  await expect(streetModeration.getByText('Old Market Road', { exact: true })).toBeHidden();
+  await streetModeration.getByLabel('Moderation state').selectOption('Rivers');
+  await expect(streetModeration.getByText('Select a location', { exact: true })).toBeVisible();
+  await streetModeration.getByLabel('Moderation location').selectOption('location-1');
+  await expect(streetModeration.getByText('Showing all streets in Port Harcourt', { exact: true })).toBeVisible();
+  await expect(streetModeration.getByText('Old Market Road', { exact: true })).toBeVisible();
+  await streetModeration.getByLabel('Moderation state').selectOption('');
+  await expect(streetModeration.getByText('Approved Avenue', { exact: true })).toBeHidden();
+  await streetModeration.getByRole('button', { name: 'Approved 1' }).click();
+  await expect(streetModeration.getByText('Approved Avenue', { exact: true })).toBeVisible();
+  await expect(streetModeration.getByText('Pipeline Road', { exact: true })).toBeHidden();
+  await streetModeration.getByPlaceholder('Search street, area, location or landmark').fill('missing street');
+  await expect(streetModeration.getByText('No matching streets', { exact: true })).toBeVisible();
+  await streetModeration.getByPlaceholder('Search street, area, location or landmark').fill('');
+  await streetModeration.getByRole('button', { name: 'Pending 1' }).click();
+  const locationDirectory = page.getByTestId('location-directory');
+  const locationDirectoryList = page.getByTestId('location-directory-list');
+  await locationDirectory.getByLabel('State', { exact: true }).selectOption('Lagos');
+  await expect(locationDirectoryList.getByText('Ikeja', { exact: true })).toBeVisible();
+  await expect(locationDirectoryList.getByText('Port Harcourt', { exact: true })).toBeHidden();
+  await locationDirectory.getByLabel('State', { exact: true }).selectOption('Rivers');
   await page.getByPlaceholder('New Rivers location').fill('Tai');
   await page.getByTitle('Add location').click();
   await expect.poll(() => locationPayload).not.toBeNull();
@@ -269,7 +321,7 @@ test('admin can moderate proposed streets and pending contributions', async ({ c
   await expect.poll(() => campaignPayload).not.toBeNull();
   expect((campaignPayload as { propertyId?: string } | null)?.propertyId).toBe(propertyId);
 
-  await page.getByRole('button', { name: 'Approve' }).first().click();
+  await streetModeration.getByRole('button', { name: 'Approve', exact: true }).click();
   await expect.poll(() => streetReviewPayload).not.toBeNull();
   expect((streetReviewPayload as { status?: string } | null)?.status).toBe('approved');
 

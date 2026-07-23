@@ -714,8 +714,15 @@ export const communityApi = {
   adminCampaigns: () =>
     api.get<ApiResponse<FreeUnlockCampaign[]>>('/community/admin/free-unlocks'),
 
-  adminStreets: (status?: StreetStatus) =>
-    api.get<ApiResponse<Street[]>>(`/community/admin/streets${status ? `?status=${status}` : ''}`),
+  adminStreets: (filters: { status?: StreetStatus; recentHours?: number; state?: string; locationId?: string } = {}) => {
+    const params = new URLSearchParams();
+    if (filters.status) params.set('status', filters.status);
+    if (filters.recentHours) params.set('recentHours', String(filters.recentHours));
+    if (filters.state) params.set('state', filters.state);
+    if (filters.locationId) params.set('locationId', filters.locationId);
+    const query = params.toString();
+    return api.get<ApiResponse<Street[]>>(`/community/admin/streets${query ? `?${query}` : ''}`);
+  },
 
   adminContributions: (status?: ContributionStatus) =>
     api.get<ApiResponse<StreetContribution[]>>(`/community/admin/contributions${status ? `?status=${status}` : ''}`),
