@@ -330,21 +330,26 @@ test('admin can moderate proposed streets and pending contributions', async ({ c
   expect((contributionReviewPayload as { status?: string } | null)?.status).toBe('flagged');
 });
 
-test('non-member is directed to contribute before browsing street intelligence', async ({ context, page }) => {
-  await seedAuth(context, page, 'user');
-  await mockSharedShell(page, 'user');
-
-  await page.route(`${API_BASE}/community/me/status`, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ statusCode: 200, message: 'Status', data: { id: 'profile-1', userId: 'renter-user-1', joinedAt: null, contributorStatus: 'not_active' } }),
-    });
+test('signed-out visitor sees Community Intelligence filters and is asked to log in on search', async ({ page }) => {
+  await page.route(`${API_BASE}/community/streets/locations**`, async (route) => {
+    const url = new URL(route.request().url());
+    const state = url.searchParams.get('state');
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
+      statusCode: 200, message: 'Locations', data: {
+        states: ['Rivers'],
+        cities: state === 'Rivers' ? ['Port Harcourt'] : [],
+        areas: [],
+        locations: state === 'Rivers' ? [{ id: 'location-1', state: 'Rivers', name: 'Port Harcourt', normalisedName: 'port harcourt', isActive: true, latitude: null, longitude: null }] : [],
+        areaRecords: [],
+      },
+    }) });
   });
-
   await page.goto('/street-intelligence');
-  await expect(page.getByRole('heading', { name: 'Join the Contributor Community' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Contribute to Join' })).toHaveAttribute('href', '/dashboard/community#contribute');
+  await expect(page.getByRole('heading', { name: 'Street Intelligence' })).toBeVisible();
+  await page.getByLabel('State').selectOption('Rivers');
+  await page.getByLabel('Location').selectOption('Port Harcourt');
+  await page.getByRole('button', { name: 'Search' }).click();
+  await expect(page).toHaveURL(/\/auth\/login\?redirect=%2Fstreet-intelligence/);
 });
 
 test('member filters street intelligence by state, city and area before street name', async ({ context, page }) => {

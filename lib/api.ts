@@ -669,7 +669,7 @@ export const communityApi = {
     const params = new URLSearchParams();
     if (filters.state) params.set('state', filters.state);
     if (filters.city) params.set('city', filters.city);
-    return api.get<ApiResponse<{ states: string[]; cities: string[]; areas: string[]; locations: import('@/types').CommunityLocation[]; areaRecords: import('@/types').CommunityArea[] }>>(`/community/streets/locations?${params}`);
+    return api.get<ApiResponse<{ states: string[]; cities: string[]; areas: string[]; locations: import('@/types').CommunityLocation[]; areaRecords: import('@/types').CommunityArea[] }>>(`/community/streets/locations?${params}`, { public: true });
   },
 
   nearbyStreets: (latitude: number, longitude: number) =>

@@ -2,13 +2,16 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ArrowRight, MapPin, Search, Users, ShieldCheck, Navigation } from 'lucide-react';
 import { communityApi } from '@/lib/api';
 import type { CommunityArea, CommunityLocation, Street } from '@/types';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { CommunityMembershipGate } from '@/components/community/CommunityMembershipGate';
+import { useAuth } from '@/context/AuthContext';
 
 function StreetIntelligenceBrowser() {
+  const router = useRouter();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [results, setResults] = useState<Street[]>([]);
   const [states, setStates] = useState<string[]>([]);
   const [cities, setCities] = useState<string[]>([]);
@@ -46,6 +49,11 @@ function StreetIntelligenceBrowser() {
 
   const search = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (authLoading) return;
+    if (!authLoading && !isAuthenticated) {
+      router.push('/auth/login?redirect=%2Fstreet-intelligence');
+      return;
+    }
     setIsSearching(true);
     try {
       const res = await communityApi.searchStreets({
@@ -66,6 +74,11 @@ function StreetIntelligenceBrowser() {
   };
 
   const useCurrentLocation = () => {
+    if (authLoading) return;
+    if (!authLoading && !isAuthenticated) {
+      router.push('/auth/login?redirect=%2Fstreet-intelligence');
+      return;
+    }
     setLocationError('');
     if (!navigator.geolocation) { setLocationError('Current location is not supported by this device.'); return; }
     setIsLocating(true);
@@ -113,12 +126,12 @@ function StreetIntelligenceBrowser() {
               disabled={!city}
             />
           </label>
-          <button type="submit" className="btn-primary justify-center" disabled={isSearching || !state || !city}>
+          <button type="submit" className="btn-primary justify-center" disabled={authLoading || isSearching || !state || !city}>
             {isSearching ? <LoadingSpinner size="sm" /> : 'Search'}
           </button>
         </form>
         <div className="-mt-5 mb-8 flex flex-wrap items-center gap-3">
-          <button type="button" onClick={useCurrentLocation} disabled={isLocating} className="btn-outline !py-2 !text-xs"><Navigation className="h-3.5 w-3.5" /> {isLocating ? 'Finding nearby streets...' : 'Use My Current Location'}</button>
+          <button type="button" onClick={useCurrentLocation} disabled={authLoading || isLocating} className="btn-outline !py-2 !text-xs"><Navigation className="h-3.5 w-3.5" /> {isLocating ? 'Finding nearby streets...' : 'Use My Current Location'}</button>
           {locationError && <p className="text-xs text-rose-600">{locationError}</p>}
         </div>
 
@@ -176,5 +189,5 @@ function StreetIntelligenceBrowser() {
 }
 
 export default function StreetIntelligencePage() {
-  return <CommunityMembershipGate><StreetIntelligenceBrowser /></CommunityMembershipGate>;
+  return <StreetIntelligenceBrowser />;
 }

@@ -98,6 +98,7 @@ export default function AdminCommunityPage() {
   };
 
   const selectedEditLocation = hierarchy.find((item) => item.id === streetEdit.locationId);
+  const selectedDirectoryState = directoryStates.find((item) => item.name === directoryState);
   const directoryLocations = hierarchy.filter((item) => item.state === directoryState);
   const moderationLocation = hierarchy.find((item) => item.id === streetLocationFilter);
   const moderationStates = useMemo(() => Array.from(new Set(hierarchy.filter((item) => item.isActive).map((item) => item.state))).sort(), [hierarchy]);
@@ -254,11 +255,16 @@ export default function AdminCommunityPage() {
           <h2 className="font-display text-lg font-bold text-navy-900">Location Directory</h2>
           <p className="mt-1 text-xs text-veriq-muted">Manage State → Location → Area/Neighbourhood → Street data used by search and contributions.</p>
         </div>
-        <div className="max-w-sm">
+        <div className="flex max-w-xl items-end gap-3">
+          <div className="min-w-0 flex-1">
           <label className="mb-1.5 block text-xs font-bold text-slate-600" htmlFor="directory-state">State</label>
           <select id="directory-state" className="input" value={directoryState} onChange={(event) => { setDirectoryState(event.target.value); setAreaLocationId(''); }}>
             {directoryStates.map((state) => <option key={state.id} value={state.name}>{state.name}</option>)}
           </select>
+          </div>
+          {selectedDirectoryState && <button type="button" disabled={saving} onClick={() => runHierarchyAction(() => locationsApi.updateState(selectedDirectoryState.id, !selectedDirectoryState.isActive), `${directoryState} ${selectedDirectoryState.isActive ? 'disabled' : 'approved'}.`)} className={`rounded-lg px-3 py-3 text-xs font-bold ${selectedDirectoryState.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
+            {selectedDirectoryState.isActive ? 'Approved' : 'Approve state'}
+          </button>}
         </div>
         <div className="grid gap-6 xl:grid-cols-2">
           <div className="card space-y-5 p-5">
@@ -273,8 +279,8 @@ export default function AdminCommunityPage() {
             </form>
             <div className="max-h-80 space-y-3 overflow-y-auto" data-testid="location-directory-list">
               {directoryLocations.map((location) => <div key={location.id} className="rounded-lg border border-slate-100 p-3">
-                <div className="flex items-center justify-between"><p className="font-bold text-navy-900">{location.name}</p><div><button type="button" onClick={() => { const name = window.prompt('Location name', location.name); if (name?.trim()) void runHierarchyAction(() => communityApi.updateLocation(location.id, { state: location.state, name: name.trim() }), 'Location updated.'); }} title="Edit location" className="p-1 text-blue-600"><Pencil className="h-4 w-4" /></button><button type="button" onClick={() => runHierarchyAction(() => communityApi.deleteLocation(location.id), 'Location removed.')} title="Remove location" className="p-1 text-rose-600"><Trash2 className="h-4 w-4" /></button></div></div>
-                <div className="mt-2 flex flex-wrap gap-2">{location.areas?.map((area) => <span key={area.id} className="inline-flex items-center gap-1 rounded bg-slate-100 px-2 py-1 text-xs text-slate-600">{area.name}<button type="button" onClick={() => { const name = window.prompt('Area / neighbourhood name', area.name); if (name?.trim()) void runHierarchyAction(() => communityApi.updateArea(area.id, { locationId: location.id, name: name.trim() }), 'Area updated.'); }} title="Edit area"><Pencil className="h-3 w-3 text-blue-500" /></button><button type="button" onClick={() => runHierarchyAction(() => communityApi.deleteArea(area.id), 'Area removed.')} title="Remove area"><Trash2 className="h-3 w-3 text-rose-500" /></button></span>)}</div>
+                <div className="flex items-center justify-between gap-2"><div className="flex items-center gap-2"><p className="font-bold text-navy-900">{location.name}</p><span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${location.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>{location.isActive ? 'Active' : 'Inactive'}</span></div><div><button type="button" onClick={() => { const name = window.prompt('Location name', location.name); if (name?.trim()) void runHierarchyAction(() => communityApi.updateLocation(location.id, { state: location.state, name: name.trim(), isActive: location.isActive }), 'Location updated.'); }} title="Edit location" className="p-1 text-blue-600"><Pencil className="h-4 w-4" /></button><button type="button" onClick={() => runHierarchyAction(() => communityApi.updateLocation(location.id, { state: location.state, name: location.name, isActive: !location.isActive }), `Location ${location.isActive ? 'deactivated' : 'activated'}.`)} title={location.isActive ? 'Deactivate location' : 'Activate location'} className={`px-2 py-1 text-xs font-bold ${location.isActive ? 'text-rose-600' : 'text-emerald-700'}`}>{location.isActive ? 'Deactivate' : 'Activate'}</button></div></div>
+                <div className="mt-2 flex flex-wrap gap-2">{location.areas?.map((area) => <span key={area.id} className={`inline-flex items-center gap-1 rounded px-2 py-1 text-xs ${area.isActive ? 'bg-slate-100 text-slate-600' : 'bg-slate-50 text-slate-400 line-through'}`}>{area.name}<button type="button" onClick={() => { const name = window.prompt('Area / neighbourhood name', area.name); if (name?.trim()) void runHierarchyAction(() => communityApi.updateArea(area.id, { locationId: location.id, name: name.trim(), isActive: area.isActive }), 'Area updated.'); }} title="Edit area"><Pencil className="h-3 w-3 text-blue-500" /></button><button type="button" onClick={() => runHierarchyAction(() => communityApi.updateArea(area.id, { locationId: location.id, name: area.name, isActive: !area.isActive }), `Area ${area.isActive ? 'deactivated' : 'activated'}.`)} title={area.isActive ? 'Deactivate area' : 'Activate area'} className={area.isActive ? 'text-rose-500' : 'text-emerald-600'}>{area.isActive ? '×' : '+'}</button></span>)}</div>
               </div>)}
               {directoryLocations.length === 0 && <p className="py-8 text-center text-sm text-slate-500">No locations have been added for {directoryState}.</p>}
             </div>
