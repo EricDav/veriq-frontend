@@ -131,16 +131,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   // ── Register ──────────────────────────────────────────────────────────
-  // Backend register only creates the account (no tokens returned).
-  // We immediately follow with a login call to get tokens and set session.
+  // Registration creates a pending account. The user verifies their email
+  // before signing in and receiving a session.
   const register = useCallback(async (dto: RegisterDto) => {
-    await authApi.register(dto); // creates the account
-    const loginRes = await authApi.login({ email: dto.email, password: dto.password });
-    const { accessToken, refreshToken, user: u } = loginRes.data;
-    setTokens(accessToken, refreshToken);
-    setStoredUser(u);
-    setUser(u);
-    setAuthCookies(u.role);
+    await authApi.register(dto);
   }, []);
 
   // ── Logout ────────────────────────────────────────────────────────────

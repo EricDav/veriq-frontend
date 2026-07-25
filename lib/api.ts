@@ -184,6 +184,8 @@ import type {
   ChangePasswordDto,
   ForgotPasswordDto,
   ResetPasswordDto,
+  VerifyEmailDto,
+  ResendVerificationDto,
   CreateAgentProfileDto,
   SubmitLevel1VerificationDto,
   SubmitLevel2VerificationDto,
@@ -237,6 +239,12 @@ export const authApi = {
 
   login: (dto: LoginDto) =>
     api.post<ApiResponse<AuthTokens>>('/auth/login', dto, { public: true }),
+
+  verifyEmail: (dto: VerifyEmailDto) =>
+    api.post<ApiResponse<{ email: string }>>('/auth/verify-email', dto, { public: true }),
+
+  resendVerification: (dto: ResendVerificationDto) =>
+    api.post<ApiResponse<null>>('/auth/resend-verification', dto, { public: true }),
 
   logout: (refreshToken?: string) =>
     api.post<ApiResponse<null>>('/auth/logout', { refreshToken }),

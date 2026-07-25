@@ -61,6 +61,10 @@ function LoginPageInner() {
       // The useEffect above handles navigation after the update is committed.
     } catch (err) {
       if (err instanceof ApiError) {
+        if (err.statusCode === 403 && err.message.toLowerCase().includes('email verification')) {
+          router.push(`/auth/verify-email?email=${encodeURIComponent(data.email.trim().toLowerCase())}`);
+          return;
+        }
         setServerError(
           err.statusCode === 401
             ? 'Invalid email or password.'

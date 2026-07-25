@@ -387,6 +387,16 @@ export interface Agent {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  feedback?: AgentFeedback[];
+}
+
+export interface AgentFeedback {
+  id: string;
+  rating: number | null;
+  comment: string;
+  ratedAt: string | null;
+  propertyTitle: string | null;
+  reviewerName: string;
 }
 
 export interface Property {
@@ -977,6 +987,15 @@ export interface RegisterDto {
 export interface LoginDto {
   email: string;
   password: string;
+}
+
+export interface VerifyEmailDto {
+  email: string;
+  otp: string;
+}
+
+export interface ResendVerificationDto {
+  email: string;
 }
 
 export interface AuthTokens {

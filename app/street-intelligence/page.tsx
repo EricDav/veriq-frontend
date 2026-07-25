@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, MapPin, Search, Users, ShieldCheck, Navigation } from 'lucide-react';
+import { ArrowRight, MapPin, Search, Users, ShieldCheck } from 'lucide-react';
 import { communityApi } from '@/lib/api';
 import type { CommunityArea, CommunityLocation, Street } from '@/types';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -25,8 +25,6 @@ function StreetIntelligenceBrowser() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
-  const [isLocating, setIsLocating] = useState(false);
-  const [locationError, setLocationError] = useState('');
 
   useEffect(() => {
     communityApi.streetLocations()
@@ -73,22 +71,6 @@ function StreetIntelligenceBrowser() {
     }
   };
 
-  const useCurrentLocation = () => {
-    if (authLoading) return;
-    if (!authLoading && !isAuthenticated) {
-      router.push('/auth/login?redirect=%2Fstreet-intelligence');
-      return;
-    }
-    setLocationError('');
-    if (!navigator.geolocation) { setLocationError('Current location is not supported by this device.'); return; }
-    setIsLocating(true);
-    navigator.geolocation.getCurrentPosition(async ({ coords }) => {
-      try { const response = await communityApi.nearbyStreets(coords.latitude, coords.longitude); setResults(response.data); setHasSearched(true); }
-      catch (error) { setLocationError(error instanceof Error ? error.message : 'Unable to suggest nearby streets.'); }
-      finally { setIsLocating(false); }
-    }, () => { setLocationError('Location permission was denied or unavailable.'); setIsLocating(false); }, { enableHighAccuracy: true, timeout: 10_000 });
-  };
-
   return (
     <div className="min-h-screen bg-veriq-surface pt-24">
       <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
@@ -130,11 +112,6 @@ function StreetIntelligenceBrowser() {
             {isSearching ? <LoadingSpinner size="sm" /> : 'Search'}
           </button>
         </form>
-        <div className="-mt-5 mb-8 flex flex-wrap items-center gap-3">
-          <button type="button" onClick={useCurrentLocation} disabled={authLoading || isLocating} className="btn-outline !py-2 !text-xs"><Navigation className="h-3.5 w-3.5" /> {isLocating ? 'Finding nearby streets...' : 'Use My Current Location'}</button>
-          {locationError && <p className="text-xs text-rose-600">{locationError}</p>}
-        </div>
-
         <div className="mb-4 flex items-center justify-between">
           <h2 className="font-display text-lg font-bold text-navy-900">
             {hasSearched ? 'Search results' : 'Choose a location'}

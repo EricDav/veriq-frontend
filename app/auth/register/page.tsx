@@ -97,8 +97,9 @@ function RegisterPageInner() {
         password: data.password,
         role: selectedRole,
       });
-      success('Account created successfully!');
-      router.push(selectedRole === UserRole.AGENT ? '/dashboard/agent' : '/dashboard');
+      success('Account created. Check your email for the verification code.');
+      const email = encodeURIComponent(data.email.trim().toLowerCase());
+      router.push(`/auth/verify-email?email=${email}`);
     } catch (err) {
       if (err instanceof ApiError) {
         if (err.errors) {

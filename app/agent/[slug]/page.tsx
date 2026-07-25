@@ -13,6 +13,7 @@ import type { Agent, Property } from '@/types';
 import { AgentTrustTier, AgentVerificationLevel } from '@/types';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
 import { PropertyCard } from '@/components/properties/PropertyCard';
+import { AgentFeedbackList } from '@/components/agents/AgentFeedbackList';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -289,6 +290,7 @@ export default function PublicAgentProfilePage() {
 
           {/* ── Right: listings ── */}
           <div className="lg:col-span-2">
+            <AgentFeedbackList feedback={agent.feedback ?? []} />
             <div className="flex items-center justify-between mb-5">
               <h2 className="font-display text-base font-bold text-navy-900">
                 Active Listings
