@@ -28,6 +28,18 @@ export enum ContributionStatus {
   ARCHIVED = 'archived',
 }
 
+export enum ContributionResponseType {
+  ANSWERED = 'answered',
+  SKIPPED = 'skipped',
+  UNKNOWN = 'unknown',
+}
+
+export enum IntelligenceSourceType {
+  VERIQ_INITIAL = 'veriq_initial',
+  AGENT_REPORT = 'agent_report',
+  COMMUNITY_UPDATE = 'community_update',
+}
+
 export enum StreetRelationshipType {
   CURRENTLY_LIVE = 'currently_live',
   CURRENTLY_WORK = 'currently_work',
@@ -423,6 +435,7 @@ export interface Property {
   city: string;
   area: string;
   address: string | null;
+  streetId: string | null;
   latitude: number | null;
   longitude: number | null;
   status: ListingStatus;
@@ -599,6 +612,13 @@ export interface IntelligenceCategory {
   sortOrder: number;
   isActive: boolean;
   isPositiveScale: boolean;
+  question: string | null;
+  section: 'Infrastructure' | 'Environment' | 'Accessibility';
+  supplementaryConfig: {
+    type: 'multi_select';
+    question: string;
+    options: string[];
+  } | null;
   options: IntelligenceOption[];
 }
 
@@ -606,12 +626,16 @@ export interface StreetIntelligenceResult {
   categoryId: string;
   category: string;
   slug: string;
+  section: 'Infrastructure' | 'Environment' | 'Accessibility';
   result: string | null;
   status: 'available' | 'insufficient_data' | 'mixed';
   contributors: number;
   level: number | null;
   maxLevel: number;
   isPositiveScale: boolean;
+  sources: IntelligenceSourceType[];
+  lastUpdated: string | null;
+  supplementaryResult: string[];
 }
 
 export interface StreetIntelligencePayload {
@@ -619,12 +643,20 @@ export interface StreetIntelligencePayload {
   contributors: number;
   lastUpdated: string | null;
   sourceNotice: string;
+  usage: {
+    limit: number;
+    used: number;
+    remaining: number;
+    requiresSignup: boolean;
+  };
   results: StreetIntelligenceResult[];
 }
 
 export interface ContributionAnswerDto {
   categoryId: string;
-  optionId: string;
+  responseType: ContributionResponseType;
+  optionId?: string;
+  supplementaryValue?: string[];
 }
 
 export interface CreateStreetDto {
@@ -664,7 +696,9 @@ export interface StreetContribution {
   answers?: Array<{
     id: string;
     categoryId: string;
-    optionId: string;
+    optionId: string | null;
+    responseType: ContributionResponseType;
+    supplementaryValue: string[] | null;
     category?: IntelligenceCategory;
     option?: IntelligenceOption;
   }>;
@@ -1084,6 +1118,7 @@ export interface CreatePropertyDto {
   city: string;
   area: string;
   address?: string;
+  streetId?: string;
   latitude?: number;
   longitude?: number;
   // Hostel-specific

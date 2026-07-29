@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { ArrowLeft, Home, GraduationCap, Camera, X, Upload, Zap, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
-import { propertiesApi, ApiError, locationsApi } from '@/lib/api';
+import { propertiesApi, ApiError, communityApi, locationsApi } from '@/lib/api';
 import { uploadToFileService } from '@/lib/upload';
 import {
   PropertyType, HostelSuitableFor, HostelGender, HostelCampusProximity,
@@ -18,6 +18,9 @@ import {
   ShortStayAC, ShortStayInternet, ShortStayCleanliness, ShortStayFurnishing, ShortStayKitchen,
   MediaSection,
   type AllowedState,
+  type CommunityArea,
+  type CommunityLocation,
+  type Street,
   type CreatePropertyMediaDto,
 } from '@/types';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -42,6 +45,7 @@ const schema = z.object({
   state: z.string().min(2, 'State is required'),
   city: z.string().min(2, 'City is required'),
   area: z.string().min(2, 'Area is required'),
+  streetId: z.string().min(1, 'Select the property street'),
   address: z.string().optional(),
   // Hostel-specific
   hostelPersonsPerRoom: z.coerce.number().min(1).optional(),
@@ -232,6 +236,9 @@ export default function NewPropertyPage() {
   const [coverUploadError, setCoverUploadError] = useState('');
   const [isCoverUploading, setIsCoverUploading] = useState(false);
   const [activeStates, setActiveStates] = useState<AllowedState[]>([]);
+  const [masterLocations, setMasterLocations] = useState<CommunityLocation[]>([]);
+  const [masterAreas, setMasterAreas] = useState<CommunityArea[]>([]);
+  const [masterStreets, setMasterStreets] = useState<Street[]>([]);
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const clientRequestIdRef = useRef(
     typeof crypto !== 'undefined' && 'randomUUID' in crypto
@@ -251,6 +258,9 @@ export default function NewPropertyPage() {
   });
 
   const propertyType = watch('propertyType');
+  const selectedState = watch('state');
+  const selectedCity = watch('city');
+  const selectedArea = watch('area');
   const coverImageUrl = watch('coverImageUrl');
   const isHostel = propertyType === PropertyType.HOSTEL;
   const isShortStay = propertyType === PropertyType.SHORT_STAY;
@@ -264,6 +274,41 @@ export default function NewPropertyPage() {
       .then((res) => setActiveStates(res.data))
       .catch(() => setActiveStates([]));
   }, []);
+
+  useEffect(() => {
+    setMasterLocations([]);
+    setMasterAreas([]);
+    setMasterStreets([]);
+    setValue('city', '');
+    setValue('area', '');
+    setValue('streetId', '');
+    if (!selectedState) return;
+    communityApi.streetLocations({ state: selectedState })
+      .then((response) => setMasterLocations(response.data.locations))
+      .catch(() => setMasterLocations([]));
+  }, [selectedState, setValue]);
+
+  useEffect(() => {
+    setMasterAreas([]);
+    setMasterStreets([]);
+    setValue('area', '');
+    setValue('streetId', '');
+    if (!selectedState || !selectedCity) return;
+    communityApi.streetLocations({ state: selectedState, city: selectedCity })
+      .then((response) => setMasterAreas(response.data.areaRecords))
+      .catch(() => setMasterAreas([]));
+  }, [selectedCity, selectedState, setValue]);
+
+  useEffect(() => {
+    setMasterStreets([]);
+    setValue('streetId', '');
+    const locationId = masterLocations.find((item) => item.name === selectedCity)?.id;
+    const areaId = masterAreas.find((item) => item.name === selectedArea)?.id;
+    if (!selectedState || !selectedCity || !selectedArea || !locationId || !areaId) return;
+    communityApi.searchStreets({ state: selectedState, city: selectedCity, area: selectedArea, locationId, areaId })
+      .then((response) => setMasterStreets(response.data))
+      .catch(() => setMasterStreets([]));
+  }, [masterAreas, masterLocations, selectedArea, selectedCity, selectedState, setValue]);
 
   // ── Toggle helpers ────────────────────────────────────────────────────
   const toggle = <T,>(
@@ -841,15 +886,29 @@ export default function NewPropertyPage() {
               {errors.state && <p className="error">{errors.state.message}</p>}
             </div>
             <div>
-              <label className="label">City *</label>
-              <input {...register('city')} className="input" placeholder="e.g. Port Harcourt" />
+              <label className="label">Location / City-LGA *</label>
+              <select {...register('city')} className="input" disabled={!selectedState}>
+                <option value="">Select location...</option>
+                {masterLocations.map((location) => <option key={location.id} value={location.name}>{location.name}</option>)}
+              </select>
               {errors.city && <p className="error">{errors.city.message}</p>}
             </div>
             <div>
-              <label className="label">Area *</label>
-              <input {...register('area')} className="input" placeholder="e.g. Choba" />
+              <label className="label">Area / Neighbourhood *</label>
+              <select {...register('area')} className="input" disabled={!selectedCity}>
+                <option value="">Select area...</option>
+                {masterAreas.map((area) => <option key={area.id} value={area.name}>{area.name}</option>)}
+              </select>
               {errors.area && <p className="error">{errors.area.message}</p>}
             </div>
+          </div>
+          <div>
+            <label className="label">Street *</label>
+            <select {...register('streetId')} className="input" disabled={!selectedArea}>
+              <option value="">Select approved street...</option>
+              {masterStreets.map((street) => <option key={street.id} value={street.id}>{street.streetName}</option>)}
+            </select>
+            {errors.streetId && <p className="error">{errors.streetId.message}</p>}
           </div>
           <div>
             <label className="label">Full Address <span className="text-slate-400">(optional — shown only after unlock)</span></label>

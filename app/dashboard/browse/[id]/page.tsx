@@ -428,7 +428,10 @@ export default function DashboardPropertyDetailPage() {
       const res = await propertiesApi.getById(id);
       const loadedProperty = res.data;
       setProperty(loadedProperty);
-      communityApi.freeUnlockStatus(id).then((statusRes) => setFreeUnlock(statusRes.data)).catch(() => setFreeUnlock(null));
+      const freeUnlockStatus = await communityApi.freeUnlockStatus(id)
+        .then((statusRes) => statusRes.data)
+        .catch(() => null);
+      setFreeUnlock(freeUnlockStatus);
 
       const isOwnListing =
         !!user?.id &&
@@ -436,6 +439,12 @@ export default function DashboardPropertyDetailPage() {
 
       if (isOwnListing) {
         setHasAccess(false);
+        setAccessDetails(null);
+        setConsultation(null);
+        return;
+      }
+      if (freeUnlockStatus?.available) {
+        setHasAccess(true);
         setAccessDetails(null);
         setConsultation(null);
         return;

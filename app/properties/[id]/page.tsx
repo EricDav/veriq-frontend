@@ -289,13 +289,21 @@ export default function PropertyDetailPage() {
         const res = await propertiesApi.getById(id);
         const loadedProperty = res.data;
         setProperty(loadedProperty);
-        communityApi.freeUnlockStatus(id).then((statusRes) => setFreeUnlock(statusRes.data)).catch(() => setFreeUnlock(null));
+        const freeUnlockStatus = await communityApi.freeUnlockStatus(id)
+          .then((statusRes) => statusRes.data)
+          .catch(() => null);
+        setFreeUnlock(freeUnlockStatus);
 
         const isOwnListing =
           !!user?.id &&
           (loadedProperty.agent?.userId === user.id || loadedProperty.agent?.user?.id === user.id);
 
         if (isOwnListing) {
+          setHasAccess(true);
+          setAccessDetails(null);
+          return;
+        }
+        if (freeUnlockStatus?.available) {
           setHasAccess(true);
           setAccessDetails(null);
           return;

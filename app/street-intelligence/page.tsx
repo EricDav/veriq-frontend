@@ -2,16 +2,12 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { ArrowRight, MapPin, Search, Users, ShieldCheck } from 'lucide-react';
 import { communityApi } from '@/lib/api';
 import type { CommunityArea, CommunityLocation, Street } from '@/types';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { useAuth } from '@/context/AuthContext';
 
 function StreetIntelligenceBrowser() {
-  const router = useRouter();
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [results, setResults] = useState<Street[]>([]);
   const [states, setStates] = useState<string[]>([]);
   const [cities, setCities] = useState<string[]>([]);
@@ -47,11 +43,6 @@ function StreetIntelligenceBrowser() {
 
   const search = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (authLoading) return;
-    if (!authLoading && !isAuthenticated) {
-      router.push('/auth/login?redirect=%2Fstreet-intelligence');
-      return;
-    }
     setIsSearching(true);
     try {
       const res = await communityApi.searchStreets({
@@ -78,14 +69,17 @@ function StreetIntelligenceBrowser() {
           <span className="mb-3 inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
             <Users className="h-3.5 w-3.5" /> Community-powered
           </span>
-          <h1 className="font-display text-3xl font-black text-navy-900 sm:text-4xl">Street Intelligence</h1>
+          <h1 className="font-display text-3xl font-black text-navy-900 sm:text-4xl">Know Before You Go</h1>
           <p className="mt-3 text-sm leading-6 text-veriq-muted">
-            Explore community-powered intelligence about streets before deciding where to live.
-            Results are based on reports from verified Community Contributors and are not independently verified by Veriq Property.
+            Discover what a street is really like before you rent or buy. Explore Veriq Street Intelligence to make smarter property decisions.
           </p>
+          <div className="mt-5 flex flex-wrap gap-3">
+            <a href="#street-search" className="btn-primary">Search Street Intelligence</a>
+            <Link href="/dashboard/community" className="btn-outline">Contribute Street Intelligence</Link>
+          </div>
         </div>
 
-        <form onSubmit={search} className="mb-8 grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_1.2fr_auto]">
+        <form id="street-search" onSubmit={search} className="mb-8 grid gap-3 rounded-lg border border-slate-200 bg-white p-4 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_1.2fr_auto]">
           <select aria-label="State" value={state} onChange={(event) => setState(event.target.value)} className="input" required>
             <option value="">Select state</option>
             {states.map((item) => <option key={item} value={item}>{item}</option>)}
@@ -108,7 +102,7 @@ function StreetIntelligenceBrowser() {
               disabled={!city}
             />
           </label>
-          <button type="submit" className="btn-primary justify-center" disabled={authLoading || isSearching || !state || !city}>
+          <button type="submit" className="btn-primary justify-center" disabled={isSearching || !state || !city}>
             {isSearching ? <LoadingSpinner size="sm" /> : 'Search'}
           </button>
         </form>
@@ -129,7 +123,7 @@ function StreetIntelligenceBrowser() {
           <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center">
             <MapPin className="mx-auto mb-3 h-10 w-10 text-slate-300" />
             <p className="font-bold text-navy-900">Start with a state</p>
-            <p className="mt-1 text-sm text-veriq-muted">Select Rivers State and a supported location before searching for a street.</p>
+            <p className="mt-1 text-sm text-veriq-muted">Select a state and location before searching for a street.</p>
           </div>
         ) : results.length === 0 ? (
           <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center">

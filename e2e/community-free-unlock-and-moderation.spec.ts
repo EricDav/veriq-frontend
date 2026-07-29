@@ -106,7 +106,7 @@ async function mockSharedShell(page: Page, role: 'user' | 'admin' = 'user') {
   });
 }
 
-test('renter sees Free Unlock and can claim it from property details', async ({ context, page }) => {
+test('renter can open a Free Unlock property report without a claim step', async ({ context, page }) => {
   await seedAuth(context, page, 'user');
   await mockSharedShell(page, 'user');
 
@@ -168,10 +168,9 @@ test('renter sees Free Unlock and can claim it from property details', async ({ 
   await expect(page.getByText('Free Unlock', { exact: true })).toBeVisible();
 
   await page.goto(`/properties/${propertyId}`);
-  await expect(page.getByText('Free Unlock Available')).toBeVisible();
-  await page.getByRole('button', { name: 'Claim Free Unlock' }).click();
-  await expect.poll(() => unlocked).toBe(true);
-  await expect(page.getByText('Free Unlock claimed. Intelligence report unlocked!')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Intelligence Report Unlocked' })).toBeVisible();
+  await expect(page.getByText('12 Test Road')).toBeVisible();
+  expect(unlocked).toBe(false);
 });
 
 test('admin can moderate proposed streets and pending contributions', async ({ context, page }) => {
@@ -238,6 +237,25 @@ test('admin can moderate proposed streets and pending contributions', async ({ c
 
   await page.route(`${API_BASE}/community/admin/analytics`, async (route) => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ statusCode: 200, message: 'Analytics', data: { totalProposedStreets: 1, activeCampaigns: 0 } }) });
+  });
+  await page.route(`${API_BASE}/community/categories`, async (route) => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
+      statusCode: 200,
+      message: 'Categories',
+      data: [{
+        id: 'cat-electricity',
+        slug: 'electricity',
+        name: 'Electricity',
+        question: 'How reliable is electricity on this street?',
+        section: 'Infrastructure',
+        supplementaryConfig: null,
+        description: null,
+        sortOrder: 0,
+        isActive: true,
+        isPositiveScale: true,
+        options: [{ id: 'opt-good', categoryId: 'cat-electricity', label: '16-20 hrs/day', numericRank: 4, sortOrder: 3, isActive: true }],
+      }],
+    }) });
   });
   await page.route(`${API_BASE}/locations/states`, async (route) => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ statusCode: 200, message: 'States', data: [
@@ -330,7 +348,7 @@ test('admin can moderate proposed streets and pending contributions', async ({ c
   expect((contributionReviewPayload as { status?: string } | null)?.status).toBe('flagged');
 });
 
-test('signed-out visitor sees Community Intelligence filters and is asked to log in on search', async ({ page }) => {
+test('signed-out visitor can filter and search Street Intelligence before signup', async ({ page }) => {
   await page.route(`${API_BASE}/community/streets/locations**`, async (route) => {
     const url = new URL(route.request().url());
     const state = url.searchParams.get('state');
@@ -344,12 +362,20 @@ test('signed-out visitor sees Community Intelligence filters and is asked to log
       },
     }) });
   });
+  await page.route(`${API_BASE}/community/streets/search**`, async (route) => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
+      statusCode: 200, message: 'Streets', data: [{
+        id: 'street-public', streetName: 'School Road', state: 'Rivers', city: 'Port Harcourt', area: 'Rumuomasi', status: 'approved',
+      }],
+    }) });
+  });
   await page.goto('/street-intelligence');
-  await expect(page.getByRole('heading', { name: 'Street Intelligence' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Know Before You Go' })).toBeVisible();
   await page.getByLabel('State').selectOption('Rivers');
   await page.getByLabel('Location').selectOption('Port Harcourt');
   await page.getByRole('button', { name: 'Search' }).click();
-  await expect(page).toHaveURL(/\/auth\/login\?redirect=%2Fstreet-intelligence/);
+  await expect(page.getByText('School Road')).toBeVisible();
+  await expect(page).toHaveURL(/\/street-intelligence$/);
 });
 
 test('member filters street intelligence by state, city and area before street name', async ({ context, page }) => {
@@ -400,18 +426,74 @@ test('member filters street intelligence by state, city and area before street n
   expect(searchUrl).toContain('locationId=location-1');
 });
 
+test('street report renders scale position, source, updated time and free-search balance on mobile', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.route(`${API_BASE}/community/streets/street-public`, async (route) => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
+      statusCode: 200,
+      message: 'Street Intelligence retrieved',
+      data: {
+        street: { id: 'street-public', streetName: 'School Road', area: 'Rumuomasi', city: 'Port Harcourt', state: 'Rivers', status: 'approved' },
+        contributors: 4,
+        lastUpdated: new Date().toISOString(),
+        sourceNotice: 'Structured intelligence notice.',
+        usage: { limit: 5, used: 1, remaining: 4, requiresSignup: false },
+        results: [{
+          categoryId: 'cat-mobile',
+          category: 'Mobile Network',
+          slug: 'mobile_network',
+          section: 'Infrastructure',
+          result: 'Good',
+          status: 'available',
+          contributors: 4,
+          level: 4,
+          maxLevel: 5,
+          isPositiveScale: true,
+          sources: ['agent_report', 'community_update'],
+          lastUpdated: new Date().toISOString(),
+          supplementaryResult: ['MTN', 'Airtel'],
+        }],
+      },
+    }) });
+  });
+
+  await page.goto('/street-intelligence/street-public');
+
+  await expect(page.getByRole('heading', { name: 'School Road' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Mobile Network' })).toBeVisible();
+  await expect(page.getByText('Works Well On:')).toBeVisible();
+  await expect(page.getByText(/Agent Reports \+ Community Updates/)).toBeVisible();
+  await expect(page.getByText('4 of 5 free street searches remaining.')).toBeVisible();
+});
+
+test('sixth anonymous street report shows the account continuation gate', async ({ page }) => {
+  await page.route(`${API_BASE}/community/streets/street-six`, async (route) => {
+    await route.fulfill({
+      status: 403,
+      contentType: 'application/json',
+      body: JSON.stringify({ statusCode: 403, message: 'street_search_limit_reached' }),
+    });
+  });
+
+  await page.goto('/street-intelligence/street-six');
+
+  await expect(page.getByRole('heading', { name: 'Continue Exploring Street Intelligence' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Create Free Account' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Sign In' })).toBeVisible();
+});
+
 test('contributor can load and save an update to previous street intelligence', async ({ context, page }) => {
   await seedAuth(context, page, 'user');
   await mockSharedShell(page, 'user');
   const category = {
-    id: 'cat-electricity', slug: 'electricity', name: 'Electricity', description: null, sortOrder: 1, isActive: true, isPositiveScale: true,
+    id: 'cat-electricity', slug: 'electricity', name: 'Electricity', question: 'How reliable is electricity on this street?', section: 'Infrastructure', supplementaryConfig: null, description: null, sortOrder: 1, isActive: true, isPositiveScale: true,
     options: [
       { id: 'opt-poor', categoryId: 'cat-electricity', label: 'Poor', numericRank: 2, sortOrder: 1, isActive: true },
       { id: 'opt-good', categoryId: 'cat-electricity', label: 'Good', numericRank: 4, sortOrder: 2, isActive: true },
     ],
   };
   const street = { id: 'street-1', state: 'Rivers', city: 'Port Harcourt', area: 'Choba', streetName: 'Unity Road', normalisedStreetName: 'unity road', landmark: null, status: 'approved', isPopular: true, popularRank: 1, createdByUserId: null, approvedByAdminId: null, approvedAt: null, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
-  const contribution = { id: 'contribution-1', userId: 'renter-user-1', streetId: street.id, street, relationshipType: 'currently_live', relationshipRecency: 'current', status: 'approved', submittedAt: new Date().toISOString(), lastUpdatedAt: new Date().toISOString(), lastConfirmedAt: null, validUntil: new Date(Date.now() + 86_400_000).toISOString(), lastRewardedAt: null, nextRewardEligibleAt: null, answers: [{ id: 'answer-1', categoryId: category.id, optionId: 'opt-poor' }] };
+  const contribution = { id: 'contribution-1', userId: 'renter-user-1', streetId: street.id, street, relationshipType: 'currently_live', relationshipRecency: 'current', status: 'approved', submittedAt: new Date().toISOString(), lastUpdatedAt: new Date().toISOString(), lastConfirmedAt: null, validUntil: new Date(Date.now() + 86_400_000).toISOString(), lastRewardedAt: null, nextRewardEligibleAt: null, answers: [{ id: 'answer-1', categoryId: category.id, optionId: 'opt-poor', responseType: 'answered', supplementaryValue: null }] };
   await page.route(`${API_BASE}/community/me/status`, async (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ statusCode: 200, message: 'Status', data: { id: 'profile-1', userId: 'renter-user-1', joinedAt: new Date().toISOString(), contributorStatus: 'active' } }) }));
   await page.route(`${API_BASE}/community/categories`, async (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ statusCode: 200, message: 'Categories', data: [category] }) }));
   await page.route(`${API_BASE}/community/streets/popular`, async (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ statusCode: 200, message: 'Streets', data: [street] }) }));
@@ -428,9 +510,9 @@ test('contributor can load and save an update to previous street intelligence', 
   await page.goto('/dashboard/community');
   await page.getByRole('button', { name: 'Update' }).click();
   await expect(page.getByRole('heading', { name: 'Update Street Intelligence' })).toBeVisible();
-  await page.getByRole('button', { name: 'Good' }).click();
+  await page.getByRole('button', { name: /Good/ }).click();
   await page.getByRole('button', { name: 'Save Intelligence Update' }).click();
   await expect.poll(() => updatePayload).not.toBeNull();
   expect(updatePayload).not.toHaveProperty('streetId');
-  expect((updatePayload as { answers?: Array<{ optionId: string }> } | null)?.answers?.[0].optionId).toBe('opt-good');
+  expect((updatePayload as { answers?: Array<{ optionId: string; responseType: string }> } | null)?.answers?.[0]).toEqual(expect.objectContaining({ optionId: 'opt-good', responseType: 'answered' }));
 });

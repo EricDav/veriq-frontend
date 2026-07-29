@@ -7,6 +7,7 @@ import { communityApi, locationsApi, propertiesApi } from '@/lib/api';
 import {
   ContributionStatus,
   FreeUnlockAgreementType,
+  IntelligenceSourceType,
   StreetStatus,
   type FreeUnlockCampaign,
   type Property,
@@ -14,6 +15,7 @@ import {
   type Street,
   type StreetContribution,
   type AllowedState,
+  type IntelligenceCategory,
 } from '@/types';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useToast } from '@/components/ui/Toast';
@@ -29,12 +31,14 @@ export default function AdminCommunityPage() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [hierarchy, setHierarchy] = useState<CommunityLocation[]>([]);
   const [directoryStates, setDirectoryStates] = useState<AllowedState[]>([]);
+  const [categories, setCategories] = useState<IntelligenceCategory[]>([]);
   const [directoryState, setDirectoryState] = useState('Rivers');
   const [locationName, setLocationName] = useState('');
   const [areaName, setAreaName] = useState('');
   const [areaLocationId, setAreaLocationId] = useState('');
   const [streetEdit, setStreetEdit] = useState({ streetId: '', locationId: '', areaId: '', streetName: '', latitude: '', longitude: '' });
   const [merge, setMerge] = useState({ sourceStreetId: '', targetStreetId: '' });
+  const [observation, setObservation] = useState({ streetId: '', categoryId: '', optionId: '', supplementaryValue: [] as string[] });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [reviewingId, setReviewingId] = useState<string | null>(null);
@@ -65,11 +69,12 @@ export default function AdminCommunityPage() {
           ? communityApi.adminStreets({ state: streetStateFilter, locationId: streetLocationFilter })
           : Promise.resolve({ data: [] as Street[] })
         : communityApi.adminStreets({ recentHours: 48 });
-      const [analyticsRes, campaignsRes, propertiesRes, statesRes] = await Promise.all([
+      const [analyticsRes, campaignsRes, propertiesRes, statesRes, categoriesRes] = await Promise.all([
         communityApi.adminAnalytics(),
         communityApi.adminCampaigns(),
         propertiesApi.listAdmin({ page: 1, limit: 100 }),
         locationsApi.allStates(),
+        communityApi.categories(),
       ]);
       const [streetsRes, contributionsRes, hierarchyRes] = await Promise.all([
         streetsRequest,
@@ -80,6 +85,7 @@ export default function AdminCommunityPage() {
       setCampaigns(campaignsRes.data);
       setProperties(propertiesRes.data);
       setDirectoryStates(statesRes.data);
+      setCategories(categoriesRes.data.filter((item) => item.isActive));
       setStreets(streetsRes.data);
       setContributions(contributionsRes.data);
       setHierarchy(hierarchyRes.data);
@@ -98,6 +104,7 @@ export default function AdminCommunityPage() {
   };
 
   const selectedEditLocation = hierarchy.find((item) => item.id === streetEdit.locationId);
+  const selectedObservationCategory = categories.find((item) => item.id === observation.categoryId);
   const selectedDirectoryState = directoryStates.find((item) => item.name === directoryState);
   const directoryLocations = hierarchy.filter((item) => item.state === directoryState);
   const moderationLocation = hierarchy.find((item) => item.id === streetLocationFilter);
@@ -299,6 +306,65 @@ export default function AdminCommunityPage() {
             <div className="border-t border-slate-100 pt-4"><p className="mb-2 text-xs font-bold text-navy-900">Merge duplicate street</p><div className="grid gap-2 sm:grid-cols-2"><select className="input" value={merge.sourceStreetId} onChange={(event) => setMerge((current) => ({ ...current, sourceStreetId: event.target.value }))}><option value="">Duplicate source</option>{streets.map((street) => <option key={street.id} value={street.id}>{street.streetName} — {street.area}</option>)}</select><select className="input" value={merge.targetStreetId} onChange={(event) => setMerge((current) => ({ ...current, targetStreetId: event.target.value }))}><option value="">Keep target</option>{streets.map((street) => <option key={street.id} value={street.id}>{street.streetName} — {street.area}</option>)}</select></div><button type="button" className="btn-outline mt-2 !py-2 !text-xs" disabled={!merge.sourceStreetId || !merge.targetStreetId || saving} onClick={() => runHierarchyAction(() => communityApi.mergeStreets(merge.sourceStreetId, merge.targetStreetId), 'Streets merged.')}><RefreshCw className="h-3.5 w-3.5" /> Merge Streets</button></div>
           </div>
         </div>
+      </section>
+
+      <section className="card space-y-4 p-6">
+        <div>
+          <h2 className="font-display text-lg font-bold text-navy-900">Initial Street Intelligence</h2>
+          <p className="mt-1 text-xs text-veriq-muted">
+            Add structured Veriq research to an approved street. Filter the street directory above when the list is long.
+          </p>
+        </div>
+        <div className="grid gap-3 md:grid-cols-3">
+          <select className="input" value={observation.streetId} onChange={(event) => setObservation((current) => ({ ...current, streetId: event.target.value }))}>
+            <option value="">Approved street</option>
+            {streets.filter((street) => street.status === StreetStatus.APPROVED).map((street) => (
+              <option key={street.id} value={street.id}>{street.streetName} - {street.area}, {street.city}</option>
+            ))}
+          </select>
+          <select className="input" value={observation.categoryId} onChange={(event) => setObservation((current) => ({ ...current, categoryId: event.target.value, optionId: '', supplementaryValue: [] }))}>
+            <option value="">Intelligence category</option>
+            {categories.map((category) => <option key={category.id} value={category.id}>{category.section} - {category.name}</option>)}
+          </select>
+          <select className="input" value={observation.optionId} onChange={(event) => setObservation((current) => ({ ...current, optionId: event.target.value }))} disabled={!selectedObservationCategory}>
+            <option value="">Current status</option>
+            {selectedObservationCategory?.options.filter((option) => option.isActive).sort((a, b) => a.numericRank - b.numericRank).map((option) => (
+              <option key={option.id} value={option.id}>{option.numericRank}/5 - {option.label}</option>
+            ))}
+          </select>
+        </div>
+        {selectedObservationCategory?.supplementaryConfig && (
+          <fieldset>
+            <legend className="text-xs font-bold text-navy-900">{selectedObservationCategory.supplementaryConfig.question}</legend>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {selectedObservationCategory.supplementaryConfig.options.map((value) => (
+                <label key={value} className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600">
+                  <input type="checkbox" checked={observation.supplementaryValue.includes(value)} onChange={() => setObservation((current) => ({
+                    ...current,
+                    supplementaryValue: current.supplementaryValue.includes(value)
+                      ? current.supplementaryValue.filter((item) => item !== value)
+                      : [...current.supplementaryValue, value],
+                  }))} />
+                  {value}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        )}
+        <button
+          type="button"
+          className="btn-primary"
+          disabled={saving || !observation.streetId || !observation.categoryId || !observation.optionId}
+          onClick={() => runHierarchyAction(
+            () => communityApi.upsertObservation({
+              ...observation,
+              sourceType: IntelligenceSourceType.VERIQ_INITIAL,
+            }),
+            'Initial Street Intelligence saved.',
+          )}
+        >
+          <Save className="h-4 w-4" /> Save Intelligence
+        </button>
       </section>
 
       <div id="free-unlocks" className="scroll-mt-24 grid gap-6 lg:grid-cols-[420px_1fr]">

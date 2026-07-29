@@ -683,8 +683,21 @@ export const communityApi = {
   nearbyStreets: (latitude: number, longitude: number) =>
     api.get<ApiResponse<Street[]>>(`/community/streets/nearby?latitude=${encodeURIComponent(latitude)}&longitude=${encodeURIComponent(longitude)}`),
 
-  getStreet: (id: string) =>
-    api.get<ApiResponse<StreetIntelligencePayload>>(`/community/streets/${id}`),
+  getStreet: (id: string) => {
+    let visitorId = '';
+    if (typeof window !== 'undefined') {
+      visitorId = localStorage.getItem('veriq_street_visitor_id') ?? '';
+      if (!visitorId) {
+        visitorId = typeof crypto.randomUUID === 'function'
+          ? crypto.randomUUID()
+          : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        localStorage.setItem('veriq_street_visitor_id', visitorId);
+      }
+    }
+    return api.get<ApiResponse<StreetIntelligencePayload>>(`/community/streets/${id}`, {
+      headers: visitorId ? { 'X-Veriq-Visitor-ID': visitorId } : undefined,
+    });
+  },
 
   createStreet: (dto: CreateStreetDto) =>
     api.post<ApiResponse<Street>>('/community/streets', dto),
@@ -718,6 +731,17 @@ export const communityApi = {
 
   adminAnalytics: () =>
     api.get<ApiResponse<unknown>>('/community/admin/analytics'),
+
+  upsertObservation: (dto: {
+    streetId: string;
+    categoryId: string;
+    optionId: string;
+    sourceType: import('@/types').IntelligenceSourceType;
+    sourceEntityId?: string;
+    supplementaryValue?: string[];
+    observedAt?: string;
+    validUntil?: string;
+  }) => api.post<ApiResponse<unknown>>('/community/admin/observations', dto),
 
   adminCampaigns: () =>
     api.get<ApiResponse<FreeUnlockCampaign[]>>('/community/admin/free-unlocks'),

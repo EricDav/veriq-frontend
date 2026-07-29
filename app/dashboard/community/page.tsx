@@ -10,6 +10,7 @@ import {
   type CommunityArea,
   type CommunityLocation,
   ContributorStatus,
+  ContributionResponseType,
   StreetRelationshipRecency,
   StreetRelationshipType,
   type ContributorProfile,
@@ -42,6 +43,12 @@ function statusCopy(status?: ContributorStatus) {
   return 'Not Yet Activated';
 }
 
+type AnswerDraft = {
+  responseType: ContributionResponseType;
+  optionId?: string;
+  supplementaryValue?: string[];
+};
+
 export default function CommunityDashboardPage() {
   const params = useSearchParams();
   const preselectedStreetId = params.get('streetId') ?? '';
@@ -72,7 +79,8 @@ export default function CommunityDashboardPage() {
   const [street, setStreet] = useState({ state: '', city: '', area: '', streetName: '', landmark: '' });
   const [relationshipType, setRelationshipType] = useState<StreetRelationshipType>(StreetRelationshipType.CURRENTLY_LIVE);
   const [relationshipRecency, setRelationshipRecency] = useState<StreetRelationshipRecency>(StreetRelationshipRecency.CURRENT);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [answers, setAnswers] = useState<Record<string, AnswerDraft>>({});
+  const [questionIndex, setQuestionIndex] = useState(0);
 
   const load = async () => {
     setLoading(true);
@@ -163,14 +171,23 @@ export default function CommunityDashboardPage() {
   }, [street.city, street.state]);
 
   const answeredAll = useMemo(
-    () => categories.length > 0 && categories.every((category) => answers[category.id]),
+    () => categories.length > 0
+      && categories.every((category) => answers[category.id])
+      && Object.values(answers).some((answer) => answer.responseType === ContributionResponseType.ANSWERED),
     [answers, categories],
   );
+  const currentCategory = categories[questionIndex];
+  const currentAnswer = currentCategory ? answers[currentCategory.id] : undefined;
+
+  const setQuestionResponse = (response: AnswerDraft) => {
+    if (!currentCategory) return;
+    setAnswers((state) => ({ ...state, [currentCategory.id]: response }));
+  };
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!answeredAll) {
-      error('Please answer every Street Intelligence category.');
+      error('Complete, skip, or mark every Street Intelligence question as unknown.');
       return;
     }
     setSubmitting(true);
@@ -178,7 +195,7 @@ export default function CommunityDashboardPage() {
       const dto: CreateContributionDto = {
         relationshipType,
         relationshipRecency,
-        answers: categories.map((category) => ({ categoryId: category.id, optionId: answers[category.id] })),
+        answers: categories.map((category) => ({ categoryId: category.id, ...answers[category.id] })),
       };
       if (!editingContributionId) {
         if (streetMode === 'existing') dto.streetId = streetId;
@@ -192,6 +209,7 @@ export default function CommunityDashboardPage() {
         success('Street Intelligence submitted. Community Contributor access is active.');
       }
       setAnswers({});
+      setQuestionIndex(0);
       setEditingContributionId(null);
       await load();
     } catch (err) {
@@ -219,13 +237,21 @@ export default function CommunityDashboardPage() {
     if (item.street.areaId) setExistingAreaRecords([{ id: item.street.areaId, locationId: item.street.locationId ?? '', name: item.street.area, normalisedName: item.street.area.toLowerCase(), isActive: true, latitude: null, longitude: null }]);
     setRelationshipType(item.relationshipType);
     setRelationshipRecency(item.relationshipRecency);
-    setAnswers(Object.fromEntries((item.answers ?? []).map((answer) => [answer.categoryId, answer.optionId])));
+    setAnswers(Object.fromEntries((item.answers ?? []).map((answer) => [
+      answer.categoryId,
+      {
+        responseType: answer.responseType ?? ContributionResponseType.ANSWERED,
+        optionId: answer.optionId ?? undefined,
+        supplementaryValue: answer.supplementaryValue ?? undefined,
+      },
+    ])));
+    setQuestionIndex(0);
     document.getElementById('contribute')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   const cancelEdit = () => {
     setEditingContributionId(null);
-    setStreetId(''); setExistingState(''); setExistingCity(''); setExistingArea(''); setAnswers({});
+    setStreetId(''); setExistingState(''); setExistingCity(''); setExistingArea(''); setAnswers({}); setQuestionIndex(0);
   };
 
   const confirm = async (id: string) => {
@@ -339,31 +365,84 @@ export default function CommunityDashboardPage() {
             </select>
           </div>
 
-          <div className="space-y-4">
-            {categories.map((category) => (
-              <div key={category.id}>
-                <p className="mb-2 text-xs font-bold text-navy-900">{category.name}</p>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
-                  {category.options.filter((option) => option.isActive).sort((a, b) => a.sortOrder - b.sortOrder).map((option) => (
+          {currentCategory && (
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-bold uppercase text-emerald-700">
+                    Question {questionIndex + 1} of {categories.length}
+                  </p>
+                  <p className="mt-1 text-xs font-semibold text-slate-500">{currentCategory.section}</p>
+                </div>
+                <div className="h-1.5 w-24 overflow-hidden rounded-full bg-slate-200">
+                  <div className="h-full bg-emerald-500" style={{ width: `${((questionIndex + 1) / categories.length) * 100}%` }} />
+                </div>
+              </div>
+              <h3 className="font-display text-base font-bold text-navy-900">
+                {currentCategory.question ?? currentCategory.name}
+              </h3>
+              <div className="mt-4 grid gap-2">
+                {currentCategory.options.filter((option) => option.isActive).sort((a, b) => a.sortOrder - b.sortOrder).map((option) => (
                     <button
                       key={option.id}
                       type="button"
-                      onClick={() => setAnswers((state) => ({ ...state, [category.id]: option.id }))}
-                      className={`rounded-xl border px-3 py-2 text-xs font-bold transition-colors ${
-                        answers[category.id] === option.id
+                      onClick={() => setQuestionResponse({
+                        responseType: ContributionResponseType.ANSWERED,
+                        optionId: option.id,
+                        supplementaryValue: currentAnswer?.supplementaryValue,
+                      })}
+                      className={`rounded-lg border px-3 py-3 text-left text-xs font-bold transition-colors ${
+                        currentAnswer?.responseType === ContributionResponseType.ANSWERED && currentAnswer.optionId === option.id
                           ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
                           : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
                       }`}
                     >
+                      <span className="mr-2 text-emerald-600">{'●'.repeat(option.numericRank)}{'○'.repeat(5 - option.numericRank)}</span>
                       {option.label}
                     </button>
-                  ))}
+                ))}
+              </div>
+
+              {currentCategory.supplementaryConfig && currentAnswer?.responseType === ContributionResponseType.ANSWERED && (
+                <fieldset className="mt-5">
+                  <legend className="text-xs font-bold text-navy-900">{currentCategory.supplementaryConfig.question}</legend>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {currentCategory.supplementaryConfig.options.map((option) => {
+                      const selected = currentAnswer.supplementaryValue?.includes(option) ?? false;
+                      return (
+                        <label key={option} className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold ${selected ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-white text-slate-600'}`}>
+                          <input
+                            type="checkbox"
+                            checked={selected}
+                            onChange={() => setQuestionResponse({
+                              ...currentAnswer,
+                              supplementaryValue: selected
+                                ? currentAnswer.supplementaryValue?.filter((value) => value !== option)
+                                : [...(currentAnswer.supplementaryValue ?? []), option],
+                            })}
+                          />
+                          {option}
+                        </label>
+                      );
+                    })}
+                  </div>
+                </fieldset>
+              )}
+
+              <div className="mt-5 flex flex-wrap gap-2 border-t border-slate-200 pt-4">
+                <button type="button" onClick={() => setQuestionResponse({ responseType: ContributionResponseType.SKIPPED })} className={`rounded-lg px-3 py-2 text-xs font-bold ${currentAnswer?.responseType === ContributionResponseType.SKIPPED ? 'bg-slate-700 text-white' : 'bg-white text-slate-600'}`}>Skip</button>
+                <button type="button" onClick={() => setQuestionResponse({ responseType: ContributionResponseType.UNKNOWN })} className={`rounded-lg px-3 py-2 text-xs font-bold ${currentAnswer?.responseType === ContributionResponseType.UNKNOWN ? 'bg-slate-700 text-white' : 'bg-white text-slate-600'}`}>I Don&apos;t Know</button>
+                <div className="ml-auto flex gap-2">
+                  <button type="button" disabled={questionIndex === 0} onClick={() => setQuestionIndex((value) => Math.max(0, value - 1))} className="btn-outline !px-3 !py-2 text-xs disabled:opacity-40">Back</button>
+                  {questionIndex < categories.length - 1 && (
+                    <button type="button" disabled={!currentAnswer} onClick={() => setQuestionIndex((value) => Math.min(categories.length - 1, value + 1))} className="btn-primary !px-3 !py-2 text-xs disabled:opacity-40">Next</button>
+                  )}
                 </div>
               </div>
-            ))}
-          </div>
+            </div>
+          )}
 
-          <button type="submit" className="btn-primary w-full justify-center" disabled={submitting}>
+          <button type="submit" className="btn-primary w-full justify-center" disabled={submitting || !answeredAll}>
             {submitting ? <LoadingSpinner size="sm" /> : <><Send className="h-4 w-4" /> {editingContributionId ? 'Save Intelligence Update' : 'Submit Intelligence'}</>}
           </button>
         </form>

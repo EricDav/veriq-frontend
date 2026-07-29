@@ -8,7 +8,7 @@ import {
   CheckCircle, AlertCircle, RefreshCw, Star, X,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { consultationsApi, propertiesApi, agentsApi } from '@/lib/api';
+import { consultationsApi, propertiesApi, agentsApi, communityApi } from '@/lib/api';
 import type { Consultation, Property, Agent } from '@/types';
 import { UserRole, AgentVerificationLevel, ConsultationStatus, ListingStatus } from '@/types';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -66,6 +66,7 @@ function UserDashboard({ userId }: { userId: string }) {
   const [accuracyScore, setAccuracyScore] = useState(100);
   const [comment, setComment] = useState('');
   const [submittingRating, setSubmittingRating] = useState(false);
+  const [showContributionInvite, setShowContributionInvite] = useState(false);
   const { success, error } = useToast();
 
   useEffect(() => {
@@ -74,6 +75,9 @@ function UserDashboard({ userId }: { userId: string }) {
       .then((r) => setConsultations(r.data))
       .catch(() => {})
       .finally(() => setLoading(false));
+    communityApi.myStatus()
+      .then((response) => setShowContributionInvite(!response.data.joinedAt))
+      .catch(() => setShowContributionInvite(false));
   }, [userId]);
 
   const unlocked = consultations.filter(
@@ -134,6 +138,19 @@ function UserDashboard({ userId }: { userId: string }) {
 
   return (
     <div className="space-y-6">
+      {showContributionInvite && (
+        <section className="rounded-lg border border-emerald-200 bg-emerald-50 p-5">
+          <h2 className="font-display text-base font-bold text-emerald-950">Help Others Know Before They Go</h2>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-emerald-900">
+            You probably know a street, neighborhood or area that someone else is about to move into.
+            Share what you know and help renters and buyers make safer, smarter property decisions.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <Link href="/dashboard/community#contribute" className="btn-primary">Contribute Now</Link>
+            <button type="button" onClick={() => setShowContributionInvite(false)} className="btn-outline">Maybe Later</button>
+          </div>
+        </section>
+      )}
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard
