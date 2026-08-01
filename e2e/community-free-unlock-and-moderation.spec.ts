@@ -482,7 +482,7 @@ test('sixth anonymous street report shows the account continuation gate', async 
   await expect(page.getByRole('link', { name: 'Sign In' })).toBeVisible();
 });
 
-test('Skip stores I do not know, advances, and contributor can save the update', async ({ context, page }) => {
+test('Skip records a skipped response separately, advances, and contributor can save the update', async ({ context, page }) => {
   await seedAuth(context, page, 'user');
   await mockSharedShell(page, 'user');
   const category = {
@@ -517,12 +517,13 @@ test('Skip stores I do not know, advances, and contributor can save the update',
   await page.goto('/dashboard/community');
   await page.getByRole('button', { name: 'Update' }).click();
   await expect(page.getByRole('heading', { name: 'Update Street Intelligence' })).toBeVisible();
+  await expect(page.getByRole('button', { name: "I Don't Know" })).toBeVisible();
   await page.getByRole('button', { name: /Skip/ }).click();
   await expect(page.getByRole('heading', { name: 'How often does this street flood?' })).toBeVisible();
   await page.getByRole('button', { name: /Never/ }).click();
   await page.getByRole('button', { name: 'Save Intelligence Update' }).click();
   await expect.poll(() => updatePayload).not.toBeNull();
   expect(updatePayload).not.toHaveProperty('streetId');
-  expect((updatePayload as { answers?: Array<{ optionId?: string; responseType: string }> } | null)?.answers?.[0]).toEqual(expect.objectContaining({ responseType: 'unknown' }));
+  expect((updatePayload as { answers?: Array<{ optionId?: string; responseType: string }> } | null)?.answers?.[0]).toEqual(expect.objectContaining({ responseType: 'skipped' }));
   expect((updatePayload as { answers?: Array<{ optionId?: string; responseType: string }> } | null)?.answers?.[1]).toEqual(expect.objectContaining({ optionId: 'opt-never', responseType: 'answered' }));
 });

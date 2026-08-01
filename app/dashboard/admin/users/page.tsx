@@ -18,6 +18,7 @@ const ROLE_BADGE: Record<UserRole, string> = {
   user: 'bg-slate-100 text-slate-600',
   agent: 'bg-gold-100 text-gold-700',
   admin: 'bg-red-100 text-red-600',
+  super_admin: 'bg-purple-100 text-purple-700',
 };
 
 type ActionType = 'deactivate' | 'activate';

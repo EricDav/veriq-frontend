@@ -36,6 +36,9 @@ function clearAuthCookies() {
 }
 import { UserRole } from '@/types';
 
+const normalizeFrontendRole = <T extends { role: UserRole }>(user: T): T =>
+  user.role === UserRole.SUPER_ADMIN ? { ...user, role: UserRole.ADMIN } : user;
+
 // ─── Context shape ────────────────────────────────────────────────────────
 
 interface AuthContextValue {
@@ -79,9 +82,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const res = await authApi.me();
         if (!mounted) return;
-        setUser(res.data);
-        setStoredUser(res.data);
-        setAuthCookies(res.data.role);
+        const currentUser = normalizeFrontendRole(res.data);
+        setUser(currentUser);
+        setStoredUser(currentUser);
+        setAuthCookies(currentUser.role);
       } catch {
       clearTokens();
       clearAuthCookies();
@@ -111,8 +115,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshUser = useCallback(async () => {
     try {
       const res = await authApi.me();
-      setUser(res.data);
-      setStoredUser(res.data);
+      const currentUser = normalizeFrontendRole(res.data);
+      setUser(currentUser);
+      setStoredUser(currentUser);
     } catch {
       // Silently fail — the token interceptor will handle expiry
     }
@@ -124,9 +129,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const res = await authApi.login(dto);
       const { accessToken, refreshToken, user: u } = res.data;
       setTokens(accessToken, refreshToken);
-      setStoredUser(u);
-      setUser(u);
-      setAuthCookies(u.role);
+      const currentUser = normalizeFrontendRole(u);
+      setStoredUser(currentUser);
+      setUser(currentUser);
+      setAuthCookies(currentUser.role);
     },
     [],
   );
@@ -135,9 +141,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const res = await authApi.googleLogin(credential);
     const { accessToken, refreshToken, user: googleUser } = res.data;
     setTokens(accessToken, refreshToken);
-    setStoredUser(googleUser);
-    setUser(googleUser);
-    setAuthCookies(googleUser.role);
+    const currentUser = normalizeFrontendRole(googleUser);
+    setStoredUser(currentUser);
+    setUser(currentUser);
+    setAuthCookies(currentUser.role);
   }, []);
 
   // ── Register ──────────────────────────────────────────────────────────
@@ -163,7 +170,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // ── Derived flags ─────────────────────────────────────────────────────
   const isAuthenticated = !!user;
-  const isAdmin = user?.role === UserRole.ADMIN;
+  const isAdmin = user?.role === UserRole.ADMIN || user?.role === UserRole.SUPER_ADMIN;
   const isAgent = user?.role === UserRole.AGENT;
 
   const value = useMemo<AuthContextValue>(

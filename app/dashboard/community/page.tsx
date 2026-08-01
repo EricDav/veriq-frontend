@@ -190,11 +190,11 @@ export default function CommunityDashboardPage() {
     setAnswers((state) => ({ ...state, [currentCategory.id]: response }));
   };
 
-  const skipQuestion = () => {
+  const skipQuestion = (responseType: ContributionResponseType.SKIPPED | ContributionResponseType.UNKNOWN) => {
     if (!currentCategory) return;
     setAnswers((state) => ({
       ...state,
-      [currentCategory.id]: { responseType: ContributionResponseType.UNKNOWN },
+      [currentCategory.id]: { responseType },
     }));
     setQuestionIndex((value) => Math.min(categories.length - 1, value + 1));
   };
@@ -456,7 +456,8 @@ export default function CommunityDashboardPage() {
               )}
 
               <div className="mt-5 flex flex-wrap gap-2 border-t border-slate-200 pt-4">
-                <button type="button" onClick={skipQuestion} className={`rounded-lg px-3 py-2 text-xs font-bold ${currentAnswer?.responseType === ContributionResponseType.UNKNOWN ? 'bg-slate-700 text-white' : 'bg-white text-slate-600'}`}>Skip · I Don&apos;t Know</button>
+                <button type="button" onClick={() => skipQuestion(ContributionResponseType.SKIPPED)} className={`rounded-lg px-3 py-2 text-xs font-bold ${currentAnswer?.responseType === ContributionResponseType.SKIPPED ? 'bg-slate-700 text-white' : 'bg-white text-slate-600'}`}>Skip</button>
+                <button type="button" onClick={() => skipQuestion(ContributionResponseType.UNKNOWN)} className={`rounded-lg px-3 py-2 text-xs font-bold ${currentAnswer?.responseType === ContributionResponseType.UNKNOWN ? 'bg-slate-700 text-white' : 'bg-white text-slate-600'}`}>I Don&apos;t Know</button>
                 <div className="ml-auto flex gap-2">
                   <button type="button" disabled={questionIndex === 0} onClick={() => setQuestionIndex((value) => Math.max(0, value - 1))} className="btn-outline !px-3 !py-2 text-xs disabled:opacity-40">Back</button>
                   {questionIndex < categories.length - 1 && (

@@ -4,6 +4,7 @@ export enum UserRole {
   USER = 'user',
   AGENT = 'agent',
   ADMIN = 'admin',
+  SUPER_ADMIN = 'super_admin',
 }
 
 export enum ContributorStatus {
@@ -636,6 +637,10 @@ export interface StreetIntelligenceResult {
   sources: IntelligenceSourceType[];
   lastUpdated: string | null;
   supplementaryResult: string[];
+  evidenceCount?: number;
+  confidenceScore?: number;
+  confidenceLevel?: 'low' | 'moderate' | 'high';
+  methodology?: 'weighted_consensus_v1';
 }
 
 export interface StreetIntelligencePayload {

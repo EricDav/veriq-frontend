@@ -160,6 +160,12 @@ function StreetResult() {
                 )}
                 <div className="mt-3 space-y-1 text-xs text-veriq-muted">
                   <p className="flex items-start gap-1"><Users className="mt-0.5 h-3.5 w-3.5 shrink-0" /> Source: {result.sources.length ? result.sources.map((source) => SOURCE_LABELS[source]).join(' + ') : 'Awaiting reports'}</p>
+                  {result.confidenceScore !== undefined && (
+                    <p>
+                      Confidence: <strong className="capitalize text-navy-900">{result.confidenceLevel}</strong>
+                      {' '}({result.confidenceScore}%) from {result.evidenceCount} {result.evidenceCount === 1 ? 'record' : 'records'}
+                    </p>
+                  )}
                   <p className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> Updated: {updatedLabel(result.lastUpdated)}</p>
                 </div>
                 <p className="sr-only">
