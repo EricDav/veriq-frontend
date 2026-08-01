@@ -12,6 +12,7 @@ import { useAuth } from '@/context/AuthContext';
 import { ApiError } from '@/lib/api';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useToast } from '@/components/ui/Toast';
+import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 
 // ─── Validation Schema ────────────────────────────────────────────────────
 
@@ -29,7 +30,7 @@ function LoginPageInner() {
   const params = useSearchParams();
   const redirect = params.get('redirect') ?? '/dashboard';
 
-  const { login, isAuthenticated, isLoading } = useAuth();
+  const { login, loginWithGoogle, isAuthenticated, isLoading } = useAuth();
   const { success } = useToast();
 
   const [showPassword, setShowPassword] = useState(false);
@@ -172,6 +173,11 @@ function LoginPageInner() {
               {isSubmitting ? 'Signing in…' : 'Sign In'}
             </button>
           </form>
+
+          <div className="mt-5 space-y-4">
+            <div className="flex items-center gap-3 text-[11px] uppercase text-white/40"><span className="h-px flex-1 bg-white/15" />or<span className="h-px flex-1 bg-white/15" /></div>
+            <GoogleSignInButton onCredential={async (credential) => { setServerError(null); await loginWithGoogle(credential); success('Welcome back!'); }} />
+          </div>
 
           <div className="mt-6 text-center">
             <p className="text-sm text-white/60">

@@ -482,7 +482,7 @@ test('sixth anonymous street report shows the account continuation gate', async 
   await expect(page.getByRole('link', { name: 'Sign In' })).toBeVisible();
 });
 
-test('contributor can load and save an update to previous street intelligence', async ({ context, page }) => {
+test('Skip stores I do not know, advances, and contributor can save the update', async ({ context, page }) => {
   await seedAuth(context, page, 'user');
   await mockSharedShell(page, 'user');
   const category = {
@@ -492,10 +492,17 @@ test('contributor can load and save an update to previous street intelligence', 
       { id: 'opt-good', categoryId: 'cat-electricity', label: 'Good', numericRank: 4, sortOrder: 2, isActive: true },
     ],
   };
+  const floodCategory = {
+    id: 'cat-flood', slug: 'flood_risk', name: 'Flood Risk', question: 'How often does this street flood?', section: 'Infrastructure', supplementaryConfig: null, description: null, sortOrder: 2, isActive: true, isPositiveScale: true,
+    options: [
+      { id: 'opt-often', categoryId: 'cat-flood', label: 'Often', numericRank: 2, sortOrder: 1, isActive: true },
+      { id: 'opt-never', categoryId: 'cat-flood', label: 'Never', numericRank: 5, sortOrder: 2, isActive: true },
+    ],
+  };
   const street = { id: 'street-1', state: 'Rivers', city: 'Port Harcourt', area: 'Choba', streetName: 'Unity Road', normalisedStreetName: 'unity road', landmark: null, status: 'approved', isPopular: true, popularRank: 1, createdByUserId: null, approvedByAdminId: null, approvedAt: null, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
-  const contribution = { id: 'contribution-1', userId: 'renter-user-1', streetId: street.id, street, relationshipType: 'currently_live', relationshipRecency: 'current', status: 'approved', submittedAt: new Date().toISOString(), lastUpdatedAt: new Date().toISOString(), lastConfirmedAt: null, validUntil: new Date(Date.now() + 86_400_000).toISOString(), lastRewardedAt: null, nextRewardEligibleAt: null, answers: [{ id: 'answer-1', categoryId: category.id, optionId: 'opt-poor', responseType: 'answered', supplementaryValue: null }] };
+  const contribution = { id: 'contribution-1', userId: 'renter-user-1', streetId: street.id, street, relationshipType: 'currently_live', relationshipRecency: 'current', status: 'approved', submittedAt: new Date().toISOString(), lastUpdatedAt: new Date().toISOString(), lastConfirmedAt: null, validUntil: new Date(Date.now() + 86_400_000).toISOString(), lastRewardedAt: null, nextRewardEligibleAt: null, answers: [{ id: 'answer-1', categoryId: category.id, optionId: 'opt-poor', responseType: 'answered', supplementaryValue: null }, { id: 'answer-2', categoryId: floodCategory.id, optionId: 'opt-often', responseType: 'answered', supplementaryValue: null }] };
   await page.route(`${API_BASE}/community/me/status`, async (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ statusCode: 200, message: 'Status', data: { id: 'profile-1', userId: 'renter-user-1', joinedAt: new Date().toISOString(), contributorStatus: 'active' } }) }));
-  await page.route(`${API_BASE}/community/categories`, async (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ statusCode: 200, message: 'Categories', data: [category] }) }));
+  await page.route(`${API_BASE}/community/categories`, async (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ statusCode: 200, message: 'Categories', data: [category, floodCategory] }) }));
   await page.route(`${API_BASE}/community/streets/popular`, async (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ statusCode: 200, message: 'Streets', data: [street] }) }));
   await page.route(`${API_BASE}/community/me/contributions`, async (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ statusCode: 200, message: 'Contributions', data: [contribution] }) }));
   await page.route(`${API_BASE}/community/referrals/code`, async (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ statusCode: 200, message: 'Referral', data: { referralCode: 'VRQ-TEST' } }) }));
@@ -510,9 +517,12 @@ test('contributor can load and save an update to previous street intelligence', 
   await page.goto('/dashboard/community');
   await page.getByRole('button', { name: 'Update' }).click();
   await expect(page.getByRole('heading', { name: 'Update Street Intelligence' })).toBeVisible();
-  await page.getByRole('button', { name: /Good/ }).click();
+  await page.getByRole('button', { name: /Skip/ }).click();
+  await expect(page.getByRole('heading', { name: 'How often does this street flood?' })).toBeVisible();
+  await page.getByRole('button', { name: /Never/ }).click();
   await page.getByRole('button', { name: 'Save Intelligence Update' }).click();
   await expect.poll(() => updatePayload).not.toBeNull();
   expect(updatePayload).not.toHaveProperty('streetId');
-  expect((updatePayload as { answers?: Array<{ optionId: string; responseType: string }> } | null)?.answers?.[0]).toEqual(expect.objectContaining({ optionId: 'opt-good', responseType: 'answered' }));
+  expect((updatePayload as { answers?: Array<{ optionId?: string; responseType: string }> } | null)?.answers?.[0]).toEqual(expect.objectContaining({ responseType: 'unknown' }));
+  expect((updatePayload as { answers?: Array<{ optionId?: string; responseType: string }> } | null)?.answers?.[1]).toEqual(expect.objectContaining({ optionId: 'opt-never', responseType: 'answered' }));
 });

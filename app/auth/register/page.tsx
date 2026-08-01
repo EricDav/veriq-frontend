@@ -13,6 +13,7 @@ import { ApiError, locationsApi } from '@/lib/api';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useToast } from '@/components/ui/Toast';
 import { UserRole, type AllowedState } from '@/types';
+import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 
 // ─── Validation Schema ────────────────────────────────────────────────────
 
@@ -20,9 +21,7 @@ const registerSchema = z.object({
   firstName: z.string().min(2, 'First name is required').max(100),
   lastName: z.string().min(2, 'Last name is required').max(100),
   email: z.string().email('Please enter a valid email'),
-  phone: z
-    .string()
-    .regex(/^\+?[0-9]{10,15}$/, 'Enter a valid phone number (e.g. +2348012345678)'),
+  phone: z.string().refine((value) => !value || /^\+?[0-9]{10,15}$/.test(value), 'Enter a valid phone number (e.g. +2348012345678)'),
   state: z.string().min(1, 'Select your state'),
   password: z
     .string()
@@ -54,7 +53,7 @@ function RegisterPageInner() {
   const params = useSearchParams();
   const defaultRole = params.get('role') === 'agent' ? UserRole.AGENT : UserRole.USER;
 
-  const { register: registerUser } = useAuth();
+  const { register: registerUser, loginWithGoogle } = useAuth();
   const { success } = useToast();
 
   const [selectedRole, setSelectedRole] = useState<UserRole>(defaultRole);
@@ -87,12 +86,16 @@ function RegisterPageInner() {
 
   const onSubmit = async (data: RegisterFormData) => {
     setServerError(null);
+    if (selectedRole === UserRole.AGENT && !data.phone) {
+      setServerError('Phone number is required for agent accounts.');
+      return;
+    }
     try {
       await registerUser({
         firstName: data.firstName,
         lastName: data.lastName,
         email: data.email,
-        phone: data.phone,
+        phone: data.phone || undefined,
         state: data.state,
         password: data.password,
         role: selectedRole,
@@ -157,7 +160,7 @@ function RegisterPageInner() {
                 }`}
               >
                 <Home className={`h-6 w-6 ${selectedRole === UserRole.USER ? 'text-gold-400' : 'text-white/60'}`} />
-                <span className="text-sm font-semibold text-white">Property Seeker</span>
+                <span className="text-sm font-semibold text-white">Property User</span>
                 <span className="text-[10px] text-white/50">Browse &amp; inspect</span>
               </button>
               <button
@@ -228,7 +231,7 @@ function RegisterPageInner() {
 
             {/* Phone */}
             <div>
-              <label className="block text-sm font-medium text-white/80 mb-1.5">Phone Number</label>
+              <label className="block text-sm font-medium text-white/80 mb-1.5">Phone Number {selectedRole === UserRole.USER && <span className="text-white/40">(optional)</span>}</label>
               <input
                 {...register('phone')}
                 type="tel"
@@ -335,6 +338,13 @@ function RegisterPageInner() {
               {isSubmitting ? 'Creating account…' : 'Create Account'}
             </button>
           </form>
+
+          {selectedRole === UserRole.USER && (
+            <div className="mt-5 space-y-4">
+              <div className="flex items-center gap-3 text-[11px] uppercase text-white/40"><span className="h-px flex-1 bg-white/15" />or<span className="h-px flex-1 bg-white/15" /></div>
+              <GoogleSignInButton onCredential={async (credential) => { await loginWithGoogle(credential); router.replace('/dashboard'); }} />
+            </div>
+          )}
 
           <div className="mt-6 text-center">
             <p className="text-sm text-white/60">

@@ -39,6 +39,8 @@ export default function AdminCommunityPage() {
   const [streetEdit, setStreetEdit] = useState({ streetId: '', locationId: '', areaId: '', streetName: '', latitude: '', longitude: '' });
   const [merge, setMerge] = useState({ sourceStreetId: '', targetStreetId: '' });
   const [observation, setObservation] = useState({ streetId: '', categoryId: '', optionId: '', supplementaryValue: [] as string[] });
+  const [observationScope, setObservationScope] = useState({ state: '', locationId: '', areaId: '' });
+  const [observationStreets, setObservationStreets] = useState<Street[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [reviewingId, setReviewingId] = useState<string | null>(null);
@@ -105,6 +107,8 @@ export default function AdminCommunityPage() {
 
   const selectedEditLocation = hierarchy.find((item) => item.id === streetEdit.locationId);
   const selectedObservationCategory = categories.find((item) => item.id === observation.categoryId);
+  const observationLocations = hierarchy.filter((item) => item.isActive && item.state === observationScope.state);
+  const observationLocation = hierarchy.find((item) => item.id === observationScope.locationId);
   const selectedDirectoryState = directoryStates.find((item) => item.name === directoryState);
   const directoryLocations = hierarchy.filter((item) => item.state === directoryState);
   const moderationLocation = hierarchy.find((item) => item.id === streetLocationFilter);
@@ -189,6 +193,15 @@ export default function AdminCommunityPage() {
     void refreshStreetScope();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [streetLocationFilter, streetStateFilter]);
+
+  useEffect(() => {
+    setObservation((current) => ({ ...current, streetId: '' }));
+    setObservationStreets([]);
+    if (!observationScope.state || !observationScope.locationId) return;
+    communityApi.adminStreets({ state: observationScope.state, locationId: observationScope.locationId })
+      .then((response) => setObservationStreets(response.data.filter((street) => street.status === StreetStatus.APPROVED)))
+      .catch(() => setObservationStreets([]));
+  }, [observationScope.locationId, observationScope.state]);
 
   useEffect(() => {
     if (!requestedPropertyId || !properties.some((property) => property.id === requestedPropertyId)) return;
@@ -315,13 +328,27 @@ export default function AdminCommunityPage() {
             Add structured Veriq research to an approved street. Filter the street directory above when the list is long.
           </p>
         </div>
-        <div className="grid gap-3 md:grid-cols-3">
-          <select className="input" value={observation.streetId} onChange={(event) => setObservation((current) => ({ ...current, streetId: event.target.value }))}>
+        <div className="grid gap-3 md:grid-cols-4">
+          <select className="input" aria-label="Initial intelligence state" value={observationScope.state} onChange={(event) => setObservationScope({ state: event.target.value, locationId: '', areaId: '' })}>
+            <option value="">State</option>
+            {directoryStates.filter((item) => item.isActive).map((item) => <option key={item.id} value={item.name}>{item.name}</option>)}
+          </select>
+          <select className="input" aria-label="Initial intelligence location" value={observationScope.locationId} onChange={(event) => setObservationScope((current) => ({ ...current, locationId: event.target.value, areaId: '' }))} disabled={!observationScope.state}>
+            <option value="">Location</option>
+            {observationLocations.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+          </select>
+          <select className="input" aria-label="Initial intelligence area" value={observationScope.areaId} onChange={(event) => { setObservationScope((current) => ({ ...current, areaId: event.target.value })); setObservation((current) => ({ ...current, streetId: '' })); }} disabled={!observationScope.locationId}>
+            <option value="">Area / neighbourhood</option>
+            {observationLocation?.areas?.filter((item) => item.isActive).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+          </select>
+          <select className="input" value={observation.streetId} onChange={(event) => setObservation((current) => ({ ...current, streetId: event.target.value }))} disabled={!observationScope.areaId}>
             <option value="">Approved street</option>
-            {streets.filter((street) => street.status === StreetStatus.APPROVED).map((street) => (
+            {observationStreets.filter((street) => street.areaId === observationScope.areaId).map((street) => (
               <option key={street.id} value={street.id}>{street.streetName} - {street.area}, {street.city}</option>
             ))}
           </select>
+        </div>
+        <div className="grid gap-3 md:grid-cols-2">
           <select className="input" value={observation.categoryId} onChange={(event) => setObservation((current) => ({ ...current, categoryId: event.target.value, optionId: '', supplementaryValue: [] }))}>
             <option value="">Intelligence category</option>
             {categories.map((category) => <option key={category.id} value={category.id}>{category.section} - {category.name}</option>)}

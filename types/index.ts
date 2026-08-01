@@ -335,7 +335,7 @@ export interface User {
   firstName: string;
   lastName: string;
   email: string;
-  phone: string;
+  phone: string | null;
   role: UserRole;
   isActive: boolean;
   isEmailVerified: boolean;
@@ -1012,7 +1012,7 @@ export interface RegisterDto {
   firstName: string;
   lastName: string;
   email: string;
-  phone: string;
+  phone?: string;
   state: string;
   password: string;
   role?: UserRole;

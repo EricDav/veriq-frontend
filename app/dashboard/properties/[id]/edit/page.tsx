@@ -4,9 +4,9 @@ import React, { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Camera, Home, Upload, X, Zap } from 'lucide-react';
-import { ApiError, locationsApi, mediaApi, propertiesApi } from '@/lib/api';
+import { ApiError, communityApi, locationsApi, mediaApi, propertiesApi } from '@/lib/api';
 import { uploadToFileService } from '@/lib/upload';
-import type { AllowedState, CreatePropertyDto, MediaItem, Property } from '@/types';
+import type { AllowedState, CommunityArea, CommunityLocation, CreatePropertyDto, MediaItem, Property, Street } from '@/types';
 import {
   CompoundCulture,
   ElectricitySituation,
@@ -105,6 +105,9 @@ export default function EditListingPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isCoverUploading, setIsCoverUploading] = useState(false);
   const [activeStates, setActiveStates] = useState<AllowedState[]>([]);
+  const [masterLocations, setMasterLocations] = useState<CommunityLocation[]>([]);
+  const [masterAreas, setMasterAreas] = useState<CommunityArea[]>([]);
+  const [masterStreets, setMasterStreets] = useState<Street[]>([]);
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [isMediaLoading, setIsMediaLoading] = useState(false);
   const [uploadingSection, setUploadingSection] = useState<string | null>(null);
@@ -136,6 +139,7 @@ export default function EditListingPage() {
           state: p.state,
           city: p.city,
           area: p.area,
+          streetId: p.streetId ?? undefined,
           address: p.address ?? '',
           latitude: p.latitude ?? undefined,
           longitude: p.longitude ?? undefined,
@@ -206,6 +210,32 @@ export default function EditListingPage() {
       .then((res) => setActiveStates(res.data))
       .catch(() => setActiveStates([]));
   }, []);
+
+  useEffect(() => {
+    setMasterLocations([]); setMasterAreas([]); setMasterStreets([]);
+    if (!form.state) return;
+    communityApi.streetLocations({ state: form.state })
+      .then((res) => setMasterLocations(res.data.locations))
+      .catch(() => setMasterLocations([]));
+  }, [form.state]);
+
+  useEffect(() => {
+    setMasterAreas([]); setMasterStreets([]);
+    if (!form.state || !form.city) return;
+    communityApi.streetLocations({ state: form.state, city: form.city })
+      .then((res) => setMasterAreas(res.data.areaRecords))
+      .catch(() => setMasterAreas([]));
+  }, [form.city, form.state]);
+
+  useEffect(() => {
+    setMasterStreets([]);
+    const location = masterLocations.find((item) => item.name === form.city);
+    const area = masterAreas.find((item) => item.name === form.area);
+    if (!form.state || !location || !area) return;
+    communityApi.searchStreets({ state: form.state, locationId: location.id, areaId: area.id })
+      .then((res) => setMasterStreets(res.data))
+      .catch(() => setMasterStreets([]));
+  }, [form.area, form.city, form.state, masterAreas, masterLocations]);
 
   useEffect(() => {
     if (!id) return;
@@ -431,7 +461,7 @@ export default function EditListingPage() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
               <label className="label">State *</label>
-              <select value={form.state ?? ''} onChange={(e) => update('state', e.target.value)} className="input" required>
+              <select value={form.state ?? ''} onChange={(e) => setForm((current) => ({ ...current, state: e.target.value, city: '', area: '', streetId: undefined }))} className="input" required>
                 <option value="">Select state...</option>
                 {form.state && !activeStates.some((state) => state.name === form.state) && (
                   <option value={form.state}>{form.state} (currently inactive)</option>
@@ -442,13 +472,28 @@ export default function EditListingPage() {
               </select>
             </div>
             <div>
-              <label className="label">City *</label>
-              <input value={form.city ?? ''} onChange={(e) => update('city', e.target.value)} className="input" required />
+              <label className="label">Location *</label>
+              <select value={form.city ?? ''} onChange={(e) => setForm((current) => ({ ...current, city: e.target.value, area: '', streetId: undefined }))} className="input" required disabled={!form.state}>
+                <option value="">Select location...</option>
+                {form.city && !masterLocations.some((item) => item.name === form.city) && <option value={form.city}>{form.city} (legacy)</option>}
+                {masterLocations.map((item) => <option key={item.id} value={item.name}>{item.name}</option>)}
+              </select>
             </div>
             <div>
               <label className="label">Area *</label>
-              <input value={form.area ?? ''} onChange={(e) => update('area', e.target.value)} className="input" required />
+              <select value={form.area ?? ''} onChange={(e) => setForm((current) => ({ ...current, area: e.target.value, streetId: undefined }))} className="input" required disabled={!form.city}>
+                <option value="">Select area...</option>
+                {form.area && !masterAreas.some((item) => item.name === form.area) && <option value={form.area}>{form.area} (legacy)</option>}
+                {masterAreas.map((item) => <option key={item.id} value={item.name}>{item.name}</option>)}
+              </select>
             </div>
+          </div>
+          <div>
+            <label className="label">Street *</label>
+            <select value={form.streetId ?? ''} onChange={(e) => update('streetId', e.target.value)} className="input" required disabled={!form.area}>
+              <option value="">Select approved street...</option>
+              {masterStreets.map((item) => <option key={item.id} value={item.id}>{item.streetName}</option>)}
+            </select>
           </div>
           <div>
             <label className="label">Address</label>

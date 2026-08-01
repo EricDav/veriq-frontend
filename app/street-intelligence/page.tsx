@@ -130,11 +130,17 @@ function StreetIntelligenceBrowser() {
             <MapPin className="mx-auto mb-3 h-10 w-10 text-slate-300" />
             <p className="font-bold text-navy-900">No streets found yet</p>
             <p className="mt-1 text-sm text-veriq-muted">Become a Community Contributor by adding intelligence for a street you know well.</p>
+            <Link
+              href={`/dashboard/community?mode=new&state=${encodeURIComponent(state)}&city=${encodeURIComponent(city)}&area=${encodeURIComponent(area)}`}
+              className="btn-primary mt-5 inline-flex"
+            >
+              I can&apos;t see my street
+            </Link>
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {results.map((street) => (
-              <Link key={street.id} href={`/street-intelligence/${street.id}`} className="card group p-5">
+              <Link key={street.id} href={`/street-intelligence/${encodeURIComponent(street.id)}`} className="card group min-w-0 p-5">
                 <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
                   <MapPin className="h-5 w-5" />
                 </div>

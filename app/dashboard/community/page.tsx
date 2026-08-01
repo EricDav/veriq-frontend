@@ -52,6 +52,10 @@ type AnswerDraft = {
 export default function CommunityDashboardPage() {
   const params = useSearchParams();
   const preselectedStreetId = params.get('streetId') ?? '';
+  const requestedNewStreet = params.get('mode') === 'new';
+  const requestedState = params.get('state') ?? '';
+  const requestedCity = params.get('city') ?? '';
+  const requestedArea = params.get('area') ?? '';
   const { success, error } = useToast();
   const [profile, setProfile] = useState<ContributorProfile | null>(null);
   const [categories, setCategories] = useState<IntelligenceCategory[]>([]);
@@ -74,13 +78,15 @@ export default function CommunityDashboardPage() {
   const [existingCity, setExistingCity] = useState('');
   const [existingArea, setExistingArea] = useState('');
 
-  const [streetMode, setStreetMode] = useState<'existing' | 'new'>(preselectedStreetId ? 'existing' : 'new');
+  const [streetMode, setStreetMode] = useState<'existing' | 'new'>(requestedNewStreet ? 'new' : 'existing');
   const [streetId, setStreetId] = useState(preselectedStreetId);
-  const [street, setStreet] = useState({ state: '', city: '', area: '', streetName: '', landmark: '' });
+  const [street, setStreet] = useState({ state: requestedState, city: requestedCity, area: requestedArea, streetName: '', landmark: '' });
   const [relationshipType, setRelationshipType] = useState<StreetRelationshipType>(StreetRelationshipType.CURRENTLY_LIVE);
   const [relationshipRecency, setRelationshipRecency] = useState<StreetRelationshipRecency>(StreetRelationshipRecency.CURRENT);
   const [answers, setAnswers] = useState<Record<string, AnswerDraft>>({});
   const [questionIndex, setQuestionIndex] = useState(0);
+  const preserveRequestedCity = React.useRef(Boolean(requestedState && requestedCity));
+  const preserveRequestedArea = React.useRef(Boolean(requestedCity && requestedArea));
 
   const load = async () => {
     setLoading(true);
@@ -159,15 +165,15 @@ export default function CommunityDashboardPage() {
   }, [editingContributionId, existingArea, existingAreaRecords, existingCity, existingLocations, existingState]);
 
   useEffect(() => {
-    setStreet((current) => ({ ...current, city: '', area: '' })); setNewLocations([]); setNewAreas([]);
+    setStreet((current) => preserveRequestedCity.current ? current : ({ ...current, city: '', area: '' })); setNewLocations([]); setNewAreas([]);
     if (!street.state) return;
-    communityApi.streetLocations({ state: street.state }).then((res) => setNewLocations(res.data.locations)).catch(() => setNewLocations([]));
+    communityApi.streetLocations({ state: street.state }).then((res) => { setNewLocations(res.data.locations); preserveRequestedCity.current = false; }).catch(() => setNewLocations([]));
   }, [street.state]);
 
   useEffect(() => {
-    setStreet((current) => ({ ...current, area: '' })); setNewAreas([]);
+    setStreet((current) => preserveRequestedArea.current ? current : ({ ...current, area: '' })); setNewAreas([]);
     if (!street.state || !street.city) return;
-    communityApi.streetLocations({ state: street.state, city: street.city }).then((res) => setNewAreas(res.data.areaRecords)).catch(() => setNewAreas([]));
+    communityApi.streetLocations({ state: street.state, city: street.city }).then((res) => { setNewAreas(res.data.areaRecords); preserveRequestedArea.current = false; }).catch(() => setNewAreas([]));
   }, [street.city, street.state]);
 
   const answeredAll = useMemo(
@@ -184,6 +190,15 @@ export default function CommunityDashboardPage() {
     setAnswers((state) => ({ ...state, [currentCategory.id]: response }));
   };
 
+  const skipQuestion = () => {
+    if (!currentCategory) return;
+    setAnswers((state) => ({
+      ...state,
+      [currentCategory.id]: { responseType: ContributionResponseType.UNKNOWN },
+    }));
+    setQuestionIndex((value) => Math.min(categories.length - 1, value + 1));
+  };
+
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!answeredAll) {
@@ -198,8 +213,15 @@ export default function CommunityDashboardPage() {
         answers: categories.map((category) => ({ categoryId: category.id, ...answers[category.id] })),
       };
       if (!editingContributionId) {
-        if (streetMode === 'existing') dto.streetId = streetId;
-      else dto.street = { ...street, locationId: newLocations.find((item) => item.name === street.city)?.id, areaId: newAreas.find((item) => item.name === street.area)?.id };
+        if (streetMode === 'existing') {
+          if (!streetId) throw new Error('Select a street or choose “I can’t see my street”.');
+          dto.streetId = streetId;
+        } else {
+          const location = newLocations.find((item) => item.name === street.city);
+          const area = newAreas.find((item) => item.name === street.area);
+          if (!location || !area || !street.streetName.trim()) throw new Error('Select a state, location and area, then enter the street name.');
+          dto.street = { ...street, locationId: location.id, areaId: area.id };
+        }
       }
       if (editingContributionId) {
         await communityApi.updateContribution(editingContributionId, dto);
@@ -306,12 +328,12 @@ export default function CommunityDashboardPage() {
               <h2 className="font-display text-base font-bold text-navy-900">{editingContributionId ? 'Update Street Intelligence' : 'Contribute Street Intelligence'}</h2>
               {editingContributionId && <button type="button" onClick={cancelEdit} className="text-xs font-bold text-slate-500"><X className="mr-1 inline h-3.5 w-3.5" /> Cancel</button>}
             </div>
-            <p className="mt-1 text-xs text-veriq-muted">No photos or videos. Just one answer per approved street category.</p>
+            <p className="mt-1 text-xs text-veriq-muted">Select a listed street or submit a missing one for admin verification.</p>
           </div>
 
           <div className={`flex rounded-xl bg-slate-100 p-1 ${editingContributionId ? 'pointer-events-none opacity-60' : ''}`}>
             <button type="button" onClick={() => setStreetMode('existing')} className={`flex-1 rounded-lg px-3 py-2 text-xs font-bold ${streetMode === 'existing' ? 'bg-white text-navy-900 shadow-sm' : 'text-slate-500'}`}>Select street</button>
-            <button type="button" onClick={() => setStreetMode('new')} className={`flex-1 rounded-lg px-3 py-2 text-xs font-bold ${streetMode === 'new' ? 'bg-white text-navy-900 shadow-sm' : 'text-slate-500'}`}>Add new street</button>
+            <button type="button" onClick={() => setStreetMode('new')} className={`flex-1 rounded-lg px-3 py-2 text-xs font-bold ${streetMode === 'new' ? 'bg-white text-navy-900 shadow-sm' : 'text-slate-500'}`}>I can&apos;t see my street</button>
           </div>
 
           {streetMode === 'existing' ? (
@@ -334,6 +356,9 @@ export default function CommunityDashboardPage() {
                   <option key={item.id} value={item.id}>{item.streetName} - {item.area}, {item.state}</option>
                 ))}
               </select>
+              <button type="button" onClick={() => { preserveRequestedCity.current = Boolean(existingCity); preserveRequestedArea.current = Boolean(existingArea); setStreetMode('new'); setStreet({ state: existingState, city: existingCity, area: existingArea, streetName: '', landmark: '' }); }} className="sm:col-span-2 text-left text-xs font-bold text-veriq-secondary hover:underline">
+                I can&apos;t see my street in this list
+              </button>
             </div>
           ) : (
             <div className="grid gap-3 sm:grid-cols-2">
@@ -353,6 +378,7 @@ export default function CommunityDashboardPage() {
               </select>
               <input className="input" placeholder="Street name" value={street.streetName} onChange={(e) => setStreet((s) => ({ ...s, streetName: e.target.value }))} required />
               <input className="input sm:col-span-2" placeholder="Nearby landmark (optional)" value={street.landmark} onChange={(e) => setStreet((s) => ({ ...s, landmark: e.target.value }))} />
+              <p className="sm:col-span-2 rounded-lg bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800">New streets are submitted as pending and will appear publicly only after admin verification.</p>
             </div>
           )}
 
@@ -430,8 +456,7 @@ export default function CommunityDashboardPage() {
               )}
 
               <div className="mt-5 flex flex-wrap gap-2 border-t border-slate-200 pt-4">
-                <button type="button" onClick={() => setQuestionResponse({ responseType: ContributionResponseType.SKIPPED })} className={`rounded-lg px-3 py-2 text-xs font-bold ${currentAnswer?.responseType === ContributionResponseType.SKIPPED ? 'bg-slate-700 text-white' : 'bg-white text-slate-600'}`}>Skip</button>
-                <button type="button" onClick={() => setQuestionResponse({ responseType: ContributionResponseType.UNKNOWN })} className={`rounded-lg px-3 py-2 text-xs font-bold ${currentAnswer?.responseType === ContributionResponseType.UNKNOWN ? 'bg-slate-700 text-white' : 'bg-white text-slate-600'}`}>I Don&apos;t Know</button>
+                <button type="button" onClick={skipQuestion} className={`rounded-lg px-3 py-2 text-xs font-bold ${currentAnswer?.responseType === ContributionResponseType.UNKNOWN ? 'bg-slate-700 text-white' : 'bg-white text-slate-600'}`}>Skip · I Don&apos;t Know</button>
                 <div className="ml-auto flex gap-2">
                   <button type="button" disabled={questionIndex === 0} onClick={() => setQuestionIndex((value) => Math.max(0, value - 1))} className="btn-outline !px-3 !py-2 text-xs disabled:opacity-40">Back</button>
                   {questionIndex < categories.length - 1 && (

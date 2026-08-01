@@ -45,6 +45,7 @@ interface AuthContextValue {
   isAdmin: boolean;
   isAgent: boolean;
   login: (dto: LoginDto) => Promise<void>;
+  loginWithGoogle: (credential: string) => Promise<void>;
   register: (dto: RegisterDto) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -130,6 +131,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [],
   );
 
+  const loginWithGoogle = useCallback(async (credential: string) => {
+    const res = await authApi.googleLogin(credential);
+    const { accessToken, refreshToken, user: googleUser } = res.data;
+    setTokens(accessToken, refreshToken);
+    setStoredUser(googleUser);
+    setUser(googleUser);
+    setAuthCookies(googleUser.role);
+  }, []);
+
   // ── Register ──────────────────────────────────────────────────────────
   // Registration creates a pending account. The user verifies their email
   // before signing in and receiving a session.
@@ -164,11 +174,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isAdmin,
       isAgent,
       login,
+      loginWithGoogle,
       register,
       logout,
       refreshUser,
     }),
-    [user, isLoading, isAuthenticated, isAdmin, isAgent, login, register, logout, refreshUser],
+    [user, isLoading, isAuthenticated, isAdmin, isAgent, login, loginWithGoogle, register, logout, refreshUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

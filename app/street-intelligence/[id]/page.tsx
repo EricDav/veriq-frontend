@@ -45,6 +45,7 @@ function StreetResult() {
   const [payload, setPayload] = useState<StreetIntelligencePayload | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [searchLimitReached, setSearchLimitReached] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     communityApi
@@ -54,6 +55,7 @@ function StreetResult() {
         if (error instanceof ApiError && error.statusCode === 403 && error.message === 'street_search_limit_reached') {
           setSearchLimitReached(true);
         }
+        setLoadError(error instanceof ApiError && error.statusCode !== 404 ? error.message : null);
         setPayload(null);
       })
       .finally(() => setIsLoading(false));
@@ -66,7 +68,7 @@ function StreetResult() {
   if (!payload) {
     return (
       <div className="min-h-screen bg-veriq-surface pt-24">
-        <main className="mx-auto max-w-4xl px-4 py-16 text-center">
+        <main className="mx-auto min-w-0 max-w-4xl px-4 py-16 text-center sm:px-6">
           <h1 className="font-display text-2xl font-bold text-navy-900">
             {searchLimitReached ? 'Continue Exploring Street Intelligence' : 'Street not found'}
           </h1>
@@ -83,7 +85,10 @@ function StreetResult() {
               </div>
             </>
           ) : (
-            <Link href="/street-intelligence" className="btn-primary mt-6">Back to Street Intelligence</Link>
+            <>
+              <p className="mx-auto mt-3 max-w-xl break-words text-sm text-veriq-muted">{loadError ?? 'This street is unavailable or is still awaiting admin approval.'}</p>
+              <Link href="/street-intelligence" className="btn-primary mt-6">Back to Street Intelligence</Link>
+            </>
           )}
         </main>
       </div>

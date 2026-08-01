@@ -240,6 +240,9 @@ export const authApi = {
   login: (dto: LoginDto) =>
     api.post<ApiResponse<AuthTokens>>('/auth/login', dto, { public: true }),
 
+  googleLogin: (credential: string) =>
+    api.post<ApiResponse<AuthTokens>>('/auth/google', { credential }, { public: true }),
+
   verifyEmail: (dto: VerifyEmailDto) =>
     api.post<ApiResponse<{ email: string }>>('/auth/verify-email', dto, { public: true }),
 
