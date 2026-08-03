@@ -584,6 +584,13 @@ export interface Street {
   approvedAt: string | null;
   createdAt: string;
   updatedAt: string;
+  readableId?: string | null;
+  canonicalUuid?: string | null;
+  locationType?: string | null;
+  publicSearchLabel?: string | null;
+  aliases?: string[];
+  lastAudited?: string | null;
+  datasetVersion?: string | null;
 }
 
 export interface CommunityArea {

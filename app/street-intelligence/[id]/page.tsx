@@ -45,6 +45,7 @@ function StreetResult() {
   const [payload, setPayload] = useState<StreetIntelligencePayload | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [searchLimitReached, setSearchLimitReached] = useState(false);
+  const [notFound, setNotFound] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -55,7 +56,12 @@ function StreetResult() {
         if (error instanceof ApiError && error.statusCode === 403 && error.message === 'street_search_limit_reached') {
           setSearchLimitReached(true);
         }
-        setLoadError(error instanceof ApiError && error.statusCode !== 404 ? error.message : null);
+        setNotFound(error instanceof ApiError && error.statusCode === 404);
+        setLoadError(
+          error instanceof ApiError
+            ? error.statusCode === 404 ? null : error.message
+            : 'Unable to connect to Street Intelligence. Please check that the API is running and try again.',
+        );
         setPayload(null);
       })
       .finally(() => setIsLoading(false));
@@ -70,7 +76,7 @@ function StreetResult() {
       <div className="min-h-screen bg-veriq-surface pt-24">
         <main className="mx-auto min-w-0 max-w-4xl px-4 py-16 text-center sm:px-6">
           <h1 className="font-display text-2xl font-bold text-navy-900">
-            {searchLimitReached ? 'Continue Exploring Street Intelligence' : 'Street not found'}
+            {searchLimitReached ? 'Continue Exploring Street Intelligence' : notFound ? 'Street not found' : 'Unable to load Street Intelligence'}
           </h1>
           {searchLimitReached ? (
             <>

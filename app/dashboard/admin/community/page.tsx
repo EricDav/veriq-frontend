@@ -33,6 +33,7 @@ export default function AdminCommunityPage() {
   const [directoryStates, setDirectoryStates] = useState<AllowedState[]>([]);
   const [categories, setCategories] = useState<IntelligenceCategory[]>([]);
   const [directoryState, setDirectoryState] = useState('Rivers');
+  const [stateToActivate, setStateToActivate] = useState('');
   const [locationName, setLocationName] = useState('');
   const [areaName, setAreaName] = useState('');
   const [areaLocationId, setAreaLocationId] = useState('');
@@ -273,7 +274,34 @@ export default function AdminCommunityPage() {
       <section className="space-y-4" data-testid="location-directory">
         <div>
           <h2 className="font-display text-lg font-bold text-navy-900">Location Directory</h2>
-          <p className="mt-1 text-xs text-veriq-muted">Manage State → Location → Area/Neighbourhood → Street data used by search and contributions.</p>
+          <p className="mt-1 text-xs text-veriq-muted">Manage State → LGA → Area/Neighbourhood → Street data used by search and contributions.</p>
+        </div>
+        <div className="card space-y-3 p-5">
+          <div>
+            <h3 className="font-display font-bold text-navy-900">Community Intelligence States</h3>
+            <p className="mt-1 text-xs text-veriq-muted">Activate another Nigerian state before adding its LGAs, areas and streets.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {directoryStates.filter((item) => item.isActive).map((item) => (
+              <button key={item.id} type="button" onClick={() => setDirectoryState(item.name)} className={`rounded-lg px-3 py-2 text-xs font-bold ${directoryState === item.name ? 'bg-navy-900 text-white' : 'bg-emerald-50 text-emerald-700'}`}>
+                {item.name}
+              </button>
+            ))}
+          </div>
+          <div className="flex max-w-xl gap-2">
+            <select aria-label="Add community state" className="input" value={stateToActivate} onChange={(event) => setStateToActivate(event.target.value)}>
+              <option value="">Select another state</option>
+              {directoryStates.filter((item) => !item.isActive).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+            </select>
+            <button type="button" className="btn-primary whitespace-nowrap" disabled={!stateToActivate || saving} onClick={() => {
+              const selected = directoryStates.find((item) => item.id === stateToActivate);
+              if (!selected) return;
+              void runHierarchyAction(() => locationsApi.updateState(selected.id, true), `${selected.name} added to Community Intelligence.`)
+                .then(() => { setDirectoryState(selected.name); setStateToActivate(''); });
+            }}>
+              <Plus className="h-4 w-4" /> Add State
+            </button>
+          </div>
         </div>
         <div className="flex max-w-xl items-end gap-3">
           <div className="min-w-0 flex-1">
@@ -289,11 +317,11 @@ export default function AdminCommunityPage() {
         <div className="grid gap-6 xl:grid-cols-2">
           <div className="card space-y-5 p-5">
             <form onSubmit={(event) => { event.preventDefault(); void runHierarchyAction(() => communityApi.createLocation({ state: directoryState, name: locationName }), 'Location added.'); setLocationName(''); }} className="flex gap-2">
-              <input className="input" value={locationName} onChange={(event) => setLocationName(event.target.value)} placeholder={`New ${directoryState} location`} required />
-              <button className="btn-primary !px-3" disabled={saving} title="Add location"><Plus className="h-4 w-4" /></button>
+              <input className="input" value={locationName} onChange={(event) => setLocationName(event.target.value)} placeholder={`New ${directoryState} LGA`} required />
+              <button className="btn-primary !px-3" disabled={saving} title="Add LGA"><Plus className="h-4 w-4" /></button>
             </form>
             <form onSubmit={(event) => { event.preventDefault(); void runHierarchyAction(() => communityApi.createArea({ locationId: areaLocationId, name: areaName }), 'Area added.'); setAreaName(''); }} className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
-              <select className="input" value={areaLocationId} onChange={(event) => setAreaLocationId(event.target.value)} required><option value="">Location</option>{directoryLocations.filter((item) => item.isActive).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
+              <select className="input" value={areaLocationId} onChange={(event) => setAreaLocationId(event.target.value)} required><option value="">LGA</option>{directoryLocations.filter((item) => item.isActive).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
               <input className="input" value={areaName} onChange={(event) => setAreaName(event.target.value)} placeholder="New area / neighbourhood" required />
               <button className="btn-primary !px-3" disabled={saving} title="Add area"><Plus className="h-4 w-4" /></button>
             </form>

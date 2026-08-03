@@ -2,22 +2,22 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ArrowRight, MapPin, Search, Users, ShieldCheck } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ArrowRight, MapPin, Users, ShieldCheck } from 'lucide-react';
 import { communityApi } from '@/lib/api';
-import type { CommunityArea, CommunityLocation, Street } from '@/types';
+import type { CommunityLocation, Street } from '@/types';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 function StreetIntelligenceBrowser() {
+  const router = useRouter();
   const [results, setResults] = useState<Street[]>([]);
   const [states, setStates] = useState<string[]>([]);
   const [cities, setCities] = useState<string[]>([]);
-  const [areas, setAreas] = useState<string[]>([]);
   const [locations, setLocations] = useState<CommunityLocation[]>([]);
-  const [areaRecords, setAreaRecords] = useState<CommunityArea[]>([]);
   const [state, setState] = useState('');
   const [city, setCity] = useState('');
-  const [area, setArea] = useState('');
-  const [q, setQ] = useState('');
+  const [streetQuery, setStreetQuery] = useState('');
+  const [selectedStreetId, setSelectedStreetId] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
@@ -30,36 +30,37 @@ function StreetIntelligenceBrowser() {
   }, []);
 
   useEffect(() => {
-    setCity(''); setArea(''); setCities([]); setAreas([]); setResults([]); setHasSearched(false);
+    setCity(''); setStreetQuery(''); setSelectedStreetId(''); setCities([]); setResults([]); setHasSearched(false);
     if (!state) return;
     communityApi.streetLocations({ state }).then((res) => { setCities(res.data.cities); setLocations(res.data.locations); }).catch(() => { setCities([]); setLocations([]); });
   }, [state]);
 
   useEffect(() => {
-    setArea(''); setAreas([]); setResults([]); setHasSearched(false);
-    if (!state || !city) return;
-    communityApi.streetLocations({ state, city }).then((res) => { setAreas(res.data.areas); setAreaRecords(res.data.areaRecords); }).catch(() => { setAreas([]); setAreaRecords([]); });
+    setStreetQuery(''); setSelectedStreetId(''); setResults([]); setHasSearched(false);
   }, [city, state]);
 
-  const search = async (event: React.FormEvent) => {
-    event.preventDefault();
-    setIsSearching(true);
-    try {
-      const res = await communityApi.searchStreets({
-        q: q.trim() || undefined,
-        state,
-        city: city || undefined,
-        area: area || undefined,
-        locationId: locations.find((item) => item.name === city)?.id,
-        areaId: areaRecords.find((item) => item.name === area)?.id,
-      });
-      setResults(res.data);
-    } catch {
-      setResults([]);
-    } finally {
-      setHasSearched(true);
-      setIsSearching(false);
+  useEffect(() => {
+    if (!state || !city || streetQuery.trim().length < 2 || selectedStreetId) {
+      if (!selectedStreetId) setResults([]);
+      return;
     }
+    const locationId = locations.find((item) => item.name === city)?.id;
+    const timeout = window.setTimeout(() => {
+      setIsSearching(true);
+      communityApi.searchStreets({ state, city, q: streetQuery.trim(), locationId })
+        .then((res) => setResults(res.data))
+        .catch(() => setResults([]))
+        .finally(() => {
+          setHasSearched(true);
+          setIsSearching(false);
+        });
+    }, 250);
+    return () => window.clearTimeout(timeout);
+  }, [city, locations, selectedStreetId, state, streetQuery]);
+
+  const openStreet = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (selectedStreetId) router.push(`/street-intelligence/${encodeURIComponent(selectedStreetId)}`);
   };
 
   return (
@@ -79,36 +80,36 @@ function StreetIntelligenceBrowser() {
           </div>
         </div>
 
-        <form id="street-search" onSubmit={search} className="mb-8 grid gap-3 rounded-lg border border-slate-200 bg-white p-4 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_1.2fr_auto]">
+        <form id="street-search" onSubmit={openStreet} className="mb-8 grid gap-3 rounded-lg border border-slate-200 bg-white p-4 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1.5fr_auto]">
           <select aria-label="State" value={state} onChange={(event) => setState(event.target.value)} className="input" required>
             <option value="">Select state</option>
             {states.map((item) => <option key={item} value={item}>{item}</option>)}
           </select>
-          <select aria-label="Location" value={city} onChange={(event) => setCity(event.target.value)} className="input" disabled={!state} required>
-            <option value="">Select location</option>
+          <select aria-label="LGA" value={city} onChange={(event) => setCity(event.target.value)} className="input" disabled={!state} required>
+            <option value="">Select LGA</option>
             {cities.map((item) => <option key={item} value={item}>{item}</option>)}
           </select>
-          <select aria-label="Area" value={area} onChange={(event) => setArea(event.target.value)} className="input" disabled={!city}>
-            <option value="">All areas</option>
-            {areas.map((item) => <option key={item} value={item}>{item}</option>)}
-          </select>
-          <label className="relative block">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <input
-              value={q}
-              onChange={(event) => setQ(event.target.value)}
-              className="input pl-9"
-              placeholder="Street name (optional)"
-              disabled={!city}
-            />
-          </label>
-          <button type="submit" className="btn-primary justify-center" disabled={isSearching || !state || !city}>
-            {isSearching ? <LoadingSpinner size="sm" /> : 'Search'}
+          <div className="relative">
+            <input aria-label="Street name" className="input" value={streetQuery} onChange={(event) => { setStreetQuery(event.target.value); setSelectedStreetId(''); }} placeholder="Start typing a street name" autoComplete="off" disabled={!city} required />
+            {streetQuery.trim().length >= 2 && !selectedStreetId && (
+              <div className="absolute z-20 mt-1 max-h-64 w-full overflow-y-auto rounded-lg border border-slate-200 bg-white p-1 shadow-lg">
+                {results.map((street) => (
+                  <button key={street.id} type="button" onClick={() => { setSelectedStreetId(street.id); setStreetQuery(street.streetName); }} className="block w-full rounded-md px-3 py-2 text-left hover:bg-slate-50">
+                    <span className="block text-sm font-bold text-navy-900">{street.streetName}</span>
+                    <span className="block text-xs text-veriq-muted">{street.area}</span>
+                  </button>
+                ))}
+                {!isSearching && results.length === 0 && <p className="px-3 py-3 text-xs text-slate-500">No approved street matches this name.</p>}
+              </div>
+            )}
+          </div>
+          <button type="submit" className="btn-primary justify-center" disabled={isSearching || !selectedStreetId}>
+            View intelligence
           </button>
         </form>
         <div className="mb-4 flex items-center justify-between">
           <h2 className="font-display text-lg font-bold text-navy-900">
-            {hasSearched ? 'Search results' : 'Choose a location'}
+            {hasSearched ? `${results.length} streets available` : 'Choose a location'}
           </h2>
           <Link href="/dashboard/community" className="text-xs font-bold text-veriq-secondary hover:underline">
             Contribute intelligence
@@ -123,15 +124,15 @@ function StreetIntelligenceBrowser() {
           <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center">
             <MapPin className="mx-auto mb-3 h-10 w-10 text-slate-300" />
             <p className="font-bold text-navy-900">Start with a state</p>
-            <p className="mt-1 text-sm text-veriq-muted">Select a state and location before searching for a street.</p>
+            <p className="mt-1 text-sm text-veriq-muted">Select a state and LGA, then start typing the street name.</p>
           </div>
         ) : results.length === 0 ? (
           <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center">
             <MapPin className="mx-auto mb-3 h-10 w-10 text-slate-300" />
-            <p className="font-bold text-navy-900">No streets found yet</p>
-            <p className="mt-1 text-sm text-veriq-muted">Become a Community Contributor by adding intelligence for a street you know well.</p>
+            <p className="font-bold text-navy-900">No addressable locations found yet</p>
+            <p className="mt-1 text-sm text-veriq-muted">Become a Community Contributor by adding intelligence for a location you know well.</p>
             <Link
-              href={`/dashboard/community?mode=new&state=${encodeURIComponent(state)}&city=${encodeURIComponent(city)}&area=${encodeURIComponent(area)}`}
+              href={`/dashboard/community?mode=new&state=${encodeURIComponent(state)}&city=${encodeURIComponent(city)}`}
               className="btn-primary mt-5 inline-flex"
             >
               I can&apos;t see my street
@@ -147,7 +148,7 @@ function StreetIntelligenceBrowser() {
                 <p className="font-display text-base font-bold text-navy-900 group-hover:text-veriq-secondary">
                   {street.streetName}
                 </p>
-                <p className="mt-1 text-xs text-veriq-muted">{street.area}, {street.city}, {street.state}</p>
+                <p className="mt-1 text-xs text-veriq-muted">{street.area}</p>
                 <div className="mt-4 flex items-center justify-between text-xs">
                   <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-1 font-semibold capitalize text-slate-600">
                     <ShieldCheck className="h-3 w-3" /> {street.status}
