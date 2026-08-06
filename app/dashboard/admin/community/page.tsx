@@ -52,6 +52,7 @@ export default function AdminCommunityPage() {
   const [streetStateFilter, setStreetStateFilter] = useState('');
   const [streetLocationFilter, setStreetLocationFilter] = useState('');
   const [streetAreaFilter, setStreetAreaFilter] = useState('');
+  const [contributionStatusFilter, setContributionStatusFilter] = useState<ContributionStatus | 'all'>(ContributionStatus.PENDING);
   const [form, setForm] = useState({
     propertyId: '',
     startDate: '',
@@ -71,7 +72,12 @@ export default function AdminCommunityPage() {
         ? streetLocationFilter
           ? communityApi.adminStreets({ state: streetStateFilter, locationId: streetLocationFilter })
           : Promise.resolve({ data: [] as Street[] })
-        : communityApi.adminStreets({ recentHours: 48 });
+        : Promise.all([
+          communityApi.adminStreets({ status: StreetStatus.PENDING }),
+          communityApi.adminStreets({ recentHours: 48 }),
+        ]).then(([pending, recent]) => ({
+          data: Array.from(new Map([...pending.data, ...recent.data].map((street) => [street.id, street])).values()),
+        }));
       const [analyticsRes, campaignsRes, propertiesRes, statesRes, categoriesRes] = await Promise.all([
         communityApi.adminAnalytics(),
         communityApi.adminCampaigns(),
@@ -81,7 +87,7 @@ export default function AdminCommunityPage() {
       ]);
       const [streetsRes, contributionsRes, hierarchyRes] = await Promise.all([
         streetsRequest,
-        communityApi.adminContributions(),
+        communityApi.adminContributions(contributionStatusFilter === 'all' ? undefined : contributionStatusFilter),
         communityApi.adminLocations(),
       ]);
       setAnalytics(analyticsRes.data as Record<string, unknown>);
@@ -121,7 +127,7 @@ export default function AdminCommunityPage() {
     }
     if (streetStateFilter) return [];
     const recentCutoff = Date.now() - 48 * 60 * 60 * 1000;
-    return streets.filter((street) => new Date(street.createdAt).getTime() >= recentCutoff);
+    return streets.filter((street) => street.status === StreetStatus.PENDING || new Date(street.createdAt).getTime() >= recentCutoff);
   }, [locationHistorySelected, streetLocationFilter, streetStateFilter, streets]);
   const streetStatusCounts = useMemo(() => Object.values(StreetStatus).reduce<Record<StreetStatus, number>>(
     (counts, status) => ({ ...counts, [status]: scopedStreets.filter((street) => street.status === status).length }),
@@ -181,12 +187,16 @@ export default function AdminCommunityPage() {
           setStreets([]);
           return;
         }
-        const response = await communityApi.adminStreets(
-          streetStateFilter
-            ? { state: streetStateFilter, locationId: streetLocationFilter }
-            : { recentHours: 48 },
-        );
-        setStreets(response.data);
+        if (streetStateFilter) {
+          const response = await communityApi.adminStreets({ state: streetStateFilter, locationId: streetLocationFilter });
+          setStreets(response.data);
+        } else {
+          const [pending, recent] = await Promise.all([
+            communityApi.adminStreets({ status: StreetStatus.PENDING }),
+            communityApi.adminStreets({ recentHours: 48 }),
+          ]);
+          setStreets(Array.from(new Map([...pending.data, ...recent.data].map((street) => [street.id, street])).values()));
+        }
       } catch (err) {
         error(err instanceof Error ? err.message : 'Unable to load streets');
       }
@@ -194,6 +204,14 @@ export default function AdminCommunityPage() {
     void refreshStreetScope();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [streetLocationFilter, streetStateFilter]);
+
+  useEffect(() => {
+    if (loading) return;
+    communityApi.adminContributions(contributionStatusFilter === 'all' ? undefined : contributionStatusFilter)
+      .then((response) => setContributions(response.data))
+      .catch((err) => error(err instanceof Error ? err.message : 'Unable to load contributions'));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contributionStatusFilter]);
 
   useEffect(() => {
     setObservation((current) => ({ ...current, streetId: '' }));
@@ -511,7 +529,7 @@ export default function AdminCommunityPage() {
             </div>
             <div className="mt-4 flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-800">
               <Clock3 className="h-4 w-4" />
-              {locationHistorySelected ? `Showing all streets in ${moderationLocation?.name}` : 'Showing streets added in the past 48 hours'}
+              {locationHistorySelected ? `Showing all streets in ${moderationLocation?.name}` : 'Showing all pending requests and streets added in the past 48 hours'}
             </div>
             <div className="mt-4 grid gap-2 sm:grid-cols-2">
               <label className="relative sm:col-span-2">
@@ -519,7 +537,7 @@ export default function AdminCommunityPage() {
                 <input className="input !pl-9" value={streetSearch} onChange={(event) => setStreetSearch(event.target.value)} placeholder="Search street, area, location or landmark" />
               </label>
               <select aria-label="Moderation state" className="input" value={streetStateFilter} onChange={(event) => { setStreetStateFilter(event.target.value); setStreetLocationFilter(''); setStreetAreaFilter(''); }}>
-                <option value="">Recent additions (48 hours)</option>
+                <option value="">Pending and recent additions</option>
                 {moderationStates.map((state) => <option key={state} value={state}>{state}</option>)}
               </select>
               <select aria-label="Moderation location" className="input" value={streetLocationFilter} onChange={(event) => { setStreetLocationFilter(event.target.value); setStreetAreaFilter(''); }} disabled={!streetStateFilter}>
@@ -570,12 +588,23 @@ export default function AdminCommunityPage() {
         </div>
 
         <div className="card overflow-hidden">
-          <div className="flex items-center justify-between border-b border-slate-100 p-5">
+          <div className="flex items-start justify-between gap-4 border-b border-slate-100 p-5">
             <div>
               <h2 className="font-display text-base font-bold text-navy-900">Contribution Moderation</h2>
               <p className="mt-1 text-xs text-veriq-muted">Review contributor reports before they affect public intelligence.</p>
             </div>
-            <Flag className="h-5 w-5 text-amber-500" />
+            <select
+              aria-label="Contribution moderation status"
+              className="input max-w-36 !py-2 text-xs"
+              value={contributionStatusFilter}
+              onChange={(event) => setContributionStatusFilter(event.target.value as ContributionStatus | 'all')}
+            >
+              <option value={ContributionStatus.PENDING}>Pending</option>
+              <option value={ContributionStatus.FLAGGED}>Flagged</option>
+              <option value={ContributionStatus.APPROVED}>Approved</option>
+              <option value={ContributionStatus.REJECTED}>Rejected</option>
+              <option value="all">All statuses</option>
+            </select>
           </div>
           <div className="divide-y divide-slate-100">
             {contributions.map((contribution) => (
@@ -589,19 +618,19 @@ export default function AdminCommunityPage() {
                   <span className="badge bg-slate-100 text-[10px] capitalize text-slate-600">{contribution.status}</span>
                 </div>
                 <div className="mt-4 flex flex-wrap gap-2">
-                  <button type="button" disabled={reviewingId === contribution.id} onClick={() => reviewContribution(contribution, ContributionStatus.APPROVED)} className="rounded-lg bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700">
+                  {contribution.status !== ContributionStatus.APPROVED && <button type="button" disabled={reviewingId === contribution.id} onClick={() => reviewContribution(contribution, ContributionStatus.APPROVED)} className="rounded-lg bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700">
                     <CheckCircle className="mr-1 inline h-3.5 w-3.5" /> Approve
-                  </button>
-                  <button type="button" disabled={reviewingId === contribution.id} onClick={() => reviewContribution(contribution, ContributionStatus.REJECTED)} className="rounded-lg bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700">
+                  </button>}
+                  {contribution.status !== ContributionStatus.REJECTED && <button type="button" disabled={reviewingId === contribution.id} onClick={() => reviewContribution(contribution, ContributionStatus.REJECTED)} className="rounded-lg bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700">
                     <XCircle className="mr-1 inline h-3.5 w-3.5" /> Reject
-                  </button>
-                  <button type="button" disabled={reviewingId === contribution.id} onClick={() => reviewContribution(contribution, ContributionStatus.FLAGGED)} className="rounded-lg bg-amber-50 px-3 py-2 text-xs font-bold text-amber-700">
+                  </button>}
+                  {contribution.status !== ContributionStatus.FLAGGED && <button type="button" disabled={reviewingId === contribution.id} onClick={() => reviewContribution(contribution, ContributionStatus.FLAGGED)} className="rounded-lg bg-amber-50 px-3 py-2 text-xs font-bold text-amber-700">
                     <Flag className="mr-1 inline h-3.5 w-3.5" /> Flag
-                  </button>
+                  </button>}
                 </div>
               </div>
             ))}
-            {contributions.length === 0 && <p className="p-8 text-center text-sm text-slate-500">No contributions awaiting moderation.</p>}
+            {contributions.length === 0 && <p className="p-8 text-center text-sm text-slate-500">No {contributionStatusFilter === 'all' ? '' : `${contributionStatusFilter} `}contributions found.</p>}
           </div>
         </div>
       </div>

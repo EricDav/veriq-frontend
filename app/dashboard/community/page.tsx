@@ -38,7 +38,7 @@ const recencyOptions = [
 
 function statusCopy(status?: ContributorStatus) {
   if (status === ContributorStatus.ACTIVE) return 'Active';
-  if (status === ContributorStatus.EXPIRED) return 'Expired';
+  if (status === ContributorStatus.EXPIRED) return 'Active';
   if (status === ContributorStatus.SUSPENDED) return 'Suspended';
   return 'Not Yet Activated';
 }
@@ -257,7 +257,7 @@ export default function CommunityDashboardPage() {
         success('Street Intelligence updated successfully.');
       } else {
         await communityApi.createContribution(dto);
-        success('Street Intelligence submitted. Community Contributor access is active.');
+        success('Street Intelligence submitted for admin review. Your Community Contributor membership is active.');
       }
       setAnswers({});
       setQuestionIndex(0);
@@ -334,16 +334,10 @@ export default function CommunityDashboardPage() {
         </div>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2">
         <div className="card p-5">
           <p className="text-xs text-slate-500">Status</p>
           <p className="mt-1 text-xl font-black text-navy-900">{statusCopy(profile?.contributorStatus)}</p>
-        </div>
-        <div className="card p-5">
-          <p className="text-xs text-slate-500">Access expires</p>
-          <p className="mt-1 text-xl font-black text-navy-900">
-            {profile?.expiresAt ? new Date(profile.expiresAt).toLocaleDateString() : 'Not active'}
-          </p>
         </div>
         <div className="card p-5">
           <p className="text-xs text-slate-500">Contributed streets</p>
@@ -527,7 +521,7 @@ export default function CommunityDashboardPage() {
 
         <div className="space-y-4">
           <div className="card p-6">
-            <h2 className="font-display mb-4 text-base font-bold text-navy-900">Extend Community Access</h2>
+            <h2 className="font-display mb-4 text-base font-bold text-navy-900">Community Participation</h2>
             <div className="grid gap-2 text-sm">
               <Link href="#contribute" className="rounded-xl border border-slate-100 p-3 font-semibold text-navy-800">Add Intelligence for Another Street</Link>
               <p className="rounded-xl border border-slate-100 p-3 font-semibold text-navy-800">Confirm a Previous Street Report</p>
@@ -539,7 +533,7 @@ export default function CommunityDashboardPage() {
             <h2 className="font-display mb-2 flex items-center gap-2 text-base font-bold text-navy-900">
               <UserPlus className="h-4 w-4 text-veriq-secondary" /> Invite a Friend
             </h2>
-            <p className="mb-4 text-xs text-veriq-muted">Share your referral link. Qualified referrals can extend your Community Contributor access.</p>
+            <p className="mb-4 text-xs text-veriq-muted">Share your referral link and help grow the Community Contributor network.</p>
             <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
               <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Referral code</p>
               <p className="mt-1 break-all font-mono text-sm font-bold text-navy-900">{referralCode || 'Generating...'}</p>

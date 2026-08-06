@@ -595,11 +595,13 @@ export interface Street {
 
 export interface CommunityArea {
   id: string; locationId: string; name: string; normalisedName: string; isActive: boolean;
+  readableId?: string | null; canonicalUuid?: string | null;
   latitude: number | null; longitude: number | null;
 }
 
 export interface CommunityLocation {
   id: string; state: string; name: string; normalisedName: string; isActive: boolean;
+  stateId?: string | null; readableId?: string | null; canonicalUuid?: string | null;
   latitude: number | null; longitude: number | null; areas?: CommunityArea[];
 }
 
@@ -1185,6 +1187,7 @@ export interface FilterPropertiesDto {
   q?: string;
   status?: ListingStatus;
   agentId?: string;
+  streetId?: string;
   state?: string;
   city?: string;
   area?: string;
@@ -1221,6 +1224,8 @@ export interface UpdateUserDto {
 
 export interface AllowedState {
   id: string;
+  readableId?: string | null;
+  canonicalUuid?: string | null;
   name: string;
   isActive: boolean;
   createdAt: string;

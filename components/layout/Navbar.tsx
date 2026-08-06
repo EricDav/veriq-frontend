@@ -33,6 +33,7 @@ export function Navbar() {
 
   const isDashboard = pathname.startsWith("/dashboard");
   const isAuthPage = pathname.startsWith("/auth");
+  const solidHeader = scrolled || pathname.startsWith("/street-intelligence");
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10);
@@ -50,7 +51,7 @@ export function Navbar() {
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled
+        solidHeader
           ? "bg-white/95 backdrop-blur-md shadow-nav"
           : "bg-transparent"
       }`}
@@ -63,10 +64,10 @@ export function Navbar() {
               <Image src="/images/Logo.png" alt="Veriq Logo" width={36} height={36} className="rounded-lg" />
             </span>
             <div className="flex flex-col leading-none">
-              <span className={`font-display text-lg font-bold tracking-tight transition-colors ${scrolled ? "text-navy-900" : "text-white"}`}>
+              <span className={`font-display text-lg font-bold tracking-tight transition-colors ${solidHeader ? "text-navy-900" : "text-white"}`}>
                 Veriq
               </span>
-              <span className={`text-[10px] font-semibold tracking-widest uppercase transition-colors ${scrolled ? "text-gold-600" : "text-gold-400"}`}>
+              <span className={`text-[10px] font-semibold tracking-widest uppercase transition-colors ${solidHeader ? "text-gold-600" : "text-gold-400"}`}>
                 Property
               </span>
             </div>
@@ -81,7 +82,7 @@ export function Navbar() {
                     onMouseEnter={() => setDropdownOpen(link.label)}
                     onMouseLeave={() => setDropdownOpen(null)}
                     className={`flex items-center gap-1 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-                      scrolled
+                      solidHeader
                         ? "text-navy-700 hover:text-navy-900 hover:bg-slate-50"
                         : "text-white/90 hover:text-white hover:bg-white/10"
                     }`}
@@ -115,10 +116,10 @@ export function Navbar() {
                   href={link.href}
                   className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
                     pathname === link.href
-                      ? scrolled
+                      ? solidHeader
                         ? "bg-slate-50 text-veriq-secondary font-semibold"
                         : "bg-white/10 text-white font-semibold"
-                      : scrolled
+                      : solidHeader
                       ? "text-navy-700 hover:text-navy-900 hover:bg-slate-50"
                       : "text-white/90 hover:text-white hover:bg-white/10"
                   }`}
@@ -144,7 +145,7 @@ export function Navbar() {
                 <Link
                   href="/auth/login"
                   className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-                    scrolled
+                    solidHeader
                       ? "text-navy-700 hover:text-navy-900"
                       : "text-white/90 hover:text-white"
                   }`}
@@ -164,7 +165,7 @@ export function Navbar() {
           {/* Mobile Menu Toggle */}
           <button
             className={`lg:hidden rounded-lg p-2 transition-colors ${
-              scrolled ? "text-navy-800 hover:bg-slate-100" : "text-white hover:bg-white/10"
+              solidHeader ? "text-navy-800 hover:bg-slate-100" : "text-white hover:bg-white/10"
             }`}
             onClick={() => setMobileOpen((v) => !v)}
             aria-label="Toggle menu"

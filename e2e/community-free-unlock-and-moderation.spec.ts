@@ -277,7 +277,7 @@ test('admin can moderate proposed streets and pending contributions', async ({ c
   await page.route(`${API_BASE}/community/admin/streets**`, async (route) => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ statusCode: 200, message: 'Streets', data: [street, approvedStreet, olderPendingStreet] }) });
   });
-  await page.route(`${API_BASE}/community/admin/contributions`, async (route) => {
+  await page.route(`${API_BASE}/community/admin/contributions**`, async (route) => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ statusCode: 200, message: 'Contributions', data: [contribution] }) });
   });
   await page.route(`${API_BASE}/community/admin/locations`, async (route) => {
@@ -303,10 +303,10 @@ test('admin can moderate proposed streets and pending contributions', async ({ c
   await page.goto('/dashboard/admin/community');
   const streetModeration = page.getByTestId('street-moderation');
   await expect(page.getByRole('heading', { name: 'Street Moderation' })).toBeVisible();
-  await expect(streetModeration.getByText('1 pending', { exact: true })).toBeVisible();
-  await expect(streetModeration.getByText('Showing streets added in the past 48 hours', { exact: true })).toBeVisible();
+  await expect(streetModeration.getByText('2 pending', { exact: true })).toBeVisible();
+  await expect(streetModeration.getByText('Showing all pending requests and streets added in the past 48 hours', { exact: true })).toBeVisible();
   await expect(streetModeration.getByText('Pipeline Road', { exact: true })).toBeVisible();
-  await expect(streetModeration.getByText('Old Market Road', { exact: true })).toBeHidden();
+  await expect(streetModeration.getByText('Old Market Road', { exact: true })).toBeVisible();
   await streetModeration.getByLabel('Moderation state').selectOption('Rivers');
   await expect(streetModeration.getByText('Select a location', { exact: true })).toBeVisible();
   await streetModeration.getByLabel('Moderation location').selectOption('location-1');
@@ -320,15 +320,15 @@ test('admin can moderate proposed streets and pending contributions', async ({ c
   await streetModeration.getByPlaceholder('Search street, area, location or landmark').fill('missing street');
   await expect(streetModeration.getByText('No matching streets', { exact: true })).toBeVisible();
   await streetModeration.getByPlaceholder('Search street, area, location or landmark').fill('');
-  await streetModeration.getByRole('button', { name: 'Pending 1' }).click();
+  await streetModeration.getByRole('button', { name: 'Pending 2' }).click();
   const locationDirectory = page.getByTestId('location-directory');
   const locationDirectoryList = page.getByTestId('location-directory-list');
   await locationDirectory.getByLabel('State', { exact: true }).selectOption('Lagos');
   await expect(locationDirectoryList.getByText('Ikeja', { exact: true })).toBeVisible();
   await expect(locationDirectoryList.getByText('Port Harcourt', { exact: true })).toBeHidden();
   await locationDirectory.getByLabel('State', { exact: true }).selectOption('Rivers');
-  await page.getByPlaceholder('New Rivers location').fill('Tai');
-  await page.getByTitle('Add location').click();
+  await page.getByPlaceholder('New Rivers LGA').fill('Tai');
+  await page.getByTitle('Add LGA').click();
   await expect.poll(() => locationPayload).not.toBeNull();
   expect(locationPayload).toEqual(expect.objectContaining({ state: 'Rivers', name: 'Tai' }));
 
@@ -339,6 +339,7 @@ test('admin can moderate proposed streets and pending contributions', async ({ c
   await expect.poll(() => campaignPayload).not.toBeNull();
   expect((campaignPayload as { propertyId?: string } | null)?.propertyId).toBe(propertyId);
 
+  await streetModeration.getByPlaceholder('Search street, area, location or landmark').fill('Pipeline');
   await streetModeration.getByRole('button', { name: 'Approve', exact: true }).click();
   await expect.poll(() => streetReviewPayload).not.toBeNull();
   expect((streetReviewPayload as { status?: string } | null)?.status).toBe('approved');

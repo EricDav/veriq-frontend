@@ -122,6 +122,19 @@ export default function PropertiesPage() {
   const [accessFilter, setAccessFilter] = useState<AccessFilter>('all');
   const [pendingAccessFilter, setPendingAccessFilter] = useState<AccessFilter>('all');
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const locationFilters: FilterPropertiesDto = {
+      state: params.get('state') || undefined,
+      city: params.get('city') || undefined,
+      area: params.get('area') || undefined,
+      streetId: params.get('streetId') || undefined,
+    };
+    if (!Object.values(locationFilters).some(Boolean)) return;
+    setFilters(locationFilters);
+    setPendingFilters(locationFilters);
+  }, []);
+
   const isHostel = pendingFilters.propertyType === PropertyType.HOSTEL;
   const isShortStay = pendingFilters.propertyType === PropertyType.SHORT_STAY;
   const isStandard = !isHostel && !isShortStay;

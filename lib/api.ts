@@ -665,12 +665,12 @@ export const communityApi = {
   categories: () =>
     api.get<ApiResponse<IntelligenceCategory[]>>('/community/categories', { public: true }),
 
-  searchStreets: (filters: { q?: string; state?: string; city?: string; area?: string; locationId?: string; areaId?: string } = {}) => {
+  searchStreets: (filters: { q?: string; state?: string; city?: string; area?: string; locationId?: string; areaId?: string; page?: number } = {}) => {
     const params = new URLSearchParams();
     Object.entries(filters).forEach(([key, value]) => {
-      if (value) params.set(key, value);
+      if (value !== undefined && value !== '') params.set(key, String(value));
     });
-    return api.get<ApiResponse<Street[]>>(`/community/streets/search?${params}`);
+    return api.get<PaginatedResponse<Street>>(`/community/streets/search?${params}`);
   },
 
   popularStreets: () =>

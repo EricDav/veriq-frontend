@@ -3,11 +3,12 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { ArrowLeft, BarChart3, Clock, MapPin, Users } from 'lucide-react';
-import { ApiError, communityApi } from '@/lib/api';
-import { IntelligenceSourceType, type StreetIntelligencePayload } from '@/types';
+import { ArrowLeft, ArrowRight, BarChart3, Building2, Clock, MapPin, Users } from 'lucide-react';
+import { ApiError, communityApi, propertiesApi } from '@/lib/api';
+import { IntelligenceSourceType, type Property, type StreetIntelligencePayload } from '@/types';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useAuth } from '@/context/AuthContext';
+import { PropertyCard } from '@/components/properties/PropertyCard';
 
 const SECTIONS = ['Infrastructure', 'Environment', 'Accessibility'] as const;
 const SOURCE_LABELS: Record<IntelligenceSourceType, string> = {
@@ -47,6 +48,9 @@ function StreetResult() {
   const [searchLimitReached, setSearchLimitReached] = useState(false);
   const [notFound, setNotFound] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [relatedProperties, setRelatedProperties] = useState<Property[]>([]);
+  const [propertyScope, setPropertyScope] = useState<'street' | 'area'>('street');
+  const [propertiesLoading, setPropertiesLoading] = useState(false);
 
   useEffect(() => {
     communityApi
@@ -66,6 +70,40 @@ function StreetResult() {
       })
       .finally(() => setIsLoading(false));
   }, [id]);
+
+  useEffect(() => {
+    if (!payload?.street) return;
+    let cancelled = false;
+    const loadRelatedProperties = async () => {
+      setPropertiesLoading(true);
+      try {
+        const exact = await propertiesApi.list({ streetId: payload.street.id, page: 1, limit: 3 });
+        if (cancelled) return;
+        if (exact.data.length > 0) {
+          setRelatedProperties(exact.data);
+          setPropertyScope('street');
+          return;
+        }
+        const nearby = await propertiesApi.list({
+          state: payload.street.state,
+          city: payload.street.city,
+          area: payload.street.area,
+          page: 1,
+          limit: 3,
+        });
+        if (!cancelled) {
+          setRelatedProperties(nearby.data);
+          setPropertyScope('area');
+        }
+      } catch {
+        if (!cancelled) setRelatedProperties([]);
+      } finally {
+        if (!cancelled) setPropertiesLoading(false);
+      }
+    };
+    void loadRelatedProperties();
+    return () => { cancelled = true; };
+  }, [payload]);
 
   if (isLoading) {
     return <div className="flex min-h-screen items-center justify-center bg-veriq-surface"><LoadingSpinner size="lg" /></div>;
@@ -102,6 +140,11 @@ function StreetResult() {
   }
 
   const { street } = payload;
+  const browsePropertiesUrl = `/properties?${new URLSearchParams({
+    state: street.state,
+    city: street.city,
+    area: street.area,
+  }).toString()}`;
 
   return (
     <div className="min-h-screen bg-veriq-surface pt-24">
@@ -183,6 +226,38 @@ function StreetResult() {
             </div>
           </section>
         ))}
+
+        <section className="mb-8 border-y border-slate-200 py-8">
+          <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="mb-1 text-xs font-bold uppercase text-emerald-700">Continue your search</p>
+              <h2 className="font-display text-xl font-black text-navy-900">
+                {propertyScope === 'street' && relatedProperties.length > 0
+                  ? `Properties on ${street.streetName}`
+                  : `Properties around ${street.area}`}
+              </h2>
+              <p className="mt-1 text-sm text-veriq-muted">Use what you have learned about the street to compare available homes nearby.</p>
+            </div>
+            <Link href={browsePropertiesUrl} className="btn-primary inline-flex">
+              Browse properties <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+
+          {propertiesLoading ? (
+            <div className="flex justify-center py-10"><LoadingSpinner size="lg" /></div>
+          ) : relatedProperties.length > 0 ? (
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {relatedProperties.map((property) => <PropertyCard key={property.id} property={property} />)}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center border border-dashed border-slate-300 bg-white px-5 py-10 text-center">
+              <Building2 className="mb-3 h-8 w-8 text-slate-300" />
+              <p className="font-bold text-navy-900">No active listings here yet</p>
+              <p className="mt-1 max-w-md text-sm text-veriq-muted">Explore the wider property directory for other verified listings in {street.city}.</p>
+              <Link href={browsePropertiesUrl} className="btn-outline mt-5 inline-flex">Explore nearby properties</Link>
+            </div>
+          )}
+        </section>
 
         <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-5">
           <p className="font-bold text-navy-900">Know This Area?</p>

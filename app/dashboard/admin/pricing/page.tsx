@@ -79,10 +79,18 @@ export default function AdminPricingPage() {
     }
   }, [authLoading, user?.role, selectedAgentId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const grouped = useMemo(() => ({
-    defaults: rules.filter((rule) => !rule.agentId),
-    partners: rules.filter((rule) => rule.agentId),
-  }), [rules]);
+  const grouped = useMemo(() => {
+    const unique = new Map<string, ConsultationPricingRule>();
+    for (const rule of rules) {
+      const key = `${rule.agentId ?? 'default'}:${rule.tier}`;
+      if (!unique.has(key)) unique.set(key, rule);
+    }
+    const deduplicated = Array.from(unique.values());
+    return {
+      defaults: deduplicated.filter((rule) => !rule.agentId),
+      partners: deduplicated.filter((rule) => rule.agentId),
+    };
+  }, [rules]);
 
   const startEdit = (rule: ConsultationPricingRule) => {
     setForm({
