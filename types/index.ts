@@ -666,6 +666,16 @@ export interface StreetIntelligencePayload {
   results: StreetIntelligenceResult[];
 }
 
+export interface StreetInitialObservation {
+  id: string;
+  streetId: string;
+  categoryId: string;
+  optionId: string;
+  sourceType: IntelligenceSourceType;
+  supplementaryValue: string[] | null;
+  observedAt: string;
+}
+
 export interface ContributionAnswerDto {
   categoryId: string;
   responseType: ContributionResponseType;

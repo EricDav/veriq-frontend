@@ -443,13 +443,6 @@ export default function DashboardPropertyDetailPage() {
         setConsultation(null);
         return;
       }
-      if (freeUnlockStatus?.available) {
-        setHasAccess(true);
-        setAccessDetails(null);
-        setConsultation(null);
-        return;
-      }
-
       if (isAuthenticated) {
         try {
           const accessRes = await consultationsApi.checkAccess(id);
@@ -509,7 +502,10 @@ export default function DashboardPropertyDetailPage() {
   }, [id, isAuthenticated, load, property?.agent?.user?.id, property?.agent?.userId, success, toastError, user?.id]);
 
   const handleFreeUnlock = useCallback(async () => {
-    if (!isAuthenticated) { toastError('Please log in to claim a Free Unlock.'); return; }
+    if (!isAuthenticated) {
+      router.push(`/auth/login?redirect=${encodeURIComponent(`/dashboard/browse/${id}`)}`);
+      return;
+    }
     if (property?.agent?.userId === user?.id || property?.agent?.user?.id === user?.id) {
       toastError('Agents cannot unlock their own listings.');
       return;
@@ -862,7 +858,7 @@ export default function DashboardPropertyDetailPage() {
                             <p className="mt-1 text-xs text-emerald-700">Active contributors can open this report without wallet payment.</p>
                           </div>
                           <button type="button" onClick={handleFreeUnlock} disabled={isUnlocking} className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-60">
-                            {isUnlocking ? 'Claiming…' : freeUnlock.eligibility?.reason === 'community_membership_required' ? 'Join Community to Unlock' : 'Claim Free Unlock'}
+                            {isUnlocking ? 'Claiming…' : !isAuthenticated ? 'Sign In to Unlock' : freeUnlock.eligibility?.reason === 'community_membership_required' ? 'Join Community to Unlock' : 'Claim Free Unlock'}
                           </button>
                         </div>
                       </div>

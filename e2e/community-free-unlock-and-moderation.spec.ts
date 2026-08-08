@@ -106,7 +106,7 @@ async function mockSharedShell(page: Page, role: 'user' | 'admin' = 'user') {
   });
 }
 
-test('renter can open a Free Unlock property report without a claim step', async ({ context, page }) => {
+test('signed-in renter must claim a Free Unlock before viewing the report', async ({ context, page }) => {
   await seedAuth(context, page, 'user');
   await mockSharedShell(page, 'user');
 
@@ -168,9 +168,11 @@ test('renter can open a Free Unlock property report without a claim step', async
   await expect(page.getByText('Free Unlock', { exact: true })).toBeVisible();
 
   await page.goto(`/properties/${propertyId}`);
+  await expect(page.getByRole('heading', { name: 'Full Intelligence Report Locked' })).toBeVisible();
+  await page.getByRole('button', { name: 'Claim Free Unlock' }).click();
   await expect(page.getByRole('heading', { name: 'Intelligence Report Unlocked' })).toBeVisible();
   await expect(page.getByText('12 Test Road')).toBeVisible();
-  expect(unlocked).toBe(false);
+  expect(unlocked).toBe(true);
 });
 
 test('admin can moderate proposed streets and pending contributions', async ({ context, page }) => {
@@ -234,6 +236,7 @@ test('admin can moderate proposed streets and pending contributions', async ({ c
   let contributionReviewPayload: Record<string, unknown> | null = null;
   let campaignPayload: Record<string, unknown> | null = null;
   let locationPayload: Record<string, unknown> | null = null;
+  let observationPayload: Record<string, unknown> | null = null;
 
   await page.route(`${API_BASE}/community/admin/analytics`, async (route) => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ statusCode: 200, message: 'Analytics', data: { totalProposedStreets: 1, activeCampaigns: 0 } }) });
@@ -280,7 +283,7 @@ test('admin can moderate proposed streets and pending contributions', async ({ c
   await page.route(`${API_BASE}/community/admin/contributions**`, async (route) => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ statusCode: 200, message: 'Contributions', data: [contribution] }) });
   });
-  await page.route(`${API_BASE}/community/admin/locations`, async (route) => {
+  await page.route(`${API_BASE}/community/admin/locations**`, async (route) => {
     if (route.request().method() === 'POST') {
       locationPayload = route.request().postDataJSON();
       await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ statusCode: 201, message: 'Location saved', data: { id: 'location-2', ...locationPayload } }) });
@@ -294,6 +297,13 @@ test('admin can moderate proposed streets and pending contributions', async ({ c
   await page.route(`${API_BASE}/community/admin/streets/${street.id}/review`, async (route) => {
     streetReviewPayload = route.request().postDataJSON();
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ statusCode: 200, message: 'Street reviewed', data: { ...street, ...streetReviewPayload } }) });
+  });
+  await page.route(`${API_BASE}/community/admin/streets/${approvedStreet.id}/observations`, async (route) => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ statusCode: 200, message: 'Initial intelligence', data: [] }) });
+  });
+  await page.route(`${API_BASE}/community/admin/observations`, async (route) => {
+    observationPayload = route.request().postDataJSON();
+    await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ statusCode: 201, message: 'Saved', data: { id: 'observation-1', ...observationPayload } }) });
   });
   await page.route(`${API_BASE}/community/admin/contributions/${contribution.id}/review`, async (route) => {
     contributionReviewPayload = route.request().postDataJSON();
@@ -322,15 +332,25 @@ test('admin can moderate proposed streets and pending contributions', async ({ c
   await streetModeration.getByPlaceholder('Search street, area, location or landmark').fill('');
   await streetModeration.getByRole('button', { name: 'Pending 2' }).click();
   const locationDirectory = page.getByTestId('location-directory');
-  const locationDirectoryList = page.getByTestId('location-directory-list');
-  await locationDirectory.getByLabel('State', { exact: true }).selectOption('Lagos');
-  await expect(locationDirectoryList.getByText('Ikeja', { exact: true })).toBeVisible();
-  await expect(locationDirectoryList.getByText('Port Harcourt', { exact: true })).toBeHidden();
-  await locationDirectory.getByLabel('State', { exact: true }).selectOption('Rivers');
-  await page.getByPlaceholder('New Rivers LGA').fill('Tai');
+  await expect(locationDirectory.getByLabel('Directory state').getByRole('option', { name: 'Lagos' })).toHaveCount(0);
+  await locationDirectory.getByLabel('Directory state').selectOption('Rivers');
+  await locationDirectory.getByLabel('Directory LGA').selectOption('location-1');
+  await expect(locationDirectory.getByLabel('Directory area').getByRole('option', { name: 'Choba' })).toHaveCount(1);
   await page.getByTitle('Add LGA').click();
+  await expect(page.getByRole('dialog', { name: 'Add local government' })).toBeVisible();
+  await page.getByRole('dialog', { name: 'Add local government' }).getByLabel('Name').fill('Tai');
+  await page.getByRole('dialog', { name: 'Add local government' }).getByRole('button', { name: 'Save' }).click();
   await expect.poll(() => locationPayload).not.toBeNull();
   expect(locationPayload).toEqual(expect.objectContaining({ state: 'Rivers', name: 'Tai' }));
+
+  await page.getByLabel('Initial intelligence state').selectOption('Rivers');
+  await page.getByLabel('Initial intelligence location').selectOption('location-1');
+  await page.getByRole('combobox', { name: 'Initial intelligence street' }).fill('Approved');
+  await page.getByRole('option', { name: /Approved Avenue/ }).click();
+  await page.getByText('16-20 hrs/day', { exact: true }).click();
+  await page.getByRole('button', { name: 'Save Intelligence' }).click();
+  await expect.poll(() => observationPayload).not.toBeNull();
+  expect(observationPayload).toEqual(expect.objectContaining({ streetId: approvedStreet.id, categoryId: 'cat-electricity', optionId: 'opt-good', sourceType: 'veriq_initial' }));
 
   await page.locator('#free-unlocks select').first().selectOption(propertyId);
   await page.locator('input[type="datetime-local"]').first().fill('2026-07-16T09:00');

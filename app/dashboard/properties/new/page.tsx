@@ -45,7 +45,7 @@ const schema = z.object({
   state: z.string().min(2, 'State is required'),
   city: z.string().min(2, 'City is required'),
   area: z.string().min(2, 'Area is required'),
-  streetId: z.string().min(1, 'Select the property street'),
+  streetId: z.string().optional(),
   address: z.string().optional(),
   // Hostel-specific
   hostelPersonsPerRoom: z.coerce.number().min(1).optional(),
@@ -239,6 +239,8 @@ export default function NewPropertyPage() {
   const [masterLocations, setMasterLocations] = useState<CommunityLocation[]>([]);
   const [masterAreas, setMasterAreas] = useState<CommunityArea[]>([]);
   const [masterStreets, setMasterStreets] = useState<Street[]>([]);
+  const [streetNotListed, setStreetNotListed] = useState(false);
+  const [missingStreetName, setMissingStreetName] = useState('');
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const clientRequestIdRef = useRef(
     typeof crypto !== 'undefined' && 'randomUUID' in crypto
@@ -260,7 +262,6 @@ export default function NewPropertyPage() {
   const propertyType = watch('propertyType');
   const selectedState = watch('state');
   const selectedCity = watch('city');
-  const selectedArea = watch('area');
   const coverImageUrl = watch('coverImageUrl');
   const isHostel = propertyType === PropertyType.HOSTEL;
   const isShortStay = propertyType === PropertyType.SHORT_STAY;
@@ -282,6 +283,7 @@ export default function NewPropertyPage() {
     setValue('city', '');
     setValue('area', '');
     setValue('streetId', '');
+    setStreetNotListed(false);
     if (!selectedState) return;
     communityApi.streetLocations({ state: selectedState })
       .then((response) => setMasterLocations(response.data.locations))
@@ -293,22 +295,17 @@ export default function NewPropertyPage() {
     setMasterStreets([]);
     setValue('area', '');
     setValue('streetId', '');
+    setStreetNotListed(false);
     if (!selectedState || !selectedCity) return;
     communityApi.streetLocations({ state: selectedState, city: selectedCity })
       .then((response) => setMasterAreas(response.data.areaRecords))
       .catch(() => setMasterAreas([]));
-  }, [selectedCity, selectedState, setValue]);
-
-  useEffect(() => {
-    setMasterStreets([]);
-    setValue('streetId', '');
     const locationId = masterLocations.find((item) => item.name === selectedCity)?.id;
-    const areaId = masterAreas.find((item) => item.name === selectedArea)?.id;
-    if (!selectedState || !selectedCity || !selectedArea || !locationId || !areaId) return;
-    communityApi.searchStreets({ state: selectedState, city: selectedCity, area: selectedArea, locationId, areaId })
+    if (!locationId) return;
+    communityApi.searchStreets({ state: selectedState, city: selectedCity, locationId })
       .then((response) => setMasterStreets(response.data))
       .catch(() => setMasterStreets([]));
-  }, [masterAreas, masterLocations, selectedArea, selectedCity, selectedState, setValue]);
+  }, [masterLocations, selectedCity, selectedState, setValue]);
 
   // ── Toggle helpers ────────────────────────────────────────────────────
   const toggle = <T,>(
@@ -449,6 +446,29 @@ export default function NewPropertyPage() {
   // ── Submit ────────────────────────────────────────────────────────────
   const onSubmit = async (data: FormData) => {
     try {
+      let streetId = data.streetId;
+      if (streetNotListed) {
+        const streetName = missingStreetName.trim();
+        const location = masterLocations.find((item) => item.name === data.city);
+        const area = masterAreas.find((item) => item.name === data.area);
+        if (!streetName || !location || !area) {
+          toastError('Select an area and enter the street name.');
+          return;
+        }
+        const response = await communityApi.createStreet({
+          state: data.state,
+          city: data.city,
+          area: data.area,
+          streetName,
+          locationId: location.id,
+          areaId: area.id,
+        });
+        streetId = response.data.id;
+      }
+      if (!streetId) {
+        toastError('Select a street or choose “I can’t see my street”.');
+        return;
+      }
       const missingSections = MEDIA_CATEGORIES.filter(({ section }) => (
         (mediaUploads[section] ?? []).filter((item) => item.status === 'uploaded').length < MIN_IMAGES
       ));
@@ -498,6 +518,7 @@ export default function NewPropertyPage() {
       const payload = {
         clientRequestId: clientRequestIdRef.current,
         ...data,
+        streetId,
         ...(isHostel ? { hostelSuitableFor: selectedSuitableFor } : {}),
         ...(isShortStay ? { shortStayAmenities: selectedAmenities } : {}),
         electricityInfo,
@@ -578,7 +599,7 @@ export default function NewPropertyPage() {
             {coverUploadError && <p className="error">{coverUploadError}</p>}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="label">Property Type *</label>
               <select {...register('propertyType')} className="input">
@@ -871,9 +892,14 @@ export default function NewPropertyPage() {
           </div>
         </div>
 
-        {/* ── Location ── */}
+        {/* ── Directory location and private address ── */}
         <div className="card p-6 space-y-4">
-          <h2 className="font-display text-base font-bold text-navy-900">Location</h2>
+          <div>
+            <h2 className="font-display text-base font-bold text-navy-900">Location Directory</h2>
+            <p className="mt-1 text-xs text-veriq-muted">
+              Select the approved location and street that link this property to Street Intelligence.
+            </p>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="label">State *</label>
@@ -886,33 +912,62 @@ export default function NewPropertyPage() {
               {errors.state && <p className="error">{errors.state.message}</p>}
             </div>
             <div>
-              <label className="label">Location / City-LGA *</label>
+              <label className="label">Local Government *</label>
               <select {...register('city')} className="input" disabled={!selectedState}>
-                <option value="">Select location...</option>
+                <option value="">Select local government...</option>
                 {masterLocations.map((location) => <option key={location.id} value={location.name}>{location.name}</option>)}
               </select>
               {errors.city && <p className="error">{errors.city.message}</p>}
             </div>
+          </div>
+          <div>
+            <label className="label">Street *</label>
+            <select
+              {...register('streetId', {
+                onChange: (event) => {
+                  const street = masterStreets.find((item) => item.id === event.target.value);
+                  setValue('area', street?.area ?? '');
+                },
+              })}
+              className="input"
+              disabled={!selectedCity || streetNotListed}
+            >
+              <option value="">Select approved street...</option>
+              {masterStreets.map((street) => <option key={street.id} value={street.id}>{street.area} - {street.streetName}</option>)}
+            </select>
+            {errors.streetId && <p className="error">{errors.streetId.message}</p>}
+          </div>
+          <label className="flex items-center gap-2 text-sm font-semibold text-navy-700">
+            <input
+              type="checkbox"
+              checked={streetNotListed}
+              onChange={(event) => {
+                setStreetNotListed(event.target.checked);
+                setValue('streetId', '');
+                setValue('area', '');
+              }}
+              disabled={!selectedCity}
+              className="h-4 w-4"
+            />
+            I can&apos;t see my street in the list
+          </label>
+          {streetNotListed && (
             <div>
               <label className="label">Area / Neighbourhood *</label>
-              <select {...register('area')} className="input" disabled={!selectedCity}>
+              <select {...register('area')} className="input">
                 <option value="">Select area...</option>
                 {masterAreas.map((area) => <option key={area.id} value={area.name}>{area.name}</option>)}
               </select>
               {errors.area && <p className="error">{errors.area.message}</p>}
+              <label className="label mt-4">Street Name *</label>
+              <input value={missingStreetName} onChange={(event) => setMissingStreetName(event.target.value)} className="input" placeholder="Enter the street name" />
+              <p className="mt-1 text-xs text-veriq-muted">The street will be sent for admin review. You can continue listing the property now.</p>
             </div>
-          </div>
+          )}
           <div>
-            <label className="label">Street *</label>
-            <select {...register('streetId')} className="input" disabled={!selectedArea}>
-              <option value="">Select approved street...</option>
-              {masterStreets.map((street) => <option key={street.id} value={street.id}>{street.streetName}</option>)}
-            </select>
-            {errors.streetId && <p className="error">{errors.streetId.message}</p>}
-          </div>
-          <div>
-            <label className="label">Full Address <span className="text-slate-400">(optional — shown only after unlock)</span></label>
-            <input {...register('address')} className="input" placeholder="e.g. 12 Varsity Road, Choba" />
+            <label className="label">Full Property Address <span className="text-slate-400">(optional - private until unlocked)</span></label>
+            <input {...register('address')} className="input" placeholder="House number, building or estate, and street" />
+            <p className="mt-1 text-xs text-veriq-muted">This is the address users see after they unlock the property.</p>
           </div>
         </div>
 

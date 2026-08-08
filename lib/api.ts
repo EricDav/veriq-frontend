@@ -749,12 +749,14 @@ export const communityApi = {
   adminCampaigns: () =>
     api.get<ApiResponse<FreeUnlockCampaign[]>>('/community/admin/free-unlocks'),
 
-  adminStreets: (filters: { status?: StreetStatus; recentHours?: number; state?: string; locationId?: string } = {}) => {
+  adminStreets: (filters: { status?: StreetStatus; recentHours?: number; state?: string; locationId?: string; areaId?: string; q?: string } = {}) => {
     const params = new URLSearchParams();
     if (filters.status) params.set('status', filters.status);
     if (filters.recentHours) params.set('recentHours', String(filters.recentHours));
     if (filters.state) params.set('state', filters.state);
     if (filters.locationId) params.set('locationId', filters.locationId);
+    if (filters.areaId) params.set('areaId', filters.areaId);
+    if (filters.q) params.set('q', filters.q);
     const query = params.toString();
     return api.get<ApiResponse<Street[]>>(`/community/admin/streets${query ? `?${query}` : ''}`);
   },
@@ -762,7 +764,7 @@ export const communityApi = {
   adminContributions: (status?: ContributionStatus) =>
     api.get<ApiResponse<StreetContribution[]>>(`/community/admin/contributions${status ? `?status=${status}` : ''}`),
 
-  adminLocations: () => api.get<ApiResponse<import('@/types').CommunityLocation[]>>('/community/admin/locations'),
+  adminLocations: (state?: string) => api.get<ApiResponse<import('@/types').CommunityLocation[]>>(`/community/admin/locations${state ? `?state=${encodeURIComponent(state)}` : ''}`),
   createLocation: (dto: { state: string; name: string; isActive?: boolean }) => api.post<ApiResponse<import('@/types').CommunityLocation>>('/community/admin/locations', dto),
   updateLocation: (id: string, dto: { state: string; name: string; isActive?: boolean }) => api.patch<ApiResponse<import('@/types').CommunityLocation>>(`/community/admin/locations/${id}`, dto),
   deleteLocation: (id: string) => api.delete<ApiResponse<null>>(`/community/admin/locations/${id}`),
@@ -772,6 +774,8 @@ export const communityApi = {
   updateStreetAdmin: (id: string, dto: { locationId?: string; areaId?: string; streetName?: string; landmark?: string; latitude?: number; longitude?: number; isPopular?: boolean; popularRank?: number }) => api.patch<ApiResponse<Street>>(`/community/admin/streets/${id}`, dto),
   deleteStreetAdmin: (id: string) => api.delete<ApiResponse<null>>(`/community/admin/streets/${id}`),
   mergeStreets: (sourceStreetId: string, targetStreetId: string) => api.post<ApiResponse<Street>>('/community/admin/streets/merge', { sourceStreetId, targetStreetId }),
+  createStreetAdmin: (dto: import('@/types').CreateStreetDto) => api.post<ApiResponse<Street>>('/community/admin/streets', dto),
+  initialObservations: (streetId: string) => api.get<ApiResponse<import('@/types').StreetInitialObservation[]>>(`/community/admin/streets/${streetId}/observations`),
 
   reviewStreet: (id: string, dto: { status: StreetStatus; isPopular?: boolean; popularRank?: number }) =>
     api.patch<ApiResponse<Street>>(`/community/admin/streets/${id}/review`, dto),

@@ -108,6 +108,8 @@ export default function EditListingPage() {
   const [masterLocations, setMasterLocations] = useState<CommunityLocation[]>([]);
   const [masterAreas, setMasterAreas] = useState<CommunityArea[]>([]);
   const [masterStreets, setMasterStreets] = useState<Street[]>([]);
+  const [streetNotListed, setStreetNotListed] = useState(false);
+  const [missingStreetName, setMissingStreetName] = useState('');
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [isMediaLoading, setIsMediaLoading] = useState(false);
   const [uploadingSection, setUploadingSection] = useState<string | null>(null);
@@ -225,17 +227,12 @@ export default function EditListingPage() {
     communityApi.streetLocations({ state: form.state, city: form.city })
       .then((res) => setMasterAreas(res.data.areaRecords))
       .catch(() => setMasterAreas([]));
-  }, [form.city, form.state]);
-
-  useEffect(() => {
-    setMasterStreets([]);
     const location = masterLocations.find((item) => item.name === form.city);
-    const area = masterAreas.find((item) => item.name === form.area);
-    if (!form.state || !location || !area) return;
-    communityApi.searchStreets({ state: form.state, locationId: location.id, areaId: area.id })
+    if (!location) return;
+    communityApi.searchStreets({ state: form.state, locationId: location.id })
       .then((res) => setMasterStreets(res.data))
       .catch(() => setMasterStreets([]));
-  }, [form.area, form.city, form.state, masterAreas, masterLocations]);
+  }, [form.city, form.state, masterLocations]);
 
   useEffect(() => {
     if (!id) return;
@@ -347,9 +344,33 @@ export default function EditListingPage() {
     }
     setIsSaving(true);
     try {
+      let streetId = form.streetId;
+      if (streetNotListed) {
+        const streetName = missingStreetName.trim();
+        const location = masterLocations.find((item) => item.name === form.city);
+        const area = masterAreas.find((item) => item.name === form.area);
+        if (!streetName || !location || !area || !form.state || !form.city || !form.area) {
+          toastError('Select an area and enter the street name.');
+          return;
+        }
+        const response = await communityApi.createStreet({
+          state: form.state,
+          city: form.city,
+          area: form.area,
+          streetName,
+          locationId: location.id,
+          areaId: area.id,
+        });
+        streetId = response.data.id;
+      }
+      if (!streetId) {
+        toastError('Select a street or choose “I can’t see my street”.');
+        return;
+      }
       const payload = Object.fromEntries(
         Object.entries(form).filter(([, value]) => value !== ''),
       ) as Partial<CreatePropertyDto>;
+      payload.streetId = streetId;
       payload.coverImageUrl = latestCoverImageUrl;
       await propertiesApi.update(id, payload);
       success('Listing updated successfully');
@@ -425,7 +446,7 @@ export default function EditListingPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className="label">Property Type *</label>
               <select value={form.propertyType ?? ''} onChange={(e) => update('propertyType', e.target.value)} className="input" required>
@@ -457,7 +478,10 @@ export default function EditListingPage() {
         </div>
 
         <div className="card space-y-4 p-6">
-          <h2 className="font-display text-base font-bold text-navy-900">Location</h2>
+          <div>
+            <h2 className="font-display text-base font-bold text-navy-900">Location Directory</h2>
+            <p className="mt-1 text-xs text-veriq-muted">Select the approved location and street that link this property to Street Intelligence.</p>
+          </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
               <label className="label">State *</label>
@@ -472,32 +496,47 @@ export default function EditListingPage() {
               </select>
             </div>
             <div>
-              <label className="label">Location *</label>
+              <label className="label">Local Government *</label>
               <select value={form.city ?? ''} onChange={(e) => setForm((current) => ({ ...current, city: e.target.value, area: '', streetId: undefined }))} className="input" required disabled={!form.state}>
-                <option value="">Select location...</option>
+                <option value="">Select local government...</option>
                 {form.city && !masterLocations.some((item) => item.name === form.city) && <option value={form.city}>{form.city} (legacy)</option>}
                 {masterLocations.map((item) => <option key={item.id} value={item.name}>{item.name}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="label">Area *</label>
-              <select value={form.area ?? ''} onChange={(e) => setForm((current) => ({ ...current, area: e.target.value, streetId: undefined }))} className="input" required disabled={!form.city}>
-                <option value="">Select area...</option>
-                {form.area && !masterAreas.some((item) => item.name === form.area) && <option value={form.area}>{form.area} (legacy)</option>}
-                {masterAreas.map((item) => <option key={item.id} value={item.name}>{item.name}</option>)}
               </select>
             </div>
           </div>
           <div>
             <label className="label">Street *</label>
-            <select value={form.streetId ?? ''} onChange={(e) => update('streetId', e.target.value)} className="input" required disabled={!form.area}>
+            <select value={form.streetId ?? ''} onChange={(e) => {
+              const street = masterStreets.find((item) => item.id === e.target.value);
+              setForm((current) => ({ ...current, streetId: e.target.value || undefined, area: street?.area ?? '' }));
+            }} className="input" required disabled={!form.city || streetNotListed}>
               <option value="">Select approved street...</option>
-              {masterStreets.map((item) => <option key={item.id} value={item.id}>{item.streetName}</option>)}
+              {masterStreets.map((item) => <option key={item.id} value={item.id}>{item.area} - {item.streetName}</option>)}
             </select>
           </div>
+          <label className="flex items-center gap-2 text-sm font-semibold text-navy-700">
+            <input type="checkbox" checked={streetNotListed} onChange={(e) => {
+              setStreetNotListed(e.target.checked);
+              setForm((current) => ({ ...current, streetId: undefined, area: '' }));
+            }} disabled={!form.city} className="h-4 w-4" />
+            I can&apos;t see my street in the list
+          </label>
+          {streetNotListed && (
+            <div>
+              <label className="label">Area / Neighbourhood *</label>
+              <select value={form.area ?? ''} onChange={(e) => update('area', e.target.value)} className="input" required>
+                <option value="">Select area...</option>
+                {masterAreas.map((item) => <option key={item.id} value={item.name}>{item.name}</option>)}
+              </select>
+              <label className="label mt-4">Street Name *</label>
+              <input value={missingStreetName} onChange={(event) => setMissingStreetName(event.target.value)} className="input" placeholder="Enter the street name" />
+              <p className="mt-1 text-xs text-veriq-muted">The street will be sent for admin review. You can save the listing now.</p>
+            </div>
+          )}
           <div>
-            <label className="label">Address</label>
-            <input value={form.address ?? ''} onChange={(e) => update('address', e.target.value)} className="input" />
+            <label className="label">Full Property Address <span className="text-slate-400">(optional - private until unlocked)</span></label>
+            <input value={form.address ?? ''} onChange={(e) => update('address', e.target.value)} className="input" placeholder="House number, building or estate, and street" />
+            <p className="mt-1 text-xs text-veriq-muted">This is the address users see after they unlock the property.</p>
           </div>
         </div>
 
