@@ -85,7 +85,7 @@ export function FAQClient({
                   </button>
                   {isOpen && (
                     <div className="px-6 pb-5">
-                      <p className="text-sm text-veriq-muted leading-relaxed">{faq.a}</p>
+                      <p className="whitespace-pre-line text-sm leading-relaxed text-veriq-muted">{faq.a}</p>
                     </div>
                   )}
                 </div>

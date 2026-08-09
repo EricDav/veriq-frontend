@@ -1,117 +1,47 @@
-import {
-  Shield,
-  Star,
-  FileSearch,
-  MapPin,
-  TrendingUp,
-  Clock,
-  CheckCircle,
-  Eye,
-} from "lucide-react";
-import type { SiteContent } from "@/types";
+import { ArrowRight, MapPin, Shield, UserRound } from 'lucide-react';
+import Link from 'next/link';
+import type { SiteContent } from '@/types';
 
 const FEATURES = [
   {
-    icon: <Eye className="h-6 w-6" />,
-    color: "bg-blue-50 text-blue-600",
-    title: "Verified Property Previews",
-    description:
-      "View curated, moderated previews of every listing. No more surprises — what you see is what the property actually looks like.",
+    icon: Shield,
+    title: 'Property Intelligence',
+    description: 'Verified previews, disclosures, property condition, utilities, and inspection insights, all structured so you know what to expect.',
+    className: 'bg-emerald-50 text-emerald-600',
+    href: '/properties',
   },
   {
-    icon: <FileSearch className="h-6 w-6" />,
-    color: "bg-purple-50 text-purple-600",
-    title: "Intelligence Reports",
-    description:
-      "Unlock detailed property reports including environmental data, utility disclosures, accessibility information, and structured inspection insights.",
+    icon: MapPin,
+    title: 'Street Intelligence',
+    description: 'Flood risk, electricity, noise, network, road access, security feel, and neighbourhood context for supported areas.',
+    className: 'bg-blue-50 text-blue-600',
+    href: '/street-intelligence',
   },
   {
-    icon: <Star className="h-6 w-6" />,
-    color: "bg-gold-50 text-gold-600",
-    title: "Agent Trust Scores",
-    description:
-      "Every agent is scored based on listing accuracy, response speed, freshness reliability, and real inspection success rates.",
-  },
-  {
-    icon: <CheckCircle className="h-6 w-6" />,
-    color: "bg-emerald-50 text-emerald-600",
-    title: "Freshness Verification",
-    description:
-      "Listings are regularly verified for availability. Stale or unavailable properties are automatically flagged or removed.",
-  },
-  {
-    icon: <MapPin className="h-6 w-6" />,
-    color: "bg-red-50 text-red-500",
-    title: "Environmental & Accessibility Info",
-    description:
-      "Access neighbourhood context, flood risk indicators, road access reports, and proximity data before committing to an inspection.",
-  },
-  {
-    icon: <Shield className="h-6 w-6" />,
-    color: "bg-indigo-50 text-indigo-600",
-    title: "Refund Protection",
-    description:
-      "If a property becomes unavailable after you unlock its report, you may qualify for a credit toward a similar available property.",
-  },
-  {
-    icon: <TrendingUp className="h-6 w-6" />,
-    color: "bg-teal-50 text-teal-600",
-    title: "Agent Performance Tracking",
-    description:
-      "Compare agents side-by-side. Agents who maintain high standards earn better visibility and trust ratings on the platform.",
-  },
-  {
-    icon: <Clock className="h-6 w-6" />,
-    color: "bg-orange-50 text-orange-600",
-    title: "Auto-Expiring Listings",
-    description:
-      "Listings automatically expire if not refreshed by the agent, keeping the platform clean, current, and trustworthy.",
+    icon: UserRound,
+    title: 'Agent Trust',
+    description: 'Identity verification, listing freshness, trust score, and performance history to help you choose the right agent.',
+    className: 'bg-violet-50 text-violet-600',
+    href: '/about',
   },
 ];
 
-export function Features({ content }: { content?: SiteContent }) {
-  const features = Array.isArray(content?.data?.items)
-    ? (content.data.items as Array<{ title: string; description: string }>).map((item, index) => ({
-        ...FEATURES[index % FEATURES.length],
-        title: item.title,
-        description: item.description,
-      }))
-    : FEATURES;
-
+export function Features({ content: _content }: { content?: SiteContent }) {
   return (
-    <section id="features" className="py-24 bg-veriq-surface">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="text-center max-w-2xl mx-auto mb-16">
-          <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 border border-blue-100 px-4 py-1.5 text-xs font-semibold text-veriq-secondary mb-4">
-            <Shield className="h-3.5 w-3.5" />
-            Platform Features
-          </div>
-          <h2 className="section-heading">
-            {content?.title ?? <>Everything you need to <span className="gradient-text">decide with confidence</span></>}
-          </h2>
-          <p className="section-subheading mt-4">
-            {content?.body ?? "Veriq Property isn't just a listings site. It's a full intelligence ecosystem built around helping you make the right decision before you ever leave home."}
-          </p>
+    <section id="features" className="bg-slate-50 py-16 sm:py-20">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+        <div className="text-center">
+          <span className="text-xs font-bold text-emerald-600">Why Veriq</span>
+          <h2 className="mt-3 font-display text-3xl font-black text-navy-900 sm:text-4xl">Everything you need to inspect smarter</h2>
+          <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-veriq-muted">Veriq combines three layers of intelligence so you can clearly see before you visit, avoid surprises, and make confident decisions.</p>
         </div>
-
-        {/* Grid */}
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {features.map((feature, i) => (
-            <div
-              key={feature.title}
-              className="card p-6 group cursor-default"
-              style={{ animationDelay: `${i * 75}ms` }}
-            >
-              <div className={`inline-flex h-12 w-12 items-center justify-center rounded-2xl ${feature.color} mb-5 transition-transform duration-300 group-hover:scale-110`}>
-                {feature.icon}
-              </div>
-              <h3 className="font-display text-base font-bold text-navy-900 mb-2 leading-snug">
-                {feature.title}
-              </h3>
-              <p className="text-sm text-veriq-muted leading-relaxed">
-                {feature.description}
-              </p>
+        <div className="mt-10 grid gap-4 md:grid-cols-3">
+          {FEATURES.map(({ icon: Icon, title, description, className, href }) => (
+            <div key={title} className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+              <div className={`flex h-11 w-11 items-center justify-center rounded-lg ${className}`}><Icon className="h-5 w-5" /></div>
+              <h3 className="mt-5 font-display text-lg font-bold text-navy-900">{title}</h3>
+              <p className="mt-3 text-sm leading-6 text-veriq-muted">{description}</p>
+              <Link href={href} className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-emerald-600">Learn more <ArrowRight className="h-4 w-4" /></Link>
             </div>
           ))}
         </div>

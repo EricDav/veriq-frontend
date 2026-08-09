@@ -111,6 +111,7 @@ test('signed-in renter must claim a Free Unlock before viewing the report', asyn
   await mockSharedShell(page, 'user');
 
   let unlocked = false;
+  let paidUnlockRequests = 0;
   await page.route(`${API_BASE}/properties*`, async (route) => {
     await route.fulfill({
       status: 200,
@@ -152,6 +153,14 @@ test('signed-in renter must claim a Free Unlock before viewing the report', asyn
       body: JSON.stringify({ statusCode: 201, message: 'Property unlocked successfully', data: { id: 'unlock-1' } }),
     });
   });
+  await page.route(`${API_BASE}/consultations/initiate`, async (route) => {
+    paidUnlockRequests += 1;
+    await route.fulfill({
+      status: 500,
+      contentType: 'application/json',
+      body: JSON.stringify({ statusCode: 500, message: 'Paid unlock must not be called for a Free Unlock' }),
+    });
+  });
   await page.route(`${API_BASE}/consultations/check-access/${propertyId}`, async (route) => {
     await route.fulfill({
       status: 200,
@@ -169,10 +178,12 @@ test('signed-in renter must claim a Free Unlock before viewing the report', asyn
 
   await page.goto(`/properties/${propertyId}`);
   await expect(page.getByRole('heading', { name: 'Full Intelligence Report Locked' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Unlock Intelligence Report' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Claim Free Unlock' }).click();
   await expect(page.getByRole('heading', { name: 'Intelligence Report Unlocked' })).toBeVisible();
   await expect(page.getByText('12 Test Road')).toBeVisible();
   expect(unlocked).toBe(true);
+  expect(paidUnlockRequests).toBe(0);
 });
 
 test('admin can moderate proposed streets and pending contributions', async ({ context, page }) => {

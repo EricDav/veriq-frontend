@@ -11,6 +11,8 @@ import { useAuth } from '@/context/AuthContext';
 import { PageLoader, LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useToast } from '@/components/ui/Toast';
 import { Modal } from '@/components/ui/Modal';
+import { DEFAULT_FAQS, DEFAULT_FAQ_CATEGORIES, FAQ_CONTENT_VERSION } from '@/app/faq/faq-data';
+import { DEFAULT_TERMS_SECTIONS, TERMS_CONTENT_VERSION } from '@/app/terms/terms-data';
 
 const PRESETS = [
   { page: 'home', section: 'hero', label: 'Home hero' },
@@ -212,34 +214,9 @@ const DEFAULT_CONTENT: Record<string, UpsertSiteContentDto> = {
     section: 'questions',
     title: 'Questions',
     data: {
-      faqs: [
-        { q: 'What is Veriq Property?', a: 'Veriq Property is a property intelligence platform designed to help people make smarter property decisions before physical inspections. We provide verified listings, detailed property intelligence reports, and agent trust scores.', categories: ['renter'] },
-        { q: 'Does Veriq Property own the listed properties?', a: 'No. Veriq Property does not own properties listed on the platform. The platform operates as a property intelligence and intermediary service. All listings are submitted by independent agents.', categories: ['renter'] },
-        { q: 'Does Veriq Property guarantee properties?', a: 'No. Users are strongly advised to physically inspect properties and independently verify important details before making commitments. We provide intelligence to help you decide — not a guarantee.', categories: ['renter'] },
-        { q: 'Why do I need to pay before seeing full property details?', a: 'The consultation/intelligence access fee unlocks detailed property intelligence, structured disclosures, and consultation access. This model ensures agents take listings seriously and users receive quality, curated information.', categories: ['renter', 'payment'] },
-        { q: 'What is included after unlocking a property?', a: 'Users may access detailed property images, environmental information, accessibility reports, utility disclosures, and consultation messaging with the listing agent.', categories: ['renter'] },
-        { q: 'What happens if the property is no longer available after payment?', a: 'If a property becomes unavailable shortly after consultation unlock, users may qualify for a refund credit. This can be applied toward unlocking similar available properties.', categories: ['renter', 'payment'] },
-        { q: 'Will I always receive a cash refund?', a: 'Not necessarily. Refunds may be issued as wallet credit, platform credit, or similar-property access support rather than direct cash refunds.', categories: ['payment'] },
-        { q: 'What qualifies for refund consideration?', a: 'Refund consideration may apply to unavailable properties, stale listings, duplicate listings, fake listings, or major listing misrepresentation.', categories: ['payment'] },
-        { q: 'What does NOT qualify for refunds?', a: 'Refunds are generally not granted for change of mind, personal preference, or dissatisfaction after inspection. The property must have been genuinely misrepresented or unavailable.', categories: ['payment'] },
-        { q: 'How are agents verified?', a: 'Agents may go through identity verification, listing review, profile assessment, and platform moderation before receiving verified status.', categories: ['agent'] },
-        { q: 'What are trust scores?', a: 'Trust scores measure agent performance based on listing accuracy, response speed, freshness reliability, and inspection success rate. Higher trust scores earn agents better visibility on the platform.', categories: ['agent'] },
-        { q: 'Can agents lose visibility or get suspended?', a: 'Yes. Agents who repeatedly violate platform policies may face reduced visibility, suspension, payout restrictions, or permanent removal from the platform.', categories: ['agent'] },
-        { q: 'Can multiple agents post the same property?', a: 'Yes. Users can compare agents based on trust scores and platform performance when multiple agents list the same property.', categories: ['renter', 'agent'] },
-        { q: 'Does Veriq Property handle rent payments?', a: 'No. Veriq Property currently focuses on property intelligence and consultation access. Rent payment arrangements are made directly between tenants and landlords/agents.', categories: ['renter'] },
-        { q: 'Is Veriq Property available only in Port Harcourt?', a: 'The platform may begin with focused operational regions but is designed for broader expansion over time across Nigeria and beyond.', categories: ['renter'] },
-        { q: 'Why do listings expire automatically?', a: 'Automatic expiration helps reduce stale listings and outdated property information. Agents must regularly reconfirm listing availability to keep properties active.', categories: ['renter', 'agent'] },
-        { q: 'How does Veriq Property reduce fake listings?', a: 'The platform uses moderation, trust systems, freshness requirements, refund protection, and performance tracking to discourage and identify fake listings.', categories: ['renter', 'agent'] },
-        { q: 'Can agents withdraw earnings immediately?', a: 'No. Agent earnings may first enter a temporary Pending Balance review period of up to 48 hours before becoming available for withdrawal.', categories: ['agent', 'payment'] },
-        { q: 'What is the minimum withdrawal amount for agents?', a: 'The current minimum withdrawal threshold is ₦5,000. Withdrawals can be made once daily.', categories: ['agent', 'payment'] },
-        { q: 'How can I contact Veriq Property?', a: 'Users can contact Veriq Property through official support channels and platform communication systems. Visit our Contact page for details.', categories: ['renter', 'agent'] },
-      ],
-      categories: [
-        { label: 'All', value: 'all' },
-        { label: 'For Renters', value: 'renter' },
-        { label: 'For Agents', value: 'agent' },
-        { label: 'Payments & Refunds', value: 'payment' },
-      ],
+      faqVersion: FAQ_CONTENT_VERSION,
+      faqs: DEFAULT_FAQS,
+      categories: DEFAULT_FAQ_CATEGORIES,
     },
   },
   'faq:cta': {
@@ -295,14 +272,11 @@ const DEFAULT_CONTENT: Record<string, UpsertSiteContentDto> = {
   'terms:documents': {
     page: 'terms',
     section: 'documents',
-    title: 'Legal Documents',
-    body: 'Effective Date: To be confirmed. Contact us for current effective dates.',
+    title: 'Terms sections',
+    body: 'Last Updated: 8 August 2026',
     data: {
-      sections: [
-        { id: 'terms', title: 'Terms of Service', items: [{ heading: '1. About Veriq Property', content: 'Veriq Property is a property intelligence platform designed to help users make more informed property decisions before physical inspections.' }] },
-        { id: 'privacy', title: 'Privacy Policy', items: [{ heading: '1. Information We Collect', content: 'We may collect names, phone numbers, email addresses, payment information, device information, and platform activity.' }] },
-        { id: 'agent-terms', title: 'Agent Terms & Guidelines', items: [{ heading: '1. Agent Responsibilities', content: 'Agents must provide accurate listing information, maintain professional conduct, provide truthful disclosures, and maintain listing freshness.' }] },
-      ],
+      termsVersion: TERMS_CONTENT_VERSION,
+      sections: DEFAULT_TERMS_SECTIONS,
     },
   },
   'terms:contact': {
@@ -392,15 +366,18 @@ export default function AdminContentPage() {
   const selectPreset = (page: string, section: string) => {
     const existing = byKey.get(`${page}:${section}`);
     const fallback = DEFAULT_CONTENT[`${page}:${section}`];
+    const isStaleFAQ = page === 'faq' && section === 'questions' && existing?.data?.faqVersion !== FAQ_CONTENT_VERSION;
+    const isStaleTerms = page === 'terms' && section === 'documents' && existing?.data?.termsVersion !== TERMS_CONTENT_VERSION;
+    const selectedContent = isStaleFAQ || isStaleTerms ? undefined : existing;
     setForm({
       page,
       section,
-      title: existing?.title ?? fallback?.title ?? '',
-      subtitle: existing?.subtitle ?? fallback?.subtitle ?? '',
-      body: existing?.body ?? fallback?.body ?? '',
-      data: existing?.data ?? fallback?.data,
+      title: selectedContent?.title ?? fallback?.title ?? '',
+      subtitle: selectedContent?.subtitle ?? fallback?.subtitle ?? '',
+      body: selectedContent?.body ?? fallback?.body ?? '',
+      data: selectedContent?.data ?? fallback?.data,
     });
-    setDataJson(JSON.stringify(existing?.data ?? fallback?.data ?? {}, null, 2));
+    setDataJson(JSON.stringify(selectedContent?.data ?? fallback?.data ?? {}, null, 2));
   };
 
   const updateDataValue = (key: string, value: unknown) => {
@@ -412,6 +389,7 @@ export default function AdminContentPage() {
 
   const structuredData = useMemo(() => parseDataJson(dataJson), [dataJson]);
   const isFAQQuestions = form.page === 'faq' && form.section === 'questions';
+  const isTermsDocuments = form.page === 'terms' && form.section === 'documents';
 
   const updateStructuredData = (next: Record<string, unknown>) => {
     setForm((prev) => ({ ...prev, data: next }));
@@ -508,7 +486,13 @@ export default function AdminContentPage() {
         title: form.title?.trim() || undefined,
         subtitle: form.subtitle?.trim() || undefined,
         body: form.body?.trim() || undefined,
-        data: dataJson.trim() ? JSON.parse(dataJson) : undefined,
+        data: dataJson.trim()
+          ? {
+              ...JSON.parse(dataJson),
+              ...(isFAQQuestions ? { faqVersion: FAQ_CONTENT_VERSION } : {}),
+              ...(isTermsDocuments ? { termsVersion: TERMS_CONTENT_VERSION } : {}),
+            }
+          : undefined,
       };
       const res = await siteContentApi.upsert(payload);
       setItems((prev) => {

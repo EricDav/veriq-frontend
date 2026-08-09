@@ -637,24 +637,18 @@ export default function PropertyDetailPage() {
                         </div>
                       </div>
                     )}
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-1.5 text-sm font-bold text-navy-900">
-                        <Wallet className="h-4 w-4 text-gold-500" />
-                        {formatNaira(property.consultationFee)}
+                    {!freeUnlock?.available && (
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1.5 text-sm font-bold text-navy-900">
+                          <Wallet className="h-4 w-4 text-gold-500" />
+                          {formatNaira(property.consultationFee)}
+                        </div>
+                        <button onClick={handleUnlock} disabled={isUnlocking} className="btn-gold flex items-center gap-2">
+                          {isUnlocking ? <LoadingSpinner size="sm" className="text-navy-900" /> : <Lock className="h-4 w-4" />}
+                          {isUnlocking ? 'Unlocking…' : 'Unlock Intelligence Report'}
+                        </button>
                       </div>
-                      <button
-                        onClick={handleUnlock}
-                        disabled={isUnlocking}
-                        className="btn-gold flex items-center gap-2"
-                      >
-                        {isUnlocking ? (
-                          <LoadingSpinner size="sm" className="text-navy-900" />
-                        ) : (
-                          <Lock className="h-4 w-4" />
-                        )}
-                        {isUnlocking ? 'Unlocking…' : 'Unlock Intelligence Report'}
-                      </button>
-                    </div>
+                    )}
                   </div>
                 </div>
               </div>

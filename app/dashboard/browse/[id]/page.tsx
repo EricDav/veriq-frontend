@@ -863,25 +863,19 @@ export default function DashboardPropertyDetailPage() {
                         </div>
                       </div>
                     )}
-                    <div className="flex items-center gap-1.5">
-                      <Wallet className="h-4 w-4 text-amber-500" />
-                      <span className="text-base font-black text-navy-900">
-                        {formatNaira(property.consultationFee)}
-                      </span>
-                      <span className="text-xs text-slate-400">one-time</span>
-                    </div>
-                    <button
-                      onClick={handleUnlock}
-                      disabled={isUnlocking || isOwnListing}
-                      className="btn-gold flex items-center gap-2"
-                    >
-                      {isUnlocking ? (
-                        <LoadingSpinner size="sm" className="text-navy-900" />
-                      ) : (
-                        <Lock className="h-4 w-4" />
-                      )}
-                      {isOwnListing ? 'Own listing cannot be unlocked' : isUnlocking ? 'Unlocking…' : 'Unlock Intelligence Report'}
-                    </button>
+                    {!freeUnlock?.available && (
+                      <>
+                        <div className="flex items-center gap-1.5">
+                          <Wallet className="h-4 w-4 text-amber-500" />
+                          <span className="text-base font-black text-navy-900">{formatNaira(property.consultationFee)}</span>
+                          <span className="text-xs text-slate-400">one-time</span>
+                        </div>
+                        <button onClick={handleUnlock} disabled={isUnlocking || isOwnListing} className="btn-gold flex items-center gap-2">
+                          {isUnlocking ? <LoadingSpinner size="sm" className="text-navy-900" /> : <Lock className="h-4 w-4" />}
+                          {isOwnListing ? 'Own listing cannot be unlocked' : isUnlocking ? 'Unlocking…' : 'Unlock Intelligence Report'}
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>

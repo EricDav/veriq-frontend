@@ -1,75 +1,31 @@
-import Link from "next/link";
-import { ArrowRight, Shield, Users } from "lucide-react";
-import type { SiteContent } from "@/types";
+import Link from 'next/link';
+import { ArrowRight, Shield, UserRound } from 'lucide-react';
+import type { SiteContent } from '@/types';
 
-export function CTA({ content }: { content?: SiteContent }) {
-  const cards = Array.isArray(content?.data?.cards)
-    ? (content.data.cards as Array<{ title: string; desc: string }>).map((card, index) => ({
-        ...[
-          { icon: <Shield className="h-5 w-5" />, color: "from-blue-500/20 to-blue-700/20" },
-          { icon: <Users className="h-5 w-5" />, color: "from-gold-500/20 to-gold-700/20" },
-        ][index % 2],
-        ...card,
-      }))
-    : [
-        { icon: <Shield className="h-5 w-5" />, title: "For Property Seekers", desc: "Unlock verified reports and make informed decisions before visiting.", color: "from-blue-500/20 to-blue-700/20" },
-        { icon: <Users className="h-5 w-5" />, title: "For Agents", desc: "Build trust, earn better visibility, and attract quality-conscious clients.", color: "from-gold-500/20 to-gold-700/20" },
-      ];
-
+export function CTA({ content: _content }: { content?: SiteContent }) {
   return (
-    <section className="py-24 bg-veriq-surface">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="relative rounded-3xl bg-hero-pattern overflow-hidden">
-          {/* Decorative */}
-          <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute top-0 right-0 w-80 h-80 rounded-full bg-gold-500/10 blur-3xl translate-x-1/2 -translate-y-1/2" />
-            <div className="absolute bottom-0 left-0 w-64 h-64 rounded-full bg-blue-400/10 blur-3xl -translate-x-1/2 translate-y-1/2" />
+    <section className="bg-white py-12 sm:py-16">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+        <div className="grid overflow-hidden rounded-lg bg-[#06101c] text-white lg:grid-cols-[1.15fr_0.85fr_0.85fr]">
+          <div className="p-7 sm:p-9">
+            <h2 className="font-display text-3xl font-black">Ready to inspect smarter?</h2>
+            <p className="mt-3 max-w-md text-sm leading-6 text-slate-400">Start with property and street intelligence built for people searching for homes in Port Harcourt.</p>
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+              <Link href="/properties" className="btn-primary">Browse Properties <ArrowRight className="h-4 w-4" /></Link>
+              <Link href="/auth/register?role=agent" className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/15 bg-white/[0.06] px-5 py-3 text-sm font-semibold"><UserRound className="h-4 w-4" /> For Agents</Link>
+            </div>
           </div>
-
-          <div className="relative grid grid-cols-1 gap-8 p-10 lg:p-16 lg:grid-cols-2 lg:items-center">
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/20 px-4 py-1.5 text-xs font-semibold text-gold-300 mb-5">
-                Get Started Today
-              </div>
-              <h2 className="font-display text-4xl font-bold text-white mb-4 leading-tight">
-                {content?.title ?? "Ready to inspect smarter?"}
-              </h2>
-              <p className="text-white/70 text-base leading-relaxed mb-8">
-                {content?.body ?? "Join thousands of property seekers and agents building a more transparent, trustworthy property experience in Nigeria."}
-              </p>
-              <div className="flex flex-wrap gap-4">
-                <Link
-                  href="/properties"
-                  className="inline-flex items-center gap-2 rounded-xl bg-gold-gradient px-7 py-3.5 text-sm font-bold text-navy-900 shadow-gold-glow transition-all duration-200 hover:scale-105"
-                >
-                  Browse Properties
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-                <Link
-                  href="/auth/register?role=agent"
-                  className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/5 px-7 py-3.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-white/10"
-                >
-                  <Users className="h-4 w-4" />
-                  Join as Agent
-                </Link>
-              </div>
-            </div>
-
-            {/* Feature cards */}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {cards.map((card) => (
-                <div
-                  key={card.title}
-                  className={`rounded-2xl bg-gradient-to-br ${card.color} border border-white/10 p-5 backdrop-blur-sm`}
-                >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-white mb-4">
-                    {card.icon}
-                  </div>
-                  <h3 className="text-white font-semibold text-sm mb-1.5">{card.title}</h3>
-                  <p className="text-white/60 text-xs leading-relaxed">{card.desc}</p>
-                </div>
-              ))}
-            </div>
+          <div className="border-t border-white/10 p-7 lg:border-l lg:border-t-0">
+            <Shield className="h-6 w-6 text-blue-300" />
+            <h3 className="mt-4 text-sm font-bold">For Property Users</h3>
+            <p className="mt-3 text-xs leading-5 text-slate-400">Unlock verified reports and street intelligence to make informed decisions before you visit.</p>
+            <Link href="/properties" className="mt-4 inline-flex items-center gap-2 text-xs font-bold text-emerald-400">Learn more <ArrowRight className="h-3.5 w-3.5" /></Link>
+          </div>
+          <div className="border-t border-white/10 bg-emerald-500/[0.08] p-7 lg:border-l lg:border-t-0">
+            <UserRound className="h-6 w-6 text-emerald-300" />
+            <h3 className="mt-4 text-sm font-bold">For Agents</h3>
+            <p className="mt-3 text-xs leading-5 text-slate-400">Build trust, stand out with verified listings, and close with confident clients.</p>
+            <Link href="/auth/register?role=agent" className="mt-4 inline-flex items-center gap-2 text-xs font-bold text-emerald-400">Learn more <ArrowRight className="h-3.5 w-3.5" /></Link>
           </div>
         </div>
       </div>

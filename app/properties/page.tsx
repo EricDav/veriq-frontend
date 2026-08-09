@@ -3,8 +3,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Search, SlidersHorizontal, MapPin, Shield,
-  ChevronLeft, ChevronRight, X, Unlock,
+  ChevronLeft, ChevronRight, X, Unlock, FileText, UserCheck, ArrowRight,
 } from 'lucide-react';
+import Link from 'next/link';
 import { PropertyCard } from '@/components/properties/PropertyCard';
 import { agentsApi, consultationsApi, locationsApi, propertiesApi } from '@/lib/api';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -262,54 +263,54 @@ export default function PropertiesPage() {
 
   return (
     <>
-      <section className="bg-hero-pattern pt-28 pb-16 relative overflow-hidden">
-        <div className="absolute bottom-0 left-0 right-0">
-          <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
-            <path d="M0 80L1440 80L1440 40C1200 0 800 0 720 40C640 80 240 80 0 40L0 80Z" fill="white" />
-          </svg>
-        </div>
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <section className="relative overflow-hidden bg-[#050b12] pb-10 pt-28 text-white lg:pb-24">
+        <div className="absolute inset-0 bg-[url('/images/web-background-visual-layer.png')] bg-cover bg-center opacity-45" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#050b12] via-[#050b12]/95 to-emerald-950/40" />
+        <div className="relative mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:px-8">
           <div className="max-w-2xl">
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-semibold text-gold-300">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-4 py-1.5 text-xs font-semibold text-emerald-300">
               <MapPin className="h-3.5 w-3.5" />
-              Nigeria
+              Launch Focus: Port Harcourt
             </div>
-            <h1 className="font-display mb-3 text-4xl font-bold text-white md:text-5xl">
-              Browse Verified Properties
+            <h1 className="font-display mb-4 text-4xl font-black leading-tight text-white md:text-5xl">
+              Find Properties<br />Worth <span className="text-veriq-secondary">Inspecting</span>
             </h1>
-            <p className="text-base text-white/70">
-              Find your next home with confidence. Every listing vetted — unlock intelligence reports before you inspect.
+            <p className="max-w-xl text-sm leading-6 text-white/70 sm:text-base">
+              Browse available properties and unlock Property Intelligence before deciding whether a visit is worth your time.
+            </p>
+            <p className="mt-5 flex max-w-lg items-start gap-3 text-xs leading-5 text-white/70 sm:text-sm">
+              <Shield className="mt-0.5 h-5 w-5 shrink-0 text-veriq-secondary" /> Browse freely. Create an account only when you are ready to unlock intelligence or contact the agent.
             </p>
           </div>
-
-          <form onSubmit={handleSearchSubmit} className="mt-8 flex flex-wrap gap-3">
-            <div className="flex min-w-64 flex-1 items-center gap-2 rounded-xl bg-white px-4 py-3 shadow-card">
-              <Search className="h-4 w-4 flex-shrink-0 text-slate-400" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="flex-1 bg-transparent text-sm text-navy-900 outline-none placeholder:text-slate-400"
-                placeholder="Search by area, city, state..."
-              />
-            </div>
-            <button type="submit" className="btn-gold !rounded-xl">
-              Search
-            </button>
-          </form>
+          <div className="grid gap-3 self-center sm:grid-cols-2">
+            <div className="rounded-lg border border-white/10 bg-white/5 p-5 backdrop-blur-sm"><Shield className="h-6 w-6 text-veriq-secondary" /><p className="mt-3 text-sm font-bold">Availability Confirmed</p><p className="mt-1 text-xs leading-5 text-white/60">Listings are checked for current availability.</p></div>
+            <div className="rounded-lg border border-white/10 bg-white/5 p-5 backdrop-blur-sm"><UserCheck className="h-6 w-6 text-veriq-secondary" /><p className="mt-3 text-sm font-bold">Agent Verified</p><p className="mt-1 text-xs leading-5 text-white/60">Agents are verified for trust and credibility.</p></div>
+            <div className="rounded-lg border border-white/10 bg-white/5 p-5 backdrop-blur-sm sm:col-span-2"><FileText className="h-6 w-6 text-veriq-secondary" /><p className="mt-3 text-sm font-bold">Property Intelligence <span className="text-veriq-secondary">Available</span></p><p className="mt-1 text-xs leading-5 text-white/60">Unlock detailed insights and decision factors before you visit.</p></div>
+          </div>
         </div>
+        <form onSubmit={handleSearchSubmit} className="relative z-10 mx-4 mt-8 grid max-w-7xl gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-xl sm:mx-6 lg:absolute lg:inset-x-6 lg:bottom-0 lg:mx-auto lg:mt-0 lg:translate-y-1/2 lg:grid-cols-[1.7fr_0.8fr_0.7fr_0.8fr_auto] lg:px-5">
+            <div className="flex min-w-0 items-center gap-2 rounded-md border border-slate-200 px-3">
+              <Search className="h-4 w-4 shrink-0 text-slate-400" />
+              <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} className="min-h-11 min-w-0 flex-1 bg-transparent text-sm text-navy-900 outline-none placeholder:text-slate-400" placeholder="Search location, street, estate or road..." />
+            </div>
+            <select aria-label="Quick property type" value={pendingFilters.propertyType ?? ''} onChange={(e) => handleTypeChange(e.target.value)} className="input"><option value="">Property Type</option>{PROPERTY_TYPES.filter((item) => item.value).map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select>
+            <select aria-label="Quick bedrooms" value={pendingFilters.minBedrooms ?? ''} onChange={(e) => setPendingFilters((f) => ({ ...f, minBedrooms: e.target.value ? Number(e.target.value) : undefined }))} className="input"><option value="">Bedrooms</option><option value="1">1+</option><option value="2">2+</option><option value="3">3+</option><option value="4">4+</option></select>
+            <select aria-label="Quick budget" value={pendingFilters.maxRent ?? ''} onChange={(e) => setPendingFilters((f) => ({ ...f, maxRent: e.target.value ? Number(e.target.value) : undefined }))} className="input"><option value="">Budget</option><option value="500000">Up to N500k</option><option value="1000000">Up to N1m</option><option value="2000000">Up to N2m</option><option value="5000000">Up to N5m</option></select>
+            <button type="submit" className="btn-primary justify-center"><Search className="h-4 w-4" /> Search</button>
+          </form>
       </section>
 
-      <section className="bg-white py-12">
+      <section className="bg-white pb-14 pt-12 lg:pt-24">
         <div className="mx-auto max-w-7xl space-y-5 px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="font-semibold text-navy-900">
+              <h2 className="font-display text-2xl font-black text-navy-900">
+                Available Properties{filters.city ? ` in ${filters.city}` : ''}
+              </h2>
+              <p className="mt-1 text-xs text-veriq-muted">
                 {isLoading ? 'Loading...' : `${total} properties found`}
               </p>
-              <p className="text-xs text-veriq-muted">Nigeria</p>
             </div>
-            {isAuthenticated && (
               <div className="inline-flex rounded-xl border border-slate-200 bg-white p-1">
                 <button
                   type="button"
@@ -322,16 +323,16 @@ export default function PropertiesPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => { setAccessFilter('unlocked'); setPendingAccessFilter('unlocked'); setPage(1); }}
+                  onClick={() => { if (isAuthenticated) { setAccessFilter('unlocked'); setPendingAccessFilter('unlocked'); setPage(1); } }}
+                  disabled={!isAuthenticated}
                   className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
                     accessFilter === 'unlocked' ? 'bg-veriq-secondary text-white' : 'text-navy-700 hover:bg-slate-50'
                   }`}
                 >
                   <Unlock className="h-4 w-4" />
-                  Unlocked
+                  My Unlocks {!isAuthenticated && <span className="text-[9px] font-normal">Sign in to view</span>}
                 </button>
               </div>
-            )}
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
@@ -704,6 +705,25 @@ export default function PropertiesPage() {
               )}
             </>
           )}
+
+          <section className="mt-12 grid overflow-hidden rounded-lg border border-slate-200 bg-slate-50 lg:grid-cols-[0.9fr_1.1fr]">
+            <div className="p-7 sm:p-9">
+              <span className="text-xs font-bold uppercase text-veriq-muted">Make smarter decisions</span>
+              <h2 className="mt-2 font-display text-2xl font-black text-navy-900">Searching in a specific area?</h2>
+              <p className="mt-3 max-w-lg text-sm leading-6 text-veriq-muted">Use Street Intelligence to understand road access, electricity, noise, flooding and security before inspecting a property.</p>
+              <Link href="/street-intelligence" className="btn-primary mt-6 inline-flex">Explore Street Intelligence <ArrowRight className="h-4 w-4" /></Link>
+            </div>
+            <div className="grid min-h-52 place-items-center bg-[radial-gradient(circle_at_center,rgba(16,185,129,0.18),transparent_55%)] p-8">
+              <div className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="flex items-center justify-between"><div><p className="font-bold text-navy-900">Rumuola, Port Harcourt</p><p className="mt-1 text-xs text-veriq-muted">Street Intelligence report</p></div><span className="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-700">Preview</span></div>
+                <div className="mt-5 grid grid-cols-2 gap-3 text-xs text-slate-600 sm:grid-cols-4"><span>Flood Risk</span><span>Road Access</span><span>Electricity</span><span>Security Feel</span></div>
+              </div>
+            </div>
+          </section>
+
+          <section className="grid gap-6 border-t border-slate-200 py-12 sm:grid-cols-3">
+            {[{ title: 'Structured Property Details', copy: 'Clear facts about each listing to help you compare with confidence.', icon: FileText }, { title: 'Street Context', copy: 'Understand the neighbourhood beyond the property before you visit.', icon: MapPin }, { title: 'Agent Trust Signals', copy: 'Verified agents and availability checks support safer decisions.', icon: UserCheck }].map(({ title, copy, icon: Icon }) => <div key={title} className="flex gap-4"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-veriq-secondary"><Icon className="h-5 w-5" /></span><div><h3 className="text-sm font-bold text-navy-900">{title}</h3><p className="mt-1 text-xs leading-5 text-veriq-muted">{copy}</p></div></div>)}
+          </section>
         </div>
       </section>
     </>

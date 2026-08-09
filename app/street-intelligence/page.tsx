@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, Bath, BedDouble, Camera, ChevronLeft, ChevronRight, MapPin, Route, ShieldCheck, Sofa, Users } from 'lucide-react';
+import { ArrowRight, Bath, BedDouble, Camera, ChevronLeft, ChevronRight, CircleHelp, MapPin, Route, Search, ShieldCheck, Signal, Sofa, Users } from 'lucide-react';
 import { communityApi } from '@/lib/api';
 import type { CommunityLocation, Street } from '@/types';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -17,13 +17,20 @@ const propertyInspectionHighlights = [
   { label: 'Access road', icon: Route },
 ];
 
+const intelligenceSteps = [
+  { title: 'Search Location', copy: 'Find the street or neighbourhood you are interested in.', icon: Search },
+  { title: 'View Intelligence', copy: 'See structured insight from people who know the area.', icon: Signal },
+  { title: 'Community Contributes', copy: 'Verified contributors share local, practical knowledge.', icon: Users },
+  { title: 'Intelligence Gets Stronger', copy: 'More verified input improves confidence over time.', icon: ShieldCheck },
+];
+
 function PropertyIntelligenceBridge() {
   return (
-    <section aria-labelledby="property-intelligence-heading" className="mt-14 border-t border-slate-200 py-12 sm:mt-16 sm:py-16">
+    <section aria-labelledby="property-intelligence-heading" className="mt-16 border-t border-slate-200 py-12 sm:py-16">
       <div className="grid items-center gap-8 lg:grid-cols-[0.8fr_1.2fr] lg:gap-12">
         <div className="max-w-xl">
-          <span className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold uppercase text-emerald-700">
-            Property-based
+          <span className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
+            Property Intelligence
           </span>
           <h2 id="property-intelligence-heading" className="mt-4 font-display text-2xl font-black text-navy-900 sm:text-3xl">
             Need intelligence on a <span className="text-veriq-secondary">specific property?</span>
@@ -150,32 +157,37 @@ function StreetIntelligenceBrowser() {
   };
 
   return (
-    <div className="min-h-screen bg-veriq-surface pt-24">
-      <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-white pt-24">
+      <main className="mx-auto max-w-6xl px-4 pb-10 pt-12 sm:px-6 sm:pt-16 lg:px-8">
         <div className="mb-8 max-w-3xl">
           <span className="mb-3 inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
-            <Users className="h-3.5 w-3.5" /> Community-powered
+            <Users className="h-3.5 w-3.5" /> Street Intelligence
           </span>
-          <h1 className="font-display text-3xl font-black text-navy-900 sm:text-4xl">Know Before You Go</h1>
-          <p className="mt-3 text-sm leading-6 text-veriq-muted">
-            Discover what a street is really like before you rent or buy. Explore Veriq Street Intelligence to make smarter property decisions.
+          <h1 className="font-display max-w-2xl text-4xl font-black leading-tight text-navy-900 sm:text-5xl">
+            Know the street before<br className="hidden sm:block" /> you choose the house.
+          </h1>
+          <p className="mt-4 max-w-2xl text-sm leading-6 text-veriq-muted sm:text-base">
+            Discover what everyday life is really like before you rent or buy. Get insight on roads, flooding, electricity, network, noise, security, neighbourhood feel and more.
           </p>
-          <div className="mt-5 flex flex-wrap gap-3">
-            <Link href="/dashboard/community" className="btn-outline">Contribute Street Intelligence</Link>
-          </div>
         </div>
 
-        <form id="street-search" onSubmit={openStreet} className="mb-8 grid gap-3 rounded-lg border border-slate-200 bg-white p-4 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1.5fr_auto]">
-          <select aria-label="State" value={state} onChange={(event) => setState(event.target.value)} className="input" required>
-            <option value="">Select state</option>
-            {states.map((item) => <option key={item} value={item}>{item}</option>)}
-          </select>
-          <select aria-label="LGA" value={city} onChange={(event) => setCity(event.target.value)} className="input" disabled={!state} required>
-            <option value="">Select LGA</option>
-            {cities.map((item) => <option key={item} value={item}>{item}</option>)}
-          </select>
-          <div className="relative">
-            <input aria-label="Street name" className="input" value={streetQuery} onChange={(event) => { setStreetQuery(event.target.value); setSelectedStreetId(''); }} placeholder="Start typing a street name" autoComplete="off" disabled={!city} required />
+        <div className="mb-10 rounded-lg border border-slate-200 bg-white p-4 shadow-[0_12px_40px_rgba(15,23,42,0.08)] sm:p-5">
+          <form id="street-search" onSubmit={openStreet} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1.45fr_auto] lg:items-end">
+          <label className="block text-xs font-bold text-navy-900">Select State
+            <select aria-label="State" value={state} onChange={(event) => setState(event.target.value)} className="input mt-2" required>
+              <option value="">Choose state</option>
+              {states.map((item) => <option key={item} value={item}>{item}</option>)}
+            </select>
+          </label>
+          <label className="block text-xs font-bold text-navy-900">Select Location / LGA
+            <select aria-label="LGA" value={city} onChange={(event) => setCity(event.target.value)} className="input mt-2" disabled={!state} required>
+              <option value="">Choose LGA</option>
+              {cities.map((item) => <option key={item} value={item}>{item}</option>)}
+            </select>
+          </label>
+          <label className="block text-xs font-bold text-navy-900">Search street, estate or road
+          <div className="relative mt-2">
+            <input aria-label="Street name" className="input" value={streetQuery} onChange={(event) => { setStreetQuery(event.target.value); setSelectedStreetId(''); }} placeholder="E.g. Woji Road, Rumuola" autoComplete="off" disabled={!city} required />
             {streetQuery.trim().length > 0 && !selectedStreetId && (
               <div className="absolute z-20 mt-1 max-h-64 w-full overflow-y-auto rounded-lg border border-slate-200 bg-white p-1 shadow-lg">
                 {streets.map((street) => (
@@ -188,10 +200,20 @@ function StreetIntelligenceBrowser() {
               </div>
             )}
           </div>
+          </label>
           <button type="submit" className="btn-primary justify-center" disabled={isSearching || !selectedStreetId}>
             View intelligence
           </button>
-        </form>
+          </form>
+          <div className="mt-5 grid gap-3 border-t border-slate-100 pt-4 text-xs sm:grid-cols-2 sm:text-center">
+            <Link href={`/dashboard/community?mode=new&state=${encodeURIComponent(state)}&city=${encodeURIComponent(city)}`} className="font-semibold text-slate-600 hover:text-veriq-secondary">
+              <CircleHelp className="mr-1.5 inline h-4 w-4" /> Can&apos;t find your location? <span className="font-bold text-veriq-secondary">Suggest it</span>
+            </Link>
+            <Link href="/dashboard/community" className="font-semibold text-slate-600 hover:text-veriq-secondary">
+              <Users className="mr-1.5 inline h-4 w-4" /> Know this location well? <span className="font-bold text-veriq-secondary">Contribute Street Intelligence</span>
+            </Link>
+          </div>
+        </div>
         {hasSearched && (
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-display text-lg font-bold text-navy-900">{total} {total === 1 ? 'street' : 'streets'} available</h2>
@@ -252,6 +274,29 @@ function StreetIntelligenceBrowser() {
             </button>
           </nav>
         )}
+
+        <section aria-labelledby="how-it-works" className="py-14 text-center sm:py-16">
+          <h2 id="how-it-works" className="font-display text-2xl font-black text-navy-900">How Street Intelligence Works</h2>
+          <div className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+            {intelligenceSteps.map(({ title, copy, icon: Icon }, index) => (
+              <div key={title} className="relative px-4">
+                <span className="absolute left-3 top-0 text-xs font-black text-veriq-secondary">{index + 1}</span>
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-veriq-secondary"><Icon className="h-6 w-6" /></div>
+                <h3 className="mt-4 text-sm font-black text-navy-900">{title}</h3>
+                <p className="mt-2 text-xs leading-5 text-veriq-muted">{copy}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="grid items-center gap-6 rounded-lg border border-slate-200 bg-slate-50 px-6 py-8 sm:px-10 lg:grid-cols-[1fr_auto]">
+          <div>
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-veriq-secondary"><ShieldCheck className="h-5 w-5" /></span>
+            <h2 className="mt-3 font-display text-2xl font-black text-navy-900">Know your street well? <span className="text-veriq-secondary">Help improve local intelligence.</span></h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-veriq-muted">Verified people familiar with a location can contribute structured insights that help others make smarter property decisions.</p>
+          </div>
+          <Link href="/dashboard/community" className="btn-primary inline-flex justify-center">Contribute Street Intelligence</Link>
+        </section>
 
         <PropertyIntelligenceBridge />
       </main>
