@@ -3,13 +3,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { BarChart3, BellRing, CheckCircle, Clock3, Flag, Gift, MapPin, Plus, RefreshCw, Search, XCircle, Trash2, Save, Pencil } from 'lucide-react';
-import { communityApi, locationsApi, propertiesApi } from '@/lib/api';
+import { agentsApi, communityApi, locationsApi, propertiesApi } from '@/lib/api';
 import {
   ContributionStatus,
   FreeUnlockAgreementType,
   IntelligenceSourceType,
+  ListingStatus,
   StreetStatus,
   type FreeUnlockCampaign,
+  type Agent,
   type Property,
   type CommunityLocation,
   type Street,
@@ -69,6 +71,9 @@ export default function AdminCommunityPage() {
   const [streets, setStreets] = useState<Street[]>([]);
   const [contributions, setContributions] = useState<StreetContribution[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [campaignAgentId, setCampaignAgentId] = useState('');
+  const [loadingCampaignProperties, setLoadingCampaignProperties] = useState(false);
   const [hierarchy, setHierarchy] = useState<CommunityLocation[]>([]);
   const [directoryStates, setDirectoryStates] = useState<AllowedState[]>([]);
   const [categories, setCategories] = useState<IntelligenceCategory[]>([]);
@@ -122,10 +127,10 @@ export default function AdminCommunityPage() {
         ]).then(([pending, recent]) => ({
           data: Array.from(new Map([...pending.data, ...recent.data].map((street) => [street.id, street])).values()),
         }));
-      const [analyticsRes, campaignsRes, propertiesRes, statesRes, categoriesRes] = await Promise.all([
+      const [analyticsRes, campaignsRes, agentsRes, statesRes, categoriesRes] = await Promise.all([
         communityApi.adminAnalytics(),
         communityApi.adminCampaigns(),
-        propertiesApi.listAdmin({ page: 1, limit: 100 }),
+        agentsApi.listAdmin(1, 100),
         locationsApi.allStates(),
         communityApi.categories(),
       ]);
@@ -136,7 +141,7 @@ export default function AdminCommunityPage() {
       ]);
       setAnalytics(analyticsRes.data as Record<string, unknown>);
       setCampaigns(campaignsRes.data);
-      setProperties(propertiesRes.data);
+      setAgents(agentsRes.data);
       setDirectoryStates(statesRes.data);
       setCategories(categoriesRes.data.filter((item) => item.isActive));
       setStreets(streetsRes.data);
@@ -346,7 +351,45 @@ export default function AdminCommunityPage() {
   }, [observation.streetId]);
 
   useEffect(() => {
+    if (!requestedPropertyId) return;
+    let cancelled = false;
+    propertiesApi.getById(requestedPropertyId)
+      .then((response) => {
+        if (cancelled) return;
+        setCampaignAgentId(response.data.agentId);
+        setProperties([response.data]);
+      })
+      .catch((err) => error(err instanceof Error ? err.message : 'Unable to load the requested property'));
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [requestedPropertyId]);
+
+  useEffect(() => {
+    if (!campaignAgentId) {
+      setProperties([]);
+      return;
+    }
+    let cancelled = false;
+    setLoadingCampaignProperties(true);
+    propertiesApi.listAdmin({ agentId: campaignAgentId, status: ListingStatus.ACTIVE, page: 1, limit: 100 })
+      .then((response) => { if (!cancelled) setProperties(response.data); })
+      .catch((err) => {
+        if (!cancelled) {
+          setProperties([]);
+          error(err instanceof Error ? err.message : 'Unable to load this agent\'s properties');
+        }
+      })
+      .finally(() => { if (!cancelled) setLoadingCampaignProperties(false); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [campaignAgentId]);
+
+  useEffect(() => {
     if (!requestedPropertyId || !properties.some((property) => property.id === requestedPropertyId)) return;
+    const requestedProperty = properties.find((property) => property.id === requestedPropertyId);
+    if (requestedProperty?.agentId && campaignAgentId !== requestedProperty.agentId) {
+      setCampaignAgentId(requestedProperty.agentId);
+    }
     const start = new Date();
     const end = new Date(start.getTime() + 7 * 86_400_000);
     const toLocalInput = (date: Date) => {
@@ -360,7 +403,7 @@ export default function AdminCommunityPage() {
       endDate: current.endDate || toLocalInput(end),
     }));
     window.setTimeout(() => document.getElementById('free-unlocks')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
-  }, [properties, requestedPropertyId]);
+  }, [campaignAgentId, properties, requestedPropertyId]);
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -372,6 +415,7 @@ export default function AdminCommunityPage() {
         endDate: new Date(form.endDate).toISOString(),
         maximumUnlocks: form.maximumUnlocks ? Number(form.maximumUnlocks) : undefined,
         maximumUnlocksPerUser: form.maximumUnlocksPerUser ? Number(form.maximumUnlocksPerUser) : undefined,
+        sponsoringAgentId: campaignAgentId,
         agreementType: form.agreementType,
         amountPaid: form.amountPaid ? Number(form.amountPaid) : undefined,
         paymentStatus: form.paymentStatus || undefined,
@@ -461,13 +505,30 @@ export default function AdminCommunityPage() {
           <h2 className="font-display flex items-center gap-2 text-base font-bold text-navy-900">
             <Gift className="h-4 w-4 text-gold-500" /> Create Free Unlock Campaign
           </h2>
-          <p className="text-xs leading-5 text-veriq-muted">Choose the property, campaign dates, and how many community members can unlock it at no cost.</p>
-          <select className="input" required value={form.propertyId} onChange={(e) => setForm((s) => ({ ...s, propertyId: e.target.value }))}>
-            <option value="">Select a property</option>
+          <p className="text-xs leading-5 text-veriq-muted">Select an agent first, then choose one of their active properties and configure the campaign.</p>
+          <div>
+            <label htmlFor="free-unlock-agent" className="label text-xs">Agent</label>
+            <select id="free-unlock-agent" className="input" required value={campaignAgentId} onChange={(e) => {
+              setCampaignAgentId(e.target.value);
+              setProperties([]);
+              setForm((state) => ({ ...state, propertyId: '' }));
+            }}>
+              <option value="">Select an agent</option>
+              {agents.map((agent) => {
+                const name = agent.businessName || `${agent.user?.firstName ?? ''} ${agent.user?.lastName ?? ''}`.trim() || agent.username || 'Unnamed agent';
+                return <option key={agent.id} value={agent.id}>{name}</option>;
+              })}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="free-unlock-property" className="label text-xs">Property</label>
+            <select id="free-unlock-property" className="input" required disabled={!campaignAgentId || loadingCampaignProperties} value={form.propertyId} onChange={(e) => setForm((s) => ({ ...s, propertyId: e.target.value }))}>
+              <option value="">{!campaignAgentId ? 'Select an agent first' : loadingCampaignProperties ? 'Loading properties...' : properties.length ? 'Select a property' : 'No active properties found'}</option>
             {properties.map((property) => (
               <option key={property.id} value={property.id}>{property.title} - {property.area}, {property.state}</option>
             ))}
-          </select>
+            </select>
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <input className="input" required type="datetime-local" value={form.startDate} onChange={(e) => setForm((s) => ({ ...s, startDate: e.target.value }))} />
             <input className="input" required type="datetime-local" value={form.endDate} onChange={(e) => setForm((s) => ({ ...s, endDate: e.target.value }))} />

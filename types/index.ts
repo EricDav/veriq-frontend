@@ -658,9 +658,7 @@ export interface StreetIntelligencePayload {
   lastUpdated: string | null;
   sourceNotice: string;
   usage: {
-    limit: number;
-    used: number;
-    remaining: number;
+    unlimited: boolean;
     requiresSignup: boolean;
   };
   results: StreetIntelligenceResult[];
@@ -1207,6 +1205,7 @@ export interface FilterPropertiesDto {
   minRent?: number;
   maxRent?: number;
   isFurnished?: boolean;
+  freeIntelligenceOnly?: boolean;
   freshnessScore?: FreshnessScore;
   // Hostel filters
   hostelSuitableFor?: HostelSuitableFor;

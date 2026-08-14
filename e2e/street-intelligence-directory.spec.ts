@@ -84,7 +84,7 @@ test('suggests database streets by state and LGA and opens imported intelligence
           lastUpdated: '2026-08-02T00:00:00.000Z',
           sourceNotice: 'This report includes Veriq Initial Intelligence.',
           results: [],
-          usage: { limit: 3, used: 1, remaining: 2, requiresSignup: false },
+          usage: { unlimited: true, requiresSignup: false },
         },
       }),
     });
@@ -118,4 +118,11 @@ test('suggests database streets by state and LGA and opens imported intelligence
   await expect(page.getByRole('heading', { name: 'Properties on Forces Avenue' })).toBeVisible();
   await expect(page.getByText('Two Bedroom Flat on Forces Avenue')).toBeVisible();
   await expect(page.getByRole('link', { name: /Browse properties/ })).toHaveAttribute('href', /state=Rivers.*city=Port\+Harcourt.*area=GRA/);
+  await page.getByRole('button', { name: 'Share This Street?' }).click();
+  await expect(page.getByRole('dialog', { name: 'Share Forces Avenue' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'WhatsApp' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Facebook' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Instagram' })).toBeVisible();
+  await page.getByRole('button', { name: 'Close share options' }).click();
+  await expect(page.getByRole('dialog', { name: 'Share Forces Avenue' })).toHaveCount(0);
 });

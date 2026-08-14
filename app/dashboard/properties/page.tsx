@@ -297,6 +297,20 @@ function AgentPropertiesView() {
   };
 
   const isApproved = !!agent?.isActive && (agent?.verificationLevel ?? 0) >= AgentVerificationLevel.BASIC;
+  const activeListings = properties.filter((property) =>
+    [ListingStatus.ACTIVE, ListingStatus.PENDING].includes(property.status),
+  );
+  const expiredListings = properties.filter((property) =>
+    [ListingStatus.EXPIRED, ListingStatus.HIDDEN].includes(property.status),
+  );
+  const rentedListings = properties.filter((property) =>
+    [ListingStatus.OCCUPIED, ListingStatus.TAKEN].includes(property.status),
+  );
+  const listingGroups = [
+    { key: 'active', title: 'Active', description: 'Listings currently visible to property users.', properties: activeListings, badge: 'bg-emerald-100 text-emerald-700' },
+    { key: 'expired', title: 'Expired', description: 'Listings that expired before they were refreshed.', properties: expiredListings, badge: 'bg-red-100 text-red-700' },
+    { key: 'rented', title: 'Rented', description: 'Completed rentals kept for records. These listings cannot be refreshed.', properties: rentedListings, badge: 'bg-blue-100 text-blue-700' },
+  ];
 
   if (isLoading) return <PageLoader />;
 
@@ -336,9 +350,9 @@ function AgentPropertiesView() {
       {/* Stats row */}
       <div className="grid grid-cols-3 gap-4">
         {[
-          { label: 'Active', value: properties.filter((p) => p.status === 'active').length, cls: 'bg-emerald-50 text-emerald-600' },
-          { label: 'Unavailable', value: properties.filter((p) => p.status === ListingStatus.OCCUPIED || p.status === ListingStatus.TAKEN).length, cls: 'bg-blue-50 text-blue-600' },
-          { label: 'Total', value: properties.length, cls: 'bg-blue-50 text-blue-600' },
+          { label: 'Active', value: activeListings.length, cls: 'bg-emerald-50 text-emerald-600' },
+          { label: 'Expired', value: expiredListings.length, cls: 'bg-red-50 text-red-600' },
+          { label: 'Rented', value: rentedListings.length, cls: 'bg-blue-50 text-blue-600' },
         ].map((s) => (
           <div key={s.label} className="card p-4 text-center">
             <p className={`text-2xl font-black ${s.cls.split(' ')[1]}`}>{s.value}</p>
@@ -360,6 +374,21 @@ function AgentPropertiesView() {
           )}
         </div>
       ) : (
+        <div className="space-y-8">
+          {listingGroups.map((group) => (
+          <section key={group.key} aria-labelledby={`${group.key}-listings-heading`}>
+            <div className="mb-3 flex items-end justify-between gap-4">
+              <div>
+                <h2 id={`${group.key}-listings-heading`} className="font-display text-lg font-bold capitalize text-navy-900">{group.title}</h2>
+                <p className="mt-1 text-xs text-veriq-muted">{group.description}</p>
+              </div>
+              <span className={`rounded-full px-3 py-1 text-xs font-bold ${group.badge}`}>{group.properties.length}</span>
+            </div>
+            {group.properties.length === 0 ? (
+              <div className="rounded-lg border border-dashed border-slate-200 bg-white px-5 py-8 text-center text-sm text-slate-500">
+                No {group.title.toLowerCase()} listings.
+              </div>
+            ) : (
         <div className="card overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -374,7 +403,7 @@ function AgentPropertiesView() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {properties.map((prop) => {
+                {group.properties.map((prop) => {
                   const freshnessWidth: Record<FreshnessScore, string> = {
                     freshly_verified: '100%',
                     recently_verified: '75%',
@@ -430,8 +459,8 @@ function AgentPropertiesView() {
                           {/* Refresh / mark active */}
                           <button
                             onClick={() => handleReconfirm(prop.id, Number(prop.rentAmount))}
-                            disabled={reconfirmingId === prop.id}
-                            title={prop.status === 'active' ? 'Refresh active listing' : 'Refresh and mark active'}
+                            disabled={reconfirmingId === prop.id || [ListingStatus.OCCUPIED, ListingStatus.TAKEN].includes(prop.status)}
+                            title={[ListingStatus.OCCUPIED, ListingStatus.TAKEN].includes(prop.status) ? 'Rented listings cannot be refreshed' : prop.status === 'active' ? 'Refresh active listing' : 'Refresh and mark active'}
                             className={`rounded-lg p-1.5 transition-colors disabled:opacity-50 ${
                               prop.status === 'active'
                                 ? 'text-emerald-600 hover:bg-emerald-50'
@@ -475,7 +504,7 @@ function AgentPropertiesView() {
                             >
                               Rented
                             </button>
-                          ) : (
+                          ) : [ListingStatus.EXPIRED, ListingStatus.HIDDEN].includes(prop.status) ? (
                             <button
                               onClick={() => setStatusTarget({ id: prop.id, action: 'reactivate', title: prop.title })}
                               title="Reactivate listing"
@@ -483,6 +512,8 @@ function AgentPropertiesView() {
                             >
                               Reactivate
                             </button>
+                          ) : (
+                            <span className="rounded-lg bg-blue-50 px-2 py-1.5 text-[10px] font-bold text-blue-700">Rented</span>
                           )}
                         </div>
                       </td>
@@ -492,6 +523,10 @@ function AgentPropertiesView() {
               </tbody>
             </table>
           </div>
+        </div>
+            )}
+          </section>
+          ))}
         </div>
       )}
 

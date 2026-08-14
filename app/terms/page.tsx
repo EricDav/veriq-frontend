@@ -69,7 +69,6 @@ export default async function TermsPage() {
                   ))}
                 </nav>
                 <div className="mt-5 space-y-1 border-t border-slate-200 pt-5 text-xs text-slate-500">
-                  <p>Effective Date: {TERMS_EFFECTIVE_DATE}</p>
                   <p>Last Updated: {TERMS_LAST_UPDATED}</p>
                 </div>
               </div>

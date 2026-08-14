@@ -2,11 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
-
 :root {
-  --font-inter: 'Inter', system-ui, sans-serif;
-  --font-plus-jakarta: 'Plus Jakarta Sans', system-ui, sans-serif;
   --color-primary: #070B14;
   --color-secondary: #10B981;
   --color-accent: #10B981;
@@ -30,7 +26,7 @@ body {
 
 @layer base {
   h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-plus-jakarta);
+    font-family: var(--font-sora);
     font-weight: 700;
     line-height: 1.2;
   }
@@ -38,15 +34,15 @@ body {
 
 @layer components {
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-veriq-secondary px-6 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-emerald-600 hover:shadow-lg active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-veriq-secondary px-6 py-3 text-sm font-medium text-white transition-all duration-200 hover:bg-emerald-600 hover:shadow-lg active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed;
   }
 
   .btn-gold {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-gold-gradient px-6 py-3 text-sm font-semibold text-white transition-all duration-200 hover:shadow-gold-glow hover:scale-105 active:scale-95;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-gold-gradient px-6 py-3 text-sm font-medium text-white transition-all duration-200 hover:shadow-gold-glow hover:scale-105 active:scale-95;
   }
 
   .btn-outline {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-navy-300 bg-white px-6 py-3 text-sm font-semibold text-navy-800 transition-all duration-200 hover:bg-navy-100 hover:border-navy-400 active:scale-95;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-navy-300 bg-white px-6 py-3 text-sm font-medium text-navy-800 transition-all duration-200 hover:bg-navy-100 hover:border-navy-400 active:scale-95;
   }
 
   .btn-ghost {

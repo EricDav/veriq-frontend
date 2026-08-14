@@ -2,20 +2,16 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Search, SlidersHorizontal, MapPin, Shield,
-  ChevronLeft, ChevronRight, X, Unlock, FileText, UserCheck, ArrowRight,
+  Search, MapPin, Shield,
+  ChevronLeft, ChevronRight, Unlock, FileText, UserCheck, ArrowRight,
 } from 'lucide-react';
 import Link from 'next/link';
 import { PropertyCard } from '@/components/properties/PropertyCard';
-import { agentsApi, consultationsApi, locationsApi, propertiesApi } from '@/lib/api';
+import { consultationsApi, propertiesApi } from '@/lib/api';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useAuth } from '@/context/AuthContext';
-import type { Agent, AllowedState, Property, FilterPropertiesDto } from '@/types';
-import {
-  PropertyType, FreshnessScore,
-  HostelSuitableFor, HostelGender, HostelCampusProximity,
-  ShortStayPricingModel,
-} from '@/types';
+import type { Property, FilterPropertiesDto } from '@/types';
+import { PropertyType } from '@/types';
 
 const PROPERTY_TYPES = [
   { value: '', label: 'All Types' },
@@ -27,41 +23,6 @@ const PROPERTY_TYPES = [
   { value: PropertyType.BUNGALOW, label: 'Bungalow' },
   { value: PropertyType.HOSTEL, label: 'Hostel' },
   { value: PropertyType.SHORT_STAY, label: 'Short Stay' },
-];
-
-const SHORT_STAY_PRICING_OPTIONS = [
-  { value: '', label: 'Any' },
-  { value: ShortStayPricingModel.DAILY, label: 'Daily Rate' },
-  { value: ShortStayPricingModel.WEEKLY, label: 'Weekly Rate' },
-  { value: ShortStayPricingModel.BOTH, label: 'Daily & Weekly' },
-];
-
-const FRESHNESS_OPTIONS = [
-  { value: '', label: 'Any Freshness' },
-  { value: FreshnessScore.FRESHLY_VERIFIED, label: 'Freshly Verified' },
-  { value: FreshnessScore.RECENTLY_VERIFIED, label: 'Recently Verified' },
-];
-
-const HOSTEL_SUITABLE_FOR_OPTIONS = [
-  { value: '', label: 'Any' },
-  { value: HostelSuitableFor.STUDENTS, label: 'Students' },
-  { value: HostelSuitableFor.CORP_MEMBERS, label: 'Corp Members (NYSC)' },
-  { value: HostelSuitableFor.WORKING_CLASS, label: 'Working Class' },
-  { value: HostelSuitableFor.TEMPORARY_STAY, label: 'Temporary Stay' },
-  { value: HostelSuitableFor.MIXED, label: 'Mixed / Any' },
-];
-
-const HOSTEL_GENDER_OPTIONS = [
-  { value: '', label: 'Any Gender' },
-  { value: HostelGender.MALE, label: 'Male Only' },
-  { value: HostelGender.FEMALE, label: 'Female Only' },
-  { value: HostelGender.MIXED, label: 'Mixed' },
-];
-
-const HOSTEL_CAMPUS_OPTIONS = [
-  { value: '', label: 'Any Location' },
-  { value: HostelCampusProximity.ON_CAMPUS, label: 'On Campus' },
-  { value: HostelCampusProximity.OFF_CAMPUS, label: 'Off Campus' },
 ];
 
 const LIMIT = 12;
@@ -109,19 +70,15 @@ function matchesFilters(property: Property, filters: FilterPropertiesDto) {
 export default function PropertiesPage() {
   const { isAuthenticated } = useAuth();
   const [properties, setProperties] = useState<Property[]>([]);
-  const [agents, setAgents] = useState<Agent[]>([]);
-  const [activeStates, setActiveStates] = useState<AllowedState[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
 
   const [filters, setFilters] = useState<FilterPropertiesDto>({});
   const [pendingFilters, setPendingFilters] = useState<FilterPropertiesDto>({});
   const [accessFilter, setAccessFilter] = useState<AccessFilter>('all');
-  const [pendingAccessFilter, setPendingAccessFilter] = useState<AccessFilter>('all');
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -135,10 +92,6 @@ export default function PropertiesPage() {
     setFilters(locationFilters);
     setPendingFilters(locationFilters);
   }, []);
-
-  const isHostel = pendingFilters.propertyType === PropertyType.HOSTEL;
-  const isShortStay = pendingFilters.propertyType === PropertyType.SHORT_STAY;
-  const isStandard = !isHostel && !isShortStay;
 
   const fetchProperties = useCallback(async (
     currentFilters: FilterPropertiesDto,
@@ -204,27 +157,9 @@ export default function PropertiesPage() {
     fetchProperties(filters, page, accessFilter);
   }, [filters, page, accessFilter, fetchProperties]);
 
-  useEffect(() => {
-    agentsApi.list(1, 100)
-      .then((res) => setAgents(res.data))
-      .catch(() => setAgents([]));
-
-    locationsApi.activeStates()
-      .then((res) => setActiveStates(res.data))
-      .catch(() => setActiveStates([]));
-  }, []);
-
-  const handleApplyFilters = () => {
-    setFilters(pendingFilters);
-    setAccessFilter(isAuthenticated ? pendingAccessFilter : 'all');
-    setPage(1);
-    setShowFilters(false);
-  };
-
   const handleClearFilters = () => {
     setPendingFilters({});
     setFilters({});
-    setPendingAccessFilter('all');
     setAccessFilter('all');
     setSearch('');
     setPage(1);
@@ -245,17 +180,7 @@ export default function PropertiesPage() {
   };
 
   const handleTypeChange = (value: string) => {
-    setPendingFilters((f) => ({
-      q: f.q,
-      state: f.state,
-      city: f.city,
-      area: f.area,
-      agentId: f.agentId,
-      minRent: f.minRent,
-      maxRent: f.maxRent,
-      freshnessScore: f.freshnessScore,
-      propertyType: (value as PropertyType) || undefined,
-    }));
+    setPendingFilters((current) => ({ ...current, propertyType: (value as PropertyType) || undefined }));
   };
 
   const activeFilterCount = Object.values(filters).filter(Boolean).length + (accessFilter === 'unlocked' ? 1 : 0);
@@ -263,7 +188,7 @@ export default function PropertiesPage() {
 
   return (
     <>
-      <section className="relative overflow-hidden bg-[#050b12] pb-10 pt-28 text-white lg:pb-24">
+      <section className="relative bg-[#050b12] pb-10 pt-28 text-white lg:pb-24">
         <div className="absolute inset-0 bg-[url('/images/web-background-visual-layer.png')] bg-cover bg-center opacity-45" />
         <div className="absolute inset-0 bg-gradient-to-r from-[#050b12] via-[#050b12]/95 to-emerald-950/40" />
         <div className="relative mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:px-8">
@@ -311,10 +236,11 @@ export default function PropertiesPage() {
                 {isLoading ? 'Loading...' : `${total} properties found`}
               </p>
             </div>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <div className="inline-flex rounded-xl border border-slate-200 bg-white p-1">
                 <button
                   type="button"
-                  onClick={() => { setAccessFilter('all'); setPendingAccessFilter('all'); }}
+                  onClick={() => setAccessFilter('all')}
                   className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
                     accessFilter === 'all' ? 'bg-navy-900 text-white' : 'text-navy-700 hover:bg-slate-50'
                   }`}
@@ -323,7 +249,7 @@ export default function PropertiesPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => { if (isAuthenticated) { setAccessFilter('unlocked'); setPendingAccessFilter('unlocked'); setPage(1); } }}
+                  onClick={() => { if (isAuthenticated) { setAccessFilter('unlocked'); setPage(1); } }}
                   disabled={!isAuthenticated}
                   className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
                     accessFilter === 'unlocked' ? 'bg-veriq-secondary text-white' : 'text-navy-700 hover:bg-slate-50'
@@ -333,305 +259,27 @@ export default function PropertiesPage() {
                   My Unlocks {!isAuthenticated && <span className="text-[9px] font-normal">Sign in to view</span>}
                 </button>
               </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <form onSubmit={handleSearchSubmit} className="flex min-w-64 flex-1 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5">
-              <Search className="h-4 w-4 flex-shrink-0 text-slate-400" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="flex-1 bg-transparent text-sm text-navy-900 outline-none placeholder:text-slate-400"
-                placeholder="Search by area, city, state..."
-              />
-              {search && (
-                <button type="button" onClick={handleClearFilters}>
-                  <X className="h-3.5 w-3.5 text-slate-400 hover:text-slate-600" />
-                </button>
-              )}
-            </form>
-            <button
-              type="button"
-              onClick={() => setShowFilters((v) => !v)}
-              className={`flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition-colors ${
-                showFilters || activeFilterCount > 0
-                  ? 'border-veriq-secondary bg-veriq-secondary/5 text-veriq-secondary'
-                  : 'border-slate-200 bg-white text-navy-700 hover:border-slate-300'
-              }`}
-            >
-              <SlidersHorizontal className="h-4 w-4" />
-              Filters
-              {activeFilterCount > 0 && (
-                <span className="ml-1 flex h-4 w-4 items-center justify-center rounded-full bg-veriq-secondary text-[10px] font-bold text-white">
-                  {activeFilterCount}
-                </span>
-              )}
-            </button>
-            <button type="button" onClick={handleSearchSubmit as any} className="btn-primary !py-2.5 !text-sm">
-              Search
-            </button>
-          </div>
-
-          {showFilters && (
-            <div className="card space-y-4 p-5">
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-                {isAuthenticated && (
-                  <div>
-                    <label className="label text-xs">Access</label>
-                    <select
-                      value={pendingAccessFilter}
-                      onChange={(e) => setPendingAccessFilter(e.target.value as AccessFilter)}
-                      className="input text-xs"
-                    >
-                      <option value="all">All properties</option>
-                      <option value="unlocked">Unlocked only</option>
-                    </select>
-                  </div>
-                )}
-                <div>
-                  <label className="label text-xs">Agent</label>
-                  <select
-                    value={pendingFilters.agentId ?? ''}
-                    onChange={(e) => setPendingFilters((f) => ({ ...f, agentId: e.target.value || undefined }))}
-                    className="input text-xs"
-                  >
-                    <option value="">All agents</option>
-                    {agents.map((agent) => (
-                      <option key={agent.id} value={agent.id}>
-                        {agent.businessName || `${agent.user?.firstName ?? ''} ${agent.user?.lastName ?? ''}`.trim() || agent.username || 'Agent'}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="label text-xs">State</label>
-                  <select
-                    value={pendingFilters.state ?? ''}
-                    onChange={(e) => setPendingFilters((f) => ({ ...f, state: e.target.value || undefined }))}
-                    className="input text-xs"
-                  >
-                    <option value="">All states</option>
-                    {activeStates.map((state) => (
-                      <option key={state.id} value={state.name}>
-                        {state.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="label text-xs">City</label>
-                  <input
-                    type="text"
-                    value={pendingFilters.city ?? ''}
-                    onChange={(e) => setPendingFilters((f) => ({ ...f, city: e.target.value || undefined }))}
-                    className="input text-xs"
-                    placeholder="e.g. Port Harcourt"
-                  />
-                </div>
-                <div>
-                  <label className="label text-xs">Property Type</label>
-                  <select
-                    value={pendingFilters.propertyType ?? ''}
-                    onChange={(e) => handleTypeChange(e.target.value)}
-                    className="input text-xs"
-                  >
-                    {PROPERTY_TYPES.map((t) => (
-                      <option key={t.value} value={t.value}>{t.label}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="label text-xs">Freshness</label>
-                  <select
-                    value={pendingFilters.freshnessScore ?? ''}
-                    onChange={(e) => setPendingFilters((f) => ({
-                      ...f, freshnessScore: (e.target.value as FreshnessScore) || undefined,
-                    }))}
-                    className="input text-xs"
-                  >
-                    {FRESHNESS_OPTIONS.map((o) => (
-                      <option key={o.value} value={o.value}>{o.label}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="label text-xs">Min Rent (N)</label>
-                  <input
-                    type="number"
-                    value={pendingFilters.minRent ?? ''}
-                    onChange={(e) => setPendingFilters((f) => ({
-                      ...f, minRent: e.target.value ? Number(e.target.value) : undefined,
-                    }))}
-                    className="input text-xs"
-                    placeholder="e.g. 50000"
-                  />
-                </div>
-                <div>
-                  <label className="label text-xs">Max Rent (N)</label>
-                  <input
-                    type="number"
-                    value={pendingFilters.maxRent ?? ''}
-                    onChange={(e) => setPendingFilters((f) => ({
-                      ...f, maxRent: e.target.value ? Number(e.target.value) : undefined,
-                    }))}
-                    className="input text-xs"
-                    placeholder="e.g. 2000000"
-                  />
-                </div>
-              </div>
-
-              {isStandard && (
-                <div>
-                  <label className="label text-xs">Min Bedrooms</label>
-                  <div className="mt-1 flex gap-2">
-                    {['Any', '1', '2', '3', '4+'].map((b) => {
-                      const val = b === 'Any' ? undefined : b === '4+' ? 4 : Number(b);
-                      const isActive = (pendingFilters.minBedrooms ?? undefined) === val;
-                      return (
-                        <button
-                          key={b}
-                          type="button"
-                          onClick={() => setPendingFilters((f) => ({ ...f, minBedrooms: val }))}
-                          className={`flex-1 rounded-lg py-1.5 text-xs font-medium transition-all ${
-                            isActive
-                              ? 'bg-veriq-secondary text-white'
-                              : 'border border-slate-200 bg-white text-navy-700 hover:border-veriq-secondary'
-                          }`}
-                        >
-                          {b}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {isShortStay && (
-                <div className="space-y-4 rounded-xl border border-veriq-secondary/20 bg-veriq-secondary/5 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-veriq-secondary">Short Stay Filters</p>
-                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-                    <div>
-                      <label className="label text-xs">Pricing Model</label>
-                      <select
-                        value={pendingFilters.shortStayPricingModel ?? ''}
-                        onChange={(e) => setPendingFilters((f) => ({
-                          ...f, shortStayPricingModel: (e.target.value as ShortStayPricingModel) || undefined,
-                        }))}
-                        className="input text-xs"
-                      >
-                        {SHORT_STAY_PRICING_OPTIONS.map((o) => (
-                          <option key={o.value} value={o.value}>{o.label}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="label text-xs">Max Rate / Night (N)</label>
-                      <input
-                        type="number"
-                        min={0}
-                        value={pendingFilters.maxDailyRate ?? ''}
-                        onChange={(e) => setPendingFilters((f) => ({
-                          ...f, maxDailyRate: e.target.value ? Number(e.target.value) : undefined,
-                        }))}
-                        className="input text-xs"
-                        placeholder="e.g. 30000"
-                      />
-                    </div>
-                    <div>
-                      <label className="label text-xs">Max Stay (nights)</label>
-                      <input
-                        type="number"
-                        min={1}
-                        value={pendingFilters.maxNights ?? ''}
-                        onChange={(e) => setPendingFilters((f) => ({
-                          ...f, maxNights: e.target.value ? Number(e.target.value) : undefined,
-                        }))}
-                        className="input text-xs"
-                        placeholder="e.g. 7"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {isHostel && (
-                <div className="space-y-4 rounded-xl border border-veriq-secondary/20 bg-veriq-secondary/5 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-veriq-secondary">Hostel Filters</p>
-                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                    <div>
-                      <label className="label text-xs">Suitable For</label>
-                      <select
-                        value={pendingFilters.hostelSuitableFor ?? ''}
-                        onChange={(e) => setPendingFilters((f) => ({
-                          ...f, hostelSuitableFor: (e.target.value as HostelSuitableFor) || undefined,
-                        }))}
-                        className="input text-xs"
-                      >
-                        {HOSTEL_SUITABLE_FOR_OPTIONS.map((o) => (
-                          <option key={o.value} value={o.value}>{o.label}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="label text-xs">Gender</label>
-                      <select
-                        value={pendingFilters.hostelGender ?? ''}
-                        onChange={(e) => setPendingFilters((f) => ({
-                          ...f, hostelGender: (e.target.value as HostelGender) || undefined,
-                        }))}
-                        className="input text-xs"
-                      >
-                        {HOSTEL_GENDER_OPTIONS.map((o) => (
-                          <option key={o.value} value={o.value}>{o.label}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="label text-xs">Campus Location</label>
-                      <select
-                        value={pendingFilters.hostelCampusProximity ?? ''}
-                        onChange={(e) => setPendingFilters((f) => ({
-                          ...f, hostelCampusProximity: (e.target.value as HostelCampusProximity) || undefined,
-                        }))}
-                        className="input text-xs"
-                      >
-                        {HOSTEL_CAMPUS_OPTIONS.map((o) => (
-                          <option key={o.value} value={o.value}>{o.label}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="label text-xs">Max Persons/Room</label>
-                      <input
-                        type="number"
-                        min={1}
-                        value={pendingFilters.hostelPersonsPerRoom ?? ''}
-                        onChange={(e) => setPendingFilters((f) => ({
-                          ...f, hostelPersonsPerRoom: e.target.value ? Number(e.target.value) : undefined,
-                        }))}
-                        className="input text-xs"
-                        placeholder="e.g. 2"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div className="flex gap-3">
-                <button type="button" onClick={handleApplyFilters} className="btn-primary !py-2 !text-xs">
-                  Apply Filters
-                </button>
+              <div className="flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-navy-700">
                 <button
                   type="button"
-                  onClick={handleClearFilters}
-                  className="rounded-xl border border-slate-200 px-4 py-2 text-xs text-slate-500 transition-colors hover:bg-slate-50"
+                  role="switch"
+                  aria-checked={Boolean(pendingFilters.freeIntelligenceOnly)}
+                  aria-label="Free Listing only"
+                  onClick={() => {
+                    const enabled = !pendingFilters.freeIntelligenceOnly;
+                    const next = { ...pendingFilters, freeIntelligenceOnly: enabled || undefined };
+                    setPendingFilters(next);
+                    setFilters(next);
+                    setPage(1);
+                  }}
+                  className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${pendingFilters.freeIntelligenceOnly ? 'bg-veriq-secondary' : 'bg-slate-300'}`}
                 >
-                  Clear All
+                  <span className={`absolute left-1 top-1 h-4 w-4 rounded-full bg-white shadow transition-transform ${pendingFilters.freeIntelligenceOnly ? 'translate-x-5' : 'translate-x-0'}`} />
                 </button>
+                Free Listing only
               </div>
             </div>
-          )}
+          </div>
 
           <div className="flex items-center gap-3 rounded-xl border border-veriq-secondary/20 bg-veriq-secondary/10 px-4 py-3">
             <Shield className="h-4 w-4 flex-shrink-0 text-veriq-secondary" />

@@ -3,19 +3,42 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { ArrowLeft, ArrowRight, BarChart3, Building2, Clock, MapPin, Users } from 'lucide-react';
+import {
+  ArrowLeft,
+  ArrowRight,
+  BarChart3,
+  Building2,
+  Check,
+  Clock,
+  Copy,
+  Facebook,
+  Instagram,
+  Linkedin,
+  Mail,
+  MapPin,
+  MessageCircle,
+  Share2,
+  Users,
+  X,
+} from 'lucide-react';
 import { ApiError, communityApi, propertiesApi } from '@/lib/api';
 import { IntelligenceSourceType, type Property, type StreetIntelligencePayload } from '@/types';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { useAuth } from '@/context/AuthContext';
 import { PropertyCard } from '@/components/properties/PropertyCard';
 
 const SECTIONS = ['Infrastructure', 'Environment', 'Accessibility'] as const;
-const SOURCE_LABELS: Record<IntelligenceSourceType, string> = {
-  [IntelligenceSourceType.VERIQ_INITIAL]: 'Veriq Initial Intelligence',
-  [IntelligenceSourceType.AGENT_REPORT]: 'Agent Reports',
+const SOURCE_LABELS: Partial<Record<IntelligenceSourceType, string>> = {
+  [IntelligenceSourceType.VERIQ_INITIAL]: 'Initial Veriq Intelligence',
   [IntelligenceSourceType.COMMUNITY_UPDATE]: 'Community Updates',
 };
+
+function sourceLabel(sources: IntelligenceSourceType[]) {
+  const labels = sources
+    .filter((source) => source !== IntelligenceSourceType.AGENT_REPORT)
+    .map((source) => SOURCE_LABELS[source])
+    .filter((label): label is string => Boolean(label));
+  return labels.length ? labels.join(' + ') : 'Awaiting community reports';
+}
 
 function updatedLabel(value: string | null) {
   if (!value) return 'No recent update';
@@ -40,12 +63,139 @@ function RatingDots({ level, maxLevel }: { level: number | null; maxLevel: numbe
   );
 }
 
+function ShareStreet({ streetName, location }: { streetName: string; location: string }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [feedback, setFeedback] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsOpen(false);
+    };
+    document.addEventListener('keydown', closeOnEscape);
+    return () => document.removeEventListener('keydown', closeOnEscape);
+  }, [isOpen]);
+
+  const shareUrl = typeof window === 'undefined' ? '' : window.location.href;
+  const shareText = `See the Street Intelligence report for ${streetName}, ${location} on Veriq Property.`;
+
+  const openShareUrl = (url: string) => {
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
+  const copyLink = async (message = 'Link copied to clipboard') => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setFeedback(message);
+    } catch {
+      setFeedback('Unable to copy automatically. Copy the address from your browser.');
+    }
+  };
+
+  const shareFromDevice = async () => {
+    if (!navigator.share) {
+      await copyLink('Link copied. Paste it into the app you want to share with.');
+      return;
+    }
+    try {
+      await navigator.share({ title: `${streetName} Street Intelligence`, text: shareText, url: shareUrl });
+      setFeedback('Street shared successfully');
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return;
+      setFeedback('Sharing was not completed. Please try another option.');
+    }
+  };
+
+  const encodedUrl = encodeURIComponent(shareUrl);
+  const encodedText = encodeURIComponent(shareText);
+  const shareOptions = [
+    {
+      label: 'WhatsApp',
+      icon: MessageCircle,
+      action: () => openShareUrl(`https://wa.me/?text=${encodedText}%20${encodedUrl}`),
+      className: 'text-emerald-700 hover:bg-emerald-50',
+    },
+    {
+      label: 'Facebook',
+      icon: Facebook,
+      action: () => openShareUrl(`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`),
+      className: 'text-blue-700 hover:bg-blue-50',
+    },
+    {
+      label: 'Instagram',
+      icon: Instagram,
+      action: () => void shareFromDevice(),
+      className: 'text-pink-700 hover:bg-pink-50',
+    },
+    {
+      label: 'X',
+      icon: X,
+      action: () => openShareUrl(`https://twitter.com/intent/tweet?text=${encodedText}&url=${encodedUrl}`),
+      className: 'text-slate-900 hover:bg-slate-100',
+    },
+    {
+      label: 'LinkedIn',
+      icon: Linkedin,
+      action: () => openShareUrl(`https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`),
+      className: 'text-sky-800 hover:bg-sky-50',
+    },
+    {
+      label: 'Email',
+      icon: Mail,
+      action: () => { window.location.href = `mailto:?subject=${encodeURIComponent(`${streetName} Street Intelligence`)}&body=${encodedText}%0A%0A${encodedUrl}`; },
+      className: 'text-slate-700 hover:bg-slate-100',
+    },
+  ];
+
+  return (
+    <>
+      <div className="mt-6 flex justify-center">
+        <button type="button" onClick={() => { setFeedback(null); setIsOpen(true); }} className="btn-primary inline-flex min-h-12 items-center gap-2 px-6 uppercase">
+          <Share2 className="h-4 w-4" /> Share This Street?
+        </button>
+      </div>
+
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-navy-900/60 p-4 sm:items-center" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setIsOpen(false); }}>
+          <section role="dialog" aria-modal="true" aria-labelledby="share-street-title" className="w-full max-w-md rounded-lg bg-white p-5 shadow-2xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 id="share-street-title" className="font-display text-lg font-bold text-navy-900">Share {streetName}</h2>
+                <p className="mt-1 text-sm text-veriq-muted">Help someone make a better-informed property decision.</p>
+              </div>
+              <button type="button" onClick={() => setIsOpen(false)} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100" aria-label="Close share options">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <button type="button" onClick={() => void shareFromDevice()} className="mt-5 flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-navy-900 px-4 text-sm font-medium text-white hover:bg-navy-800">
+              <Share2 className="h-4 w-4" /> Share with another app
+            </button>
+
+            <div className="mt-4 grid grid-cols-3 gap-2">
+              {shareOptions.map(({ label, icon: Icon, action, className }) => (
+                <button key={label} type="button" onClick={action} className={`flex min-h-16 flex-col items-center justify-center gap-1 rounded-lg border border-slate-200 px-2 text-xs font-medium transition-colors ${className}`}>
+                  <Icon className="h-5 w-5" /> {label}
+                </button>
+              ))}
+            </div>
+
+            <button type="button" onClick={() => void copyLink()} className="mt-4 flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-slate-300 px-4 text-sm font-medium text-navy-900 hover:bg-slate-50">
+              {feedback?.startsWith('Link copied') ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
+              Copy link
+            </button>
+            {feedback && <p role="status" className="mt-3 text-center text-xs text-veriq-muted">{feedback}</p>}
+          </section>
+        </div>
+      )}
+    </>
+  );
+}
+
 function StreetResult() {
   const { id } = useParams<{ id: string }>();
-  const { isAuthenticated } = useAuth();
   const [payload, setPayload] = useState<StreetIntelligencePayload | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchLimitReached, setSearchLimitReached] = useState(false);
   const [notFound, setNotFound] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [relatedProperties, setRelatedProperties] = useState<Property[]>([]);
@@ -57,9 +207,6 @@ function StreetResult() {
       .getStreet(id)
       .then((res) => setPayload(res.data))
       .catch((error) => {
-        if (error instanceof ApiError && error.statusCode === 403 && error.message === 'street_search_limit_reached') {
-          setSearchLimitReached(true);
-        }
         setNotFound(error instanceof ApiError && error.statusCode === 404);
         setLoadError(
           error instanceof ApiError
@@ -114,26 +261,12 @@ function StreetResult() {
       <div className="min-h-screen bg-veriq-surface pt-24">
         <main className="mx-auto min-w-0 max-w-4xl px-4 py-16 text-center sm:px-6">
           <h1 className="font-display text-2xl font-bold text-navy-900">
-            {searchLimitReached ? 'Continue Exploring Street Intelligence' : notFound ? 'Street not found' : 'Unable to load Street Intelligence'}
+            {notFound ? 'Street not found' : 'Unable to load Street Intelligence'}
           </h1>
-          {searchLimitReached ? (
-            <>
-              <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-veriq-muted">
-                You&apos;re discovering valuable insights that help people make smarter property decisions.
-                Create your free Veriq account to continue exploring Street Intelligence, save your searches,
-                and become part of a growing community helping everyone Know Before They Go.
-              </p>
-              <div className="mt-6 flex flex-wrap justify-center gap-3">
-                <Link href="/auth/register" className="btn-primary">Create Free Account</Link>
-                <Link href={`/auth/login?redirect=${encodeURIComponent(`/street-intelligence/${id}`)}`} className="btn-outline">Sign In</Link>
-              </div>
-            </>
-          ) : (
-            <>
+          <>
               <p className="mx-auto mt-3 max-w-xl break-words text-sm text-veriq-muted">{loadError ?? 'This street is unavailable or is still awaiting admin approval.'}</p>
               <Link href="/street-intelligence" className="btn-primary mt-6">Back to Street Intelligence</Link>
-            </>
-          )}
+          </>
         </main>
       </div>
     );
@@ -171,13 +304,6 @@ function StreetResult() {
           {payload.sourceNotice}
         </div>
 
-        {!isAuthenticated && (
-          <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-            <span><strong>{payload.usage.remaining}</strong> of {payload.usage.limit} free street searches remaining.</span>
-            <Link href="/auth/register" className="font-bold text-emerald-800 underline">Create a free account</Link>
-          </div>
-        )}
-
         {SECTIONS.map((section) => (
           <section key={section} className="mb-8">
             <h2 className="mb-4 font-display text-lg font-black text-navy-900">{section}</h2>
@@ -208,7 +334,7 @@ function StreetResult() {
                   </p>
                 )}
                 <div className="mt-3 space-y-1 text-xs text-veriq-muted">
-                  <p className="flex items-start gap-1"><Users className="mt-0.5 h-3.5 w-3.5 shrink-0" /> Source: {result.sources.length ? result.sources.map((source) => SOURCE_LABELS[source]).join(' + ') : 'Awaiting reports'}</p>
+                  <p className="flex items-start gap-1"><Users className="mt-0.5 h-3.5 w-3.5 shrink-0" /> Source: {sourceLabel(result.sources)}</p>
                   {result.confidenceScore !== undefined && (
                     <p>
                       Confidence: <strong className="capitalize text-navy-900">{result.confidenceLevel}</strong>
@@ -268,6 +394,7 @@ function StreetResult() {
         <p className="mt-6 text-xs leading-5 text-slate-500">
           Street Intelligence reflects the experiences of Community Contributors and may change as new reports are submitted. Users should make independent enquiries before making a property decision.
         </p>
+        <ShareStreet streetName={street.streetName} location={`${street.area}, ${street.city}, ${street.state}`} />
       </main>
     </div>
   );

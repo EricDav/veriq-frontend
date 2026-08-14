@@ -46,7 +46,7 @@ const config: Config = {
       },
       fontFamily: {
         sans:    ["var(--font-inter)", "system-ui", "sans-serif"],
-        display: ["var(--font-plus-jakarta)", "system-ui", "sans-serif"],
+        display: ["var(--font-sora)", "system-ui", "sans-serif"],
       },
       backgroundImage: {
         "hero-pattern":  "linear-gradient(135deg, #070B14 0%, #111827 60%, #0D3D2E 100%)",

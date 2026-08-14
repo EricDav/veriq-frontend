@@ -36,6 +36,7 @@ function userFixture(role: 'user' | 'admin' = 'user') {
 function propertyFixture() {
   return {
     id: propertyId,
+    agentId: 'agent-1',
     title: 'Free Unlock Choba Flat',
     description: 'A clean property with a sponsored intelligence report.',
     propertyType: 'flat',
@@ -278,7 +279,12 @@ test('admin can moderate proposed streets and pending contributions', async ({ c
     ] }) });
   });
   await page.route(`${API_BASE}/properties/admin/all?*`, async (route) => {
+    expect(new URL(route.request().url()).searchParams.get('agentId')).toBe('agent-1');
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ statusCode: 200, message: 'Properties', data: [propertyFixture()], meta: { total: 1, page: 1, limit: 100, pages: 1 } }) });
+  });
+  await page.route(`${API_BASE}/agents/admin/all?*`, async (route) => {
+    const agent = propertyFixture().agent;
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ statusCode: 200, message: 'Agents', data: [{ ...agent, businessName: 'Ada Homes', username: 'ada-agent' }], meta: { total: 1, page: 1, limit: 100, pages: 1 } }) });
   });
   await page.route(`${API_BASE}/community/admin/free-unlocks`, async (route) => {
     if (route.request().method() === 'POST') {
@@ -363,12 +369,16 @@ test('admin can moderate proposed streets and pending contributions', async ({ c
   await expect.poll(() => observationPayload).not.toBeNull();
   expect(observationPayload).toEqual(expect.objectContaining({ streetId: approvedStreet.id, categoryId: 'cat-electricity', optionId: 'opt-good', sourceType: 'veriq_initial' }));
 
-  await page.locator('#free-unlocks select').first().selectOption(propertyId);
+  await expect(page.getByLabel('Property')).toBeDisabled();
+  await page.getByLabel('Agent').selectOption('agent-1');
+  await expect(page.getByLabel('Property')).toBeEnabled();
+  await page.getByLabel('Property').selectOption(propertyId);
   await page.locator('input[type="datetime-local"]').first().fill('2026-07-16T09:00');
   await page.locator('input[type="datetime-local"]').nth(1).fill('2026-07-20T09:00');
   await page.getByRole('button', { name: 'Create Campaign' }).click();
   await expect.poll(() => campaignPayload).not.toBeNull();
   expect((campaignPayload as { propertyId?: string } | null)?.propertyId).toBe(propertyId);
+  expect((campaignPayload as { sponsoringAgentId?: string } | null)?.sponsoringAgentId).toBe('agent-1');
 
   await streetModeration.getByPlaceholder('Search street, area, location or landmark').fill('Pipeline');
   await streetModeration.getByRole('button', { name: 'Approve', exact: true }).click();
@@ -458,7 +468,7 @@ test('member filters street intelligence by state, city and area before street n
   expect(searchUrl).toContain('locationId=location-1');
 });
 
-test('street report renders scale position, source, updated time and free-search balance on mobile', async ({ page }) => {
+test('street report renders scale position and community source on mobile without search limits', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.route(`${API_BASE}/community/streets/street-public`, async (route) => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
@@ -469,7 +479,7 @@ test('street report renders scale position, source, updated time and free-search
         contributors: 4,
         lastUpdated: new Date().toISOString(),
         sourceNotice: 'Structured intelligence notice.',
-        usage: { limit: 5, used: 1, remaining: 4, requiresSignup: false },
+        usage: { unlimited: true, requiresSignup: false },
         results: [{
           categoryId: 'cat-mobile',
           category: 'Mobile Network',
@@ -481,7 +491,7 @@ test('street report renders scale position, source, updated time and free-search
           level: 4,
           maxLevel: 5,
           isPositiveScale: true,
-          sources: ['agent_report', 'community_update'],
+          sources: ['community_update'],
           lastUpdated: new Date().toISOString(),
           supplementaryResult: ['MTN', 'Airtel'],
         }],
@@ -494,24 +504,31 @@ test('street report renders scale position, source, updated time and free-search
   await expect(page.getByRole('heading', { name: 'School Road' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Mobile Network' })).toBeVisible();
   await expect(page.getByText('Works Well On:')).toBeVisible();
-  await expect(page.getByText(/Agent Reports \+ Community Updates/)).toBeVisible();
-  await expect(page.getByText('4 of 5 free street searches remaining.')).toBeVisible();
+  await expect(page.getByText(/Source: Community Updates/)).toBeVisible();
+  await expect(page.getByText(/Agent Reports/)).toHaveCount(0);
+  await expect(page.getByText(/free street searches remaining/)).toHaveCount(0);
 });
 
-test('sixth anonymous street report shows the account continuation gate', async ({ page }) => {
+test('anonymous street reports remain accessible without an account continuation gate', async ({ page }) => {
   await page.route(`${API_BASE}/community/streets/street-six`, async (route) => {
     await route.fulfill({
-      status: 403,
+      status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ statusCode: 403, message: 'street_search_limit_reached' }),
+      body: JSON.stringify({ statusCode: 200, message: 'Street Intelligence retrieved', data: {
+        street: { id: 'street-six', streetName: 'Unlimited Road', area: 'Rumuomasi', city: 'Port Harcourt', state: 'Rivers', status: 'approved' },
+        contributors: 0,
+        lastUpdated: null,
+        sourceNotice: 'Street Intelligence is community-powered.',
+        usage: { unlimited: true, requiresSignup: false },
+        results: [],
+      } }),
     });
   });
 
   await page.goto('/street-intelligence/street-six');
 
-  await expect(page.getByRole('heading', { name: 'Continue Exploring Street Intelligence' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Create Free Account' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Sign In' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Unlimited Road' })).toBeVisible();
+  await expect(page.getByText('Continue Exploring Street Intelligence')).toHaveCount(0);
 });
 
 test('Skip records a skipped response separately, advances, and contributor can save the update', async ({ context, page }) => {
