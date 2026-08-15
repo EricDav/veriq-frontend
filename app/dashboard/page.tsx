@@ -10,9 +10,10 @@ import {
 import { useAuth } from '@/context/AuthContext';
 import { consultationsApi, propertiesApi, agentsApi, communityApi } from '@/lib/api';
 import type { Consultation, Property, Agent } from '@/types';
-import { UserRole, AgentVerificationLevel, ConsultationStatus, ListingStatus } from '@/types';
+import { UserRole, AgentVerificationLevel, AgentFeedbackTag, ConsultationStatus, ListingStatus } from '@/types';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useToast } from '@/components/ui/Toast';
+import { AgentFeedbackSelector } from '@/components/agents/AgentFeedbackSelector';
 
 // ─── Formatters ───────────────────────────────────────────────────────────
 
@@ -64,7 +65,7 @@ function UserDashboard({ userId }: { userId: string }) {
   const [rating, setRating] = useState(5);
   const [inspectionOccurred, setInspectionOccurred] = useState(true);
   const [accuracyScore, setAccuracyScore] = useState(100);
-  const [comment, setComment] = useState('');
+  const [feedbackTags, setFeedbackTags] = useState<AgentFeedbackTag[]>([]);
   const [submittingRating, setSubmittingRating] = useState(false);
   const [showContributionInvite, setShowContributionInvite] = useState(false);
   const { success, error } = useToast();
@@ -95,7 +96,7 @@ function UserDashboard({ userId }: { userId: string }) {
     setRating(Number(consultation.userSatisfactionRating ?? 5));
     setInspectionOccurred(consultation.inspectionOccurred ?? true);
     setAccuracyScore(Number(consultation.listingAccuracyScore ?? 100));
-    setComment(consultation.userFeedbackComment ?? '');
+    setFeedbackTags(consultation.userFeedbackTags ?? []);
   };
 
   const submitRating = async (event: React.FormEvent) => {
@@ -109,7 +110,7 @@ function UserDashboard({ userId }: { userId: string }) {
         inspectionOccurred,
         accuracyScore,
         satisfactionRating: rating,
-        comment: comment.trim() || undefined,
+        feedbackTags,
       });
 
       const ratedAt = new Date().toISOString();
@@ -121,7 +122,7 @@ function UserDashboard({ userId }: { userId: string }) {
                 inspectionOccurred,
                 listingAccuracyScore: accuracyScore,
                 userSatisfactionRating: rating,
-                userFeedbackComment: comment.trim() || null,
+                userFeedbackTags: feedbackTags,
                 ratedAt,
               }
             : item,
@@ -339,16 +340,7 @@ function UserDashboard({ userId }: { userId: string }) {
                 />
               </div>
 
-              <div>
-                <label className="mb-2 block text-sm font-bold text-navy-900">Comment</label>
-                <textarea
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value.slice(0, 500))}
-                  rows={4}
-                  className="input min-h-28 resize-y"
-                  placeholder="Share how responsive, honest, or helpful the agent was."
-                />
-              </div>
+              <AgentFeedbackSelector value={feedbackTags} onChange={setFeedbackTags} />
             </div>
 
             <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">

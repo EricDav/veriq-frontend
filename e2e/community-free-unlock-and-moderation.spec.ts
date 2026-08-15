@@ -187,6 +187,63 @@ test('signed-in renter must claim a Free Unlock before viewing the report', asyn
   expect(paidUnlockRequests).toBe(0);
 });
 
+test('agent rating uses structured feedback and limits users to two selections', async ({ context, page }) => {
+  await seedAuth(context, page, 'user');
+  await mockSharedShell(page, 'user');
+  let ratingPayload: Record<string, unknown> | null = null;
+  const consultation = {
+    id: 'consultation-rating-1',
+    userId: 'renter-user-1',
+    propertyId,
+    property: propertyFixture(),
+    tier: 'tier_1',
+    feeAmount: 2500,
+    status: 'unlocked',
+    paymentReference: 'FREE-rating',
+    paymentProvider: 'free_unlock',
+    paidAt: new Date().toISOString(),
+    unlockedAt: new Date().toISOString(),
+    accessExpiresAt: new Date(Date.now() + 86_400_000).toISOString(),
+    notes: null,
+    inspectionOccurred: null,
+    listingAccuracyScore: null,
+    userSatisfactionRating: null,
+    userFeedbackComment: null,
+    userFeedbackTags: null,
+    ratedAt: null,
+    agentId: 'agent-1',
+  };
+  await page.route(`${API_BASE}/consultations/my?*`, async (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ statusCode: 200, message: 'Consultations', data: [consultation], meta: { total: 1, page: 1, limit: 10, pages: 1 } }),
+  }));
+  await page.route(`${API_BASE}/community/me/status`, async (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ statusCode: 200, message: 'Status', data: { joinedAt: new Date().toISOString() } }),
+  }));
+  await page.route(`${API_BASE}/agents/inspection-outcome`, async (route) => {
+    ratingPayload = route.request().postDataJSON();
+    await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ statusCode: 201, message: 'Agent feedback recorded', data: {} }) });
+  });
+
+  await page.goto('/dashboard');
+  await page.getByRole('button', { name: 'Rate agent' }).click();
+  await page.getByRole('button', { name: 'Clear and Helpful' }).click();
+  await page.getByRole('button', { name: 'Helpful Photos' }).click();
+  await expect(page.getByText('2/2 selected')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'More Details Needed' })).toBeDisabled();
+  await page.getByRole('button', { name: 'Submit rating' }).click();
+
+  await expect.poll(() => ratingPayload).not.toBeNull();
+  expect((ratingPayload as { feedbackTags?: string[] } | null)?.feedbackTags).toEqual([
+    'clear_and_helpful',
+    'helpful_photos',
+  ]);
+  expect(ratingPayload).not.toHaveProperty('comment');
+});
+
 test('admin can moderate proposed streets and pending contributions', async ({ context, page }) => {
   await seedAuth(context, page, 'admin');
   await mockSharedShell(page, 'admin');
@@ -243,6 +300,15 @@ test('admin can moderate proposed streets and pending contributions', async ({ c
     nextRewardEligibleAt: null,
     answers: [{ id: 'answer-1', categoryId: 'cat-1', optionId: 'opt-1' }],
   };
+  const moderationContributions = [
+    contribution,
+    ...Array.from({ length: 5 }, (_, index) => ({
+      ...contribution,
+      id: `contribution-${index + 2}`,
+      streetId: `street-contribution-${index + 2}`,
+      street: { ...street, id: `street-contribution-${index + 2}`, streetName: `Contribution Street ${index + 2}` },
+    })),
+  ];
 
   let streetReviewPayload: Record<string, unknown> | null = null;
   let contributionReviewPayload: Record<string, unknown> | null = null;
@@ -298,7 +364,7 @@ test('admin can moderate proposed streets and pending contributions', async ({ c
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ statusCode: 200, message: 'Streets', data: [street, approvedStreet, olderPendingStreet] }) });
   });
   await page.route(`${API_BASE}/community/admin/contributions**`, async (route) => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ statusCode: 200, message: 'Contributions', data: [contribution] }) });
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ statusCode: 200, message: 'Contributions', data: moderationContributions }) });
   });
   await page.route(`${API_BASE}/community/admin/locations**`, async (route) => {
     if (route.request().method() === 'POST') {
@@ -385,7 +451,13 @@ test('admin can moderate proposed streets and pending contributions', async ({ c
   await expect.poll(() => streetReviewPayload).not.toBeNull();
   expect((streetReviewPayload as { status?: string } | null)?.status).toBe('approved');
 
-  await page.getByRole('button', { name: 'Flag' }).click();
+  await page.getByRole('tab', { name: /Contributions 6/ }).click();
+  const contributionModeration = page.getByTestId('contribution-moderation');
+  await expect(contributionModeration.getByText('Contribution Street 6', { exact: true })).toHaveCount(0);
+  await contributionModeration.getByRole('button', { name: 'Next moderation page' }).click();
+  await expect(contributionModeration.getByText('Contribution Street 6', { exact: true })).toBeVisible();
+  await contributionModeration.getByRole('button', { name: 'Previous moderation page' }).click();
+  await contributionModeration.getByRole('button', { name: 'Flag' }).first().click();
   await expect.poll(() => contributionReviewPayload).not.toBeNull();
   expect((contributionReviewPayload as { status?: string } | null)?.status).toBe('flagged');
 });

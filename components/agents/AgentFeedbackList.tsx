@@ -1,5 +1,6 @@
 import { MessageSquare, Star } from 'lucide-react';
 import type { AgentFeedback } from '@/types';
+import { AGENT_FEEDBACK_LABELS } from './AgentFeedbackSelector';
 
 export function AgentFeedbackList({ feedback }: { feedback: AgentFeedback[] }) {
   return (
@@ -39,7 +40,17 @@ export function AgentFeedbackList({ feedback }: { feedback: AgentFeedback[] }) {
                   )}
                 </div>
               </div>
-              <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-600">{item.comment}</p>
+              {item.feedbackTags?.length ? (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {item.feedbackTags.map((tag) => (
+                    <span key={tag} className="rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-xs font-medium text-emerald-800">
+                      {AGENT_FEEDBACK_LABELS[tag]}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-600">{item.comment}</p>
+              )}
             </article>
           ))}
         </div>

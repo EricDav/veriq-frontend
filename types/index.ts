@@ -407,6 +407,7 @@ export interface AgentFeedback {
   id: string;
   rating: number | null;
   comment: string;
+  feedbackTags?: AgentFeedbackTag[];
   ratedAt: string | null;
   propertyTitle: string | null;
   reviewerName: string;
@@ -515,6 +516,7 @@ export interface Consultation {
   listingAccuracyScore: number | null;
   userSatisfactionRating: number | null;
   userFeedbackComment: string | null;
+  userFeedbackTags?: AgentFeedbackTag[] | null;
   ratedAt: string | null;
   agentId: string | null;
   commissionRate: number | null;
@@ -761,7 +763,17 @@ export interface RecordInspectionOutcomeDto {
   inspectionOccurred: boolean;
   accuracyScore?: number;
   satisfactionRating?: number;
-  comment?: string;
+  feedbackTags?: AgentFeedbackTag[];
+}
+
+export enum AgentFeedbackTag {
+  CLEAR_AND_HELPFUL = 'clear_and_helpful',
+  DETAILED_INFORMATION = 'detailed_information',
+  HELPFUL_PHOTOS = 'helpful_photos',
+  INFORMATION_LOOKED_ACCURATE = 'information_looked_accurate',
+  MORE_DETAILS_NEEDED = 'more_details_needed',
+  BETTER_PHOTOS_NEEDED = 'better_photos_needed',
+  INTELLIGENCE_COULD_BE_MORE_ACCURATE = 'intelligence_could_be_more_accurate',
 }
 
 export interface ChatParticipant {

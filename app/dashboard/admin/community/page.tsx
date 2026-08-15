@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { BarChart3, BellRing, CheckCircle, Clock3, Flag, Gift, MapPin, Plus, RefreshCw, Search, XCircle, Trash2, Save, Pencil } from 'lucide-react';
+import { BarChart3, BellRing, CheckCircle, ChevronLeft, ChevronRight, Clock3, Flag, Gift, MapPin, Plus, RefreshCw, Search, XCircle, Trash2, Save, Pencil } from 'lucide-react';
 import { agentsApi, communityApi, locationsApi, propertiesApi } from '@/lib/api';
 import {
   ContributionStatus,
@@ -28,6 +28,30 @@ type DirectoryModal = {
   id?: string;
   name: string;
 };
+
+const MODERATION_PAGE_SIZE = 5;
+
+function PaginationControls({ page, total, pageSize, onChange }: {
+  page: number;
+  total: number;
+  pageSize: number;
+  onChange: (page: number) => void;
+}) {
+  const pages = Math.max(1, Math.ceil(total / pageSize));
+  if (total <= pageSize) return null;
+  const first = (page - 1) * pageSize + 1;
+  const last = Math.min(page * pageSize, total);
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 bg-slate-50 px-5 py-3">
+      <p className="text-xs text-slate-500">Showing {first}-{last} of {total}</p>
+      <div className="flex items-center gap-2">
+        <button type="button" aria-label="Previous moderation page" disabled={page === 1} onClick={() => onChange(page - 1)} className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 disabled:opacity-40"><ChevronLeft className="h-4 w-4" /></button>
+        <span className="min-w-20 text-center text-xs font-semibold text-slate-600">Page {page} of {pages}</span>
+        <button type="button" aria-label="Next moderation page" disabled={page === pages} onClick={() => onChange(page + 1)} className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 disabled:opacity-40"><ChevronRight className="h-4 w-4" /></button>
+      </div>
+    </div>
+  );
+}
 
 function StreetCombobox({ label, search, onSearch, streets, selectedId, onSelect, disabled }: {
   label: string;
@@ -94,6 +118,9 @@ export default function AdminCommunityPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [reviewingId, setReviewingId] = useState<string | null>(null);
+  const [moderationTab, setModerationTab] = useState<'streets' | 'contributions'>('streets');
+  const [streetPage, setStreetPage] = useState(1);
+  const [contributionPage, setContributionPage] = useState(1);
   const [streetStatusFilter, setStreetStatusFilter] = useState<StreetStatus | 'all'>(() =>
     searchParams.get('moderation') === 'all' ? 'all' : StreetStatus.PENDING,
   );
@@ -226,6 +253,23 @@ export default function AdminCommunityPage() {
         .some((value) => value?.toLowerCase().includes(query));
     });
   }, [scopedStreets, streetAreaFilter, streetSearch, streetStatusFilter]);
+  const paginatedStreets = useMemo(
+    () => filteredStreets.slice((streetPage - 1) * MODERATION_PAGE_SIZE, streetPage * MODERATION_PAGE_SIZE),
+    [filteredStreets, streetPage],
+  );
+  const paginatedContributions = useMemo(
+    () => contributions.slice((contributionPage - 1) * MODERATION_PAGE_SIZE, contributionPage * MODERATION_PAGE_SIZE),
+    [contributionPage, contributions],
+  );
+
+  useEffect(() => { setStreetPage(1); }, [streetAreaFilter, streetLocationFilter, streetSearch, streetStateFilter, streetStatusFilter]);
+  useEffect(() => { setContributionPage(1); }, [contributionStatusFilter]);
+  useEffect(() => {
+    setStreetPage((current) => Math.min(current, Math.max(1, Math.ceil(filteredStreets.length / MODERATION_PAGE_SIZE))));
+  }, [filteredStreets.length]);
+  useEffect(() => {
+    setContributionPage((current) => Math.min(current, Math.max(1, Math.ceil(contributions.length / MODERATION_PAGE_SIZE))));
+  }, [contributions.length]);
 
   const reviewStreet = async (street: Street, status: StreetStatus) => {
     setReviewingId(street.id);
@@ -591,8 +635,23 @@ export default function AdminCommunityPage() {
         </div>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-2">
-        <div className="card overflow-hidden" data-testid="street-moderation">
+      <section className="card overflow-hidden" aria-labelledby="moderation-workspace-title">
+        <div className="flex flex-col gap-4 border-b border-slate-100 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 id="moderation-workspace-title" className="font-display text-lg font-bold text-navy-900">Moderation Workspace</h2>
+            <p className="mt-1 text-xs text-veriq-muted">Review one queue at a time. Pending work is surfaced first.</p>
+          </div>
+          <div className="grid grid-cols-2 rounded-lg border border-slate-200 bg-slate-50 p-1" role="tablist" aria-label="Moderation queue">
+            <button type="button" role="tab" aria-selected={moderationTab === 'streets'} onClick={() => setModerationTab('streets')} className={`rounded-md px-4 py-2 text-xs font-bold ${moderationTab === 'streets' ? 'bg-navy-900 text-white shadow-sm' : 'text-slate-600 hover:bg-white'}`}>
+              Street Requests <span className={moderationTab === 'streets' ? 'text-white/70' : 'text-amber-700'}>{streetStatusCounts.pending ?? 0}</span>
+            </button>
+            <button type="button" role="tab" aria-selected={moderationTab === 'contributions'} onClick={() => setModerationTab('contributions')} className={`rounded-md px-4 py-2 text-xs font-bold ${moderationTab === 'contributions' ? 'bg-navy-900 text-white shadow-sm' : 'text-slate-600 hover:bg-white'}`}>
+              Contributions <span className={moderationTab === 'contributions' ? 'text-white/70' : 'text-amber-700'}>{contributions.length}</span>
+            </button>
+          </div>
+        </div>
+
+        {moderationTab === 'streets' && <div data-testid="street-moderation" role="tabpanel">
           <div className="border-b border-slate-100 p-5">
             <div className="flex items-start justify-between gap-4">
             <div>
@@ -636,8 +695,8 @@ export default function AdminCommunityPage() {
               })}
             </div>
           </div>
-          <div className="max-h-[680px] divide-y divide-slate-100 overflow-y-auto">
-            {filteredStreets.map((street) => (
+          <div className="divide-y divide-slate-100">
+            {paginatedStreets.map((street) => (
               <div key={street.id} className="p-5">
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -662,9 +721,10 @@ export default function AdminCommunityPage() {
             ))}
             {filteredStreets.length === 0 && <div className="p-10 text-center"><MapPin className="mx-auto mb-3 h-6 w-6 text-slate-300" /><p className="text-sm font-semibold text-slate-600">{streetStateFilter && !streetLocationFilter ? 'Select a location' : 'No matching streets'}</p><p className="mt-1 text-xs text-slate-400">{streetStateFilter && !streetLocationFilter ? 'Choose a location to view its full street history.' : 'Try another status, area, or search term.'}</p></div>}
           </div>
-        </div>
+          <PaginationControls page={streetPage} total={filteredStreets.length} pageSize={MODERATION_PAGE_SIZE} onChange={setStreetPage} />
+        </div>}
 
-        <div className="card overflow-hidden">
+        {moderationTab === 'contributions' && <div role="tabpanel" data-testid="contribution-moderation">
           <div className="flex items-start justify-between gap-4 border-b border-slate-100 p-5">
             <div>
               <h2 className="font-display text-base font-bold text-navy-900">Contribution Moderation</h2>
@@ -684,7 +744,7 @@ export default function AdminCommunityPage() {
             </select>
           </div>
           <div className="divide-y divide-slate-100">
-            {contributions.map((contribution) => (
+            {paginatedContributions.map((contribution) => (
               <div key={contribution.id} className="p-5">
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -709,8 +769,9 @@ export default function AdminCommunityPage() {
             ))}
             {contributions.length === 0 && <p className="p-8 text-center text-sm text-slate-500">No {contributionStatusFilter === 'all' ? '' : `${contributionStatusFilter} `}contributions found.</p>}
           </div>
-        </div>
-      </div>
+          <PaginationControls page={contributionPage} total={contributions.length} pageSize={MODERATION_PAGE_SIZE} onChange={setContributionPage} />
+        </div>}
+      </section>
 
       {directoryModal && <div className="fixed inset-0 z-[100] flex items-center justify-center bg-navy-950/55 px-4 py-6" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setDirectoryModal(null); }}>
         <form role="dialog" aria-modal="true" aria-labelledby="directory-modal-title" onSubmit={saveDirectoryModal} className="w-full max-w-md rounded-lg bg-white p-6 shadow-2xl">

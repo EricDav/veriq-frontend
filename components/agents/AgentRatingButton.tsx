@@ -5,6 +5,8 @@ import { Star, X } from 'lucide-react';
 import { agentsApi } from '@/lib/api';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useToast } from '@/components/ui/Toast';
+import { AgentFeedbackSelector } from './AgentFeedbackSelector';
+import { AgentFeedbackTag } from '@/types';
 
 interface AgentRatingButtonProps {
   propertyId: string;
@@ -17,7 +19,7 @@ export function AgentRatingButton({ propertyId, propertyTitle, className }: Agen
   const [rating, setRating] = useState(5);
   const [inspectionOccurred, setInspectionOccurred] = useState(true);
   const [accuracyScore, setAccuracyScore] = useState(100);
-  const [comment, setComment] = useState('');
+  const [feedbackTags, setFeedbackTags] = useState<AgentFeedbackTag[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { success, error } = useToast();
 
@@ -30,7 +32,7 @@ export function AgentRatingButton({ propertyId, propertyTitle, className }: Agen
         inspectionOccurred,
         accuracyScore,
         satisfactionRating: rating,
-        comment: comment.trim() || undefined,
+        feedbackTags,
       });
       success('Thanks. Your agent rating has been recorded.');
       setIsOpen(false);
@@ -114,16 +116,7 @@ export function AgentRatingButton({ propertyId, propertyTitle, className }: Agen
                 />
               </div>
 
-              <div>
-                <label className="mb-2 block text-sm font-bold text-navy-900">Comment</label>
-                <textarea
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value.slice(0, 500))}
-                  rows={4}
-                  className="input min-h-28 resize-y"
-                  placeholder="Share how responsive, honest, or helpful the agent was."
-                />
-              </div>
+              <AgentFeedbackSelector value={feedbackTags} onChange={setFeedbackTags} />
             </div>
 
             <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
