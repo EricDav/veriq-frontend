@@ -21,12 +21,10 @@ export function AgentFeedbackList({ feedback }: { feedback: AgentFeedback[] }) {
         <div className="space-y-3">
           {feedback.map((item) => (
             <article key={item.id} className="rounded-lg border border-slate-200 bg-white p-5">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <p className="text-sm font-bold text-navy-900">{item.reviewerName}</p>
-                  {item.propertyTitle && <p className="mt-0.5 text-xs text-slate-400">{item.propertyTitle}</p>}
-                </div>
-                <div className="flex items-center gap-2">
+              <div>
+                <p className="text-sm font-bold text-navy-900">{item.reviewerName}</p>
+                {item.propertyTitle && <p className="mt-1 break-words text-xs leading-5 text-slate-400">{item.propertyTitle}</p>}
+                <div className="mt-2 flex flex-wrap items-center gap-2">
                   {item.rating !== null && (
                     <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-700">
                       <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />

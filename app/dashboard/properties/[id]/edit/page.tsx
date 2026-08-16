@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Camera, Home, Upload, X, Zap } from 'lucide-react';
+import { ArrowLeft, Camera, Home, Upload, X, Zap, Search } from 'lucide-react';
 import { ApiError, communityApi, locationsApi, mediaApi, propertiesApi } from '@/lib/api';
 import { uploadToFileService } from '@/lib/upload';
 import type { AllowedState, CommunityArea, CommunityLocation, CreatePropertyDto, MediaItem, Property, Street } from '@/types';
@@ -109,7 +109,11 @@ export default function EditListingPage() {
   const [masterAreas, setMasterAreas] = useState<CommunityArea[]>([]);
   const [masterStreets, setMasterStreets] = useState<Street[]>([]);
   const [streetNotListed, setStreetNotListed] = useState(false);
+  const [streetQuery, setStreetQuery] = useState('');
+  const [debouncedStreetQuery, setDebouncedStreetQuery] = useState('');
+  const [isSearchingStreets, setIsSearchingStreets] = useState(false);
   const [missingStreetName, setMissingStreetName] = useState('');
+  const [missingStreetLandmark, setMissingStreetLandmark] = useState('');
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [isMediaLoading, setIsMediaLoading] = useState(false);
   const [uploadingSection, setUploadingSection] = useState<string | null>(null);
@@ -134,6 +138,11 @@ export default function EditListingPage() {
           }
         }
         setProperty(p);
+        if (p.streetId) {
+          communityApi.getStreet(p.streetId)
+            .then((streetResponse) => setStreetQuery(streetResponse.data.street.streetName))
+            .catch(() => setStreetQuery(''));
+        }
         setForm({
           title: p.title,
           description: p.description ?? '',
@@ -229,10 +238,34 @@ export default function EditListingPage() {
       .catch(() => setMasterAreas([]));
     const location = masterLocations.find((item) => item.name === form.city);
     if (!location) return;
-    communityApi.searchStreets({ state: form.state, locationId: location.id })
-      .then((res) => setMasterStreets(res.data))
-      .catch(() => setMasterStreets([]));
   }, [form.city, form.state, masterLocations]);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => setDebouncedStreetQuery(streetQuery.trim()), 300);
+    return () => window.clearTimeout(timeout);
+  }, [streetQuery]);
+
+  useEffect(() => {
+    if (!form.state || !form.city || streetNotListed || debouncedStreetQuery.length < 2) {
+      setMasterStreets([]);
+      return;
+    }
+    const location = masterLocations.find((item) => item.name === form.city);
+    if (!location) return;
+    let active = true;
+    setIsSearchingStreets(true);
+    communityApi.searchStreets({ state: form.state, city: form.city, locationId: location.id, q: debouncedStreetQuery })
+      .then((res) => { if (active) setMasterStreets(res.data); })
+      .catch(() => { if (active) setMasterStreets([]); })
+      .finally(() => { if (active) setIsSearchingStreets(false); });
+    return () => { active = false; };
+  }, [debouncedStreetQuery, form.city, form.state, masterLocations, streetNotListed]);
+
+  useEffect(() => {
+    if (!form.streetId || streetQuery) return;
+    const selected = masterStreets.find((item) => item.id === form.streetId);
+    if (selected) setStreetQuery(selected.streetName);
+  }, [form.streetId, masterStreets, streetQuery]);
 
   useEffect(() => {
     if (!id) return;
@@ -360,6 +393,7 @@ export default function EditListingPage() {
           streetName,
           locationId: location.id,
           areaId: area.id,
+          landmark: missingStreetLandmark.trim() || undefined,
         });
         streetId = response.data.id;
       }
@@ -482,7 +516,11 @@ export default function EditListingPage() {
             <h2 className="font-display text-base font-bold text-navy-900">Location Directory</h2>
             <p className="mt-1 text-xs text-veriq-muted">Select the approved location and street that link this property to Street Intelligence.</p>
           </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="flex rounded-xl bg-slate-100 p-1">
+            <button type="button" onClick={() => { setStreetNotListed(false); setMissingStreetName(''); setMissingStreetLandmark(''); }} className={`flex-1 rounded-lg px-3 py-2 text-xs font-bold ${!streetNotListed ? 'bg-white text-navy-900 shadow-sm' : 'text-slate-500'}`}>Select street</button>
+            <button type="button" onClick={() => { setStreetNotListed(true); setForm((current) => ({ ...current, streetId: undefined, area: '' })); setStreetQuery(''); }} className={`flex-1 rounded-lg px-3 py-2 text-xs font-bold ${streetNotListed ? 'bg-white text-navy-900 shadow-sm' : 'text-slate-500'}`}>I can&apos;t see my street</button>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className="label">State *</label>
               <select value={form.state ?? ''} onChange={(e) => setForm((current) => ({ ...current, state: e.target.value, city: '', area: '', streetId: undefined }))} className="input" required>
@@ -504,24 +542,23 @@ export default function EditListingPage() {
               </select>
             </div>
           </div>
-          <div>
-            <label className="label">Street *</label>
-            <select value={form.streetId ?? ''} onChange={(e) => {
-              const street = masterStreets.find((item) => item.id === e.target.value);
-              setForm((current) => ({ ...current, streetId: e.target.value || undefined, area: street?.area ?? '' }));
-            }} className="input" required disabled={!form.city || streetNotListed}>
-              <option value="">Select approved street...</option>
-              {masterStreets.map((item) => <option key={item.id} value={item.id}>{item.area} - {item.streetName}</option>)}
-            </select>
-          </div>
-          <label className="flex items-center gap-2 text-sm font-semibold text-navy-700">
-            <input type="checkbox" checked={streetNotListed} onChange={(e) => {
-              setStreetNotListed(e.target.checked);
-              setForm((current) => ({ ...current, streetId: undefined, area: '' }));
-            }} disabled={!form.city} className="h-4 w-4" />
-            I can&apos;t see my street in the list
-          </label>
-          {streetNotListed && (
+          {!streetNotListed ? (
+            <div className="relative">
+              <label className="label">Search street, estate or road *</label>
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <input aria-label="Street name" value={streetQuery} onChange={(event) => { setStreetQuery(event.target.value); setForm((current) => ({ ...current, streetId: undefined, area: '' })); }} className="input pl-9" placeholder="Start typing a street name" autoComplete="off" disabled={!form.city} />
+              </div>
+              {form.city && streetQuery.trim().length >= 2 && !form.streetId && (
+                <div className="absolute z-20 mt-1 max-h-64 w-full overflow-y-auto rounded-lg border border-slate-200 bg-white p-1 shadow-lg">
+                  {masterStreets.map((street) => <button key={street.id} type="button" onClick={() => { setForm((current) => ({ ...current, streetId: street.id, area: street.area })); setStreetQuery(street.streetName); }} className="block w-full rounded-md px-3 py-2 text-left hover:bg-slate-50"><span className="block text-sm font-bold text-navy-900">{street.streetName}</span><span className="block text-xs text-veriq-muted">{street.area}</span></button>)}
+                  {!isSearchingStreets && masterStreets.length === 0 && <p className="px-3 py-3 text-xs text-slate-500">No approved street matches this name.</p>}
+                </div>
+              )}
+              {form.streetId && <p className="mt-1 text-xs font-semibold text-emerald-700">Approved street selected.</p>}
+              <button type="button" onClick={() => { setStreetNotListed(true); setMissingStreetName(streetQuery); setStreetQuery(''); setForm((current) => ({ ...current, streetId: undefined, area: '' })); }} disabled={!form.city} className="mt-2 text-left text-xs font-bold text-veriq-secondary hover:underline disabled:opacity-50">I can&apos;t see my street in this list</button>
+            </div>
+          ) : (
             <div>
               <label className="label">Area / Neighbourhood *</label>
               <select value={form.area ?? ''} onChange={(e) => update('area', e.target.value)} className="input" required>
@@ -530,6 +567,8 @@ export default function EditListingPage() {
               </select>
               <label className="label mt-4">Street Name *</label>
               <input value={missingStreetName} onChange={(event) => setMissingStreetName(event.target.value)} className="input" placeholder="Enter the street name" />
+              <label className="label mt-4">Nearby Landmark <span className="font-normal text-slate-400">(optional)</span></label>
+              <input value={missingStreetLandmark} onChange={(event) => setMissingStreetLandmark(event.target.value)} className="input" placeholder="e.g. Opposite the health centre" />
               <p className="mt-1 text-xs text-veriq-muted">The street will be sent for admin review. You can save the listing now.</p>
             </div>
           )}
