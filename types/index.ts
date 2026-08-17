@@ -755,6 +755,8 @@ export interface FreeUnlockStatus {
   eligibility?: {
     eligible: boolean;
     reason: string | null;
+    alreadyUnlocked?: boolean;
+    accessExpiresAt?: string | null;
   };
 }
 

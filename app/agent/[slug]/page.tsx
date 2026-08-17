@@ -290,7 +290,6 @@ export default function PublicAgentProfilePage() {
 
           {/* ── Right: listings ── */}
           <div className="lg:col-span-2">
-            <AgentFeedbackList feedback={agent.feedback ?? []} />
             <div className="flex items-center justify-between mb-5">
               <h2 className="font-display text-base font-bold text-navy-900">
                 Active Listings
@@ -319,6 +318,9 @@ export default function PublicAgentProfilePage() {
                 ))}
               </div>
             )}
+            <div className="mt-8">
+              <AgentFeedbackList feedback={agent.feedback ?? []} />
+            </div>
           </div>
         </div>
       </div>
