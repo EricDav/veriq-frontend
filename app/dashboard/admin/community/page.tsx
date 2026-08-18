@@ -134,7 +134,6 @@ export default function AdminCommunityPage() {
     startDate: '',
     endDate: '',
     maximumUnlocks: '25',
-    maximumUnlocksPerUser: '1',
     agreementType: FreeUnlockAgreementType.VERIQ_PROMOTIONAL_CAMPAIGN,
     amountPaid: '',
     paymentStatus: '',
@@ -458,7 +457,6 @@ export default function AdminCommunityPage() {
         startDate: new Date(form.startDate).toISOString(),
         endDate: new Date(form.endDate).toISOString(),
         maximumUnlocks: form.maximumUnlocks ? Number(form.maximumUnlocks) : undefined,
-        maximumUnlocksPerUser: form.maximumUnlocksPerUser ? Number(form.maximumUnlocksPerUser) : undefined,
         sponsoringAgentId: campaignAgentId,
         agreementType: form.agreementType,
         amountPaid: form.amountPaid ? Number(form.amountPaid) : undefined,
@@ -577,10 +575,7 @@ export default function AdminCommunityPage() {
             <input className="input" required type="datetime-local" value={form.startDate} onChange={(e) => setForm((s) => ({ ...s, startDate: e.target.value }))} />
             <input className="input" required type="datetime-local" value={form.endDate} onChange={(e) => setForm((s) => ({ ...s, endDate: e.target.value }))} />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <input className="input" type="number" min="1" placeholder="Max unlocks" value={form.maximumUnlocks} onChange={(e) => setForm((s) => ({ ...s, maximumUnlocks: e.target.value }))} />
-            <input className="input" type="number" min="1" placeholder="Max per user" value={form.maximumUnlocksPerUser} onChange={(e) => setForm((s) => ({ ...s, maximumUnlocksPerUser: e.target.value }))} />
-          </div>
+          <input className="input" type="number" min="1" placeholder="Maximum campaign unlocks" value={form.maximumUnlocks} onChange={(e) => setForm((s) => ({ ...s, maximumUnlocks: e.target.value }))} />
           <select className="input" value={form.agreementType} onChange={(e) => setForm((s) => ({ ...s, agreementType: e.target.value as FreeUnlockAgreementType }))}>
             {Object.values(FreeUnlockAgreementType).map((value) => (
               <option key={value} value={value}>{value.replace(/_/g, ' ')}</option>

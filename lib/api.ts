@@ -788,7 +788,6 @@ export const communityApi = {
     startDate: string;
     endDate: string;
     maximumUnlocks?: number;
-    maximumUnlocksPerUser?: number;
     sponsoringAgentId?: string;
     agreementType?: string;
     amountPaid?: number;
