@@ -518,9 +518,17 @@ export default function DashboardPropertyDetailPage() {
     setIsUnlocking(true);
     try {
       await communityApi.unlockFreeProperty(id);
-      const accessRes = await consultationsApi.checkAccess(id);
-      setHasAccess(accessRes.data?.hasAccess ?? true);
+      const [accessRes, freeUnlockRes] = await Promise.all([
+        consultationsApi.checkAccess(id),
+        communityApi.freeUnlockStatus(id),
+      ]);
+      const confirmedAccess = accessRes.data?.hasAccess ?? false;
+      setHasAccess(confirmedAccess);
       setAccessDetails(accessRes.data ?? null);
+      setFreeUnlock(freeUnlockRes.data);
+      if (!confirmedAccess) {
+        throw new Error('Free Unlock was created, but report access could not be confirmed. Please try again.');
+      }
       success('Free Unlock claimed. Intelligence report unlocked!');
       await load();
     } catch (err) {
