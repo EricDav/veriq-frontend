@@ -155,6 +155,8 @@ export default function AdminLedgerPage() {
   const [loadingSummary, setLoadingSummary] = useState(true);
 
   const [entries, setEntries] = useState<WalletLedgerEntry[]>([]);
+  const [pendingWithdrawals, setPendingWithdrawals] = useState<WalletLedgerEntry[]>([]);
+  const [loadingWithdrawals, setLoadingWithdrawals] = useState(true);
   const [loadingEntries, setLoadingEntries] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -200,6 +202,19 @@ export default function AdminLedgerPage() {
       .finally(() => setLoadingEntries(false));
   }, [page, typeFilter, statusFilter, search]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const loadPendingWithdrawals = useCallback(() => {
+    setLoadingWithdrawals(true);
+    walletApi.adminGetLedger({
+      page: 1,
+      limit: 50,
+      type: WalletTransactionType.WITHDRAWAL,
+      status: WalletTransactionStatus.PENDING,
+    })
+      .then((res) => setPendingWithdrawals(res.data))
+      .catch(() => toastError('Failed to load pending withdrawal requests'))
+      .finally(() => setLoadingWithdrawals(false));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     loadSummary();
   }, [loadSummary]);
@@ -207,6 +222,10 @@ export default function AdminLedgerPage() {
   useEffect(() => {
     loadEntries();
   }, [loadEntries]);
+
+  useEffect(() => {
+    loadPendingWithdrawals();
+  }, [loadPendingWithdrawals]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -217,6 +236,7 @@ export default function AdminLedgerPage() {
   const refreshAll = () => {
     loadSummary();
     loadEntries();
+    loadPendingWithdrawals();
   };
 
   const handleMarkWithdrawalPaid = async (transactionId: string) => {
@@ -384,6 +404,52 @@ export default function AdminLedgerPage() {
           </div>
         </>
       ) : null}
+
+      <section className="card overflow-hidden p-0">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
+          <div>
+            <h2 className="font-display text-base font-bold text-navy-900">Pending Withdrawal Requests</h2>
+            <p className="mt-1 text-xs text-veriq-muted">Review reserved agent funds, then complete or decline each payout.</p>
+          </div>
+          <span className="inline-flex min-w-8 items-center justify-center rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">
+            {pendingWithdrawals.length}
+          </span>
+        </div>
+        {loadingWithdrawals ? (
+          <div className="flex justify-center py-10"><LoadingSpinner size="md" className="text-veriq-secondary" /></div>
+        ) : pendingWithdrawals.length === 0 ? (
+          <div className="px-5 py-10 text-center">
+            <CheckCircle className="mx-auto mb-2 h-7 w-7 text-emerald-500" />
+            <p className="text-sm font-semibold text-navy-900">No pending withdrawals</p>
+            <p className="mt-1 text-xs text-veriq-muted">New agent requests will appear here automatically.</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-slate-100">
+            {pendingWithdrawals.map((tx) => (
+              <article key={tx.id} className="grid gap-4 px-5 py-4 md:grid-cols-[minmax(0,1fr)_auto_auto] md:items-center">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="font-semibold text-navy-900">{tx.user?.name ?? 'Unknown agent'}</p>
+                    <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700">Pending</span>
+                  </div>
+                  <p className="mt-1 text-xs text-slate-500">{tx.user?.email}</p>
+                  <p className="mt-2 break-words text-xs leading-5 text-slate-600">{tx.description}</p>
+                  <p className="mt-1 text-[11px] text-slate-400">{tx.paymentReference} · {formatDate(tx.createdAt)}</p>
+                </div>
+                <p className="text-lg font-black text-navy-900">{fmtNaira(tx.amount)}</p>
+                <div className="flex flex-wrap gap-2 md:justify-end">
+                  <button type="button" disabled={actioningTxId === tx.id} onClick={() => handleMarkWithdrawalPaid(tx.id)} className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-50">
+                    Complete
+                  </button>
+                  <button type="button" disabled={actioningTxId === tx.id} onClick={() => handleRejectWithdrawal(tx.id)} className="rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50 disabled:opacity-50">
+                    Decline
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
 
       {/* Filters */}
       <div className="card p-4">

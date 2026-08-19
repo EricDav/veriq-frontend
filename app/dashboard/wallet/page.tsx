@@ -186,6 +186,13 @@ export default function WalletPage() {
     }
   };
 
+  const withdrawalValue = Number(withdrawAmount);
+  const canRequestWithdrawal = !!earnings
+    && Number.isSafeInteger(withdrawalValue)
+    && withdrawalValue >= earnings.minWithdrawalAmount
+    && withdrawalValue <= earnings.availableForWithdrawal
+    && earnings.pendingWithdrawal <= 0;
+
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       <div>
@@ -293,6 +300,7 @@ export default function WalletPage() {
                 <label className="label">Amount (₦)</label>
                 <input
                   type="number"
+                  required
                   min={earnings?.minWithdrawalAmount ?? 5000}
                   max={earnings?.availableForWithdrawal ?? undefined}
                   step={1}
@@ -303,17 +311,18 @@ export default function WalletPage() {
                 />
               </div>
               <div>
-                <label className="label">Note</label>
+                <label className="label">Note <span className="font-normal text-slate-400">(optional)</span></label>
                 <input
                   value={withdrawNote}
                   onChange={(e) => setWithdrawNote(e.target.value)}
+                  maxLength={120}
                   placeholder="Optional payout note"
                   className="input"
                 />
               </div>
               <button
                 type="submit"
-                disabled={withdrawLoading || !earnings?.isEligible}
+                disabled={withdrawLoading || !canRequestWithdrawal}
                 className="btn-primary !text-sm !py-2.5 flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50"
               >
                 {withdrawLoading && <LoadingSpinner size="sm" />}
