@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { FileText, ImageIcon, Plus, RefreshCw, Save, ShieldCheck, Trash2, Upload } from 'lucide-react';
+import { FileText, ImageIcon, MessageSquareQuote, Plus, RefreshCw, Save, ShieldCheck, Trash2, Upload } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { siteContentApi, ApiError } from '@/lib/api';
 import { uploadToFileService } from '@/lib/upload';
@@ -19,7 +19,7 @@ const PRESETS = [
   { page: 'home', section: 'features', label: 'Home features' },
   { page: 'home', section: 'how_it_works', label: 'Home process' },
   { page: 'home', section: 'cta', label: 'Home CTA' },
-  { page: 'home', section: 'trust_stats', label: 'Home trust stats' },
+  { page: 'home', section: 'trust_stats', label: 'Testimonials' },
   { page: 'about', section: 'hero', label: 'About hero' },
   { page: 'about', section: 'mission', label: 'About mission' },
   { page: 'about', section: 'problems', label: 'About problems solved' },
@@ -300,6 +300,7 @@ function contentKey(item: Pick<SiteContent, 'page' | 'section'>) {
 
 type FAQItem = { q: string; a: string; categories?: string[] };
 type FAQCategory = { label: string; value: string };
+type TestimonialItem = { quote: string; name: string; role?: string; initials?: string };
 
 function parseDataJson(dataJson: string): Record<string, unknown> | null {
   if (!dataJson.trim()) return {};
@@ -322,10 +323,17 @@ export default function AdminContentPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingHero, setIsUploadingHero] = useState(false);
   const [isFAQQuestionModalOpen, setIsFAQQuestionModalOpen] = useState(false);
+  const [isTestimonialModalOpen, setIsTestimonialModalOpen] = useState(false);
   const [faqQuestionDraft, setFAQQuestionDraft] = useState({
     q: '',
     a: '',
     categories: '',
+  });
+  const [testimonialDraft, setTestimonialDraft] = useState<TestimonialItem>({
+    quote: '',
+    name: '',
+    role: '',
+    initials: '',
   });
 
   useEffect(() => {
@@ -397,6 +405,7 @@ export default function AdminContentPage() {
   const structuredData = useMemo(() => parseDataJson(dataJson), [dataJson]);
   const isFAQQuestions = form.page === 'faq' && form.section === 'questions';
   const isTermsDocuments = form.page === 'terms' && form.section === 'documents';
+  const isTestimonials = form.page === 'home' && form.section === 'trust_stats';
 
   const updateStructuredData = (next: Record<string, unknown>) => {
     setForm((prev) => ({ ...prev, data: next }));
@@ -470,6 +479,64 @@ export default function AdminContentPage() {
     updateStructuredData({ ...base, categories: categories.filter((_, itemIndex) => itemIndex !== index) });
   };
 
+  const updateTestimonial = (index: number, patch: Partial<TestimonialItem>) => {
+    const base = structuredData ?? {};
+    const testimonials = Array.isArray(base.testimonials)
+      ? ([...base.testimonials] as TestimonialItem[])
+      : [];
+    testimonials[index] = {
+      ...(testimonials[index] ?? { quote: '', name: '' }),
+      ...patch,
+    };
+    updateStructuredData({ ...base, testimonials });
+  };
+
+  const openTestimonialModal = () => {
+    if (structuredData === null) {
+      toastError('Fix the metadata JSON before adding a testimonial.');
+      return;
+    }
+    setTestimonialDraft({ quote: '', name: '', role: '', initials: '' });
+    setIsTestimonialModalOpen(true);
+  };
+
+  const addTestimonialFromModal = () => {
+    const quote = testimonialDraft.quote.trim();
+    const name = testimonialDraft.name.trim();
+    if (!quote || !name) {
+      toastError('Customer name and testimonial are required.');
+      return;
+    }
+    const base = structuredData ?? {};
+    const testimonials = Array.isArray(base.testimonials)
+      ? ([...base.testimonials] as TestimonialItem[])
+      : [];
+    updateStructuredData({
+      ...base,
+      testimonials: [
+        ...testimonials,
+        {
+          quote,
+          name,
+          role: testimonialDraft.role?.trim() || undefined,
+          initials: testimonialDraft.initials?.trim().toUpperCase() || undefined,
+        },
+      ],
+    });
+    setIsTestimonialModalOpen(false);
+  };
+
+  const removeTestimonial = (index: number) => {
+    const base = structuredData ?? {};
+    const testimonials = Array.isArray(base.testimonials)
+      ? ([...base.testimonials] as TestimonialItem[])
+      : [];
+    updateStructuredData({
+      ...base,
+      testimonials: testimonials.filter((_, itemIndex) => itemIndex !== index),
+    });
+  };
+
   const handleHeroImageUpload = async (file: File | undefined) => {
     if (!file) return;
     setIsUploadingHero(true);
@@ -486,6 +553,19 @@ export default function AdminContentPage() {
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isTestimonials) {
+      if (structuredData === null) {
+        toastError('Fix the metadata JSON before saving testimonials.');
+        return;
+      }
+      const testimonials = Array.isArray(structuredData.testimonials)
+        ? (structuredData.testimonials as TestimonialItem[])
+        : [];
+      if (testimonials.some((item) => !item.name?.trim() || !item.quote?.trim())) {
+        toastError('Every testimonial must include a customer name and testimonial.');
+        return;
+      }
+    }
     setIsSaving(true);
     try {
       const payload = {
@@ -625,6 +705,99 @@ export default function AdminContentPage() {
                 />
               </div>
 
+              {isTestimonials && (
+                <div className="space-y-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <h2 className="flex items-center gap-2 font-display text-base font-bold text-navy-900">
+                        <MessageSquareQuote className="h-5 w-5 text-veriq-secondary" /> Testimonials
+                      </h2>
+                      <p className="mt-1 text-xs text-slate-500">
+                        Only testimonials saved here are displayed on the public homepage.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={openTestimonialModal}
+                      className="btn-primary inline-flex items-center gap-2 !py-2 !text-xs"
+                    >
+                      <Plus className="h-4 w-4" /> Add Testimonial
+                    </button>
+                  </div>
+
+                  {structuredData === null ? (
+                    <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                      Fix the metadata JSON below to use the testimonial editor again.
+                    </div>
+                  ) : (Array.isArray(structuredData.testimonials) && structuredData.testimonials.length > 0) ? (
+                    <div className="space-y-3">
+                      {(structuredData.testimonials as TestimonialItem[]).map((testimonial, index) => (
+                        <div key={index} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                          <div className="mb-3 flex items-center justify-between gap-3">
+                            <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
+                              Testimonial {index + 1}
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => removeTestimonial(index)}
+                              className="rounded-lg border border-red-100 p-2 text-red-500 transition-colors hover:bg-red-50"
+                              aria-label={`Remove testimonial ${index + 1}`}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                            <div>
+                              <label className="label">Customer name</label>
+                              <input
+                                value={testimonial.name ?? ''}
+                                onChange={(e) => updateTestimonial(index, { name: e.target.value })}
+                                className="input"
+                                placeholder="Customer name"
+                              />
+                            </div>
+                            <div>
+                              <label className="label">Role or description</label>
+                              <input
+                                value={testimonial.role ?? ''}
+                                onChange={(e) => updateTestimonial(index, { role: e.target.value })}
+                                className="input"
+                                placeholder="Property user"
+                              />
+                            </div>
+                            <div className="sm:col-span-2">
+                              <label className="label">Testimonial</label>
+                              <textarea
+                                value={testimonial.quote ?? ''}
+                                onChange={(e) => updateTestimonial(index, { quote: e.target.value })}
+                                className="input min-h-[100px] resize-y"
+                                placeholder="What did the customer say?"
+                              />
+                            </div>
+                            <div>
+                              <label className="label">Initials (optional)</label>
+                              <input
+                                value={testimonial.initials ?? ''}
+                                onChange={(e) => updateTestimonial(index, { initials: e.target.value.toUpperCase().slice(0, 3) })}
+                                className="input"
+                                maxLength={3}
+                                placeholder="DO"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="rounded-xl border border-dashed border-slate-300 bg-white px-5 py-10 text-center">
+                      <MessageSquareQuote className="mx-auto h-8 w-8 text-slate-300" />
+                      <p className="mt-3 text-sm font-semibold text-navy-900">No testimonials added</p>
+                      <p className="mt-1 text-xs text-slate-500">The homepage testimonial section stays hidden until one is saved.</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {isFAQQuestions && (
                 <div className="space-y-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
@@ -734,7 +907,7 @@ export default function AdminContentPage() {
                 </div>
               )}
 
-              <details className="rounded-xl border border-slate-200 bg-white p-4" open={!isFAQQuestions}>
+              <details className="rounded-xl border border-slate-200 bg-white p-4" open={!isFAQQuestions && !isTestimonials}>
                 <summary className="cursor-pointer text-sm font-bold text-navy-900">Advanced Metadata JSON</summary>
                 <div className="mt-3">
                   <label className="label">Metadata JSON</label>
@@ -846,6 +1019,72 @@ export default function AdminContentPage() {
           </button>
           <button type="button" onClick={addFAQItemFromModal} className="btn-primary">
             Add Question
+          </button>
+        </div>
+      </div>
+    </Modal>
+
+    <Modal
+      isOpen={isTestimonialModalOpen}
+      onClose={() => setIsTestimonialModalOpen(false)}
+      title="Add Testimonial"
+      size="lg"
+    >
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <label className="label">Customer name</label>
+            <input
+              value={testimonialDraft.name}
+              onChange={(e) => setTestimonialDraft((prev) => ({ ...prev, name: e.target.value }))}
+              className="input"
+              placeholder="Customer name"
+              autoFocus
+            />
+          </div>
+          <div>
+            <label className="label">Role or description</label>
+            <input
+              value={testimonialDraft.role ?? ''}
+              onChange={(e) => setTestimonialDraft((prev) => ({ ...prev, role: e.target.value }))}
+              className="input"
+              placeholder="Property user"
+            />
+          </div>
+        </div>
+        <div>
+          <label className="label">Testimonial</label>
+          <textarea
+            value={testimonialDraft.quote}
+            onChange={(e) => setTestimonialDraft((prev) => ({ ...prev, quote: e.target.value }))}
+            className="input min-h-[150px] resize-y"
+            placeholder="Enter the customer's feedback"
+          />
+        </div>
+        <div>
+          <label className="label">Initials (optional)</label>
+          <input
+            value={testimonialDraft.initials ?? ''}
+            onChange={(e) => setTestimonialDraft((prev) => ({
+              ...prev,
+              initials: e.target.value.toUpperCase().slice(0, 3),
+            }))}
+            className="input max-w-40"
+            maxLength={3}
+            placeholder="DO"
+          />
+          <p className="mt-1 text-xs text-slate-500">Generated from the customer name when left blank.</p>
+        </div>
+        <div className="flex justify-end gap-3 pt-2">
+          <button
+            type="button"
+            onClick={() => setIsTestimonialModalOpen(false)}
+            className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-medium text-navy-700 transition-colors hover:bg-slate-50"
+          >
+            Cancel
+          </button>
+          <button type="button" onClick={addTestimonialFromModal} className="btn-primary">
+            Add Testimonial
           </button>
         </div>
       </div>
