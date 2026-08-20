@@ -1,4 +1,5 @@
 import { CheckCircle2, ListChecks, Quote, ShieldCheck, Sparkles } from 'lucide-react';
+import type { SiteContent } from '@/types';
 
 const PROOF = [
   { icon: ListChecks, title: 'What you can verify', items: ['Verified ownership', 'Availability reconfirmation', 'Structured inspection info'] },
@@ -6,13 +7,32 @@ const PROOF = [
   { icon: ShieldCheck, title: 'What users gain', items: ['Fewer wasted inspections', 'More confident decisions', 'Better agent transparency'] },
 ];
 
-const TESTIMONIALS = [
-  { quote: 'The street intel on Rumuola helped me understand the area before I spent money on inspection. Saved me time.', name: 'Chikezie O.', role: 'Property User', initials: 'CO' },
-  { quote: 'I now avoid long reports in cases better in inspection. That is both time saving.', name: 'Tosin A.', role: 'Real Estate Agent', initials: 'TA' },
-  { quote: 'Veriq helps me confirm listings faster and close with confident clients.', name: 'Amaka E.', role: 'Property Investor', initials: 'AE' },
-];
+type Testimonial = { quote: string; name: string; role?: string; initials: string };
 
-export function TrustStats() {
+function getTestimonials(content?: SiteContent): Testimonial[] {
+  const source = content?.data?.testimonials;
+  if (!Array.isArray(source)) return [];
+
+  return source.flatMap((value) => {
+    if (!value || typeof value !== 'object') return [];
+    const item = value as Record<string, unknown>;
+    const quote = typeof item.quote === 'string' ? item.quote.trim() : '';
+    const name = typeof item.name === 'string' ? item.name.trim() : '';
+    if (!quote || !name) return [];
+    const role = typeof item.role === 'string' ? item.role.trim() : '';
+    const suppliedInitials = typeof item.initials === 'string' ? item.initials.trim() : '';
+    const initials = suppliedInitials || name
+      .split(/\s+/)
+      .map((part) => part[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase();
+    return [{ quote, name, role: role || undefined, initials }];
+  });
+}
+
+export function TrustStats({ content }: { content?: SiteContent }) {
+  const testimonials = getTestimonials(content);
   return (
     <section className="bg-[#06101c] py-16 text-white sm:py-20">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
@@ -31,22 +51,29 @@ export function TrustStats() {
           ))}
         </div>
 
-        <div className="mt-12 text-center">
-          <h2 className="font-display text-2xl font-black">What our users say</h2>
-          <p className="mt-2 text-sm text-slate-500">Real experiences from people who inspect smarter with Veriq.</p>
-        </div>
-        <div className="mt-7 grid gap-4 md:grid-cols-3">
-          {TESTIMONIALS.map((item) => (
-            <figure key={item.name} className="rounded-lg border border-white/10 bg-white/[0.05] p-5">
-              <Quote className="h-5 w-5 fill-emerald-400 text-emerald-400" />
-              <blockquote className="mt-3 text-sm leading-6 text-slate-300">“{item.quote}”</blockquote>
-              <figcaption className="mt-5 flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-500 text-xs font-bold text-white">{item.initials}</div>
-                <div><p className="text-sm font-bold text-white">{item.name}</p><p className="text-xs text-slate-500">{item.role}</p></div>
-              </figcaption>
-            </figure>
-          ))}
-        </div>
+        {testimonials.length > 0 && (
+          <div className="mt-12">
+            <div className="text-center">
+              <h2 className="font-display text-2xl font-black">{content?.title || 'What our users say'}</h2>
+              {content?.subtitle && <p className="mt-2 text-sm text-slate-500">{content.subtitle}</p>}
+            </div>
+            <div className="mt-7 grid gap-4 md:grid-cols-3">
+              {testimonials.map((item, index) => (
+                <figure key={`${item.name}-${index}`} className="rounded-lg border border-white/10 bg-white/[0.05] p-5">
+                  <Quote className="h-5 w-5 fill-emerald-400 text-emerald-400" />
+                  <blockquote className="mt-3 text-sm leading-6 text-slate-300">“{item.quote}”</blockquote>
+                  <figcaption className="mt-5 flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-500 text-xs font-bold text-white">{item.initials}</div>
+                    <div>
+                      <p className="text-sm font-bold text-white">{item.name}</p>
+                      {item.role && <p className="text-xs text-slate-500">{item.role}</p>}
+                    </div>
+                  </figcaption>
+                </figure>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </section>
   );

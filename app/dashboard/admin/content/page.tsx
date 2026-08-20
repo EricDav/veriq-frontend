@@ -81,6 +81,13 @@ const DEFAULT_CONTENT: Record<string, UpsertSiteContentDto> = {
     title: 'How Veriq Works',
     subtitle: 'Search, unlock intelligence, then inspect with confidence.',
   },
+  'home:trust_stats': {
+    page: 'home',
+    section: 'trust_stats',
+    title: 'What our users say',
+    subtitle: 'Real experiences from people who inspect smarter with Veriq.',
+    data: { testimonials: [] },
+  },
   'home:cta': {
     page: 'home',
     section: 'cta',

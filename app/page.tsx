@@ -13,7 +13,7 @@ export default async function HomePage() {
       <Hero content={content.hero} />
       <Features content={content.features} />
       <HowItWorks content={content.how_it_works} />
-      <TrustStats />
+      <TrustStats content={content.trust_stats} />
       <CTA content={content.cta} />
     </>
   );
