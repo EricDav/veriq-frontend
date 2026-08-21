@@ -158,7 +158,8 @@ export default function AdminBlogsPage() {
   const [activeTab, setActiveTab] = useState<'write' | 'preview' | 'seo' | 'revisions'>('write');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
+  const [isUploadingInlineImage, setIsUploadingInlineImage] = useState(false);
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
 
   useEffect(() => {
     if (!authLoading && user?.role !== UserRole.ADMIN) {
@@ -266,9 +267,22 @@ export default function AdminBlogsPage() {
     );
   };
 
+  const validateImage = (file?: File) => {
+    if (!file) return false;
+    if (!file.type.startsWith('image/')) {
+      toastError('Please select a valid image file.');
+      return false;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toastError('Image size must not exceed 10 MB.');
+      return false;
+    }
+    return true;
+  };
+
   const uploadImage = async (file?: File) => {
-    if (!file) return;
-    setIsUploading(true);
+    if (!validateImage(file) || !file) return;
+    setIsUploadingInlineImage(true);
     try {
       const uploaded = await uploadToFileService(file);
       runCommand('insertImage', uploaded.url);
@@ -276,13 +290,13 @@ export default function AdminBlogsPage() {
     } catch (err) {
       toastError(err instanceof Error ? err.message : 'Image upload failed');
     } finally {
-      setIsUploading(false);
+      setIsUploadingInlineImage(false);
     }
   };
 
   const uploadCover = async (file?: File) => {
-    if (!file) return;
-    setIsUploading(true);
+    if (!validateImage(file) || !file) return;
+    setIsUploadingCover(true);
     try {
       const uploaded = await uploadToFileService(file);
       setForm((prev) => ({ ...prev, coverImage: uploaded.url }));
@@ -290,7 +304,7 @@ export default function AdminBlogsPage() {
     } catch (err) {
       toastError(err instanceof Error ? err.message : 'Featured image upload failed');
     } finally {
-      setIsUploading(false);
+      setIsUploadingCover(false);
     }
   };
 
@@ -534,9 +548,19 @@ export default function AdminBlogsPage() {
                     <ToolbarButton title="Embed media" onClick={insertMedia}><Video className="h-4 w-4" /></ToolbarButton>
                     <ToolbarButton title="Insert table" onClick={insertTable}><Table className="h-4 w-4" /></ToolbarButton>
                     <ToolbarButton title="Text color" onClick={() => runCommand('foreColor', window.prompt('Hex color', '#10B981') || '#10B981')}><Palette className="h-4 w-4" /></ToolbarButton>
-                    <label title="Upload inline image" className="inline-grid h-9 w-9 cursor-pointer place-items-center rounded-lg border border-slate-200 text-slate-600 hover:border-veriq-secondary hover:bg-emerald-50 hover:text-veriq-secondary">
-                      {isUploading ? <LoadingSpinner size="sm" /> : <Upload className="h-4 w-4" />}
-                      <input type="file" accept="image/*" className="hidden" disabled={isUploading} onChange={(e) => uploadImage(e.target.files?.[0])} />
+                    <label title="Upload image into article" className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-lg border border-slate-200 px-3 text-xs font-medium text-slate-600 hover:border-veriq-secondary hover:bg-emerald-50 hover:text-veriq-secondary">
+                      {isUploadingInlineImage ? <LoadingSpinner size="sm" /> : <Upload className="h-4 w-4" />}
+                      <span>{isUploadingInlineImage ? 'Uploading...' : 'Add image'}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        disabled={isUploadingInlineImage}
+                        onChange={(e) => {
+                          void uploadImage(e.target.files?.[0]);
+                          e.currentTarget.value = '';
+                        }}
+                      />
                     </label>
                   </div>
 
@@ -594,14 +618,44 @@ export default function AdminBlogsPage() {
                 <div className="rounded-xl border border-slate-200 p-4">
                   <p className="mb-3 flex items-center gap-2 text-sm font-bold text-navy-900"><ImageIcon className="h-4 w-4 text-veriq-secondary" /> Media</p>
                   <div className="space-y-3">
-                    {form.coverImage && <img src={form.coverImage} alt="" className="h-32 w-full rounded-lg object-cover" />}
-                    <div className="flex gap-2">
-                      <input value={form.coverImage ?? ''} onChange={(e) => setForm((prev) => ({ ...prev, coverImage: e.target.value }))} className="input" placeholder="Featured image URL" />
-                      <label className="inline-flex cursor-pointer items-center rounded-lg border border-slate-200 px-3 text-navy-700 hover:border-veriq-secondary">
-                        <Upload className="h-4 w-4" />
-                        <input type="file" accept="image/*" className="hidden" disabled={isUploading} onChange={(e) => uploadCover(e.target.files?.[0])} />
-                      </label>
+                    {form.coverImage ? (
+                      <div className="relative overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+                        <img src={form.coverImage} alt="Blog cover preview" className="h-40 w-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => setForm((prev) => ({ ...prev, coverImage: '' }))}
+                          className="absolute right-2 top-2 inline-grid h-8 w-8 place-items-center rounded-lg bg-white/95 text-red-600 shadow-sm hover:bg-red-50"
+                          title="Remove cover image"
+                          aria-label="Remove cover image"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center">
+                        <ImageIcon className="mx-auto h-7 w-7 text-slate-300" />
+                        <p className="mt-2 text-xs text-slate-500">No cover image uploaded</p>
+                      </div>
+                    )}
+                    <div>
+                      <label className="label">Cover image URL</label>
+                      <input value={form.coverImage ?? ''} onChange={(e) => setForm((prev) => ({ ...prev, coverImage: e.target.value }))} className="input" placeholder="https://..." />
                     </div>
+                    <label className="btn-outline inline-flex w-full cursor-pointer items-center justify-center gap-2 !py-2.5 !text-xs">
+                      {isUploadingCover ? <LoadingSpinner size="sm" /> : <Upload className="h-4 w-4" />}
+                      {isUploadingCover ? 'Uploading cover...' : form.coverImage ? 'Replace cover image' : 'Upload cover image'}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        disabled={isUploadingCover}
+                        onChange={(e) => {
+                          void uploadCover(e.target.files?.[0]);
+                          e.currentTarget.value = '';
+                        }}
+                      />
+                    </label>
+                    <p className="text-xs text-slate-500">JPG, PNG, or WebP. Maximum file size: 10 MB.</p>
                     <input value={form.youtubeId ?? ''} onChange={(e) => setForm((prev) => ({ ...prev, youtubeId: e.target.value }))} className="input" placeholder="Featured YouTube URL or ID" />
                   </div>
                 </div>
