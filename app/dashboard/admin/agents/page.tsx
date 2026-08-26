@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   CheckCircle, XCircle, Clock, ChevronLeft, ChevronRight,
-  Search, RefreshCw, User, ExternalLink,
+  Search, RefreshCw, User, ExternalLink, Phone, MessageCircle,
 } from 'lucide-react';
 import { agentsApi, usersApi, ApiError } from '@/lib/api';
 import type { Agent } from '@/types';
@@ -31,6 +31,24 @@ interface PendingAction {
   type: ActionType;
   label: string;
   message: string;
+}
+
+function phoneLinks(phone: string | null | undefined) {
+  const raw = phone?.trim();
+  if (!raw) return null;
+
+  const digits = raw.replace(/\D/g, '');
+  if (!digits) return null;
+
+  const internationalDigits = digits.startsWith('0')
+    ? `234${digits.slice(1)}`
+    : digits;
+
+  return {
+    display: raw,
+    call: `tel:+${internationalDigits}`,
+    whatsapp: `https://wa.me/${internationalDigits}`,
+  };
 }
 
 export default function AdminAgentsPage() {
@@ -149,8 +167,9 @@ export default function AdminAgentsPage() {
     ? agents.filter((a) => {
         const name = `${a.user?.firstName ?? ''} ${a.user?.lastName ?? ''}`.toLowerCase();
         const email = (a.user?.email ?? '').toLowerCase();
+        const phone = (a.user?.phone ?? '').toLowerCase();
         const q = search.toLowerCase();
-        return name.includes(q) || email.includes(q);
+        return name.includes(q) || email.includes(q) || phone.includes(q);
       })
     : agents;
 
@@ -202,7 +221,7 @@ export default function AdminAgentsPage() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search agents by name or email…"
+            placeholder="Search agents by name, email or phone…"
             className="flex-1 text-sm text-navy-900 placeholder:text-slate-400 outline-none bg-transparent"
           />
         </div>
@@ -251,6 +270,7 @@ export default function AdminAgentsPage() {
                   const isActive = agent.isActive && userActive;
                   const hasPendingL1 = agent.govIdUrl && !agent.isGovIdVerified;
                   const hasPendingL2 = hasProfessionalSubmission(agent) && !agent.isProfessionallyVerified;
+                  const contact = phoneLinks(agent.user?.phone);
 
                   return (
                     <tr key={agent.id} className="hover:bg-slate-50 transition-colors">
@@ -263,6 +283,31 @@ export default function AdminAgentsPage() {
                           <div className="min-w-0">
                             <p className="font-semibold text-navy-900 text-xs truncate">{name || 'Unknown'}</p>
                             <p className="text-[10px] text-slate-400 truncate">{agent.user?.email}</p>
+                            {contact ? (
+                              <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                                <span className="text-[10px] font-medium text-slate-600">{contact.display}</span>
+                                <a
+                                  href={contact.call}
+                                  className="inline-grid h-6 w-6 place-items-center rounded-md border border-slate-200 text-slate-600 transition-colors hover:border-veriq-secondary hover:bg-emerald-50 hover:text-veriq-secondary"
+                                  title={`Call ${name || 'agent'}`}
+                                  aria-label={`Call ${name || 'agent'} on ${contact.display}`}
+                                >
+                                  <Phone className="h-3 w-3" />
+                                </a>
+                                <a
+                                  href={contact.whatsapp}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-grid h-6 w-6 place-items-center rounded-md border border-emerald-200 text-emerald-600 transition-colors hover:bg-emerald-50"
+                                  title={`WhatsApp ${name || 'agent'}`}
+                                  aria-label={`Message ${name || 'agent'} on WhatsApp`}
+                                >
+                                  <MessageCircle className="h-3 w-3" />
+                                </a>
+                              </div>
+                            ) : (
+                              <p className="mt-1 text-[10px] italic text-slate-400">No phone provided</p>
+                            )}
                             {agent.businessName && (
                               <p className="text-[10px] text-slate-400 italic truncate">{agent.businessName}</p>
                             )}

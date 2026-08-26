@@ -12,7 +12,7 @@ import {
   MapPin, Briefcase, User, Lock, ExternalLink, Copy, Check, Share2,
 } from 'lucide-react';
 import { agentsApi, ApiError, locationsApi } from '@/lib/api';
-import { uploadToFileService } from '@/lib/upload';
+import { ACCEPTED_IMAGE_INPUT, uploadToFileService } from '@/lib/upload';
 import type { Agent, AllowedState } from '@/types';
 import { AgentVerificationLevel, AgentTrustTier } from '@/types';
 import { useAuth } from '@/context/AuthContext';
@@ -607,7 +607,7 @@ export default function AgentProfilePage() {
                 <UploadField
                   label="Profile Photo"
                   value={photoUrl}
-                  accept="image/*"
+                  accept={ACCEPTED_IMAGE_INPUT}
                   helper="Upload a passport-style photo. The file is stored in the configured upload service."
                   onUploaded={async (url) => {
                     setProfileValue('profilePhotoUrl', url, { shouldValidate: true, shouldDirty: true });
@@ -786,7 +786,7 @@ export default function AgentProfilePage() {
               <UploadField
                 label="Selfie with ID *"
                 value={watchL1('selfieUrl')}
-                accept="image/*"
+                accept={ACCEPTED_IMAGE_INPUT}
                 helper="Take a live photo holding your ID document, then upload it here."
                 onUploaded={(url) => setL1Value('selfieUrl', url, { shouldValidate: true, shouldDirty: true })}
                 error={l1Errors.selfieUrl?.message}

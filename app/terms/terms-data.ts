@@ -5,9 +5,9 @@ export type TermsBlock =
 export type TermsItem = { heading: string; blocks: TermsBlock[] };
 export type TermsSection = { id: string; title: string; items: TermsItem[] };
 
-export const TERMS_CONTENT_VERSION = '2026-08-08';
-export const TERMS_LAST_UPDATED = '8 August 2026';
-export const TERMS_EFFECTIVE_DATE = '[Insert Launch Date]';
+export const TERMS_CONTENT_VERSION = '2026-08-23';
+export const TERMS_LAST_UPDATED = '23 August 2026';
+export const TERMS_EFFECTIVE_DATE = '23 August 2026';
 
 export const DEFAULT_TERMS_SECTIONS: TermsSection[] = [
   {
@@ -472,7 +472,7 @@ export const DEFAULT_TERMS_SECTIONS: TermsSection[] = [
         "blocks": [
           {
             "type": "paragraph",
-            "text": "Where Veriq shares intelligence-access or consultation revenue with listing agents, the applicable share may be determined by Veriq's current agent compensation rules."
+            "text": "Where Veriq shares Property Intelligence access revenue with listing agents, the current standard revenue-sharing formula is 60% to Veriq Property and 40% to the listing Agent. The Agent's share is calculated from the amount paid by a user to unlock Property Intelligence for that Agent's listed property. For example, where a user pays ₦1,000 to unlock a property, the listing Agent earns ₦400 and Veriq Property receives ₦600. This standard sharing formula applies unless the Agent qualifies for a separately communicated special compensation arrangement or status. Veriq may review the standard revenue-sharing formula from time to time in accordance with these Terms and its current agent compensation rules, and will communicate the applicable rate where required."
           },
           {
             "type": "paragraph",
@@ -946,4 +946,3 @@ export const DEFAULT_TERMS_SECTIONS: TermsSection[] = [
     ]
   }
 ];
-

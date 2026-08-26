@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { CheckCircle, Shield, Lock, User, Eye, EyeOff, Share2, Copy, Check, ExternalLink, Camera, Upload } from 'lucide-react';
 import { usersApi, authApi, agentsApi, ApiError } from '@/lib/api';
-import { uploadToFileService } from '@/lib/upload';
+import { ACCEPTED_IMAGE_INPUT, uploadToFileService } from '@/lib/upload';
 import { useAuth } from '@/context/AuthContext';
 import { UserRole } from '@/types';
 import type { Agent } from '@/types';
@@ -189,7 +189,7 @@ export default function ProfilePage() {
             {photoUploading ? <LoadingSpinner size="sm" /> : <Camera className="h-3.5 w-3.5" />}
             <input
               type="file"
-              accept="image/*"
+              accept={ACCEPTED_IMAGE_INPUT}
               className="hidden"
               disabled={photoUploading}
               onChange={(e) => onPhotoUpload(e.target.files?.[0])}
@@ -246,7 +246,7 @@ export default function ProfilePage() {
               {agentPhotoUploading ? 'Uploading...' : agent?.profilePhotoUrl ? 'Replace Photo' : 'Upload Photo'}
               <input
                 type="file"
-                accept="image/*"
+                accept={ACCEPTED_IMAGE_INPUT}
                 className="hidden"
                 disabled={!agent || agentPhotoUploading}
                 onChange={(e) => onAgentPhotoUpload(e.target.files?.[0])}

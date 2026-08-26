@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { FileText, ImageIcon, MessageSquareQuote, Plus, RefreshCw, Save, ShieldCheck, Trash2, Upload } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { siteContentApi, ApiError } from '@/lib/api';
-import { uploadToFileService } from '@/lib/upload';
+import { ACCEPTED_IMAGE_INPUT, uploadToFileService } from '@/lib/upload';
 import type { SiteContent, UpsertSiteContentDto } from '@/types';
 import { UserRole } from '@/types';
 import { useAuth } from '@/context/AuthContext';
@@ -949,7 +949,7 @@ export default function AdminContentPage() {
                       {isUploadingHero ? 'Uploading...' : 'Upload Image'}
                       <input
                         type="file"
-                        accept="image/*"
+                        accept={ACCEPTED_IMAGE_INPUT}
                         className="hidden"
                         onChange={(e) => {
                           handleHeroImageUpload(e.target.files?.[0]);

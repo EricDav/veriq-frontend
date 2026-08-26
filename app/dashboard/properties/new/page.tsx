@@ -8,7 +8,7 @@ import { z } from 'zod';
 import { ArrowLeft, Home, GraduationCap, Camera, X, Upload, Zap, ShieldCheck, Search } from 'lucide-react';
 import Link from 'next/link';
 import { propertiesApi, ApiError, communityApi, locationsApi } from '@/lib/api';
-import { uploadToFileService } from '@/lib/upload';
+import { ACCEPTED_IMAGE_INPUT, MAX_ORIGINAL_IMAGE_BYTES, uploadToFileService } from '@/lib/upload';
 import {
   PropertyType, HostelSuitableFor, HostelGender, HostelCampusProximity,
   ShortStayPricingModel,
@@ -167,7 +167,7 @@ const KNOWN_ISSUES_OPTIONS = [
 ];
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_FILE_SIZE = MAX_ORIGINAL_IMAGE_BYTES;
 const MIN_IMAGES = 2;
 const MAX_IMAGES = 5;
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api/v1', '') ?? 'http://localhost:3000';
@@ -400,7 +400,7 @@ export default function NewPropertyPage() {
         return;
       }
       if (file.size > MAX_FILE_SIZE) {
-        rejected.push(createMediaItem(file, 'failed', 'Max file size is 10MB'));
+        rejected.push(createMediaItem(file, 'failed', 'Max original image size is 25MB'));
         return;
       }
       accepted.push({ item: createMediaItem(file, 'uploading'), file });
@@ -608,7 +608,7 @@ export default function NewPropertyPage() {
                 {isCoverUploading ? 'Uploading...' : coverImageUrl ? 'Replace cover' : 'Upload cover'}
                 <input
                   type="file"
-                  accept="image/*"
+                  accept={ACCEPTED_IMAGE_INPUT}
                   className="hidden"
                   disabled={isCoverUploading}
                   onChange={(e) => handleCoverUpload(e.target.files?.[0])}
@@ -996,7 +996,7 @@ export default function NewPropertyPage() {
               <Camera className="h-4 w-4 text-veriq-secondary" /> Property Media
             </h2>
             <p className="text-xs text-veriq-muted mt-1">
-              Upload {MIN_IMAGES}–{MAX_IMAGES} photos per category. JPG, PNG, WEBP · Max 10MB each.
+              Upload {MIN_IMAGES}–{MAX_IMAGES} photos per category. JPG, PNG, WebP, HEIC or HEIF · Max 25MB each. Photos are optimized automatically.
               Clear, well-lit, recent photos only.
             </p>
           </div>
@@ -1104,7 +1104,7 @@ export default function NewPropertyPage() {
                       ref={(el) => { fileInputRefs.current[section] = el; }}
                       type="file"
                       multiple
-                      accept=".jpg,.jpeg,.png,.webp"
+                      accept={ACCEPTED_IMAGE_INPUT}
                       className="hidden"
                       onChange={(e) => handleFileAdd(section, e.target.files)}
                     />

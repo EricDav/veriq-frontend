@@ -138,6 +138,7 @@ test('agent can replace a property cover image and save the new cover URL', asyn
           state: 'Rivers',
           city: 'Port Harcourt',
           area: 'Choba',
+          streetId: 'street-1',
           address: '12 Test Road',
           bedrooms: 2,
           bathrooms: 2,
@@ -212,9 +213,9 @@ test('agent can replace a property cover image and save the new cover URL', asyn
 
   const coverInput = page.locator('label:has-text("Replace cover") input[type="file"]');
   await coverInput.setInputFiles({
-    name: 'replacement-cover.webp',
-    mimeType: 'image/webp',
-    buffer: Buffer.from('fake-image-bytes'),
+    name: 'replacement-cover.png',
+    mimeType: 'image/png',
+    buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', 'base64'),
   });
 
   await expect.poll(() => uploadWasCalled).toBe(true);

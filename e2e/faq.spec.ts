@@ -22,6 +22,11 @@ test('FAQ uses the complete approved content and category filters', async ({ pag
   await page.getByPlaceholder('Search questions...').fill('minimum withdrawal');
   await expect(page.getByText('No results found for “minimum withdrawal”')).toBeVisible();
 
+  await page.getByPlaceholder('Search questions...').clear();
   await page.getByRole('button', { name: 'Agents', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'How do agents earn from Property Intelligence unlocks?' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'What is the minimum withdrawal amount for agents?' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'How do agents earn from Property Intelligence unlocks?' }).click();
+  await expect(page.getByText('The current standard revenue-sharing formula is 40% to the Agent and 60% to Veriq Property.')).toBeVisible();
 });

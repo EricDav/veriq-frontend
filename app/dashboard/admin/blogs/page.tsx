@@ -38,7 +38,7 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { ApiError, blogsApi } from '@/lib/api';
-import { uploadToFileService } from '@/lib/upload';
+import { ACCEPTED_IMAGE_INPUT, MAX_ORIGINAL_IMAGE_BYTES, uploadToFileService } from '@/lib/upload';
 import { ALL_CATEGORIES } from '@/lib/blogs';
 import type { BlogPost, BlogPostStatus, UpsertBlogPostDto } from '@/types';
 import { UserRole } from '@/types';
@@ -269,12 +269,8 @@ export default function AdminBlogsPage() {
 
   const validateImage = (file?: File) => {
     if (!file) return false;
-    if (!file.type.startsWith('image/')) {
-      toastError('Please select a valid image file.');
-      return false;
-    }
-    if (file.size > 10 * 1024 * 1024) {
-      toastError('Image size must not exceed 10 MB.');
+    if (file.size > MAX_ORIGINAL_IMAGE_BYTES) {
+      toastError('Image size must not exceed 25 MB.');
       return false;
     }
     return true;
@@ -553,7 +549,7 @@ export default function AdminBlogsPage() {
                       <span>{isUploadingInlineImage ? 'Uploading...' : 'Add image'}</span>
                       <input
                         type="file"
-                        accept="image/*"
+                        accept={ACCEPTED_IMAGE_INPUT}
                         className="hidden"
                         disabled={isUploadingInlineImage}
                         onChange={(e) => {
@@ -646,7 +642,7 @@ export default function AdminBlogsPage() {
                       {isUploadingCover ? 'Uploading cover...' : form.coverImage ? 'Replace cover image' : 'Upload cover image'}
                       <input
                         type="file"
-                        accept="image/*"
+                        accept={ACCEPTED_IMAGE_INPUT}
                         className="hidden"
                         disabled={isUploadingCover}
                         onChange={(e) => {
@@ -655,7 +651,7 @@ export default function AdminBlogsPage() {
                         }}
                       />
                     </label>
-                    <p className="text-xs text-slate-500">JPG, PNG, or WebP. Maximum file size: 10 MB.</p>
+                    <p className="text-xs text-slate-500">JPG, PNG, WebP, HEIC or HEIF. Maximum original size: 25 MB. Images are optimized automatically.</p>
                     <input value={form.youtubeId ?? ''} onChange={(e) => setForm((prev) => ({ ...prev, youtubeId: e.target.value }))} className="input" placeholder="Featured YouTube URL or ID" />
                   </div>
                 </div>

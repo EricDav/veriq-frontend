@@ -1,12 +1,12 @@
 export type FAQItem = { q: string; a: string; categories?: string[] };
 export type FAQCategory = { label: string; value: string };
 
-export const FAQ_CONTENT_VERSION = '2026-08-09';
+export const FAQ_CONTENT_VERSION = '2026-08-23';
 
 export const DEFAULT_FAQS: FAQItem[] = [
   {
     "q": "What is Veriq Property?",
-    "a": "Veriq Property is a property intelligence platform designed to help people make better property decisions before physical inspection.\nInstead of simply showing property listings, Veriq helps users understand the property, the street, and the agent before deciding whether a property is worth visiting.\nDepending on the property and location, Veriq may provide Property Intelligence, Street Intelligence, listing freshness information, agent trust signals, estimated move-in costs, and other decision-support information.",
+    "a": "Veriq Property is a property intelligence platform designed to help people make better property decisions before physical inspection.\nInstead of simply showing property listings, Veriq helps users understand the property, the street, and the agent before deciding whether a property is worth visiting.\nDepending on the property and location, Veriq may provide Property Intelligence, Street Intelligence, listing freshness information, agent trust signals, estimated move-in costs, and other decision-support information.\nFor paid Property Intelligence unlocks linked to an agent-listed property, Veriq currently shares the applicable unlock revenue with the listing Agent. The current standard revenue-sharing formula is 40% to the Agent and 60% to Veriq Property.",
     "categories": [
       "general"
     ]
@@ -48,7 +48,7 @@ export const DEFAULT_FAQS: FAQItem[] = [
   },
   {
     "q": "Why do I need to pay before seeing the full Property Intelligence?",
-    "a": "The access fee is for the Property Intelligence report and related consultation access, not simply for viewing a property listing.\nThe report may contain structured information, additional images, property condition information, disclosures, utility and access information, environmental observations, and other details intended to help you determine whether the property is worth physically inspecting.\nBasic property information remains available before you decide whether to unlock the report.",
+    "a": "The access fee is for the Property Intelligence report and related consultation access, not simply for viewing a property listing.\nThe report may contain structured information, additional images, property condition information, disclosures, utility and access information, environmental observations, and other details intended to help you determine whether the property is worth physically inspecting.\nBasic property information remains available before you decide whether to unlock the report.\nWhere a paid Property Intelligence unlock relates to an agent-listed property, the current standard revenue-sharing formula allocates 40% of the unlock fee to the listing Agent and 60% to Veriq Property.\nFor example, if a user pays ₦1,000 to unlock the Property Intelligence for an Agent's property, the Agent earns ₦400 and Veriq Property receives ₦600.",
     "categories": [
       "property-user"
     ]
@@ -104,7 +104,7 @@ export const DEFAULT_FAQS: FAQItem[] = [
   },
   {
     "q": "Does Veriq Property handle rent payments?",
-    "a": "At present, Veriq's core payment function relates to platform services such as Property Intelligence access.\nRent, agency fees, inspection fees, deposits, and other property transaction payments are generally handled between the relevant parties unless Veriq expressly introduces and identifies a supported payment service for such transactions.",
+    "a": "At present, Veriq's core payment function relates to platform services such as Property Intelligence access.\nRent, agency fees, inspection fees, deposits, and other property transaction payments are generally handled between the relevant parties unless Veriq expressly introduces and identifies a supported payment service for such transactions.\nThe Property Intelligence unlock fee is a Veriq platform payment. For an agent-listed property, the current standard revenue-sharing formula is 40% to the listing Agent and 60% to Veriq Property.",
     "categories": [
       "property-user"
     ]
@@ -215,6 +215,13 @@ export const DEFAULT_FAQS: FAQItem[] = [
     ]
   },
   {
+    "q": "How do agents earn from Property Intelligence unlocks?",
+    "a": "When a user pays to unlock Property Intelligence for a property listed by an Agent, the listing Agent earns a share of the applicable unlock fee.\nThe current standard revenue-sharing formula is 40% to the Agent and 60% to Veriq Property.\nExample: if a user pays ₦1,000 to unlock an Agent's property, the Agent earns ₦400 and Veriq Property receives ₦600.\nThe standard revenue-sharing rate may be reviewed as the platform develops. Where the applicable rate changes, Veriq will communicate the current rate through the platform or its official agent compensation rules.",
+    "categories": [
+      "agent"
+    ]
+  },
+  {
     "q": "Can agents withdraw earnings immediately?",
     "a": "Not necessarily.\nAgent earnings may remain in a pending or review state for a defined period before becoming available for withdrawal.\nThis allows Veriq to review qualifying transactions and address issues such as unavailable or misleading listings before releasing applicable earnings.",
     "categories": [
@@ -318,4 +325,3 @@ export const DEFAULT_FAQ_CATEGORIES: FAQCategory[] = [
   { label: 'Safety & Trust', value: 'safety' },
   { label: 'Support', value: 'support' },
 ];
-

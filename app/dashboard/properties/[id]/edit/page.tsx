@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Camera, Home, Upload, X, Zap, Search } from 'lucide-react';
 import { ApiError, communityApi, locationsApi, mediaApi, propertiesApi } from '@/lib/api';
-import { uploadToFileService } from '@/lib/upload';
+import { ACCEPTED_IMAGE_INPUT, uploadToFileService } from '@/lib/upload';
 import type { AllowedState, CommunityArea, CommunityLocation, CreatePropertyDto, MediaItem, Property, Street } from '@/types';
 import {
   CompoundCulture,
@@ -463,7 +463,7 @@ export default function EditListingPage() {
                 {isCoverUploading ? 'Uploading...' : coverImageUrl ? 'Replace cover' : 'Upload cover'}
                 <input
                   type="file"
-                  accept="image/*"
+                  accept={ACCEPTED_IMAGE_INPUT}
                   className="hidden"
                   disabled={isCoverUploading}
                   onChange={(e) => {
@@ -842,7 +842,7 @@ export default function EditListingPage() {
                       ref={(el) => { fileInputRefs.current[section] = el; }}
                       type="file"
                       multiple
-                      accept="image/*"
+                      accept={ACCEPTED_IMAGE_INPUT}
                       className="hidden"
                       disabled={uploadingSection === section}
                       onChange={(e) => uploadMedia(section, e.target.files)}
