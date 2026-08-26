@@ -842,3 +842,36 @@ export const consultationPricingApi = {
   delete: (id: string) =>
     api.delete<ApiResponse<null>>(`/consultation-pricing/admin/${id}`),
 };
+
+// ── Admin Communications ─────────────────────────────────────────────────
+
+export interface CommunicationAudienceFilter {
+  audienceType: 'users' | 'agents'; mode?: 'all' | 'selected'; selectedUserIds?: string[];
+  activityStatus?: 'active' | 'inactive'; location?: string;
+  unlockStatus?: 'unlocked' | 'never_unlocked';
+  propertyStatus?: 'active_properties' | 'no_active_properties' | 'expired_properties';
+}
+export interface CommunicationCampaign extends CommunicationAudienceFilter {
+  id: string; kind: 'campaign' | 'direct'; name: string; subject: string; body: string;
+  ctaText?: string | null; ctaUrl?: string | null; status: string; scheduledAt?: string;
+  targetedCount: number; sentCount: number; failedCount: number; uniqueOpenCount: number;
+  uniqueClickCount: number; createdAt: string;
+}
+export interface CommunicationTemplate {
+  id: string; name: string; audienceType?: 'users' | 'agents' | null; subject: string;
+  body: string; ctaText?: string | null; ctaUrl?: string | null; isActive: boolean;
+}
+
+export const communicationsApi = {
+  previewAudience: (filter: CommunicationAudienceFilter) => api.post<ApiResponse<{ count: number; sample: Array<{ id: string; name: string; email: string }> }>>('/communications/audience/preview', filter),
+  createCampaign: (payload: CommunicationAudienceFilter & { name: string; subject: string; body: string; ctaText?: string; ctaUrl?: string; targetAction?: string; scheduledAt?: string; sendNow?: boolean }) => api.post<ApiResponse<CommunicationCampaign>>('/communications/campaigns', payload),
+  direct: (payload: { userId: string; subject: string; body: string; ctaText?: string; ctaUrl?: string }) => api.post<ApiResponse<CommunicationCampaign>>('/communications/direct', payload),
+  list: (page = 1) => api.get<PaginatedResponse<CommunicationCampaign>>(`/communications/campaigns?page=${page}&limit=20`),
+  detail: (id: string) => api.get<ApiResponse<CommunicationCampaign & { recipients: unknown[] }>>(`/communications/campaigns/${id}`),
+  cancel: (id: string) => api.post<ApiResponse<CommunicationCampaign>>(`/communications/campaigns/${id}/cancel`, {}),
+  analytics: () => api.get<ApiResponse<{ campaigns: number; targeted: number; sent: number; failed: number; uniqueOpens: number; uniqueClicks: number; deliveryRate: number; openRate: number; clickRate: number }>>('/communications/analytics'),
+  templates: () => api.get<ApiResponse<CommunicationTemplate[]>>('/communications/templates'),
+  createTemplate: (payload: Omit<CommunicationTemplate, 'id'>) => api.post<ApiResponse<CommunicationTemplate>>('/communications/templates', payload),
+  updateTemplate: (id: string, payload: Omit<CommunicationTemplate, 'id'>) => api.patch<ApiResponse<CommunicationTemplate>>(`/communications/templates/${id}`, payload),
+  deleteTemplate: (id: string) => api.delete<ApiResponse<{ id: string }>>(`/communications/templates/${id}`),
+};

@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Users, CheckCircle, XCircle, Search, RefreshCw,
-  ChevronLeft, ChevronRight, ShieldCheck,
+  ChevronLeft, ChevronRight, ShieldCheck, Mail,
 } from 'lucide-react';
 import { usersApi, ApiError } from '@/lib/api';
 import type { User } from '@/types';
@@ -234,7 +234,8 @@ export default function AdminUsersPage() {
                         )}
                       </td>
                       <td className="px-4 py-4">
-                        <div className="flex justify-end">
+                        <div className="flex justify-end gap-2">
+                          {!isSelf && <button onClick={() => router.push(`/dashboard/admin/communications?directUserId=${u.id}&recipient=${encodeURIComponent(`${u.firstName} ${u.lastName}`)}`)} className="rounded-lg border border-slate-200 p-1.5 text-slate-600" title="Send email"><Mail className="h-3.5 w-3.5" /></button>}
                           {!isSelf && (
                             u.isActive ? (
                               <button

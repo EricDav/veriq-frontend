@@ -52,6 +52,7 @@ const ADMIN_NAV = [
   { label: 'Allowed States', href: '/dashboard/admin/states', icon: MapPin },
   { label: 'Blogs', href: '/dashboard/admin/blogs', icon: BookOpen },
   { label: 'Contact Forms', href: '/dashboard/admin/contacts', icon: Mail },
+  { label: 'Communications', href: '/dashboard/admin/communications', icon: MessageCircle },
   { label: 'Site Content', href: '/dashboard/admin/content', icon: FileText },
   { label: 'Ledger', href: '/dashboard/admin/ledger', icon: Landmark },
   { label: 'Profile', href: '/dashboard/profile', icon: User },

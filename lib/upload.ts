@@ -2,12 +2,14 @@ export interface ExternalUploadFile {
   name: string;
   path: string;
   url: string;
+  display_url?: string;
+  optimized_url?: string;
   size: number;
   mime: string;
 }
 
 export const MAX_ORIGINAL_IMAGE_BYTES = 25 * 1024 * 1024;
-export const PROCESSED_IMAGE_MAX_DIMENSION = 2800;
+export const PROCESSED_IMAGE_MAX_DIMENSION = 2560;
 export const PROCESSED_IMAGE_TARGET_BYTES = 1.5 * 1024 * 1024;
 export const ACCEPTED_IMAGE_INPUT = '.jpg,.jpeg,.png,.webp,.heic,.heif,image/jpeg,image/png,image/webp,image/heic,image/heif,image/heic-sequence,image/heif-sequence';
 
@@ -22,7 +24,6 @@ const ACCEPTED_IMAGE_MIME_TYPES = new Set([
 ]);
 
 const ACCEPTED_IMAGE_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif']);
-const HEIC_MIME_TYPES = new Set(['image/heic', 'image/heif', 'image/heic-sequence', 'image/heif-sequence']);
 
 function fileExtension(fileName: string) {
   return fileName.split('.').pop()?.toLowerCase() ?? '';
@@ -30,10 +31,6 @@ function fileExtension(fileName: string) {
 
 function isImageFile(file: File) {
   return file.type.startsWith('image/') || ACCEPTED_IMAGE_EXTENSIONS.has(fileExtension(file.name));
-}
-
-function isHeicFile(file: File) {
-  return HEIC_MIME_TYPES.has(file.type.toLowerCase()) || ['heic', 'heif'].includes(fileExtension(file.name));
 }
 
 function assertAcceptedImage(file: File) {
@@ -47,57 +44,10 @@ function assertAcceptedImage(file: File) {
   }
 }
 
-function replaceExtension(fileName: string, extension: string) {
-  const baseName = fileName.replace(/\.[^.]+$/, '') || 'image';
-  return `${baseName}.${extension}`;
-}
-
-async function convertHeicToJpeg(file: File) {
-  const { default: heic2any } = await import('heic2any');
-  const converted = await heic2any({
-    blob: file,
-    toType: 'image/jpeg',
-    quality: 0.9,
-  });
-  const blob = Array.isArray(converted) ? converted[0] : converted;
-  if (!blob) throw new Error('This HEIC/HEIF image could not be converted.');
-  return new File([blob], replaceExtension(file.name, 'jpg'), {
-    type: 'image/jpeg',
-    lastModified: file.lastModified,
-  });
-}
-
 export async function optimizeImageForUpload(original: File): Promise<File> {
   assertAcceptedImage(original);
 
-  let browserCompatibleFile = original;
-  if (isHeicFile(original)) {
-    try {
-      browserCompatibleFile = await convertHeicToJpeg(original);
-    } catch (error) {
-      throw new Error(error instanceof Error
-        ? `Could not process the HEIC/HEIF image: ${error.message}`
-        : 'Could not process the HEIC/HEIF image.');
-    }
-  }
-
-  try {
-    const { default: imageCompression } = await import('browser-image-compression');
-    const compressed = await imageCompression(browserCompatibleFile, {
-      maxSizeMB: PROCESSED_IMAGE_TARGET_BYTES / (1024 * 1024),
-      maxWidthOrHeight: PROCESSED_IMAGE_MAX_DIMENSION,
-      useWebWorker: true,
-      initialQuality: 0.86,
-      maxIteration: 12,
-      preserveExif: false,
-    });
-
-    return compressed;
-  } catch (error) {
-    throw new Error(error instanceof Error
-      ? `Could not optimize the image: ${error.message}`
-      : 'Could not optimize the image.');
-  }
+  return original;
 }
 
 interface ExternalUploadResponse {
@@ -107,6 +57,8 @@ interface ExternalUploadResponse {
   data?: ExternalUploadFile;
   file?: ExternalUploadFile;
   url?: string;
+  display_url?: string;
+  optimized_url?: string;
   name?: string;
   path?: string;
   size?: number;
@@ -130,7 +82,7 @@ function resolveUploadUrl(value: string | undefined, fallback: File) {
 }
 
 function normalizeUploadFile(file: Partial<ExternalUploadFile> | null | undefined, fallback: File): ExternalUploadFile | null {
-  const rawUrl = file?.url ?? file?.path;
+  const rawUrl = file?.display_url ?? file?.optimized_url ?? file?.url ?? file?.path;
   const url = resolveUploadUrl(rawUrl, fallback);
   if (!url) return null;
 
@@ -138,6 +90,8 @@ function normalizeUploadFile(file: Partial<ExternalUploadFile> | null | undefine
     name: file?.name ?? fallback.name,
     path: file?.path ?? url,
     url,
+    display_url: file?.display_url,
+    optimized_url: file?.optimized_url,
     size: file?.size ?? fallback.size,
     mime: file?.mime ?? fallback.type,
   };
@@ -151,6 +105,8 @@ function normalizeUploadResponse(body: ExternalUploadResponse | null, fallback: 
       body
         ? {
             url: body.url,
+            display_url: body.display_url,
+            optimized_url: body.optimized_url,
             name: body.name,
             path: body.path,
             size: body.size,
@@ -163,9 +119,12 @@ function normalizeUploadResponse(body: ExternalUploadResponse | null, fallback: 
 }
 
 export async function uploadToFileService(file: File): Promise<ExternalUploadFile> {
-  const uploadFile = isImageFile(file) ? await optimizeImageForUpload(file) : file;
+  if (isImageFile(file)) {
+    await optimizeImageForUpload(file);
+  }
+
   const formData = new FormData();
-  formData.append('file', uploadFile);
+  formData.append('file', file, file.name || 'upload');
 
   const res = await fetch(UPLOAD_URL, {
     method: 'POST',
@@ -173,7 +132,7 @@ export async function uploadToFileService(file: File): Promise<ExternalUploadFil
   });
 
   const body = (await res.json().catch(() => null)) as ExternalUploadResponse | null;
-  const uploaded = normalizeUploadResponse(body, uploadFile);
+  const uploaded = normalizeUploadResponse(body, file);
   const successful = body?.success ?? body?.ok ?? res.ok;
   if (!res.ok || !successful || !uploaded?.url) {
     throw new Error(body?.message ?? 'File upload failed');

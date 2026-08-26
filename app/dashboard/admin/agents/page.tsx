@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   CheckCircle, XCircle, Clock, ChevronLeft, ChevronRight,
-  Search, RefreshCw, User, ExternalLink, Phone, MessageCircle,
+  Search, RefreshCw, User, ExternalLink, Phone, MessageCircle, Mail,
 } from 'lucide-react';
 import { agentsApi, usersApi, ApiError } from '@/lib/api';
 import type { Agent } from '@/types';
@@ -437,6 +437,7 @@ export default function AdminAgentsPage() {
                       {/* Actions */}
                       <td className="px-4 py-4">
                         <div className="flex flex-col gap-1.5 items-end">
+                          <Link href={`/dashboard/admin/communications?directUserId=${agent.userId}&recipient=${encodeURIComponent(name || 'Agent')}`} className="flex items-center gap-1 text-[10px] font-bold text-emerald-700"><Mail className="h-3 w-3" />Send email</Link>
                           <Link
                             href={`/dashboard/admin/properties?agentId=${agent.id}&agentName=${encodeURIComponent(name || 'Agent')}`}
                             className="text-[10px] font-bold text-navy-700 hover:text-veriq-secondary hover:underline"
