@@ -468,7 +468,7 @@ function AgentDashboard({ agentUserId }: { agentUserId: string }) {
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-navy-900 text-sm truncate">{prop.title}</p>
                     <p className="text-[10px] text-slate-400 mt-0.5">
-                      {prop.area}, {prop.state} · {formatNaira(Number(prop.rentAmount))}/mo
+                      {prop.area}, {prop.state} · {formatNaira(Number(prop.rentAmount))}/yr
                     </p>
                   </div>
                   <span className={`badge text-[10px] capitalize ${

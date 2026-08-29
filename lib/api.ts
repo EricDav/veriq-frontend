@@ -249,6 +249,18 @@ export const authApi = {
   resendVerification: (dto: ResendVerificationDto) =>
     api.post<ApiResponse<null>>('/auth/resend-verification', dto, { public: true }),
 
+  requestPhoneVerification: (phone?: string) =>
+    api.post<ApiResponse<{ phone: string; expiresInSeconds?: number; verified?: boolean }>>('/auth/phone/request', phone ? { phone } : {}),
+
+  verifyPhone: (otp: string) =>
+    api.post<ApiResponse<{ phone: string; verified: boolean }>>('/auth/phone/verify', { otp }),
+
+  verifyAgentSignupPhone: (email: string, otp: string) =>
+    api.post<ApiResponse<{ phone: string; verified: boolean }>>('/auth/agent-phone/verify', { email, otp }, { public: true }),
+
+  resendAgentSignupPhone: (email: string) =>
+    api.post<ApiResponse<{ phone?: string; expiresInSeconds?: number }>>('/auth/agent-phone/resend', { email }, { public: true }),
+
   logout: (refreshToken?: string) =>
     api.post<ApiResponse<null>>('/auth/logout', { refreshToken }),
 

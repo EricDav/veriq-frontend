@@ -66,6 +66,11 @@ function LoginPageInner() {
           router.push(`/auth/verify-email?email=${encodeURIComponent(data.email.trim().toLowerCase())}`);
           return;
         }
+        if (err.statusCode === 403 && err.message.toLowerCase().includes('phone verification')) {
+          const email = encodeURIComponent(data.email.trim().toLowerCase());
+          router.push(`/auth/verify-phone?email=${email}`);
+          return;
+        }
         setServerError(
           err.statusCode === 401
             ? 'Invalid email or password.'

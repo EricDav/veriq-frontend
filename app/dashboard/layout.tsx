@@ -113,6 +113,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           conversationId?: string;
         };
         if (payload.senderId && payload.senderId !== user?.id) {
+          setNotificationUnread((current) => current + 1);
           playChatSound();
           showChatNotification(
             payload.sender?.name ? `New message from ${payload.sender.name}` : 'New chat message',
@@ -202,7 +203,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const navItems = getNavItems(user?.role);
   const initials = getInitials(user?.firstName, user?.lastName);
   const displayName = user ? `${user.firstName} ${user.lastName}` : 'User';
-  const bellUnread = notificationUnread + chatUnread;
+  // Chat messages are persisted as notifications, so adding chatUnread here
+  // would count the same incoming message twice.
+  const bellUnread = notificationUnread;
 
   const roleBadgeClass =
     user?.role === UserRole.ADMIN

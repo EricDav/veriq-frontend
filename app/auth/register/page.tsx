@@ -100,9 +100,14 @@ function RegisterPageInner() {
         password: data.password,
         role: selectedRole,
       });
-      success('Account created. Check your email for the verification code.');
+      success(selectedRole === UserRole.AGENT ? 'Account created. Check your phone for the verification code.' : 'Account created. Check your email for the verification code.');
       const email = encodeURIComponent(data.email.trim().toLowerCase());
-      router.push(`/auth/verify-email?email=${email}`);
+      if (selectedRole === UserRole.AGENT) {
+        const phone = encodeURIComponent(data.phone!.replace(/.(?=.{3})/g, '*'));
+        router.push(`/auth/verify-phone?email=${email}&phone=${phone}`);
+      } else {
+        router.push(`/auth/verify-email?email=${email}`);
+      }
     } catch (err) {
       if (err instanceof ApiError) {
         if (err.errors) {
@@ -183,8 +188,9 @@ function RegisterPageInner() {
             {/* Name row */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-white/80 mb-1.5">First Name</label>
+                <label htmlFor="register-first-name" className="block text-sm font-medium text-white/80 mb-1.5">First Name</label>
                 <input
+                  id="register-first-name"
                   {...register('firstName')}
                   type="text"
                   autoComplete="given-name"
@@ -198,8 +204,9 @@ function RegisterPageInner() {
                 )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-white/80 mb-1.5">Last Name</label>
+                <label htmlFor="register-last-name" className="block text-sm font-medium text-white/80 mb-1.5">Last Name</label>
                 <input
+                  id="register-last-name"
                   {...register('lastName')}
                   type="text"
                   autoComplete="family-name"
@@ -216,8 +223,9 @@ function RegisterPageInner() {
 
             {/* Email */}
             <div>
-              <label className="block text-sm font-medium text-white/80 mb-1.5">Email Address</label>
+              <label htmlFor="register-email" className="block text-sm font-medium text-white/80 mb-1.5">Email Address</label>
               <input
+                id="register-email"
                 {...register('email')}
                 type="email"
                 autoComplete="email"
@@ -231,8 +239,9 @@ function RegisterPageInner() {
 
             {/* Phone */}
             <div>
-              <label className="block text-sm font-medium text-white/80 mb-1.5">Phone Number {selectedRole === UserRole.USER && <span className="text-white/40">(optional)</span>}</label>
+              <label htmlFor="register-phone" className="block text-sm font-medium text-white/80 mb-1.5">Phone Number {selectedRole === UserRole.USER && <span className="text-white/40">(optional)</span>}</label>
               <input
+                id="register-phone"
                 {...register('phone')}
                 type="tel"
                 autoComplete="tel"
@@ -246,8 +255,9 @@ function RegisterPageInner() {
 
             {/* State */}
             <div>
-              <label className="block text-sm font-medium text-white/80 mb-1.5">State</label>
+              <label htmlFor="register-state" className="block text-sm font-medium text-white/80 mb-1.5">State</label>
               <select
+                id="register-state"
                 {...register('state')}
                 disabled={statesLoading}
                 className={`w-full rounded-lg border bg-white/10 px-4 py-3 text-sm text-white outline-none transition-all focus:ring-2 focus:ring-white/10 ${
@@ -271,9 +281,10 @@ function RegisterPageInner() {
 
             {/* Password */}
             <div>
-              <label className="block text-sm font-medium text-white/80 mb-1.5">Password</label>
+              <label htmlFor="register-password" className="block text-sm font-medium text-white/80 mb-1.5">Password</label>
               <div className="relative">
                 <input
+                  id="register-password"
                   {...register('password')}
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="new-password"

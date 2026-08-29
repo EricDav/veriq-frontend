@@ -25,6 +25,7 @@ import { PageLoader, LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/components/ui/Toast';
 import { AgentRatingButton } from '@/components/agents/AgentRatingButton';
+import { MoveInEstimate } from '@/components/properties/MoveInEstimate';
 
 // ─── Constants ────────────────────────────────────────────────────────────
 
@@ -747,37 +748,7 @@ export default function DashboardPropertyDetailPage() {
               </>
             )}
 
-            {/* Move-in costs */}
-            <div className="mt-5 rounded-xl bg-veriq-surface p-4">
-              <h3 className="font-semibold text-navy-900 mb-3 flex items-center gap-2">
-                <span className="flex h-4 w-4 items-center justify-center text-sm font-black text-veriq-secondary">₦</span> Move-in Estimate
-              </h3>
-              <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-xs">
-                {[
-                  { label: 'Annual Rent', value: property.rentAmount },
-                  { label: 'Agency Fee', value: property.agencyFee },
-                  { label: 'Service Charge', value: property.serviceCharge },
-                  { label: 'Legal Fee', value: property.legalFee },
-                  { label: 'Caution Fee', value: property.cautionFee },
-                  { label: 'Inspection Fee', value: property.inspectionFee },
-                ].map(({ label, value }) =>
-                  Number(value) > 0 ? (
-                    <div key={label} className="flex justify-between">
-                      <span className="text-slate-500">{label}</span>
-                      <span className="font-semibold text-navy-800">{formatNaira(value)}</span>
-                    </div>
-                  ) : null,
-                )}
-              </div>
-              {Number(property.totalMoveInEstimate) > 0 && (
-                <div className="mt-3 pt-3 border-t border-slate-200 flex justify-between">
-                  <span className="text-xs font-bold text-navy-900">Total Move-in</span>
-                  <span className="text-sm font-black text-navy-900">
-                    {formatNaira(property.totalMoveInEstimate)}
-                  </span>
-                </div>
-              )}
-            </div>
+            <MoveInEstimate {...property} />
 
             {/* Short Stay-specific details */}
             {isShortStay && (property.shortStayDailyRate || property.shortStayWeeklyRate) && (

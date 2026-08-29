@@ -50,7 +50,7 @@ export default function SavedPage() {
                 <span className="text-xs text-slate-400">Saved {prop.savedAt}</span>
               </div>
               <div className="mt-3 flex items-center justify-between">
-                <p className="text-sm font-bold text-navy-900">₦{prop.price.toLocaleString()}<span className="text-xs font-normal text-slate-400">/mo</span></p>
+                <p className="text-sm font-bold text-navy-900">₦{prop.price.toLocaleString()}<span className="text-xs font-normal text-slate-400">/yr</span></p>
                 <Link href={`${BROWSE_HREF}/${prop.id}`} className="inline-flex items-center gap-1 rounded-lg bg-veriq-secondary px-3 py-1.5 text-xs font-semibold text-white hover:bg-navy-700 transition-colors">
                   <Lock className="h-3 w-3" />
                   Unlock

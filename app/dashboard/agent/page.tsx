@@ -9,9 +9,9 @@ import { z } from 'zod';
 import {
   Plus, TrendingUp, CheckCircle, Clock, AlertCircle, Shield,
   Upload, FileText, Eye, ChevronDown, X, Camera, CreditCard,
-  MapPin, Briefcase, User, Lock, ExternalLink, Copy, Check, Share2,
+  MapPin, Briefcase, User, Lock, ExternalLink, Copy, Check, Share2, Phone,
 } from 'lucide-react';
-import { agentsApi, ApiError, locationsApi } from '@/lib/api';
+import { agentsApi, ApiError, authApi, locationsApi } from '@/lib/api';
 import { ACCEPTED_IMAGE_INPUT, uploadToFileService } from '@/lib/upload';
 import type { Agent, AllowedState } from '@/types';
 import { AgentVerificationLevel, AgentTrustTier } from '@/types';
@@ -299,6 +299,33 @@ export default function AgentProfilePage() {
   // Multi-select states
   const [specializations, setSpecializations] = useState<string[]>([]);
   const [operatingLocations, setOperatingLocations] = useState<string[]>([]);
+  const [phoneCode, setPhoneCode] = useState('');
+  const [phoneCodeSent, setPhoneCodeSent] = useState(false);
+  const [phoneVerificationLoading, setPhoneVerificationLoading] = useState(false);
+
+  const requestPhoneCode = async () => {
+    setPhoneVerificationLoading(true);
+    try {
+      await authApi.requestPhoneVerification();
+      setPhoneCodeSent(true);
+      success('Verification code sent by SMS.');
+    } catch (err) {
+      toastError(err instanceof ApiError ? err.message : 'Could not send verification code');
+    } finally { setPhoneVerificationLoading(false); }
+  };
+
+  const verifyPhoneCode = async () => {
+    if (!/^\d{6}$/.test(phoneCode)) { toastError('Enter the complete 6-digit code'); return; }
+    setPhoneVerificationLoading(true);
+    try {
+      await authApi.verifyPhone(phoneCode);
+      setAgent((current) => current ? { ...current, isPhoneVerified: true, user: { ...current.user, isPhoneVerified: true } } : current);
+      setPhoneCode(''); setPhoneCodeSent(false);
+      success('Phone number verified successfully.');
+    } catch (err) {
+      toastError(err instanceof ApiError ? err.message : 'Could not verify phone number');
+    } finally { setPhoneVerificationLoading(false); }
+  };
 
   useEffect(() => {
     async function load() {
@@ -454,6 +481,17 @@ export default function AgentProfilePage() {
         <Link href="/dashboard/properties/new" className="btn-gold !text-sm !py-2.5">
           <Plus className="h-4 w-4" /> Add New Listing
         </Link>
+      </div>
+
+      <div className="card p-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex gap-3">
+            <span className={`grid h-10 w-10 place-items-center rounded-full ${agent?.isPhoneVerified ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}><Phone className="h-5 w-5" /></span>
+            <div><h2 className="font-display text-sm font-bold text-navy-900">Phone Verification</h2><p className="mt-1 text-xs text-slate-500">{agent?.isPhoneVerified ? 'Your agent phone number is verified.' : `Verify ${user?.phone || 'your phone number'} by SMS.`}</p></div>
+          </div>
+          {agent?.isPhoneVerified ? <span className="badge bg-emerald-100 text-emerald-700"><CheckCircle className="h-3 w-3" />Verified</span> : !phoneCodeSent ? <button type="button" onClick={requestPhoneCode} disabled={phoneVerificationLoading || !user?.phone} className="btn-secondary !py-2 text-sm disabled:opacity-50">{phoneVerificationLoading ? 'Sending...' : 'Send verification code'}</button> : null}
+        </div>
+        {!agent?.isPhoneVerified && phoneCodeSent && <div className="mt-4 flex flex-wrap items-end gap-3 border-t border-slate-100 pt-4"><label className="block"><span className="label">6-digit SMS code</span><input value={phoneCode} onChange={(event) => setPhoneCode(event.target.value.replace(/\D/g, '').slice(0, 6))} inputMode="numeric" autoComplete="one-time-code" className="input w-48" placeholder="000000" /></label><button type="button" onClick={verifyPhoneCode} disabled={phoneVerificationLoading || phoneCode.length !== 6} className="btn-primary !py-2.5 text-sm disabled:opacity-50">{phoneVerificationLoading ? 'Verifying...' : 'Verify phone'}</button><button type="button" onClick={requestPhoneCode} disabled={phoneVerificationLoading} className="px-2 py-2.5 text-xs font-medium text-slate-600">Resend code</button></div>}
       </div>
 
       {/* ── Share public profile ── */}

@@ -74,7 +74,7 @@ export function Hero({ content: _content }: { content?: SiteContent }) {
                 </div>
                 <span className="rounded-full bg-emerald-400/10 px-2 py-1 text-[10px] font-bold text-emerald-300">Available</span>
               </div>
-              <p className="mt-4 text-lg font-bold text-emerald-400">₦65,000 <span className="text-xs font-medium text-slate-400">/mo</span></p>
+              <p className="mt-4 text-lg font-bold text-emerald-400">₦1.5M<span className="text-xs font-medium text-slate-400">/yr</span></p>
               <div className="mt-3 flex flex-wrap gap-4 text-xs text-slate-300">
                 <span className="flex items-center gap-1"><BedDouble className="h-3.5 w-3.5 text-emerald-400" /> 2 Beds</span>
                 <span className="flex items-center gap-1"><Bath className="h-3.5 w-3.5 text-emerald-400" /> 2 Baths</span>
