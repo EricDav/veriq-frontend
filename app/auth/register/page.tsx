@@ -100,11 +100,10 @@ function RegisterPageInner() {
         password: data.password,
         role: selectedRole,
       });
-      success(selectedRole === UserRole.AGENT ? 'Account created. Check your phone for the verification code.' : 'Account created. Check your email for the verification code.');
+      success(selectedRole === UserRole.AGENT ? 'Account created. You can sign in now; phone verification is still pending.' : 'Account created. Check your email for the verification code.');
       const email = encodeURIComponent(data.email.trim().toLowerCase());
       if (selectedRole === UserRole.AGENT) {
-        const phone = encodeURIComponent(data.phone!.replace(/.(?=.{3})/g, '*'));
-        router.push(`/auth/verify-phone?email=${email}&phone=${phone}`);
+        router.push(`/auth/login?email=${email}`);
       } else {
         router.push(`/auth/verify-email?email=${email}`);
       }
