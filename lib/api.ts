@@ -378,6 +378,9 @@ export const agentsApi = {
   approveLevel2: (id: string) =>
     api.patch<ApiResponse<Agent>>(`/agents/${id}/approve-level2`),
 
+  setListingApproval: (id: string, approved: boolean) =>
+    api.patch<ApiResponse<Agent>>(`/agents/${id}/listing-approval`, { approved }),
+
   updateMetrics: (id: string) =>
     api.patch<ApiResponse<Agent>>(`/agents/${id}/update-metrics`),
 

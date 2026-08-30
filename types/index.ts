@@ -398,6 +398,9 @@ export interface Agent {
   allowContactAfterPayment: boolean;
   agreementAcceptedAt: string | null;
   isActive: boolean;
+  isListingApprovedByAdmin: boolean;
+  listingApprovedAt: string | null;
+  listingApprovedByUserId: string | null;
   createdAt: string;
   updatedAt: string;
   feedback?: AgentFeedback[];

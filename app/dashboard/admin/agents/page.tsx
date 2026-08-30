@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { agentsApi, usersApi, ApiError } from '@/lib/api';
 import type { Agent } from '@/types';
-import { AgentTrustTier } from '@/types';
+import { AgentTrustTier, AgentVerificationLevel } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 import { UserRole } from '@/types';
 import { PageLoader, LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -23,7 +23,7 @@ const TIER_BADGE: Record<AgentTrustTier, string> = {
   platinum: 'bg-purple-100 text-purple-700',
 };
 
-type ActionType = 'approve-l1' | 'approve-l2' | 'deactivate' | 'reactivate';
+type ActionType = 'approve-l1' | 'approve-l2' | 'approve-listing' | 'revoke-listing' | 'deactivate' | 'reactivate';
 
 interface PendingAction {
   agentId: string;
@@ -105,6 +105,14 @@ export default function AdminAgentsPage() {
         label: 'Approve Level 2',
         message: `Approve Level 2 (Professional) verification for ${agentName}? This grants their Professional badge.`,
       },
+      'approve-listing': {
+        label: 'Approve to list',
+        message: `Allow ${agentName} to list properties before phone and identity verification is complete? This grants listing access only and does not mark the agent as verified.`,
+      },
+      'revoke-listing': {
+        label: 'Revoke listing access',
+        message: `Revoke the temporary listing approval for ${agentName}? Existing listings will remain, but they cannot create another listing until verified or approved again.`,
+      },
       deactivate: {
         label: 'Deactivate Agent',
         message: `Deactivate ${agentName}'s account? They will no longer be able to log in or list properties.`,
@@ -135,6 +143,10 @@ export default function AdminAgentsPage() {
         const res = await agentsApi.approveLevel2(agentId);
         setAgents((prev) => prev.map((a) => (a.id === agentId ? res.data : a)));
         success('Level 2 verification approved!');
+      } else if (type === 'approve-listing' || type === 'revoke-listing') {
+        const res = await agentsApi.setListingApproval(agentId, type === 'approve-listing');
+        setAgents((prev) => prev.map((a) => (a.id === agentId ? res.data : a)));
+        success(type === 'approve-listing' ? 'Agent can now list properties.' : 'Temporary listing access revoked.');
       } else if (type === 'deactivate') {
         await usersApi.deactivate(userId);
         setAgents((prev) =>
@@ -432,6 +444,11 @@ export default function AdminAgentsPage() {
                             <Clock className="h-2.5 w-2.5" /> L2 Pending
                           </span>
                         )}
+                        {agent.isListingApprovedByAdmin && (
+                          <span className="badge mt-1 bg-blue-100 text-[10px] text-blue-700">
+                            <CheckCircle className="h-2.5 w-2.5" /> Listing override
+                          </span>
+                        )}
                       </td>
 
                       {/* Actions */}
@@ -459,6 +476,23 @@ export default function AdminAgentsPage() {
                             >
                               Approve professional
                             </button>
+                          )}
+                          {agent.verificationLevel < AgentVerificationLevel.BASIC && (
+                            agent.isListingApprovedByAdmin ? (
+                              <button
+                                onClick={() => initiateAction(agent, 'revoke-listing')}
+                                className="text-[10px] font-bold text-amber-700 hover:underline"
+                              >
+                                Revoke listing access
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => initiateAction(agent, 'approve-listing')}
+                                className="rounded-lg bg-blue-600 px-3 py-1.5 text-[10px] font-bold text-white transition-colors hover:bg-blue-700"
+                              >
+                                Approve to list
+                              </button>
+                            )
                           )}
                           {agent.isActive && userActive ? (
                             <button
