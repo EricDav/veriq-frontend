@@ -93,6 +93,7 @@ export enum PropertyType {
   ROOM_AND_PARLOUR = 'room_and_parlour', // Room & Parlour
   DUPLEX = 'duplex',                     // Duplex
   BUNGALOW = 'bungalow',                 // Bungalow
+  SHARED_APARTMENT = 'shared_apartment', // Private room in a shared apartment
   HOSTEL = 'hostel',                     // Hostel Intelligence Framework
   SHORT_STAY = 'short_stay',             // Short Stay Intelligence Framework
   // ─── Legacy ───────────────────────────────────────────────────
@@ -1145,6 +1146,8 @@ export interface CreatePropertyDto {
   propertyType: PropertyType;
   bedrooms?: number;
   bathrooms: number;
+  toilets?: number;
+  furnishingStatus?: string;
   floorLevel?: string;
   isFurnished?: boolean;
   rentAmount: number;
@@ -1153,6 +1156,8 @@ export interface CreatePropertyDto {
   legalFee?: number;
   cautionFee?: number;
   inspectionFee?: number;
+  serviceChargeCovers?: string[];
+  listingDetails?: Record<string, unknown>;
   state: string;
   city: string;
   area: string;

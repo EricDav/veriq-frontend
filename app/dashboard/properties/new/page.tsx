@@ -25,6 +25,7 @@ import {
 } from '@/types';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useToast } from '@/components/ui/Toast';
+import { LISTING_FIELDS } from '@/lib/property-listing-spec';
 
 // ─── Schema ───────────────────────────────────────────────────────────────
 
@@ -34,6 +35,8 @@ const schema = z.object({
   propertyType: z.nativeEnum(PropertyType),
   bedrooms: z.coerce.number().min(0).optional(),
   bathrooms: z.coerce.number().min(0),
+  toilets: z.coerce.number().min(0).optional(),
+  furnishingStatus: z.string().optional(),
   floorLevel: z.string().optional(),
   isFurnished: z.boolean().optional(),
   rentAmount: z.coerce.number().min(1, 'Rent amount is required'),
@@ -99,6 +102,7 @@ const PROPERTY_TYPE_OPTIONS = [
   { value: PropertyType.ROOM_AND_PARLOUR, label: 'Room & Parlour' },
   { value: PropertyType.DUPLEX, label: 'Duplex' },
   { value: PropertyType.BUNGALOW, label: 'Bungalow' },
+  { value: PropertyType.SHARED_APARTMENT, label: 'Shared Apartment' },
   { value: PropertyType.HOSTEL, label: 'Hostel' },
   { value: PropertyType.SHORT_STAY, label: 'Short Stay' },
 ];
@@ -161,8 +165,14 @@ const KNOWN_ISSUES_OPTIONS = [
   { key: 'damp_wall', label: 'Damp Wall' },
   { key: 'plumbing_issue', label: 'Plumbing Issue' },
   { key: 'ceiling_damage', label: 'Ceiling Damage' },
+  { key: 'roof_leakage', label: 'Roof Leakage' },
   { key: 'cracks', label: 'Cracks' },
   { key: 'poor_finishing', label: 'Poor Finishing' },
+  { key: 'faulty_electrical_fittings', label: 'Faulty Electrical Fittings' },
+  { key: 'poor_water_pressure', label: 'Poor Water Pressure' },
+  { key: 'faulty_doors_windows', label: 'Faulty Doors / Windows' },
+  { key: 'pest_issue', label: 'Pest Issue' },
+  { key: 'drainage_issue', label: 'Drainage Issue' },
   { key: 'none_observed', label: 'None Observed' },
 ];
 
@@ -229,6 +239,7 @@ export default function NewPropertyPage() {
   const [bestNetwork, setBestNetwork] = useState<string[]>([]);
   const [securityFeatures, setSecurityFeatures] = useState<string[]>([]);
   const [knownIssues, setKnownIssues] = useState<string[]>([]);
+  const [serviceChargeCovers, setServiceChargeCovers] = useState<string[]>([]);
 
   // ── Media state: files upload immediately and submit only sends uploaded URLs.
   const [mediaUploads, setMediaUploads] = useState<Record<string, MediaUploadItem[]>>({});
@@ -245,6 +256,7 @@ export default function NewPropertyPage() {
   const [isSearchingStreets, setIsSearchingStreets] = useState(false);
   const [missingStreetName, setMissingStreetName] = useState('');
   const [missingStreetLandmark, setMissingStreetLandmark] = useState('');
+  const [listingDetails, setListingDetails] = useState<Record<string, string | number>>({});
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const clientRequestIdRef = useRef(
     typeof crypto !== 'undefined' && 'randomUUID' in crypto
@@ -264,12 +276,20 @@ export default function NewPropertyPage() {
   });
 
   const propertyType = watch('propertyType');
+  const serviceCharge = watch('serviceCharge');
   const selectedState = watch('state');
   const selectedCity = watch('city');
   const coverImageUrl = watch('coverImageUrl');
   const isHostel = propertyType === PropertyType.HOSTEL;
   const isShortStay = propertyType === PropertyType.SHORT_STAY;
   const isStandard = !isHostel && !isShortStay;
+  const typeFields = LISTING_FIELDS[propertyType] ?? [];
+  const minimumImagesPerCategory = isHostel || isShortStay ? 1 : MIN_IMAGES;
+  const minimumOverallImages = isHostel ? 7 : isShortStay ? 8 : 0;
+
+  useEffect(() => {
+    setListingDetails({});
+  }, [propertyType]);
   const allMediaUploads = Object.values(mediaUploads).flat();
   const hasPendingMediaUploads = allMediaUploads.some((item) => item.status === 'uploading');
   const hasFailedMediaUploads = allMediaUploads.some((item) => item.status === 'failed');
@@ -495,7 +515,7 @@ export default function NewPropertyPage() {
         return;
       }
       const missingSections = MEDIA_CATEGORIES.filter(({ section }) => (
-        (mediaUploads[section] ?? []).filter((item) => item.status === 'uploaded').length < MIN_IMAGES
+        (mediaUploads[section] ?? []).filter((item) => item.status === 'uploaded').length < minimumImagesPerCategory
       ));
       if (!coverImageUrl) {
         toastError('Please upload a cover image before creating the listing.');
@@ -519,11 +539,16 @@ export default function NewPropertyPage() {
       }
       if (missingSections.length > 0) {
         const nextErrors = missingSections.reduce<Record<string, string>>((acc, { section, label }) => {
-          acc[section] = `${label} needs at least ${MIN_IMAGES} images.`;
+          acc[section] = `${label} needs at least ${minimumImagesPerCategory} image${minimumImagesPerCategory === 1 ? '' : 's'}.`;
           return acc;
         }, {});
         setMediaErrors((prev) => ({ ...prev, ...nextErrors }));
-        toastError(`Add at least ${MIN_IMAGES} images to every property media category.`);
+        toastError(`Add at least ${minimumImagesPerCategory} image${minimumImagesPerCategory === 1 ? '' : 's'} to every applicable category.`);
+        return;
+      }
+      const uploadedMediaCount = allMediaUploads.filter((item) => item.status === 'uploaded').length;
+      if (uploadedMediaCount < minimumOverallImages) {
+        toastError(`Add at least ${minimumOverallImages} property-media images for this property type.`);
         return;
       }
 
@@ -550,6 +575,8 @@ export default function NewPropertyPage() {
         bestNetwork,
         securityFeatures,
         knownIssues,
+        serviceChargeCovers,
+        listingDetails,
         propertyMedia,
       };
 
@@ -646,6 +673,12 @@ export default function NewPropertyPage() {
               <label className="label">Bathrooms *</label>
               <input {...register('bathrooms')} type="number" min={0} className="input" />
             </div>
+            {!isShortStay && (
+              <div>
+                <label className="label">Toilets *</label>
+                <input {...register('toilets')} type="number" min={0} className="input" />
+              </div>
+            )}
           </div>
 
           {isStandard && (
@@ -654,11 +687,54 @@ export default function NewPropertyPage() {
                 <label className="label">Floor Level</label>
                 <input {...register('floorLevel')} className="input" placeholder="e.g. Ground floor, 2nd floor" />
               </div>
-              <div className="flex items-center gap-3 mt-6">
-                <input type="checkbox" {...register('isFurnished')} id="furnished" className="h-4 w-4" />
-                <label htmlFor="furnished" className="text-sm font-medium text-navy-700">Furnished</label>
+              <div>
+                <label className="label">Furnishing Status *</label>
+                <select {...register('furnishingStatus')} className="input">
+                  <option value="">Select…</option>
+                  <option value="fully_furnished">Fully Furnished</option>
+                  <option value="partly_furnished">Partly Furnished</option>
+                  <option value="unfurnished">Unfurnished</option>
+                  <option value="not_confirmed">Not Confirmed</option>
+                </select>
               </div>
             </div>
+          )}
+        </div>
+
+        <div className="card p-6 space-y-5">
+          <div>
+            <h2 className="font-display text-base font-bold text-navy-900">{PROPERTY_TYPE_OPTIONS.find((item) => item.value === propertyType)?.label} Intelligence</h2>
+            <p className="mt-1 text-sm text-slate-500">Complete only the structured details that apply to this property type.</p>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {typeFields.map((field) => (
+              <div key={field.key}>
+                <label className="label">{field.label}{field.required ? ' *' : ''}</label>
+                {field.options && field.options.length > 0 ? (
+                  <select
+                    className="input"
+                    required={field.required}
+                    value={String(listingDetails[field.key] ?? '')}
+                    onChange={(event) => setListingDetails((current) => ({ ...current, [field.key]: event.target.value }))}
+                  >
+                    <option value="">Select…</option>
+                    {field.options.map((option) => <option key={option} value={option}>{option}</option>)}
+                  </select>
+                ) : (
+                  <input
+                    className="input"
+                    type={field.type ?? 'text'}
+                    min={field.type === 'number' ? 0 : undefined}
+                    required={field.required}
+                    value={String(listingDetails[field.key] ?? '')}
+                    onChange={(event) => setListingDetails((current) => ({ ...current, [field.key]: field.type === 'number' ? Number(event.target.value) : event.target.value }))}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+          {propertyType === PropertyType.SELF_CONTAIN && ['No Kitchen', 'Shared'].some((value) => Object.values(listingDetails).includes(value)) && (
+            <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">This configuration may not meet Veriq’s Self-Contain definition. Confirm the property type before submitting.</p>
           )}
         </div>
 
@@ -915,6 +991,16 @@ export default function NewPropertyPage() {
               <input {...register('inspectionFee')} type="number" min={0} className="input" placeholder="0" />
             </div>
           </div>
+          {Number(serviceCharge) > 0 && (
+            <div>
+              <label className="label">Service Charge Covers *</label>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {['Security','Waste Disposal','Common-area Cleaning','Water','Generator/Power','Estate Maintenance','Other'].map((item) => (
+                  <Chip key={item} label={item} active={serviceChargeCovers.includes(item)} onClick={() => toggle(item, serviceChargeCovers, setServiceChargeCovers)} />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* ── Directory location and private address ── */}
@@ -996,7 +1082,7 @@ export default function NewPropertyPage() {
               <Camera className="h-4 w-4 text-veriq-secondary" /> Property Media
             </h2>
             <p className="text-xs text-veriq-muted mt-1">
-              Upload {MIN_IMAGES}–{MAX_IMAGES} photos per category. JPG, PNG, WebP, HEIC or HEIF · Max 25MB each. Photos are optimized automatically.
+              Upload {minimumImagesPerCategory}–{MAX_IMAGES} photos per applicable category{minimumOverallImages ? ` and at least ${minimumOverallImages} overall` : ''}. JPG, PNG, WebP, HEIC or HEIF · Max 25MB each. Photos are optimized automatically.
               Clear, well-lit, recent photos only.
             </p>
           </div>
@@ -1019,12 +1105,12 @@ export default function NewPropertyPage() {
                     </div>
                     <div className="flex flex-wrap items-center gap-1.5 sm:justify-end">
                       <span className={`rounded-full px-2 py-1 text-[11px] font-bold ${
-                        uploadedCount < MIN_IMAGES ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700'
+                        uploadedCount < minimumImagesPerCategory ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700'
                       }`}>
                         {uploadedCount}/{MAX_IMAGES} uploaded
                       </span>
                       <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-600">
-                        min {MIN_IMAGES}
+                        min {minimumImagesPerCategory}
                       </span>
                       {uploadingCount > 0 && (
                         <span className="rounded-full bg-blue-50 px-2 py-1 text-[11px] font-bold text-blue-700">
@@ -1325,7 +1411,9 @@ export default function NewPropertyPage() {
                     key={opt.key}
                     label={opt.label}
                     active={knownIssues.includes(opt.key)}
-                    onClick={() => toggle(opt.key, knownIssues, setKnownIssues)}
+                    onClick={() => setKnownIssues((current) => opt.key === 'none_observed'
+                      ? (current.includes(opt.key) ? [] : ['none_observed'])
+                      : (current.includes(opt.key) ? current.filter((item) => item !== opt.key) : [...current.filter((item) => item !== 'none_observed'), opt.key]))}
                   />
                 ))}
               </div>
