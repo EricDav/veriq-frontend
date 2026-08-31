@@ -39,7 +39,7 @@ const schema = z.object({
   furnishingStatus: z.string().optional(),
   floorLevel: z.string().optional(),
   isFurnished: z.boolean().optional(),
-  rentAmount: z.coerce.number().min(1, 'Rent amount is required'),
+  rentAmount: z.coerce.number().min(0),
   serviceCharge: z.coerce.number().min(0).optional(),
   agencyFee: z.coerce.number().min(0).optional(),
   legalFee: z.coerce.number().min(0).optional(),
@@ -272,7 +272,7 @@ export default function NewPropertyPage() {
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { bedrooms: 1, bathrooms: 1, propertyType: PropertyType.FLAT },
+    defaultValues: { bedrooms: 1, bathrooms: 1, rentAmount: 0, propertyType: PropertyType.FLAT },
   });
 
   const propertyType = watch('propertyType');
@@ -283,9 +283,12 @@ export default function NewPropertyPage() {
   const isHostel = propertyType === PropertyType.HOSTEL;
   const isShortStay = propertyType === PropertyType.SHORT_STAY;
   const isStandard = !isHostel && !isShortStay;
+  const showBedrooms = [PropertyType.FLAT, PropertyType.DUPLEX, PropertyType.BUNGALOW, PropertyType.SHORT_STAY].includes(propertyType);
+  const showFloorLevel = [PropertyType.FLAT, PropertyType.MINI_FLAT, PropertyType.SELF_CONTAIN, PropertyType.ROOM_AND_PARLOUR, PropertyType.SHARED_APARTMENT].includes(propertyType);
   const typeFields = LISTING_FIELDS[propertyType] ?? [];
-  const minimumImagesPerCategory = isHostel || isShortStay ? 1 : MIN_IMAGES;
-  const minimumOverallImages = isHostel ? 7 : isShortStay ? 8 : 0;
+  const minimumImagesPerCategory = 1;
+  const minimumOverallImages = [PropertyType.HOSTEL, PropertyType.SHARED_APARTMENT].includes(propertyType) ? 7
+    : [PropertyType.SHORT_STAY, PropertyType.FLAT, PropertyType.MINI_FLAT, PropertyType.DUPLEX, PropertyType.BUNGALOW].includes(propertyType) ? 8 : 0;
 
   useEffect(() => {
     setListingDetails({});
@@ -577,6 +580,9 @@ export default function NewPropertyPage() {
         knownIssues,
         serviceChargeCovers,
         listingDetails,
+        rentAmount: isShortStay
+          ? Math.max(Number(listingDetails.dailyRate ?? 0), Number(listingDetails.weeklyRate ?? 0))
+          : data.rentAmount,
         propertyMedia,
       };
 
@@ -610,7 +616,7 @@ export default function NewPropertyPage() {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
 
         {/* ── SECTION 1: Basic Info ── */}
-        <div className="card p-6 space-y-4">
+        <div className={isShortStay ? 'hidden' : 'card p-6 space-y-4'}>
           <h2 className="font-display text-base font-bold text-navy-900 flex items-center gap-2">
             <Home className="h-4 w-4 text-veriq-secondary" /> Basic Information
           </h2>
@@ -662,18 +668,18 @@ export default function NewPropertyPage() {
               {errors.propertyType && <p className="error">{errors.propertyType.message}</p>}
             </div>
 
-            {isStandard && (
+            {showBedrooms && (
               <div>
                 <label className="label">Bedrooms *</label>
                 <input {...register('bedrooms')} type="number" min={0} className="input" />
               </div>
             )}
 
-            <div>
+            {!isHostel && <div>
               <label className="label">Bathrooms *</label>
-              <input {...register('bathrooms')} type="number" min={0} className="input" />
-            </div>
-            {!isShortStay && (
+              <input {...register('bathrooms')} type="number" min={isShortStay ? 1 : 0} className="input" />
+            </div>}
+            {!isShortStay && !isHostel && (
               <div>
                 <label className="label">Toilets *</label>
                 <input {...register('toilets')} type="number" min={0} className="input" />
@@ -683,10 +689,10 @@ export default function NewPropertyPage() {
 
           {isStandard && (
             <div className="grid grid-cols-2 gap-4">
-              <div>
+              {showFloorLevel && <div>
                 <label className="label">Floor Level</label>
-                <input {...register('floorLevel')} className="input" placeholder="e.g. Ground floor, 2nd floor" />
-              </div>
+                <select {...register('floorLevel')} className="input"><option value="">Select…</option><option>Ground Floor</option><option>First Floor</option><option>Second Floor</option><option>Third Floor</option><option>Fourth Floor+</option><option>Other</option></select>
+              </div>}
               <div>
                 <label className="label">Furnishing Status *</label>
                 <select {...register('furnishingStatus')} className="input">
@@ -739,7 +745,7 @@ export default function NewPropertyPage() {
         </div>
 
         {/* ── Hostel Section ── */}
-        {isHostel && (
+        {false && isHostel && (
           <div className="card p-6 space-y-5 border-2 border-veriq-secondary/20">
             <h2 className="font-display text-base font-bold text-navy-900 flex items-center gap-2">
               <GraduationCap className="h-4 w-4 text-veriq-secondary" /> Hostel Details
@@ -809,7 +815,7 @@ export default function NewPropertyPage() {
         )}
 
         {/* ── Short Stay Section ── */}
-        {isShortStay && (
+        {false && isShortStay && (
           <div className="card p-6 space-y-5 border-2 border-veriq-secondary/20">
             <h2 className="font-display text-base font-bold text-navy-900 flex items-center gap-2">
               <span className="text-veriq-secondary text-lg">🏨</span> Short Stay Details
@@ -881,7 +887,7 @@ export default function NewPropertyPage() {
         )}
 
         {/* ── Short Stay Intelligence ── */}
-        {isShortStay && (
+        {false && isShortStay && (
           <div className="card p-6 space-y-5 border-2 border-veriq-secondary/20">
             <div>
               <h2 className="font-display text-base font-bold text-navy-900 flex items-center gap-2">
@@ -962,34 +968,34 @@ export default function NewPropertyPage() {
         {/* ── Pricing ── */}
         <div className="card p-6 space-y-4">
           <h2 className="font-display text-base font-bold text-navy-900">
-            {isShortStay ? 'Additional Fees (₦)' : isHostel ? 'Pricing (₦) — per year per person' : 'Pricing (₦)'}
+            {isShortStay ? 'Short Stay Pricing & Fees' : isHostel ? 'Hostel Pricing & Fees' : 'Pricing & Fees (₦)'}
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="label">Annual Rent *</label>
+            {!isShortStay && <div>
+              <label className="label">{isHostel ? 'Rent Amount *' : propertyType === PropertyType.SHARED_APARTMENT ? 'Annual Rent for Available Room *' : 'Annual Rent *'}</label>
               <input {...register('rentAmount')} type="number" min={0} className="input" placeholder="e.g. 150000" />
               {errors.rentAmount && <p className="error">{errors.rentAmount.message}</p>}
-            </div>
-            <div>
+            </div>}
+            {!isShortStay && <div>
               <label className="label">Agency Fee</label>
               <input {...register('agencyFee')} type="number" min={0} className="input" placeholder="0" />
-            </div>
-            <div>
+            </div>}
+            {!isShortStay && <div>
               <label className="label">Service Charge</label>
               <input {...register('serviceCharge')} type="number" min={0} className="input" placeholder="0" />
-            </div>
-            <div>
+            </div>}
+            {!isShortStay && !isHostel && <div>
               <label className="label">Legal Fee</label>
               <input {...register('legalFee')} type="number" min={0} className="input" placeholder="0" />
-            </div>
-            <div>
+            </div>}
+            {!isShortStay && <div>
               <label className="label">Caution Fee</label>
               <input {...register('cautionFee')} type="number" min={0} className="input" placeholder="0" />
-            </div>
-            <div>
+            </div>}
+            {!isShortStay && <div>
               <label className="label">Inspection Fee</label>
               <input {...register('inspectionFee')} type="number" min={0} className="input" placeholder="0" />
-            </div>
+            </div>}
           </div>
           {Number(serviceCharge) > 0 && (
             <div>
