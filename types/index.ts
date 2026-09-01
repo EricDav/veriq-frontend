@@ -226,6 +226,10 @@ export enum SecurityFeatures {
 }
 
 export enum PropertyCondition {
+  EXCELLENT = 'excellent',
+  GOOD = 'good',
+  FAIR = 'fair',
+  POOR = 'poor',
   NEWLY_BUILT = 'newly_built',
   NEWLY_RENOVATED = 'newly_renovated',
   GOOD_CONDITION = 'good_condition',
@@ -296,6 +300,9 @@ export enum MediaSection {
   WATER_AREA = 'water_area',
   CEILING = 'ceiling',
   OTHER = 'other',
+  MAIN_ROOM = 'main_room',
+  EXTERIOR = 'exterior',
+  COMMON_AREA = 'common_area',
 }
 
 export enum ListingStatus {
@@ -425,9 +432,12 @@ export interface Property {
   description: string | null;
   propertyType: PropertyType;
   bedrooms: number;
-  bathrooms: number;
+  bathrooms?: number;
   floorLevel: string | null;
   isFurnished: boolean;
+  furnishingStatus?: string | null;
+  toilets?: number | null;
+  listingDetails?: Record<string, unknown> | null;
   rentAmount: number;
   serviceCharge: number;
   agencyFee: number;
@@ -1145,7 +1155,7 @@ export interface CreatePropertyDto {
   description?: string;
   propertyType: PropertyType;
   bedrooms?: number;
-  bathrooms: number;
+  bathrooms?: number;
   toilets?: number;
   furnishingStatus?: string;
   floorLevel?: string;
@@ -1156,7 +1166,6 @@ export interface CreatePropertyDto {
   legalFee?: number;
   cautionFee?: number;
   inspectionFee?: number;
-  serviceChargeCovers?: string[];
   listingDetails?: Record<string, unknown>;
   state: string;
   city: string;

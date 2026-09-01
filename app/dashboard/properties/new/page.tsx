@@ -5,17 +5,15 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ArrowLeft, Home, GraduationCap, Camera, X, Upload, Zap, ShieldCheck, Search } from 'lucide-react';
+import { ArrowLeft, Home, Camera, X, Upload, Zap, ShieldCheck, Search } from 'lucide-react';
 import Link from 'next/link';
 import { propertiesApi, ApiError, communityApi, locationsApi } from '@/lib/api';
 import { ACCEPTED_IMAGE_INPUT, MAX_ORIGINAL_IMAGE_BYTES, uploadToFileService } from '@/lib/upload';
 import {
-  PropertyType, HostelSuitableFor, HostelGender, HostelCampusProximity,
-  ShortStayPricingModel,
+  PropertyType,
   FloodRisk, ElectricitySituation, WaterAvailability, WaterSource,
   RoadAccess, RoadAccessRain, NetworkQuality, NoiseLevel, NoiseSource,
   SecurityFeel, PropertyCondition, CompoundCulture,
-  ShortStayAC, ShortStayInternet, ShortStayCleanliness, ShortStayFurnishing, ShortStayKitchen,
   MediaSection,
   type AllowedState,
   type CommunityArea,
@@ -25,7 +23,7 @@ import {
 } from '@/types';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useToast } from '@/components/ui/Toast';
-import { LISTING_FIELDS } from '@/lib/property-listing-spec';
+import { LISTING_FIELDS, MEDIA_OVERALL_MINIMUM, MEDIA_REQUIREMENTS } from '@/lib/property-listing-spec';
 
 // ─── Schema ───────────────────────────────────────────────────────────────
 
@@ -34,11 +32,10 @@ const schema = z.object({
   description: z.string().max(1000).optional(),
   propertyType: z.nativeEnum(PropertyType),
   bedrooms: z.coerce.number().min(0).optional(),
-  bathrooms: z.coerce.number().min(0),
+  bathrooms: z.coerce.number().min(0).optional(),
   toilets: z.coerce.number().min(0).optional(),
   furnishingStatus: z.string().optional(),
   floorLevel: z.string().optional(),
-  isFurnished: z.boolean().optional(),
   rentAmount: z.coerce.number().min(0),
   serviceCharge: z.coerce.number().min(0).optional(),
   agencyFee: z.coerce.number().min(0).optional(),
@@ -50,23 +47,6 @@ const schema = z.object({
   area: z.string().min(2, 'Area is required'),
   streetId: z.string().optional(),
   address: z.string().optional(),
-  // Hostel-specific
-  hostelPersonsPerRoom: z.coerce.number().min(1).optional(),
-  hostelGender: z.nativeEnum(HostelGender).optional(),
-  hostelCampusProximity: z.nativeEnum(HostelCampusProximity).optional(),
-  hostelNearestCampus: z.string().max(200).optional(),
-  hostelDistanceFromCampus: z.string().max(100).optional(),
-  hostelMealsIncluded: z.boolean().optional(),
-  hostelRulesNotes: z.string().max(500).optional(),
-  // Short Stay-specific
-  shortStayPricingModel: z.nativeEnum(ShortStayPricingModel).optional(),
-  shortStayDailyRate: z.coerce.number().min(0).optional(),
-  shortStayWeeklyRate: z.coerce.number().min(0).optional(),
-  shortStayMinNights: z.coerce.number().min(1).optional(),
-  shortStayMaxNights: z.coerce.number().min(1).optional(),
-  shortStayCheckInTime: z.string().max(20).optional(),
-  shortStayCheckOutTime: z.string().max(20).optional(),
-  shortStayHouseRules: z.string().max(500).optional(),
   // Quick Intelligence
   floodRisk: z.nativeEnum(FloodRisk).optional(),
   electricitySituation: z.nativeEnum(ElectricitySituation).optional(),
@@ -81,13 +61,6 @@ const schema = z.object({
   propertyCondition: z.nativeEnum(PropertyCondition).optional(),
   compoundCulture: z.nativeEnum(CompoundCulture).optional(),
   agentObservation: z.string().max(200).optional(),
-  // Short Stay Intelligence
-  shortStayAC: z.nativeEnum(ShortStayAC).optional(),
-  shortStayInternet: z.nativeEnum(ShortStayInternet).optional(),
-  shortStayCleanliness: z.nativeEnum(ShortStayCleanliness).optional(),
-  shortStayFurnishing: z.nativeEnum(ShortStayFurnishing).optional(),
-  shortStayKitchen: z.nativeEnum(ShortStayKitchen).optional(),
-  shortStayAgentNote: z.string().max(200).optional(),
   coverImageUrl: z.string().url('Enter a valid URL').or(z.literal('')).optional(),
 });
 
@@ -104,39 +77,7 @@ const PROPERTY_TYPE_OPTIONS = [
   { value: PropertyType.BUNGALOW, label: 'Bungalow' },
   { value: PropertyType.SHARED_APARTMENT, label: 'Shared Apartment' },
   { value: PropertyType.HOSTEL, label: 'Hostel' },
-  { value: PropertyType.SHORT_STAY, label: 'Short Stay' },
-];
-
-const SHORT_STAY_AMENITIES = [
-  { key: 'wifi', label: 'WiFi' },
-  { key: 'ac', label: 'Air Conditioning' },
-  { key: 'generator', label: 'Generator / Power Backup' },
-  { key: 'kitchen', label: 'Kitchen Access' },
-  { key: 'hot_water', label: 'Hot Water' },
-  { key: 'parking', label: 'Parking' },
-  { key: 'security', label: 'Security / Gate' },
-  { key: 'laundry', label: 'Laundry' },
-  { key: 'tv', label: 'Smart TV' },
-  { key: 'pool', label: 'Swimming Pool' },
-];
-
-const SUITABLE_FOR_OPTIONS = [
-  { value: HostelSuitableFor.STUDENTS, label: 'Students' },
-  { value: HostelSuitableFor.CORP_MEMBERS, label: 'Corp Members (NYSC)' },
-  { value: HostelSuitableFor.WORKING_CLASS, label: 'Working Class' },
-  { value: HostelSuitableFor.TEMPORARY_STAY, label: 'Temporary Stay' },
-  { value: HostelSuitableFor.MIXED, label: 'Mixed / Any' },
-];
-
-// Media categories shown in upload section
-const MEDIA_CATEGORIES: { section: MediaSection; label: string; hint: string }[] = [
-  { section: MediaSection.ROAD_ACCESS,  label: 'Road Access',   hint: 'Photos of the road leading to the property' },
-  { section: MediaSection.ENVIRONMENT, label: 'Surroundings',  hint: 'Neighbourhood, nearby landmarks' },
-  { section: MediaSection.LIVING_ROOM, label: 'Living Room',   hint: 'Main sitting area' },
-  { section: MediaSection.KITCHEN,     label: 'Kitchen',       hint: 'Kitchen / cooking area' },
-  { section: MediaSection.BEDROOM,     label: 'Bedroom',       hint: 'Bedroom(s)' },
-  { section: MediaSection.BATHROOM,    label: 'Bathroom',      hint: 'Bathroom / toilet' },
-  { section: MediaSection.COMPOUND,    label: 'Compound',      hint: 'Compound / exterior' },
+  { value: PropertyType.SHORT_STAY, label: 'Short Let' },
 ];
 
 const ELECTRICITY_INFO_OPTIONS = [
@@ -231,15 +172,12 @@ export default function NewPropertyPage() {
   const { success, error: toastError } = useToast();
 
   // ── Hostel / Short Stay multi-select state ─────────────────────────────
-  const [selectedSuitableFor, setSelectedSuitableFor] = useState<HostelSuitableFor[]>([]);
-  const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
 
   // ── Quick Intelligence multi-select state ─────────────────────────────
   const [electricityInfo, setElectricityInfo] = useState<string[]>([]);
   const [bestNetwork, setBestNetwork] = useState<string[]>([]);
   const [securityFeatures, setSecurityFeatures] = useState<string[]>([]);
   const [knownIssues, setKnownIssues] = useState<string[]>([]);
-  const [serviceChargeCovers, setServiceChargeCovers] = useState<string[]>([]);
 
   // ── Media state: files upload immediately and submit only sends uploaded URLs.
   const [mediaUploads, setMediaUploads] = useState<Record<string, MediaUploadItem[]>>({});
@@ -256,7 +194,7 @@ export default function NewPropertyPage() {
   const [isSearchingStreets, setIsSearchingStreets] = useState(false);
   const [missingStreetName, setMissingStreetName] = useState('');
   const [missingStreetLandmark, setMissingStreetLandmark] = useState('');
-  const [listingDetails, setListingDetails] = useState<Record<string, string | number>>({});
+  const [listingDetails, setListingDetails] = useState<Record<string, unknown>>({});
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const clientRequestIdRef = useRef(
     typeof crypto !== 'undefined' && 'randomUUID' in crypto
@@ -276,7 +214,6 @@ export default function NewPropertyPage() {
   });
 
   const propertyType = watch('propertyType');
-  const serviceCharge = watch('serviceCharge');
   const selectedState = watch('state');
   const selectedCity = watch('city');
   const coverImageUrl = watch('coverImageUrl');
@@ -284,14 +221,23 @@ export default function NewPropertyPage() {
   const isShortStay = propertyType === PropertyType.SHORT_STAY;
   const isStandard = !isHostel && !isShortStay;
   const showBedrooms = [PropertyType.FLAT, PropertyType.DUPLEX, PropertyType.BUNGALOW, PropertyType.SHORT_STAY].includes(propertyType);
-  const showFloorLevel = [PropertyType.FLAT, PropertyType.MINI_FLAT, PropertyType.SELF_CONTAIN, PropertyType.ROOM_AND_PARLOUR, PropertyType.SHARED_APARTMENT].includes(propertyType);
+  const showBathrooms = [PropertyType.FLAT, PropertyType.DUPLEX, PropertyType.BUNGALOW, PropertyType.SHORT_STAY].includes(propertyType);
+  const showVisitorToilet = [PropertyType.FLAT, PropertyType.DUPLEX, PropertyType.BUNGALOW].includes(propertyType);
+  const showFloorLevel = [PropertyType.FLAT, PropertyType.MINI_FLAT, PropertyType.SELF_CONTAIN, PropertyType.ROOM_AND_PARLOUR].includes(propertyType);
   const typeFields = LISTING_FIELDS[propertyType] ?? [];
+  const mediaCategories = (MEDIA_REQUIREMENTS[propertyType] ?? []).filter((category) => {
+    if (propertyType === PropertyType.HOSTEL && category.section === MediaSection.KITCHEN) return listingDetails.cookingAllowed !== 'No';
+    if (propertyType === PropertyType.SHORT_STAY && category.section === MediaSection.KITCHEN) return Array.isArray(listingDetails.amenities) && listingDetails.amenities.includes('Kitchen Access');
+    if (propertyType === PropertyType.SHORT_STAY && category.section === MediaSection.LIVING_ROOM) return ['Entire Apartment', 'Serviced Apartment'].includes(String(listingDetails.shortLetType ?? ''));
+    return true;
+  });
   const minimumImagesPerCategory = 1;
-  const minimumOverallImages = [PropertyType.HOSTEL, PropertyType.SHARED_APARTMENT].includes(propertyType) ? 7
-    : [PropertyType.SHORT_STAY, PropertyType.FLAT, PropertyType.MINI_FLAT, PropertyType.DUPLEX, PropertyType.BUNGALOW].includes(propertyType) ? 8 : 0;
+  const minimumOverallImages = MEDIA_OVERALL_MINIMUM[propertyType] ?? 0;
 
   useEffect(() => {
     setListingDetails({});
+    setMediaUploads({});
+    setMediaErrors({});
   }, [propertyType]);
   const allMediaUploads = Object.values(mediaUploads).flat();
   const hasPendingMediaUploads = allMediaUploads.some((item) => item.status === 'uploading');
@@ -387,7 +333,7 @@ export default function NewPropertyPage() {
         status: 'failed',
         error: err instanceof Error ? err.message : 'Upload failed',
       });
-      const label = MEDIA_CATEGORIES.find((category) => category.section === section)?.label ?? 'This category';
+      const label = mediaCategories.find((category) => category.section === section)?.label ?? 'This category';
       setMediaErrors((prev) => ({
         ...prev,
         [section]: `${label}: ${file.name} failed to upload.`,
@@ -517,8 +463,8 @@ export default function NewPropertyPage() {
         toastError('Select a street or choose “I can’t see my street”.');
         return;
       }
-      const missingSections = MEDIA_CATEGORIES.filter(({ section }) => (
-        (mediaUploads[section] ?? []).filter((item) => item.status === 'uploaded').length < minimumImagesPerCategory
+      const missingSections = mediaCategories.filter(({ section, minimum }) => (
+        (mediaUploads[section] ?? []).filter((item) => item.status === 'uploaded').length < minimum
       ));
       if (!coverImageUrl) {
         toastError('Please upload a cover image before creating the listing.');
@@ -529,7 +475,7 @@ export default function NewPropertyPage() {
         return;
       }
       if (hasFailedMediaUploads) {
-        const nextErrors = MEDIA_CATEGORIES.reduce<Record<string, string>>((acc, { section, label }) => {
+        const nextErrors = mediaCategories.reduce<Record<string, string>>((acc, { section, label }) => {
           const failed = (mediaUploads[section] ?? []).filter((item) => item.status === 'failed');
           if (failed.length > 0) {
             acc[section] = `${label}: ${failed.map((item) => `${item.fileName} (${item.error ?? 'Upload failed'})`).join(', ')}`;
@@ -571,14 +517,20 @@ export default function NewPropertyPage() {
       const payload = {
         clientRequestId: clientRequestIdRef.current,
         ...data,
+        bedrooms: showBedrooms ? data.bedrooms : undefined,
+        bathrooms: showBathrooms ? data.bathrooms : undefined,
+        toilets: showVisitorToilet ? data.toilets : undefined,
+        floorLevel: showFloorLevel ? data.floorLevel : undefined,
+        furnishingStatus: isStandard ? data.furnishingStatus : undefined,
+        electricitySituation: isShortStay ? undefined : data.electricitySituation,
+        waterAvailability: isShortStay ? undefined : data.waterAvailability,
+        waterSource: isShortStay ? undefined : data.waterSource,
+        compoundCulture: isShortStay ? undefined : data.compoundCulture,
         streetId,
-        ...(isHostel ? { hostelSuitableFor: selectedSuitableFor } : {}),
-        ...(isShortStay ? { shortStayAmenities: selectedAmenities } : {}),
-        electricityInfo,
+        electricityInfo: isShortStay ? undefined : electricityInfo,
         bestNetwork,
         securityFeatures,
         knownIssues,
-        serviceChargeCovers,
         listingDetails,
         rentAmount: isShortStay
           ? Math.max(Number(listingDetails.dailyRate ?? 0), Number(listingDetails.weeklyRate ?? 0))
@@ -671,17 +623,17 @@ export default function NewPropertyPage() {
             {showBedrooms && (
               <div>
                 <label className="label">Bedrooms *</label>
-                <input {...register('bedrooms')} type="number" min={0} className="input" />
+                <input {...register('bedrooms')} type="number" min={isShortStay ? 0 : 1} className="input" required />
               </div>
             )}
 
-            {!isHostel && <div>
+            {showBathrooms && <div>
               <label className="label">Bathrooms *</label>
-              <input {...register('bathrooms')} type="number" min={isShortStay ? 1 : 0} className="input" />
+              <input {...register('bathrooms')} type="number" min={1} className="input" required />
             </div>}
-            {!isShortStay && !isHostel && (
+            {showVisitorToilet && (
               <div>
-                <label className="label">Toilets *</label>
+                <label className="label">Separate / Visitor Toilet</label>
                 <input {...register('toilets')} type="number" min={0} className="input" />
               </div>
             )}
@@ -695,12 +647,11 @@ export default function NewPropertyPage() {
               </div>}
               <div>
                 <label className="label">Furnishing Status *</label>
-                <select {...register('furnishingStatus')} className="input">
+                <select {...register('furnishingStatus')} className="input" required>
                   <option value="">Select…</option>
-                  <option value="fully_furnished">Fully Furnished</option>
-                  <option value="partly_furnished">Partly Furnished</option>
+                  <option value="furnished">Furnished</option>
+                  <option value="partially_furnished">Partially Furnished</option>
                   <option value="unfurnished">Unfurnished</option>
-                  <option value="not_confirmed">Not Confirmed</option>
                 </select>
               </div>
             </div>
@@ -713,10 +664,26 @@ export default function NewPropertyPage() {
             <p className="mt-1 text-sm text-slate-500">Complete only the structured details that apply to this property type.</p>
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {typeFields.map((field) => (
+            {typeFields.filter((field) => {
+              if (!field.showWhen) return true;
+              const current = listingDetails[field.showWhen.key];
+              if (field.key === 'otherMandatoryFeeDescription') return Number(current) > 0;
+              return field.showWhen.values.includes(current as never);
+            }).map((field) => (
               <div key={field.key}>
                 <label className="label">{field.label}{field.required ? ' *' : ''}</label>
-                {field.options && field.options.length > 0 ? (
+                {field.type === 'multi' ? (
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {(field.options ?? []).map((option) => {
+                      const values = Array.isArray(listingDetails[field.key]) ? listingDetails[field.key] as string[] : [];
+                      return <Chip key={option} label={option} active={values.includes(option)} onClick={() => setListingDetails((current) => ({ ...current, [field.key]: values.includes(option) ? values.filter((item) => item !== option) : [...values, option] }))} />;
+                    })}
+                  </div>
+                ) : field.type === 'checkbox' ? (
+                  <label className="flex items-center gap-3 rounded-md border border-slate-200 px-4 py-3 text-sm font-medium text-navy-700">
+                    <input type="checkbox" checked={Boolean(listingDetails[field.key])} onChange={(event) => setListingDetails((current) => ({ ...current, [field.key]: event.target.checked }))} /> Yes
+                  </label>
+                ) : field.options && field.options.length > 0 ? (
                   <select
                     className="input"
                     required={field.required}
@@ -726,10 +693,12 @@ export default function NewPropertyPage() {
                     <option value="">Select…</option>
                     {field.options.map((option) => <option key={option} value={option}>{option}</option>)}
                   </select>
+                ) : field.type === 'textarea' ? (
+                  <textarea className="input resize-none" rows={3} maxLength={field.maxLength} required={field.required} value={String(listingDetails[field.key] ?? '')} onChange={(event) => setListingDetails((current) => ({ ...current, [field.key]: event.target.value }))} />
                 ) : (
                   <input
                     className="input"
-                    type={field.type ?? 'text'}
+                    type={field.type === 'time' ? 'time' : field.type ?? 'text'}
                     min={field.type === 'number' ? 0 : undefined}
                     required={field.required}
                     value={String(listingDetails[field.key] ?? '')}
@@ -739,231 +708,7 @@ export default function NewPropertyPage() {
               </div>
             ))}
           </div>
-          {propertyType === PropertyType.SELF_CONTAIN && ['No Kitchen', 'Shared'].some((value) => Object.values(listingDetails).includes(value)) && (
-            <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">This configuration may not meet Veriq’s Self-Contain definition. Confirm the property type before submitting.</p>
-          )}
         </div>
-
-        {/* ── Hostel Section ── */}
-        {false && isHostel && (
-          <div className="card p-6 space-y-5 border-2 border-veriq-secondary/20">
-            <h2 className="font-display text-base font-bold text-navy-900 flex items-center gap-2">
-              <GraduationCap className="h-4 w-4 text-veriq-secondary" /> Hostel Details
-            </h2>
-
-            <div>
-              <label className="label">Suitable For <span className="text-slate-400 font-normal">(select all that apply)</span></label>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {SUITABLE_FOR_OPTIONS.map((opt) => (
-                  <Chip
-                    key={opt.value}
-                    label={opt.label}
-                    active={selectedSuitableFor.includes(opt.value)}
-                    onClick={() => toggle(opt.value, selectedSuitableFor, setSelectedSuitableFor)}
-                  />
-                ))}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div>
-                <label className="label">Gender</label>
-                <select {...register('hostelGender')} className="input">
-                  <option value="">Select…</option>
-                  <option value={HostelGender.MALE}>Male Only</option>
-                  <option value={HostelGender.FEMALE}>Female Only</option>
-                  <option value={HostelGender.MIXED}>Mixed</option>
-                </select>
-              </div>
-              <div>
-                <label className="label">Campus Location</label>
-                <select {...register('hostelCampusProximity')} className="input">
-                  <option value="">Select…</option>
-                  <option value={HostelCampusProximity.ON_CAMPUS}>On Campus</option>
-                  <option value={HostelCampusProximity.OFF_CAMPUS}>Off Campus</option>
-                </select>
-              </div>
-              <div>
-                <label className="label">Persons Per Room</label>
-                <input {...register('hostelPersonsPerRoom')} type="number" min={1} className="input" placeholder="e.g. 4" />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="label">Nearest Institution</label>
-                <input {...register('hostelNearestCampus')} className="input" placeholder="e.g. University of Port Harcourt" />
-              </div>
-              <div>
-                <label className="label">Distance from Campus</label>
-                <input {...register('hostelDistanceFromCampus')} className="input" placeholder="e.g. 5 min walk, 2km" />
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <input type="checkbox" {...register('hostelMealsIncluded')} id="meals" className="h-4 w-4" />
-              <label htmlFor="meals" className="text-sm font-medium text-navy-700">Meals included in rent</label>
-            </div>
-
-            <div>
-              <label className="label">House Rules / Landlord Preferences</label>
-              <textarea {...register('hostelRulesNotes')} rows={3} className="input resize-none"
-                placeholder="e.g. No visitors after 10pm. Female only. No cooking in room…" />
-              <p className="text-xs text-slate-400 mt-1">Max 500 characters</p>
-            </div>
-          </div>
-        )}
-
-        {/* ── Short Stay Section ── */}
-        {false && isShortStay && (
-          <div className="card p-6 space-y-5 border-2 border-veriq-secondary/20">
-            <h2 className="font-display text-base font-bold text-navy-900 flex items-center gap-2">
-              <span className="text-veriq-secondary text-lg">🏨</span> Short Stay Details
-            </h2>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div>
-                <label className="label">Pricing Model *</label>
-                <select {...register('shortStayPricingModel')} className="input">
-                  <option value="">Select…</option>
-                  <option value={ShortStayPricingModel.DAILY}>Daily Rate Only</option>
-                  <option value={ShortStayPricingModel.WEEKLY}>Weekly Rate Only</option>
-                  <option value={ShortStayPricingModel.BOTH}>Daily &amp; Weekly</option>
-                </select>
-              </div>
-              <div>
-                <label className="label">Daily Rate (₦/night)</label>
-                <input {...register('shortStayDailyRate')} type="number" min={0} className="input" placeholder="e.g. 15,000" />
-              </div>
-              <div>
-                <label className="label">Weekly Rate (₦/week)</label>
-                <input {...register('shortStayWeeklyRate')} type="number" min={0} className="input" placeholder="e.g. 80,000" />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="label">Minimum Nights</label>
-                <input {...register('shortStayMinNights')} type="number" min={1} className="input" placeholder="e.g. 1" />
-              </div>
-              <div>
-                <label className="label">Maximum Nights <span className="text-slate-400 font-normal">(leave blank for no limit)</span></label>
-                <input {...register('shortStayMaxNights')} type="number" min={1} className="input" placeholder="e.g. 30" />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="label">Check-in Time</label>
-                <input {...register('shortStayCheckInTime')} className="input" placeholder="e.g. 2:00 PM" />
-              </div>
-              <div>
-                <label className="label">Check-out Time</label>
-                <input {...register('shortStayCheckOutTime')} className="input" placeholder="e.g. 11:00 AM" />
-              </div>
-            </div>
-
-            <div>
-              <label className="label">Amenities <span className="text-slate-400 font-normal">(select all available)</span></label>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {SHORT_STAY_AMENITIES.map((a) => (
-                  <Chip
-                    key={a.key}
-                    label={a.label}
-                    active={selectedAmenities.includes(a.key)}
-                    onClick={() => toggle(a.key, selectedAmenities, setSelectedAmenities)}
-                  />
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label className="label">House Rules</label>
-              <textarea {...register('shortStayHouseRules')} rows={3} className="input resize-none"
-                placeholder="e.g. No parties. No smoking inside. Guests must vacate by check-out time…" />
-              <p className="text-xs text-slate-400 mt-1">Max 500 characters</p>
-            </div>
-          </div>
-        )}
-
-        {/* ── Short Stay Intelligence ── */}
-        {false && isShortStay && (
-          <div className="card p-6 space-y-5 border-2 border-veriq-secondary/20">
-            <div>
-              <h2 className="font-display text-base font-bold text-navy-900 flex items-center gap-2">
-                <Zap className="h-4 w-4 text-veriq-secondary" /> Short Stay Intelligence
-              </h2>
-              <p className="text-xs text-veriq-muted mt-1">
-                Help guests understand the comfort and convenience of this space.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="label">Air Conditioning *</label>
-                <select {...register('shortStayAC')} className="input">
-                  <option value="">Select…</option>
-                  <option value={ShortStayAC.AVAILABLE_ALL_ROOMS}>Available In All Rooms</option>
-                  <option value={ShortStayAC.AVAILABLE_SOME_ROOMS}>Available In Some Rooms</option>
-                  <option value={ShortStayAC.NOT_AVAILABLE}>Not Available</option>
-                </select>
-              </div>
-              <div>
-                <label className="label">Internet Availability *</label>
-                <select {...register('shortStayInternet')} className="input">
-                  <option value="">Select…</option>
-                  <option value={ShortStayInternet.HIGH_SPEED}>High-Speed Internet</option>
-                  <option value={ShortStayInternet.STANDARD}>Standard Internet</option>
-                  <option value={ShortStayInternet.LIMITED}>Limited Internet</option>
-                  <option value={ShortStayInternet.NOT_AVAILABLE}>Not Available</option>
-                </select>
-              </div>
-              <div>
-                <label className="label">Cleanliness *</label>
-                <select {...register('shortStayCleanliness')} className="input">
-                  <option value="">Select…</option>
-                  <option value={ShortStayCleanliness.EXCELLENT}>Excellent</option>
-                  <option value={ShortStayCleanliness.GOOD}>Good</option>
-                  <option value={ShortStayCleanliness.FAIR}>Fair</option>
-                  <option value={ShortStayCleanliness.POOR}>Poor</option>
-                </select>
-              </div>
-              <div>
-                <label className="label">Furnishing Level *</label>
-                <select {...register('shortStayFurnishing')} className="input">
-                  <option value="">Select…</option>
-                  <option value={ShortStayFurnishing.FULLY_FURNISHED}>Fully Furnished</option>
-                  <option value={ShortStayFurnishing.PARTIALLY_FURNISHED}>Partially Furnished</option>
-                  <option value={ShortStayFurnishing.BASIC_FURNISHING}>Basic Furnishing</option>
-                </select>
-              </div>
-              <div className="sm:col-span-2">
-                <label className="label">Kitchen Access *</label>
-                <select {...register('shortStayKitchen')} className="input">
-                  <option value="">Select…</option>
-                  <option value={ShortStayKitchen.FULL_KITCHEN}>Full Kitchen</option>
-                  <option value={ShortStayKitchen.KITCHENETTE}>Kitchenette</option>
-                  <option value={ShortStayKitchen.NOT_AVAILABLE}>Not Available</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label className="label flex items-center gap-2">
-                <ShieldCheck className="h-3.5 w-3.5 text-veriq-secondary" />
-                Agent Observation
-                <span className="text-slate-400 font-normal text-xs">(optional)</span>
-              </label>
-              <textarea
-                {...register('shortStayAgentNote')}
-                rows={2}
-                className="input resize-none"
-                placeholder="e.g. Fully furnished short-stay apartment with reliable internet, functional air conditioning, and a well-equipped kitchen."
-              />
-              <p className="text-xs text-slate-400 mt-1">Max 200 characters</p>
-            </div>
-          </div>
-        )}
 
         {/* ── Pricing ── */}
         <div className="card p-6 space-y-4">
@@ -973,7 +718,7 @@ export default function NewPropertyPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {!isShortStay && <div>
               <label className="label">{isHostel ? 'Rent Amount *' : propertyType === PropertyType.SHARED_APARTMENT ? 'Annual Rent for Available Room *' : 'Annual Rent *'}</label>
-              <input {...register('rentAmount')} type="number" min={0} className="input" placeholder="e.g. 150000" />
+              <input {...register('rentAmount')} type="number" min={1} className="input" placeholder="e.g. 150000" required />
               {errors.rentAmount && <p className="error">{errors.rentAmount.message}</p>}
             </div>}
             {!isShortStay && <div>
@@ -997,16 +742,6 @@ export default function NewPropertyPage() {
               <input {...register('inspectionFee')} type="number" min={0} className="input" placeholder="0" />
             </div>}
           </div>
-          {Number(serviceCharge) > 0 && (
-            <div>
-              <label className="label">Service Charge Covers *</label>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {['Security','Waste Disposal','Common-area Cleaning','Water','Generator/Power','Estate Maintenance','Other'].map((item) => (
-                  <Chip key={item} label={item} active={serviceChargeCovers.includes(item)} onClick={() => toggle(item, serviceChargeCovers, setServiceChargeCovers)} />
-                ))}
-              </div>
-            </div>
-          )}
         </div>
 
         {/* ── Directory location and private address ── */}
@@ -1094,7 +829,7 @@ export default function NewPropertyPage() {
           </div>
 
           <div className="space-y-5">
-            {MEDIA_CATEGORIES.map(({ section, label, hint }) => {
+            {mediaCategories.map(({ section, label, hint, minimum }) => {
               const items = mediaUploads[section] ?? [];
               const uploadedCount = items.filter((item) => item.status === 'uploaded').length;
               const uploadingCount = items.filter((item) => item.status === 'uploading').length;
@@ -1111,12 +846,12 @@ export default function NewPropertyPage() {
                     </div>
                     <div className="flex flex-wrap items-center gap-1.5 sm:justify-end">
                       <span className={`rounded-full px-2 py-1 text-[11px] font-bold ${
-                        uploadedCount < minimumImagesPerCategory ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700'
+                        uploadedCount < minimum ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700'
                       }`}>
                         {uploadedCount}/{MAX_IMAGES} uploaded
                       </span>
                       <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-600">
-                        min {minimumImagesPerCategory}
+                        {minimum > 0 ? `min ${minimum}` : 'optional'}
                       </span>
                       {uploadingCount > 0 && (
                         <span className="rounded-full bg-blue-50 px-2 py-1 text-[11px] font-bold text-blue-700">
@@ -1227,14 +962,14 @@ export default function NewPropertyPage() {
               <Zap className="h-4 w-4 text-veriq-secondary" /> Veriq Quick Intelligence
             </h2>
             <p className="text-xs text-veriq-muted mt-1">
-              Help users know what to expect after moving in. Answer as accurately as possible.
+              Help users understand what to expect from the property and its surroundings. Answer as accurately as possible.
             </p>
           </div>
 
           {/* ── Flood Risk ── */}
           <div>
             <label className="label">Flood Risk *</label>
-            <select {...register('floodRisk')} className="input">
+            <select {...register('floodRisk')} className="input" required>
               <option value="">Select…</option>
               <option value={FloodRisk.NO_KNOWN_FLOODING}>No Known Flooding</option>
               <option value={FloodRisk.MINOR_OCCASIONALLY}>Minor Flooding Occasionally</option>
@@ -1242,11 +977,11 @@ export default function NewPropertyPage() {
             </select>
           </div>
 
-          {/* ── Electricity ── */}
-          <div className="space-y-3">
+          {/* ── Electricity (residential only) ── */}
+          {!isShortStay && <div className="space-y-3">
             <div>
               <label className="label">Electricity Situation *</label>
-              <select {...register('electricitySituation')} className="input">
+              <select {...register('electricitySituation')} className="input" required>
                 <option value="">Select…</option>
                 <option value={ElectricitySituation.EXCELLENT}>Excellent</option>
                 <option value={ElectricitySituation.GOOD}>Good</option>
@@ -1267,13 +1002,13 @@ export default function NewPropertyPage() {
                 ))}
               </div>
             </div>
-          </div>
+          </div>}
 
-          {/* ── Water ── */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* ── Water (residential only) ── */}
+          {!isShortStay && <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="label">Water Availability *</label>
-              <select {...register('waterAvailability')} className="input">
+              <select {...register('waterAvailability')} className="input" required>
                 <option value="">Select…</option>
                 <option value={WaterAvailability.CONSTANT}>Constant</option>
                 <option value={WaterAvailability.MOSTLY_AVAILABLE}>Mostly Available</option>
@@ -1291,13 +1026,13 @@ export default function NewPropertyPage() {
                 <option value={WaterSource.MIXED_SOURCE}>Mixed Source</option>
               </select>
             </div>
-          </div>
+          </div>}
 
           {/* ── Road Access ── */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="label">Road Access *</label>
-              <select {...register('roadAccess')} className="input">
+              <select {...register('roadAccess')} className="input" required>
                 <option value="">Select…</option>
                 <option value={RoadAccess.EXCELLENT}>Excellent</option>
                 <option value={RoadAccess.GOOD}>Good</option>
@@ -1320,8 +1055,8 @@ export default function NewPropertyPage() {
           {/* ── Network ── */}
           <div className="space-y-3">
             <div>
-              <label className="label">Network Quality *</label>
-              <select {...register('networkQuality')} className="input">
+              <label className="label">{isShortStay ? 'Mobile Network Quality' : 'Network Quality'} *</label>
+              <select {...register('networkQuality')} className="input" required>
                 <option value="">Select…</option>
                 <option value={NetworkQuality.EXCELLENT}>Excellent</option>
                 <option value={NetworkQuality.GOOD}>Good</option>
@@ -1330,25 +1065,19 @@ export default function NewPropertyPage() {
               </select>
             </div>
             <div>
-              <label className="label text-xs font-medium text-slate-500">Best Network</label>
-              <div className="flex flex-wrap gap-2 mt-1">
-                {BEST_NETWORK_OPTIONS.map((opt) => (
-                  <Chip
-                    key={opt.key}
-                    label={opt.label}
-                    active={bestNetwork.includes(opt.key)}
-                    onClick={() => toggle(opt.key, bestNetwork, setBestNetwork)}
-                  />
-                ))}
-              </div>
+              <label className="label text-xs font-medium text-slate-500">{isShortStay ? 'Best Mobile Network' : 'Best Network'}</label>
+              <select className="input" value={bestNetwork[0] ?? ''} onChange={(event) => setBestNetwork(event.target.value ? [event.target.value] : [])}>
+                <option value="">Select…</option>
+                {BEST_NETWORK_OPTIONS.map((opt) => <option key={opt.key} value={opt.key}>{opt.label}</option>)}
+              </select>
             </div>
           </div>
 
           {/* ── Noise ── */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="label">Noise Level *</label>
-              <select {...register('noiseLevel')} className="input">
+              <label className="label">{isShortStay ? 'External Noise Level' : 'Noise Level'} *</label>
+              <select {...register('noiseLevel')} className="input" required>
                 <option value="">Select…</option>
                 <option value={NoiseLevel.QUIET}>Quiet</option>
                 <option value={NoiseLevel.MODERATE}>Moderate</option>
@@ -1373,8 +1102,8 @@ export default function NewPropertyPage() {
           {/* ── Security ── */}
           <div className="space-y-3">
             <div>
-              <label className="label">Security Feel *</label>
-              <select {...register('securityFeel')} className="input">
+              <label className="label">{isShortStay ? 'Security Feel of Area' : 'Security Feel'} *</label>
+              <select {...register('securityFeel')} className="input" required>
                 <option value="">Select…</option>
                 <option value={SecurityFeel.GOOD}>Good</option>
                 <option value={SecurityFeel.FAIR}>Fair</option>
@@ -1400,13 +1129,12 @@ export default function NewPropertyPage() {
           <div className="space-y-3">
             <div>
               <label className="label">Property Condition *</label>
-              <select {...register('propertyCondition')} className="input">
+              <select {...register('propertyCondition')} className="input" required>
                 <option value="">Select…</option>
-                <option value={PropertyCondition.NEWLY_BUILT}>Newly Built</option>
-                <option value={PropertyCondition.NEWLY_RENOVATED}>Newly Renovated</option>
-                <option value={PropertyCondition.GOOD_CONDITION}>Good Condition</option>
-                <option value={PropertyCondition.FAIR_CONDITION}>Fair Condition</option>
-                <option value={PropertyCondition.NEEDS_REPAIRS}>Needs Repairs</option>
+                <option value={PropertyCondition.EXCELLENT}>Excellent</option>
+                <option value={PropertyCondition.GOOD}>Good</option>
+                <option value={PropertyCondition.FAIR}>Fair</option>
+                <option value={PropertyCondition.POOR}>Poor</option>
               </select>
             </div>
             <div>
@@ -1426,10 +1154,10 @@ export default function NewPropertyPage() {
             </div>
           </div>
 
-          {/* ── Compound Culture ── */}
-          <div>
+          {/* ── Compound Culture (residential only) ── */}
+          {!isShortStay && <div>
             <label className="label">Compound Culture *</label>
-            <select {...register('compoundCulture')} className="input">
+            <select {...register('compoundCulture')} className="input" required>
               <option value="">Select…</option>
               <option value={CompoundCulture.FAMILY_FRIENDLY}>Family Friendly</option>
               <option value={CompoundCulture.MOSTLY_FAMILIES}>Mostly Families</option>
@@ -1438,7 +1166,7 @@ export default function NewPropertyPage() {
               <option value={CompoundCulture.QUIET_COMPOUND}>Quiet Compound</option>
               <option value={CompoundCulture.SOCIAL_COMPOUND}>Social Compound</option>
             </select>
-          </div>
+          </div>}
 
           {/* ── Agent Observation ── */}
           <div>

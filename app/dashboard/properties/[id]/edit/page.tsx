@@ -6,14 +6,12 @@ import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Camera, Home, Upload, X, Zap, Search } from 'lucide-react';
 import { ApiError, communityApi, locationsApi, mediaApi, propertiesApi } from '@/lib/api';
 import { ACCEPTED_IMAGE_INPUT, uploadToFileService } from '@/lib/upload';
+import { LISTING_FIELDS, MEDIA_OVERALL_MINIMUM, MEDIA_REQUIREMENTS } from '@/lib/property-listing-spec';
 import type { AllowedState, CommunityArea, CommunityLocation, CreatePropertyDto, MediaItem, Property, Street } from '@/types';
 import {
   CompoundCulture,
   ElectricitySituation,
   FloodRisk,
-  HostelCampusProximity,
-  HostelGender,
-  HostelSuitableFor,
   MediaSection,
   NetworkQuality,
   NoiseLevel,
@@ -23,12 +21,6 @@ import {
   RoadAccess,
   RoadAccessRain,
   SecurityFeel,
-  ShortStayAC,
-  ShortStayCleanliness,
-  ShortStayFurnishing,
-  ShortStayInternet,
-  ShortStayKitchen,
-  ShortStayPricingModel,
   WaterAvailability,
   WaterSource,
 } from '@/types';
@@ -61,33 +53,12 @@ const PROPERTY_TYPE_OPTIONS = [
   { value: PropertyType.ROOM_AND_PARLOUR, label: 'Room & Parlour' },
   { value: PropertyType.DUPLEX, label: 'Duplex' },
   { value: PropertyType.BUNGALOW, label: 'Bungalow' },
+  { value: PropertyType.SHARED_APARTMENT, label: 'Shared Apartment' },
   { value: PropertyType.HOSTEL, label: 'Hostel' },
-  { value: PropertyType.SHORT_STAY, label: 'Short Stay' },
+  { value: PropertyType.SHORT_STAY, label: 'Short Let' },
 ];
-
-const MEDIA_CATEGORIES: { section: MediaSection; label: string; hint: string }[] = [
-  { section: MediaSection.ROAD_ACCESS, label: 'Road Access', hint: 'Photos of the road leading to the property' },
-  { section: MediaSection.ENVIRONMENT, label: 'Surroundings', hint: 'Neighbourhood, nearby landmarks' },
-  { section: MediaSection.LIVING_ROOM, label: 'Living Room', hint: 'Main sitting area' },
-  { section: MediaSection.KITCHEN, label: 'Kitchen', hint: 'Kitchen / cooking area' },
-  { section: MediaSection.BEDROOM, label: 'Bedroom', hint: 'Bedroom(s)' },
-  { section: MediaSection.BATHROOM, label: 'Bathroom', hint: 'Bathroom / toilet' },
-  { section: MediaSection.COMPOUND, label: 'Compound', hint: 'Compound / exterior' },
-];
-
-const MIN_IMAGES = 2;
 const MAX_IMAGES = 5;
-const REQUIRED_MEDIA_SECTIONS = MEDIA_CATEGORIES.map((category) => category.section);
-
 const chipOptions = {
-  hostelSuitableFor: [
-    [HostelSuitableFor.STUDENTS, 'Students'],
-    [HostelSuitableFor.CORP_MEMBERS, 'Corp Members'],
-    [HostelSuitableFor.WORKING_CLASS, 'Working Class'],
-    [HostelSuitableFor.TEMPORARY_STAY, 'Temporary Stay'],
-    [HostelSuitableFor.MIXED, 'Mixed / Any'],
-  ] as Array<[HostelSuitableFor, string]>,
-  shortStayAmenities: ['wifi', 'ac', 'generator', 'kitchen', 'hot_water', 'parking', 'security', 'laundry', 'tv', 'pool'],
   electricityInfo: ['public_power_mostly', 'frequent_outages', 'generator_common', 'solar_backup'],
   bestNetwork: ['mtn', 'airtel', 'glo', '9mobile'],
   securityFeatures: ['gated_compound', 'security_personnel', 'estate_environment', 'busy_area', 'isolated_area'],
@@ -122,6 +93,19 @@ export default function EditListingPage() {
   const coverImageInputRef = useRef<HTMLInputElement | null>(null);
   const latestCoverImageUrlRef = useRef('');
   const hasEditedCoverImageRef = useRef(false);
+  const propertyType = form.propertyType;
+  const hasRoomCounts = [PropertyType.FLAT, PropertyType.DUPLEX, PropertyType.BUNGALOW, PropertyType.SHORT_STAY].includes(propertyType as PropertyType);
+  const hasFloorLevel = [PropertyType.FLAT, PropertyType.MINI_FLAT, PropertyType.SELF_CONTAIN, PropertyType.ROOM_AND_PARLOUR].includes(propertyType as PropertyType);
+  const hasResidentialFurnishing = propertyType !== PropertyType.HOSTEL && propertyType !== PropertyType.SHORT_STAY;
+  const listingDetails = (form.listingDetails ?? {}) as Record<string, unknown>;
+  const typeFields = propertyType ? LISTING_FIELDS[propertyType] ?? [] : [];
+  const mediaCategories = (propertyType ? MEDIA_REQUIREMENTS[propertyType] ?? [] : []).filter((category) => {
+    if (propertyType === PropertyType.HOSTEL && category.section === MediaSection.KITCHEN) return listingDetails.cookingAllowed !== 'No';
+    if (propertyType === PropertyType.SHORT_STAY && category.section === MediaSection.KITCHEN) return Array.isArray(listingDetails.amenities) && listingDetails.amenities.includes('Kitchen Access');
+    if (propertyType === PropertyType.SHORT_STAY && category.section === MediaSection.LIVING_ROOM) return ['Entire Apartment', 'Serviced Apartment'].includes(String(listingDetails.shortLetType ?? ''));
+    return true;
+  });
+  const requiredMediaSections = mediaCategories.filter((category) => category.minimum > 0).map((category) => category.section);
 
   useEffect(() => {
     let mounted = true;
@@ -158,6 +142,9 @@ export default function EditListingPage() {
           bathrooms: p.bathrooms,
           floorLevel: p.floorLevel ?? '',
           isFurnished: p.isFurnished,
+          furnishingStatus: p.furnishingStatus ?? undefined,
+          toilets: p.toilets ?? undefined,
+          listingDetails: p.listingDetails ?? {},
           rentAmount: Number(p.rentAmount),
           serviceCharge: Number(p.serviceCharge ?? 0),
           agencyFee: Number(p.agencyFee ?? 0),
@@ -280,6 +267,13 @@ export default function EditListingPage() {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
+  const updateListingDetail = (key: string, value: unknown) => {
+    setForm((prev) => ({
+      ...prev,
+      listingDetails: { ...((prev.listingDetails ?? {}) as Record<string, unknown>), [key]: value },
+    }));
+  };
+
   const toggleArray = <T,>(key: keyof CreatePropertyDto, value: T) => {
     setForm((prev) => {
       const current = Array.isArray(prev[key]) ? prev[key] as T[] : [];
@@ -319,12 +313,13 @@ export default function EditListingPage() {
 
   const deleteMedia = async (item: MediaItem) => {
     const sectionItems = media.filter((m) => m.section === item.section);
-    if (REQUIRED_MEDIA_SECTIONS.includes(item.section as MediaSection) && sectionItems.length <= MIN_IMAGES) {
+    const requirement = mediaCategories.find((category) => category.section === item.section);
+    if (requiredMediaSections.includes(item.section as MediaSection) && requirement && sectionItems.length <= requirement.minimum) {
       setMediaErrors((prev) => ({
         ...prev,
-        [item.section]: `Add a replacement first. ${MEDIA_CATEGORIES.find((category) => category.section === item.section)?.label ?? 'This category'} must keep at least ${MIN_IMAGES} images.`,
+        [item.section]: `Add a replacement first. ${requirement.label} must keep at least ${requirement.minimum} image${requirement.minimum === 1 ? '' : 's'}.`,
       }));
-      toastError(`Add a replacement first. Each category needs at least ${MIN_IMAGES} images.`);
+      toastError('Add a replacement before removing this required image.');
       return;
     }
     try {
@@ -363,16 +358,21 @@ export default function EditListingPage() {
       toastError('Please upload a cover image before saving changes.');
       return;
     }
-    const missingSections = MEDIA_CATEGORIES.filter(({ section }) => media.filter((item) => item.section === section).length < MIN_IMAGES);
+    const missingSections = mediaCategories.filter(({ section, minimum }) => minimum > 0 && media.filter((item) => item.section === section).length < minimum);
     if (missingSections.length > 0) {
       setMediaErrors((prev) => ({
         ...prev,
-        ...missingSections.reduce<Record<string, string>>((acc, { section, label }) => {
-          acc[section] = `${label} needs at least ${MIN_IMAGES} images.`;
+        ...missingSections.reduce<Record<string, string>>((acc, { section, label, minimum }) => {
+          acc[section] = `${label} needs at least ${minimum} image${minimum === 1 ? '' : 's'}.`;
           return acc;
         }, {}),
       }));
-      toastError(`Add at least ${MIN_IMAGES} images to every property media category before saving.`);
+      toastError('Complete every required property media category before saving.');
+      return;
+    }
+    const overallMinimum = propertyType ? MEDIA_OVERALL_MINIMUM[propertyType] ?? 0 : 0;
+    if (media.length < overallMinimum) {
+      toastError(`Upload at least ${overallMinimum} property images before saving.`);
       return;
     }
     setIsSaving(true);
@@ -404,6 +404,7 @@ export default function EditListingPage() {
       const payload = Object.fromEntries(
         Object.entries(form).filter(([, value]) => value !== ''),
       ) as Partial<CreatePropertyDto>;
+      payload.listingDetails = Object.fromEntries(typeFields.map((field) => [field.key, listingDetails[field.key]]));
       payload.streetId = streetId;
       payload.coverImageUrl = latestCoverImageUrl;
       await propertiesApi.update(id, payload);
@@ -483,32 +484,17 @@ export default function EditListingPage() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className="label">Property Type *</label>
-              <select value={form.propertyType ?? ''} onChange={(e) => update('propertyType', e.target.value)} className="input" required>
+              <select value={form.propertyType ?? ''} onChange={(e) => setForm((current) => ({ ...current, propertyType: e.target.value as PropertyType, listingDetails: {} }))} className="input" required>
                 {PROPERTY_TYPE_OPTIONS.map((type) => (
                   <option key={type.value} value={type.value}>{type.label}</option>
                 ))}
               </select>
             </div>
-            <div>
-              <label className="label">Bedrooms</label>
-              <input type="number" min={0} value={Number(form.bedrooms ?? 0)} onChange={(e) => update('bedrooms', Number(e.target.value))} className="input" />
-            </div>
-            <div>
-              <label className="label">Bathrooms</label>
-              <input type="number" min={0} value={Number(form.bathrooms ?? 0)} onChange={(e) => update('bathrooms', Number(e.target.value))} className="input" />
-            </div>
+            {hasRoomCounts && <div><label className="label">Bedrooms *</label><input type="number" min={1} value={form.bedrooms ?? ''} onChange={(e) => update('bedrooms', e.target.value ? Number(e.target.value) : undefined)} className="input" required /></div>}
+            {hasRoomCounts && <div><label className="label">Bathrooms *</label><input type="number" min={1} value={form.bathrooms ?? ''} onChange={(e) => update('bathrooms', e.target.value ? Number(e.target.value) : undefined)} className="input" required /></div>}
           </div>
 
-          <div className="flex items-center gap-3">
-            <input
-              type="checkbox"
-              checked={!!form.isFurnished}
-              onChange={(e) => update('isFurnished', e.target.checked)}
-              id="isFurnished"
-              className="h-4 w-4"
-            />
-            <label htmlFor="isFurnished" className="text-sm font-medium text-navy-700">Furnished</label>
-          </div>
+          {hasResidentialFurnishing && <div><label className="label">Furnishing Status *</label><select value={form.furnishingStatus ?? ''} onChange={(event) => update('furnishingStatus', event.target.value)} className="input" required><option value="">Select...</option><option value="furnished">Furnished</option><option value="semi_furnished">Semi-furnished</option><option value="unfurnished">Unfurnished</option></select></div>}
         </div>
 
         <div className="card space-y-4 p-6">
@@ -581,17 +567,17 @@ export default function EditListingPage() {
 
         <div className="card space-y-4 p-6">
           <h2 className="font-display text-base font-bold text-navy-900">Details & Pricing</h2>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {hasFloorLevel && <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
               <label className="label">Floor Level</label>
               <input value={form.floorLevel ?? ''} onChange={(e) => update('floorLevel', e.target.value)} className="input" />
             </div>
-          </div>
+          </div>}
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {moneyFields.map(({ key, label }) => (
+            {moneyFields.filter(({ key }) => propertyType !== PropertyType.SHORT_STAY || key !== 'rentAmount').map(({ key, label }) => (
               <div key={String(key)}>
-                <label className="label">{label}</label>
+                <label className="label">{key === 'rentAmount' ? (propertyType === PropertyType.HOSTEL ? 'Rent Amount' : propertyType === PropertyType.SHARED_APARTMENT ? 'Annual Rent for Available Room' : 'Annual Rent') : label}</label>
                 <input
                   type="number"
                   min={0}
@@ -604,133 +590,29 @@ export default function EditListingPage() {
           </div>
         </div>
 
-        {form.propertyType === PropertyType.HOSTEL && (
+        {typeFields.length > 0 && (
           <div className="card space-y-4 border-2 border-veriq-secondary/20 p-6">
-            <h2 className="font-display text-base font-bold text-navy-900">Hostel Details</h2>
             <div>
-              <label className="label">Suitable For</label>
-              <div className="flex flex-wrap gap-2">
-                {chipOptions.hostelSuitableFor.map(([value, label]) => (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => toggleArray('hostelSuitableFor', value)}
-                    className={`rounded-full border px-4 py-1.5 text-xs font-semibold ${form.hostelSuitableFor?.includes(value) ? 'border-veriq-secondary bg-veriq-secondary text-white' : 'border-slate-200 bg-white text-navy-700'}`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <div>
-                <label className="label">Gender</label>
-                <select value={form.hostelGender ?? ''} onChange={(e) => update('hostelGender', e.target.value || undefined)} className="input">
-                  <option value="">Select...</option>
-                  <option value={HostelGender.MALE}>Male Only</option>
-                  <option value={HostelGender.FEMALE}>Female Only</option>
-                  <option value={HostelGender.MIXED}>Mixed</option>
-                </select>
-              </div>
-              <div>
-                <label className="label">Campus Location</label>
-                <select value={form.hostelCampusProximity ?? ''} onChange={(e) => update('hostelCampusProximity', e.target.value || undefined)} className="input">
-                  <option value="">Select...</option>
-                  <option value={HostelCampusProximity.ON_CAMPUS}>On Campus</option>
-                  <option value={HostelCampusProximity.OFF_CAMPUS}>Off Campus</option>
-                </select>
-              </div>
-              <div>
-                <label className="label">Persons Per Room</label>
-                <input type="number" min={1} value={form.hostelPersonsPerRoom ?? ''} onChange={(e) => update('hostelPersonsPerRoom', e.target.value ? Number(e.target.value) : undefined)} className="input" />
-              </div>
+              <h2 className="font-display text-base font-bold text-navy-900">{PROPERTY_TYPE_OPTIONS.find((item) => item.value === propertyType)?.label} Details</h2>
+              <p className="mt-1 text-xs text-veriq-muted">Complete the details required for this property type.</p>
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <label className="label">Nearest Institution</label>
-                <input value={form.hostelNearestCampus ?? ''} onChange={(e) => update('hostelNearestCampus', e.target.value)} className="input" />
-              </div>
-              <div>
-                <label className="label">Distance from Campus</label>
-                <input value={form.hostelDistanceFromCampus ?? ''} onChange={(e) => update('hostelDistanceFromCampus', e.target.value)} className="input" />
-              </div>
+              {typeFields.map((field) => {
+                if (field.showWhen) {
+                  const current = listingDetails[field.showWhen.key];
+                  const visible = field.showWhen.values.some((value) => value === current || (typeof current === 'number' && typeof value === 'number' && current >= value));
+                  if (!visible) return null;
+                }
+                if (field.type === 'multi') {
+                  const values = Array.isArray(listingDetails[field.key]) ? listingDetails[field.key] as string[] : [];
+                  return <div key={field.key} className="sm:col-span-2"><label className="label">{field.label}{field.required ? ' *' : ''}</label><div className="flex flex-wrap gap-2">{field.options?.map((option) => <button key={option} type="button" onClick={() => updateListingDetail(field.key, values.includes(option) ? values.filter((value) => value !== option) : [...values, option])} className={`rounded-full border px-4 py-1.5 text-xs font-semibold ${values.includes(option) ? 'border-veriq-secondary bg-veriq-secondary text-white' : 'border-slate-200 bg-white text-navy-700'}`}>{option}</button>)}</div></div>;
+                }
+                if (field.type === 'checkbox') return <label key={field.key} className="flex items-center gap-3 text-sm font-medium text-navy-700"><input type="checkbox" checked={Boolean(listingDetails[field.key])} onChange={(event) => updateListingDetail(field.key, event.target.checked)} className="h-4 w-4" />{field.label}</label>;
+                if (field.options) return <div key={field.key}><label className="label">{field.label}{field.required ? ' *' : ''}</label><select className="input" required={field.required} value={String(listingDetails[field.key] ?? '')} onChange={(event) => updateListingDetail(field.key, event.target.value)}><option value="">Select...</option>{field.options.map((option) => <option key={option} value={option}>{option}</option>)}</select></div>;
+                if (field.type === 'textarea') return <div key={field.key} className="sm:col-span-2"><label className="label">{field.label}{field.required ? ' *' : ''}</label><textarea className="input resize-none" rows={3} maxLength={field.maxLength} required={field.required} value={String(listingDetails[field.key] ?? '')} onChange={(event) => updateListingDetail(field.key, event.target.value)} /></div>;
+                return <div key={field.key}><label className="label">{field.label}{field.required ? ' *' : ''}</label><input className="input" type={field.type ?? 'text'} min={field.type === 'number' ? 0 : undefined} required={field.required} value={String(listingDetails[field.key] ?? '')} onChange={(event) => updateListingDetail(field.key, field.type === 'number' ? (event.target.value === '' ? undefined : Number(event.target.value)) : event.target.value)} /></div>;
+              })}
             </div>
-            <label className="flex items-center gap-3 text-sm font-medium text-navy-700">
-              <input type="checkbox" checked={!!form.hostelMealsIncluded} onChange={(e) => update('hostelMealsIncluded', e.target.checked)} className="h-4 w-4" />
-              Meals included in rent
-            </label>
-            <div>
-              <label className="label">House Rules / Notes</label>
-              <textarea value={form.hostelRulesNotes ?? ''} onChange={(e) => update('hostelRulesNotes', e.target.value)} rows={3} className="input resize-none" />
-            </div>
-          </div>
-        )}
-
-        {form.propertyType === PropertyType.SHORT_STAY && (
-          <div className="card space-y-4 border-2 border-veriq-secondary/20 p-6">
-            <h2 className="font-display text-base font-bold text-navy-900">Short Stay Details</h2>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <div>
-                <label className="label">Pricing Model</label>
-                <select value={form.shortStayPricingModel ?? ''} onChange={(e) => update('shortStayPricingModel', e.target.value || undefined)} className="input">
-                  <option value="">Select...</option>
-                  <option value={ShortStayPricingModel.DAILY}>Daily</option>
-                  <option value={ShortStayPricingModel.WEEKLY}>Weekly</option>
-                  <option value={ShortStayPricingModel.BOTH}>Daily & Weekly</option>
-                </select>
-              </div>
-              <div>
-                <label className="label">Daily Rate</label>
-                <input type="number" min={0} value={form.shortStayDailyRate ?? ''} onChange={(e) => update('shortStayDailyRate', e.target.value ? Number(e.target.value) : undefined)} className="input" />
-              </div>
-              <div>
-                <label className="label">Weekly Rate</label>
-                <input type="number" min={0} value={form.shortStayWeeklyRate ?? ''} onChange={(e) => update('shortStayWeeklyRate', e.target.value ? Number(e.target.value) : undefined)} className="input" />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
-              <input aria-label="Minimum nights" type="number" min={1} value={form.shortStayMinNights ?? ''} onChange={(e) => update('shortStayMinNights', e.target.value ? Number(e.target.value) : undefined)} className="input" placeholder="Min nights" />
-              <input aria-label="Maximum nights" type="number" min={1} value={form.shortStayMaxNights ?? ''} onChange={(e) => update('shortStayMaxNights', e.target.value ? Number(e.target.value) : undefined)} className="input" placeholder="Max nights" />
-              <input aria-label="Check-in time" value={form.shortStayCheckInTime ?? ''} onChange={(e) => update('shortStayCheckInTime', e.target.value)} className="input" placeholder="Check-in" />
-              <input aria-label="Check-out time" value={form.shortStayCheckOutTime ?? ''} onChange={(e) => update('shortStayCheckOutTime', e.target.value)} className="input" placeholder="Check-out" />
-            </div>
-            <div>
-              <label className="label">Amenities</label>
-              <div className="flex flex-wrap gap-2">
-                {chipOptions.shortStayAmenities.map((value) => (
-                  <button key={value} type="button" onClick={() => toggleArray('shortStayAmenities', value)} className={`rounded-full border px-4 py-1.5 text-xs font-semibold capitalize ${form.shortStayAmenities?.includes(value) ? 'border-veriq-secondary bg-veriq-secondary text-white' : 'border-slate-200 bg-white text-navy-700'}`}>
-                    {value.replace(/_/g, ' ')}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <textarea aria-label="Short stay house rules" value={form.shortStayHouseRules ?? ''} onChange={(e) => update('shortStayHouseRules', e.target.value)} rows={3} className="input resize-none" placeholder="House rules" />
-          </div>
-        )}
-
-        {form.propertyType === PropertyType.SHORT_STAY && (
-          <div className="card space-y-4 border-2 border-veriq-secondary/20 p-6">
-            <h2 className="font-display text-base font-bold text-navy-900">Short Stay Intelligence</h2>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {[
-                ['shortStayAC', 'Air Conditioning', ShortStayAC],
-                ['shortStayInternet', 'Internet', ShortStayInternet],
-                ['shortStayCleanliness', 'Cleanliness', ShortStayCleanliness],
-                ['shortStayFurnishing', 'Furnishing', ShortStayFurnishing],
-                ['shortStayKitchen', 'Kitchen Access', ShortStayKitchen],
-              ].map(([key, label, enumObj]) => (
-                <div key={key as string}>
-                  <label className="label">{label as string}</label>
-                  <select value={String(form[key as keyof CreatePropertyDto] ?? '')} onChange={(e) => update(key as keyof CreatePropertyDto, e.target.value || undefined)} className="input">
-                    <option value="">Select...</option>
-                    {Object.values(enumObj as Record<string, string>).map((value) => (
-                      <option key={value} value={value}>{value.replace(/_/g, ' ')}</option>
-                    ))}
-                  </select>
-                </div>
-              ))}
-            </div>
-            <textarea aria-label="Short stay agent note" value={form.shortStayAgentNote ?? ''} onChange={(e) => update('shortStayAgentNote', e.target.value)} rows={2} className="input resize-none" placeholder="Agent note" />
           </div>
         )}
 
@@ -741,17 +623,19 @@ export default function EditListingPage() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {[
               ['floodRisk', 'Flood Risk', FloodRisk],
-              ['electricitySituation', 'Electricity Situation', ElectricitySituation],
-              ['waterAvailability', 'Water Availability', WaterAvailability],
-              ['waterSource', 'Water Source', WaterSource],
+              ...(propertyType === PropertyType.SHORT_STAY ? [] : [
+                ['electricitySituation', 'Electricity Situation', ElectricitySituation],
+                ['waterAvailability', 'Water Availability', WaterAvailability],
+                ['waterSource', 'Water Source', WaterSource],
+              ]),
               ['roadAccess', 'Road Access', RoadAccess],
               ['roadAccessRain', 'Road During Rain', RoadAccessRain],
-              ['networkQuality', 'Network Quality', NetworkQuality],
-              ['noiseLevel', 'Noise Level', NoiseLevel],
+              ['networkQuality', propertyType === PropertyType.SHORT_STAY ? 'Mobile Network' : 'Network Quality', NetworkQuality],
+              ['noiseLevel', propertyType === PropertyType.SHORT_STAY ? 'External Noise' : 'Noise Level', NoiseLevel],
               ['noiseSource', 'Noise Source', NoiseSource],
-              ['securityFeel', 'Security Feel', SecurityFeel],
+              ['securityFeel', propertyType === PropertyType.SHORT_STAY ? 'Security Feel of Area' : 'Security Feel', SecurityFeel],
               ['propertyCondition', 'Property Condition', PropertyCondition],
-              ['compoundCulture', 'Compound Culture', CompoundCulture],
+              ...(propertyType === PropertyType.SHORT_STAY ? [] : [['compoundCulture', 'Compound Culture', CompoundCulture]]),
             ].map(([key, label, enumObj]) => (
               <div key={key as string}>
                 <label className="label">{label as string}</label>
@@ -766,8 +650,7 @@ export default function EditListingPage() {
           </div>
 
           {[
-            ['electricityInfo', 'Electricity Info', chipOptions.electricityInfo],
-            ['bestNetwork', 'Best Networks', chipOptions.bestNetwork],
+            ...(propertyType === PropertyType.SHORT_STAY ? [] : [['electricityInfo', 'Electricity Info', chipOptions.electricityInfo]]),
             ['securityFeatures', 'Security Features', chipOptions.securityFeatures],
             ['knownIssues', 'Known Issues', chipOptions.knownIssues],
           ].map(([key, label, values]) => (
@@ -784,6 +667,14 @@ export default function EditListingPage() {
           ))}
 
           <div>
+            <label className="label">Best Network *</label>
+            <select className="input" required value={Array.isArray(form.bestNetwork) ? form.bestNetwork[0] ?? '' : ''} onChange={(event) => update('bestNetwork', event.target.value ? [event.target.value] : [])}>
+              <option value="">Select...</option>
+              {chipOptions.bestNetwork.map((value) => <option key={value} value={value}>{value === '9mobile' ? '9mobile' : value.toUpperCase()}</option>)}
+            </select>
+          </div>
+
+          <div>
             <label className="label">Agent Observation</label>
             <textarea value={form.agentObservation ?? ''} onChange={(e) => update('agentObservation', e.target.value)} rows={2} className="input resize-none" />
           </div>
@@ -797,7 +688,7 @@ export default function EditListingPage() {
             <div className="flex justify-center py-8"><LoadingSpinner size="md" /></div>
           ) : (
             <div className="space-y-5">
-              {MEDIA_CATEGORIES.map(({ section, label, hint }) => {
+              {mediaCategories.map(({ section, label, hint, minimum }) => {
                 const items = media.filter((item) => item.section === section);
                 const err = mediaErrors[section];
                 const canAdd = items.length < MAX_IMAGES;
@@ -810,12 +701,12 @@ export default function EditListingPage() {
                       </div>
                       <div className="flex flex-wrap items-center gap-1.5 sm:justify-end">
                         <span className={`rounded-full px-2 py-1 text-[11px] font-bold ${
-                          items.length < MIN_IMAGES ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700'
+                          items.length < minimum ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700'
                         }`}>
                           {items.length}/{MAX_IMAGES} uploaded
                         </span>
                         <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-600">
-                          min {MIN_IMAGES}
+                          min {minimum}
                         </span>
                         {canAdd && (
                           <button type="button" onClick={() => fileInputRefs.current[section]?.click()} className="rounded-full bg-veriq-secondary/10 px-2 py-1 text-[11px] font-bold text-veriq-secondary hover:bg-veriq-secondary/15">
