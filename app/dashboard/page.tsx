@@ -584,6 +584,8 @@ export default function DashboardPage() {
   const heading =
     user?.role === UserRole.ADMIN
       ? 'Admin Panel'
+      : user?.role === UserRole.SHORT_LET_OPERATOR
+      ? 'Operator Portal'
       : user?.role === UserRole.AGENT
       ? 'Agent Dashboard'
       : 'Dashboard';
@@ -591,6 +593,8 @@ export default function DashboardPage() {
   const sub =
     user?.role === UserRole.ADMIN
       ? 'Full administrative access'
+      : user?.role === UserRole.SHORT_LET_OPERATOR
+      ? 'Manage your associated Short Let properties'
       : user?.role === UserRole.AGENT
       ? 'Manage your listings and verification'
       : 'Your property activity overview';
@@ -620,12 +624,14 @@ export default function DashboardPage() {
             <RefreshCw className="h-4 w-4" /> Admin Overview
           </Link>
         )}
+        {user?.role === UserRole.SHORT_LET_OPERATOR && <Link href="/dashboard/operator-properties" className="btn-primary !py-2.5 !text-sm">My Properties</Link>}
       </div>
 
       {/* Role-specific content */}
       {user?.role === UserRole.ADMIN && <AdminDashboard />}
       {user?.role === UserRole.AGENT && <AgentDashboard agentUserId={user.id} />}
       {user?.role === UserRole.USER && <UserDashboard userId={user.id} />}
+      {user?.role === UserRole.SHORT_LET_OPERATOR && <div className="rounded-lg border border-slate-200 bg-white p-8 text-center"><h2 className="font-display text-xl font-semibold">Manage Short Let availability</h2><p className="mt-2 text-sm text-veriq-muted">Open your associated properties to update operational details, images and availability.</p><Link href="/dashboard/operator-properties" className="btn-primary mt-5 inline-flex">Open My Properties</Link></div>}
     </div>
   );
 }

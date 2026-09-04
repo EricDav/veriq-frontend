@@ -930,6 +930,9 @@ export default function DashboardPropertyDetailPage() {
                   </div>
                 </div>
               )}
+              {hasAccess && property.propertyType === PropertyType.SHORT_STAY && accessDetails?.bookingLink && (
+                <a href={accessDetails.bookingLink} target="_blank" rel="noopener noreferrer" className="btn-primary flex w-full items-center justify-center">Open booking page</a>
+              )}
 
               {/* Media gallery */}
               <div className="card p-6">

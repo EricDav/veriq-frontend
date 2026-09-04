@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Heart, Search, User, LogOut,
   Bell, Menu, X, Home, TrendingUp, Plus,
-  Settings, ChevronRight, Users, ShieldCheck, Wallet, Landmark, FileText, MessageCircle, Mail, MapPin, BookOpen, Settings2,
+  Settings, ChevronRight, Users, ShieldCheck, Wallet, Landmark, FileText, MessageCircle, Mail, MapPin, BookOpen, Settings2, Building2,
 } from 'lucide-react';
 import Image from 'next/image';
 import { useAuth } from '@/context/AuthContext';
@@ -35,6 +35,7 @@ const AGENT_NAV = [
   { label: 'Street Intelligence', href: '/street-intelligence', icon: MapPin },
   { label: 'Share Intelligence', href: '/dashboard/community', icon: Users },
   { label: 'My Listings', href: '/dashboard/properties', icon: Home },
+  { label: 'Short Let Operators', href: '/dashboard/short-let-operators', icon: Building2 },
   { label: 'Agent Profile', href: '/dashboard/agent', icon: TrendingUp },
   { label: 'Chats', href: '/dashboard/chat', icon: MessageCircle },
   { label: 'Transactions', href: '/dashboard/wallet', icon: Wallet },
@@ -46,6 +47,7 @@ const ADMIN_NAV = [
   { label: 'Agents', href: '/dashboard/admin/agents', icon: ShieldCheck },
   { label: 'Users', href: '/dashboard/admin/users', icon: Users },
   { label: 'Properties', href: '/dashboard/admin/properties', icon: Home },
+  { label: 'Short Let Operators', href: '/dashboard/admin/short-let-operators', icon: Building2 },
   { label: 'Street Intelligence', href: '/street-intelligence', icon: MapPin },
   { label: 'Share Intelligence', href: '/dashboard/admin/community', icon: Users },
   { label: 'Pricing', href: '/dashboard/admin/pricing', icon: Settings2 },
@@ -58,9 +60,15 @@ const ADMIN_NAV = [
   { label: 'Profile', href: '/dashboard/profile', icon: User },
 ];
 
+const OPERATOR_NAV = [
+  { label: 'My Properties', href: '/dashboard/operator-properties', icon: Home },
+  { label: 'Profile', href: '/dashboard/profile', icon: User },
+];
+
 function getNavItems(role?: UserRole) {
   if (role === UserRole.ADMIN) return ADMIN_NAV;
   if (role === UserRole.AGENT) return AGENT_NAV;
+  if (role === UserRole.SHORT_LET_OPERATOR) return OPERATOR_NAV;
   return USER_NAV;
 }
 

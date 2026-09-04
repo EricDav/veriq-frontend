@@ -34,6 +34,7 @@ const STATUS_STYLES: Record<ListingStatus, string> = {
   hidden: 'bg-slate-100 text-slate-500',
   taken: 'bg-purple-100 text-purple-700',
   expired: 'bg-red-100 text-red-600',
+  unavailable: 'bg-slate-100 text-slate-700',
 };
 
 const PROPERTY_TYPES = [

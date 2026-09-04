@@ -415,6 +415,8 @@ export const propertiesApi = {
   getById: (id: string) =>
     api.get<ApiResponse<Property>>(`/properties/${id}`, { public: true }),
 
+  getOwnedById: (id: string) => api.get<ApiResponse<Property>>(`/properties/my/listings/${id}`),
+
   /** Admin: list properties of any status, optionally scoped and filtered */
   listAdmin: async (params: (FilterPropertiesDto & { status?: string }) = {}) => {
     const sp = new URLSearchParams();
@@ -464,6 +466,20 @@ export const propertiesApi = {
 
   unhide: (id: string) =>
     api.patch<ApiResponse<Property>>(`/properties/${id}/unhide`),
+};
+
+export const shortLetOperatorsApi = {
+  approved: () => api.get<ApiResponse<import('@/types').ShortLetOperator[]>>('/short-let-operators/approved'),
+  adminList: (status = '') => api.get<ApiResponse<import('@/types').ShortLetOperator[]>>(`/short-let-operators/admin${status ? `?status=${status}` : ''}`),
+  create: (dto: Record<string, unknown>) => api.post<ApiResponse<import('@/types').ShortLetOperator>>('/short-let-operators/admin', dto),
+  update: (id: string, dto: Record<string, unknown>) => api.patch<ApiResponse<import('@/types').ShortLetOperator>>(`/short-let-operators/admin/${id}`, dto),
+  setStatus: (id: string, status: string) => api.patch<ApiResponse<import('@/types').ShortLetOperator>>(`/short-let-operators/admin/${id}/status`, { status }),
+  listings: (id: string) => api.get<ApiResponse<Property[]>>(`/short-let-operators/admin/${id}/listings`),
+  provision: (id: string, email: string) => api.post<ApiResponse<{ operator: import('@/types').ShortLetOperator; temporaryPassword: string }>>(`/short-let-operators/${id}/portal-access`, { email }),
+  reset: (id: string) => api.post<ApiResponse<{ operator: import('@/types').ShortLetOperator; temporaryPassword: string }>>(`/short-let-operators/${id}/reset-access`, {}),
+  portalListings: () => api.get<ApiResponse<Property[]>>('/short-let-operators/portal/listings'),
+  portalUpdate: (id: string, dto: Record<string, unknown>) => api.patch<ApiResponse<Property>>(`/short-let-operators/portal/listings/${id}`, dto),
+  availability: (id: string, available: boolean) => api.patch<ApiResponse<Property>>(`/short-let-operators/portal/listings/${id}/availability`, { available }),
 };
 
 // ── Consultations ─────────────────────────────────────────────────────────

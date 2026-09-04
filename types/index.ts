@@ -3,6 +3,7 @@
 export enum UserRole {
   USER = 'user',
   AGENT = 'agent',
+  SHORT_LET_OPERATOR = 'short_let_operator',
   ADMIN = 'admin',
   SUPER_ADMIN = 'super_admin',
 }
@@ -312,6 +313,15 @@ export enum ListingStatus {
   HIDDEN = 'hidden',
   TAKEN = 'taken',
   EXPIRED = 'expired',
+  UNAVAILABLE = 'unavailable',
+}
+
+export enum ShortLetOperatorStatus { PENDING = 'pending', APPROVED = 'approved', DEACTIVATED = 'deactivated' }
+export enum OperatorPortalStatus { NOT_CREATED = 'not_created', ACTIVE = 'active', DEACTIVATED = 'deactivated' }
+export interface ShortLetOperator {
+  id: string; name: string; contactPerson: string | null; phone: string; email: string | null;
+  websiteUrl: string | null; status: ShortLetOperatorStatus; portalStatus: OperatorPortalStatus;
+  userId: string | null; createdAt: string; updatedAt: string;
 }
 
 export enum FreshnessScore {
@@ -428,6 +438,8 @@ export interface Property {
   id: string;
   agentId: string;
   agent: Agent;
+  shortLetOperatorId?: string | null;
+  shortLetOperator?: ShortLetOperator | null;
   title: string;
   description: string | null;
   propertyType: PropertyType;
@@ -438,6 +450,7 @@ export interface Property {
   furnishingStatus?: string | null;
   toilets?: number | null;
   listingDetails?: Record<string, unknown> | null;
+  bookingLink?: string | null;
   rentAmount: number;
   serviceCharge: number;
   agencyFee: number;
@@ -555,6 +568,7 @@ export interface ConsultationAccess {
   consultationId?: string;
   accessExpiresAt?: string;
   unlockedAt?: string;
+  bookingLink?: string | null;
   contactAllowed?: boolean;
   agentContact?: {
     agentId: string;
@@ -1167,6 +1181,8 @@ export interface CreatePropertyDto {
   cautionFee?: number;
   inspectionFee?: number;
   listingDetails?: Record<string, unknown>;
+  shortLetOperatorId?: string;
+  bookingLink?: string;
   state: string;
   city: string;
   area: string;

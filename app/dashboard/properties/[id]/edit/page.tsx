@@ -4,10 +4,10 @@ import React, { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Camera, Home, Upload, X, Zap, Search } from 'lucide-react';
-import { ApiError, communityApi, locationsApi, mediaApi, propertiesApi } from '@/lib/api';
+import { ApiError, communityApi, locationsApi, mediaApi, propertiesApi, shortLetOperatorsApi } from '@/lib/api';
 import { ACCEPTED_IMAGE_INPUT, uploadToFileService } from '@/lib/upload';
 import { LISTING_FIELDS, MEDIA_OVERALL_MINIMUM, MEDIA_REQUIREMENTS } from '@/lib/property-listing-spec';
-import type { AllowedState, CommunityArea, CommunityLocation, CreatePropertyDto, MediaItem, Property, Street } from '@/types';
+import type { AllowedState, CommunityArea, CommunityLocation, CreatePropertyDto, MediaItem, Property, ShortLetOperator, Street } from '@/types';
 import {
   CompoundCulture,
   ElectricitySituation,
@@ -89,6 +89,7 @@ export default function EditListingPage() {
   const [isMediaLoading, setIsMediaLoading] = useState(false);
   const [uploadingSection, setUploadingSection] = useState<string | null>(null);
   const [mediaErrors, setMediaErrors] = useState<Record<string, string>>({});
+  const [shortLetOperators, setShortLetOperators] = useState<ShortLetOperator[]>([]);
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const coverImageInputRef = useRef<HTMLInputElement | null>(null);
   const latestCoverImageUrlRef = useRef('');
@@ -101,15 +102,18 @@ export default function EditListingPage() {
   const typeFields = propertyType ? LISTING_FIELDS[propertyType] ?? [] : [];
   const mediaCategories = (propertyType ? MEDIA_REQUIREMENTS[propertyType] ?? [] : []).filter((category) => {
     if (propertyType === PropertyType.HOSTEL && category.section === MediaSection.KITCHEN) return listingDetails.cookingAllowed !== 'No';
-    if (propertyType === PropertyType.SHORT_STAY && category.section === MediaSection.KITCHEN) return Array.isArray(listingDetails.amenities) && listingDetails.amenities.includes('Kitchen Access');
-    if (propertyType === PropertyType.SHORT_STAY && category.section === MediaSection.LIVING_ROOM) return ['Entire Apartment', 'Serviced Apartment'].includes(String(listingDetails.shortLetType ?? ''));
+    if (propertyType === PropertyType.SHORT_STAY && category.section === MediaSection.MAIN_ROOM) return listingDetails.shortLetType === 'Studio Apartment';
+    if (propertyType === PropertyType.SHORT_STAY && category.section === MediaSection.BEDROOM) return listingDetails.shortLetType !== 'Studio Apartment';
+    if (propertyType === PropertyType.SHORT_STAY && category.section === MediaSection.KITCHEN) return Array.isArray(listingDetails.amenities) && listingDetails.amenities.includes('Kitchen');
+    if (propertyType === PropertyType.SHORT_STAY && category.section === MediaSection.LIVING_ROOM) return ['Serviced Apartment', 'Duplex / House'].includes(String(listingDetails.shortLetType ?? ''));
+    if (propertyType === PropertyType.SHORT_STAY && category.section === MediaSection.COMPOUND) return Array.isArray(listingDetails.amenities) && listingDetails.amenities.includes('Parking');
     return true;
   });
   const requiredMediaSections = mediaCategories.filter((category) => category.minimum > 0).map((category) => category.section);
 
   useEffect(() => {
     let mounted = true;
-    propertiesApi.getById(id)
+    propertiesApi.getOwnedById(id)
       .then((res) => {
         if (!mounted) return;
         const p = res.data;
@@ -145,6 +149,8 @@ export default function EditListingPage() {
           furnishingStatus: p.furnishingStatus ?? undefined,
           toilets: p.toilets ?? undefined,
           listingDetails: p.listingDetails ?? {},
+          shortLetOperatorId: p.shortLetOperatorId ?? undefined,
+          bookingLink: p.bookingLink ?? undefined,
           rentAmount: Number(p.rentAmount),
           serviceCharge: Number(p.serviceCharge ?? 0),
           agencyFee: Number(p.agencyFee ?? 0),
@@ -208,6 +214,11 @@ export default function EditListingPage() {
       .then((res) => setActiveStates(res.data))
       .catch(() => setActiveStates([]));
   }, []);
+
+  useEffect(() => {
+    if (propertyType !== PropertyType.SHORT_STAY) return;
+    shortLetOperatorsApi.approved().then((response) => setShortLetOperators(response.data)).catch(() => setShortLetOperators([]));
+  }, [propertyType]);
 
   useEffect(() => {
     setMasterLocations([]); setMasterAreas([]); setMasterStreets([]);
@@ -450,6 +461,7 @@ export default function EditListingPage() {
             <label className="label">Property Title *</label>
             <input value={form.title ?? ''} onChange={(e) => update('title', e.target.value)} className="input" required />
           </div>
+          {propertyType === PropertyType.SHORT_STAY && <div><label className="label">Associated Short Let Operator</label><select value={form.shortLetOperatorId ?? ''} onChange={(event) => update('shortLetOperatorId', event.target.value || undefined)} className="input"><option value="">None / Independent Listing</option>{shortLetOperators.map((operator) => <option key={operator.id} value={operator.id}>{operator.name}</option>)}</select></div>}
 
           <div>
             <label className="label">Description</label>
@@ -744,6 +756,8 @@ export default function EditListingPage() {
             </div>
           )}
         </div>
+
+        {propertyType === PropertyType.SHORT_STAY && <div className="card space-y-2 p-6"><label className="label">Booking Link</label><input type="url" value={form.bookingLink ?? ''} onChange={(event) => update('bookingLink', event.target.value || undefined)} placeholder="https://..." className="input" /><p className="text-xs text-veriq-muted">Optional. This link is visible only after unlock.</p></div>}
 
         <div className="flex justify-end gap-3 pb-8">
           <Link href="/dashboard/properties" className="btn-outline !py-2.5 !text-sm">Cancel</Link>

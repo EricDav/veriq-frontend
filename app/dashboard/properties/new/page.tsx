@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { ArrowLeft, Home, Camera, X, Upload, Zap, ShieldCheck, Search } from 'lucide-react';
 import Link from 'next/link';
-import { propertiesApi, ApiError, communityApi, locationsApi } from '@/lib/api';
+import { propertiesApi, ApiError, communityApi, locationsApi, shortLetOperatorsApi } from '@/lib/api';
 import { ACCEPTED_IMAGE_INPUT, MAX_ORIGINAL_IMAGE_BYTES, uploadToFileService } from '@/lib/upload';
 import {
   PropertyType,
@@ -20,6 +20,7 @@ import {
   type CommunityLocation,
   type Street,
   type CreatePropertyMediaDto,
+  type ShortLetOperator,
 } from '@/types';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useToast } from '@/components/ui/Toast';
@@ -42,6 +43,8 @@ const schema = z.object({
   legalFee: z.coerce.number().min(0).optional(),
   cautionFee: z.coerce.number().min(0).optional(),
   inspectionFee: z.coerce.number().min(0).optional(),
+  shortLetOperatorId: z.string().optional(),
+  bookingLink: z.string().url().refine((value) => value.startsWith('https://'), 'Booking link must use HTTPS').optional().or(z.literal('')),
   state: z.string().min(2, 'State is required'),
   city: z.string().min(2, 'City is required'),
   area: z.string().min(2, 'Area is required'),
@@ -195,6 +198,7 @@ export default function NewPropertyPage() {
   const [missingStreetName, setMissingStreetName] = useState('');
   const [missingStreetLandmark, setMissingStreetLandmark] = useState('');
   const [listingDetails, setListingDetails] = useState<Record<string, unknown>>({});
+  const [shortLetOperators, setShortLetOperators] = useState<ShortLetOperator[]>([]);
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const clientRequestIdRef = useRef(
     typeof crypto !== 'undefined' && 'randomUUID' in crypto
@@ -227,8 +231,11 @@ export default function NewPropertyPage() {
   const typeFields = LISTING_FIELDS[propertyType] ?? [];
   const mediaCategories = (MEDIA_REQUIREMENTS[propertyType] ?? []).filter((category) => {
     if (propertyType === PropertyType.HOSTEL && category.section === MediaSection.KITCHEN) return listingDetails.cookingAllowed !== 'No';
-    if (propertyType === PropertyType.SHORT_STAY && category.section === MediaSection.KITCHEN) return Array.isArray(listingDetails.amenities) && listingDetails.amenities.includes('Kitchen Access');
-    if (propertyType === PropertyType.SHORT_STAY && category.section === MediaSection.LIVING_ROOM) return ['Entire Apartment', 'Serviced Apartment'].includes(String(listingDetails.shortLetType ?? ''));
+    if (propertyType === PropertyType.SHORT_STAY && category.section === MediaSection.MAIN_ROOM) return listingDetails.shortLetType === 'Studio Apartment';
+    if (propertyType === PropertyType.SHORT_STAY && category.section === MediaSection.BEDROOM) return listingDetails.shortLetType !== 'Studio Apartment';
+    if (propertyType === PropertyType.SHORT_STAY && category.section === MediaSection.KITCHEN) return Array.isArray(listingDetails.amenities) && listingDetails.amenities.includes('Kitchen');
+    if (propertyType === PropertyType.SHORT_STAY && category.section === MediaSection.LIVING_ROOM) return ['Serviced Apartment', 'Duplex / House'].includes(String(listingDetails.shortLetType ?? ''));
+    if (propertyType === PropertyType.SHORT_STAY && category.section === MediaSection.COMPOUND) return Array.isArray(listingDetails.amenities) && listingDetails.amenities.includes('Parking');
     return true;
   });
   const minimumImagesPerCategory = 1;
@@ -239,6 +246,10 @@ export default function NewPropertyPage() {
     setMediaUploads({});
     setMediaErrors({});
   }, [propertyType]);
+  useEffect(() => {
+    if (!isShortStay) return;
+    shortLetOperatorsApi.approved().then((response) => setShortLetOperators(response.data)).catch(() => setShortLetOperators([]));
+  }, [isShortStay]);
   const allMediaUploads = Object.values(mediaUploads).flat();
   const hasPendingMediaUploads = allMediaUploads.some((item) => item.status === 'uploading');
   const hasFailedMediaUploads = allMediaUploads.some((item) => item.status === 'failed');
@@ -532,6 +543,8 @@ export default function NewPropertyPage() {
         securityFeatures,
         knownIssues,
         listingDetails,
+        shortLetOperatorId: isShortStay ? data.shortLetOperatorId || undefined : undefined,
+        bookingLink: isShortStay ? data.bookingLink || undefined : undefined,
         rentAmount: isShortStay
           ? Math.max(Number(listingDetails.dailyRate ?? 0), Number(listingDetails.weeklyRate ?? 0))
           : data.rentAmount,
@@ -638,6 +651,8 @@ export default function NewPropertyPage() {
               </div>
             )}
           </div>
+
+          {isShortStay && <div><label className="label">Associated Short Let Operator</label><select {...register('shortLetOperatorId')} className="input"><option value="">None / Independent Listing</option>{shortLetOperators.map((operator) => <option key={operator.id} value={operator.id}>{operator.name}</option>)}</select></div>}
 
           {isStandard && (
             <div className="grid grid-cols-2 gap-4">
@@ -1184,6 +1199,8 @@ export default function NewPropertyPage() {
             <p className="text-xs text-slate-400 mt-1">Max 200 characters</p>
           </div>
         </div>
+
+        {isShortStay && <div className="card space-y-2 p-6"><label className="label">Booking Link</label><input {...register('bookingLink')} type="url" placeholder="https://..." className="input" /><p className="text-xs text-veriq-muted">Optional. This link is visible only after unlock.</p>{errors.bookingLink && <p className="error">{errors.bookingLink.message}</p>}</div>}
 
         {/* ── Submit ── */}
         <div className="flex gap-3 justify-end pb-8">
