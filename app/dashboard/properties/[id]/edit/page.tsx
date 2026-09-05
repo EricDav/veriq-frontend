@@ -58,6 +58,13 @@ const PROPERTY_TYPE_OPTIONS = [
   { value: PropertyType.SHORT_STAY, label: 'Short Let' },
 ];
 const MAX_IMAGES = 5;
+const SHORT_LET_FIELD_GROUPS = {
+  basic: ['shortLetType', 'beds', 'maximumGuests'],
+  pricing: ['pricingModel', 'dailyRate', 'weeklyRate', 'monthlyRate', 'minimumNights', 'checkInTime', 'checkOutTime'],
+  amenities: ['amenities', 'houseRules'],
+  intelligence: ['wifiReliability', 'powerBackupReliability', 'waterReliability', 'acCoverage', 'cleanliness', 'feesIncluded'],
+  fees: ['cleaningFee', 'securityDeposit', 'otherMandatoryFee', 'otherMandatoryFeeDescription'],
+} as const;
 const chipOptions = {
   electricityInfo: ['public_power_mostly', 'frequent_outages', 'generator_common', 'solar_backup'],
   bestNetwork: ['mtn', 'airtel', 'glo', '9mobile'],
@@ -219,6 +226,19 @@ export default function EditListingPage() {
     if (propertyType !== PropertyType.SHORT_STAY) return;
     shortLetOperatorsApi.approved().then((response) => setShortLetOperators(response.data)).catch(() => setShortLetOperators([]));
   }, [propertyType]);
+
+  useEffect(() => {
+    if (propertyType !== PropertyType.SHORT_STAY) return;
+    const amenities = Array.isArray(listingDetails.amenities) ? listingDetails.amenities : [];
+    setForm((current) => {
+      const details = { ...(current.listingDetails ?? {}) };
+      let changed = false;
+      if (details.shortLetType === 'Studio Apartment' && current.bedrooms !== 0) changed = true;
+      if (!amenities.includes('Wi-Fi') && details.wifiReliability !== 'No Wi-Fi') { details.wifiReliability = 'No Wi-Fi'; changed = true; }
+      if (!amenities.includes('Air Conditioning') && details.acCoverage !== 'No Air Conditioning') { details.acCoverage = 'No Air Conditioning'; changed = true; }
+      return changed ? { ...current, bedrooms: details.shortLetType === 'Studio Apartment' ? 0 : current.bedrooms, listingDetails: details } : current;
+    });
+  }, [propertyType, listingDetails]);
 
   useEffect(() => {
     setMasterLocations([]); setMasterAreas([]); setMasterStreets([]);
@@ -440,6 +460,26 @@ export default function EditListingPage() {
     );
   }
 
+  const renderListingFields = (keys?: readonly string[]) => typeFields
+    .filter((field) => !keys || keys.includes(field.key))
+    .filter((field) => {
+      if (field.key === 'wifiReliability' && !(listingDetails.amenities as string[] | undefined)?.includes('Wi-Fi')) return false;
+      if (field.key === 'acCoverage' && !(listingDetails.amenities as string[] | undefined)?.includes('Air Conditioning')) return false;
+      if (!field.showWhen) return true;
+      const current = listingDetails[field.showWhen.key];
+      if (field.key === 'otherMandatoryFeeDescription') return Number(current) > 0;
+      return field.showWhen.values.some((value) => value === current || (typeof current === 'number' && typeof value === 'number' && current >= value));
+    })
+    .map((field) => {
+      if (field.type === 'multi') {
+        const values = Array.isArray(listingDetails[field.key]) ? listingDetails[field.key] as string[] : [];
+        return <div key={field.key} className="sm:col-span-2"><label className="label">{field.label}{field.required ? ' *' : ''}</label><div className="flex flex-wrap gap-2">{field.options?.map((option) => <button key={option} type="button" onClick={() => updateListingDetail(field.key, values.includes(option) ? values.filter((value) => value !== option) : [...values, option])} className={`rounded-full border px-4 py-1.5 text-xs font-semibold ${values.includes(option) ? 'border-veriq-secondary bg-veriq-secondary text-white' : 'border-slate-200 bg-white text-navy-700'}`}>{option}</button>)}</div></div>;
+      }
+      if (field.options) return <div key={field.key}><label className="label">{field.label}{field.required ? ' *' : ''}</label><select className="input" required={field.required} value={String(listingDetails[field.key] ?? '')} onChange={(event) => updateListingDetail(field.key, event.target.value)}><option value="">Select...</option>{field.options.map((option) => <option key={option} value={option}>{option}</option>)}</select></div>;
+      if (field.type === 'textarea') return <div key={field.key} className="sm:col-span-2"><label className="label">{field.label}{field.required ? ' *' : ''}</label><textarea className="input resize-none" rows={3} maxLength={field.maxLength} required={field.required} value={String(listingDetails[field.key] ?? '')} placeholder={field.key === 'houseRules' ? 'State check-in, guest, smoking, pet, party, and noise rules' : undefined} onChange={(event) => updateListingDetail(field.key, event.target.value)} /></div>;
+      return <div key={field.key}><label className="label">{field.label}{field.required ? ' *' : ''}</label><input className="input" type={field.type ?? 'text'} min={field.type === 'number' ? 0 : undefined} required={field.required} value={String(listingDetails[field.key] ?? '')} placeholder={field.key === 'otherMandatoryFeeDescription' ? 'Describe what this mandatory fee covers' : undefined} onChange={(event) => updateListingDetail(field.key, field.type === 'number' ? (event.target.value === '' ? undefined : Number(event.target.value)) : event.target.value)} /></div>;
+    });
+
   return (
     <div className="mx-auto max-w-3xl">
       <div className="mb-6">
@@ -450,8 +490,8 @@ export default function EditListingPage() {
         <p className="text-sm text-veriq-muted">{property.title}</p>
       </div>
 
-      <form onSubmit={save} className="space-y-6">
-        <div className="card space-y-4 p-6">
+      <form onSubmit={save} className="flex flex-col gap-6">
+        <div className="card order-1 space-y-4 p-6">
           <h2 className="font-display flex items-center gap-2 text-base font-bold text-navy-900">
             <Home className="h-4 w-4 text-veriq-secondary" /> Basic Information
           </h2>
@@ -502,14 +542,20 @@ export default function EditListingPage() {
                 ))}
               </select>
             </div>
-            {hasRoomCounts && <div><label className="label">Bedrooms *</label><input type="number" min={1} value={form.bedrooms ?? ''} onChange={(e) => update('bedrooms', e.target.value ? Number(e.target.value) : undefined)} className="input" required /></div>}
+            {hasRoomCounts && <div><label className="label">Bedrooms *</label><input type="number" min={propertyType === PropertyType.SHORT_STAY ? 0 : 1} value={form.bedrooms ?? ''} onChange={(e) => update('bedrooms', e.target.value === '' ? undefined : Number(e.target.value))} className="input" required disabled={propertyType === PropertyType.SHORT_STAY && listingDetails.shortLetType === 'Studio Apartment'} />{propertyType === PropertyType.SHORT_STAY && listingDetails.shortLetType === 'Studio Apartment' && <p className="mt-1 text-xs text-slate-500">Studio Apartments use 0 bedrooms.</p>}</div>}
             {hasRoomCounts && <div><label className="label">Bathrooms *</label><input type="number" min={1} value={form.bathrooms ?? ''} onChange={(e) => update('bathrooms', e.target.value ? Number(e.target.value) : undefined)} className="input" required /></div>}
           </div>
 
           {hasResidentialFurnishing && <div><label className="label">Furnishing Status *</label><select value={form.furnishingStatus ?? ''} onChange={(event) => update('furnishingStatus', event.target.value)} className="input" required><option value="">Select...</option><option value="furnished">Furnished</option><option value="semi_furnished">Semi-furnished</option><option value="unfurnished">Unfurnished</option></select></div>}
+          {propertyType === PropertyType.SHORT_STAY && <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">{renderListingFields(SHORT_LET_FIELD_GROUPS.basic)}</div>}
         </div>
 
-        <div className="card space-y-4 p-6">
+        {propertyType === PropertyType.SHORT_STAY && <div className="card order-2 space-y-4 p-6"><h2 className="font-display text-base font-bold text-navy-900">Pricing &amp; Stay Details</h2><div className="grid grid-cols-1 gap-4 sm:grid-cols-2">{renderListingFields(SHORT_LET_FIELD_GROUPS.pricing)}</div></div>}
+        {propertyType === PropertyType.SHORT_STAY && <div className="card order-3 space-y-4 p-6"><h2 className="font-display text-base font-bold text-navy-900">Amenities &amp; Rules</h2><div className="grid grid-cols-1 gap-4 sm:grid-cols-2">{renderListingFields(SHORT_LET_FIELD_GROUPS.amenities)}</div></div>}
+        {propertyType === PropertyType.SHORT_STAY && <div className="card order-4 space-y-4 p-6"><h2 className="font-display text-base font-bold text-navy-900">Short Let Intelligence</h2><div className="grid grid-cols-1 gap-4 sm:grid-cols-2">{renderListingFields(SHORT_LET_FIELD_GROUPS.intelligence)}</div></div>}
+        {propertyType === PropertyType.SHORT_STAY && <div className="card order-5 space-y-4 p-6"><h2 className="font-display text-base font-bold text-navy-900">Additional Fees</h2><div className="grid grid-cols-1 gap-4 sm:grid-cols-2">{renderListingFields(SHORT_LET_FIELD_GROUPS.fees)}</div></div>}
+
+        <div className="card order-6 space-y-4 p-6">
           <div>
             <h2 className="font-display text-base font-bold text-navy-900">Location Directory</h2>
             <p className="mt-1 text-xs text-veriq-muted">Select the approved location and street that link this property to Street Intelligence.</p>
@@ -577,7 +623,7 @@ export default function EditListingPage() {
           </div>
         </div>
 
-        <div className="card space-y-4 p-6">
+        {propertyType !== PropertyType.SHORT_STAY && <div className="card order-2 space-y-4 p-6">
           <h2 className="font-display text-base font-bold text-navy-900">Details & Pricing</h2>
           {hasFloorLevel && <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
@@ -587,7 +633,7 @@ export default function EditListingPage() {
           </div>}
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {moneyFields.filter(({ key }) => propertyType !== PropertyType.SHORT_STAY || key !== 'rentAmount').map(({ key, label }) => (
+            {moneyFields.map(({ key, label }) => (
               <div key={String(key)}>
                 <label className="label">{key === 'rentAmount' ? (propertyType === PropertyType.HOSTEL ? 'Rent Amount' : propertyType === PropertyType.SHARED_APARTMENT ? 'Annual Rent for Available Room' : 'Annual Rent') : label}</label>
                 <input
@@ -600,10 +646,10 @@ export default function EditListingPage() {
               </div>
             ))}
           </div>
-        </div>
+        </div>}
 
-        {typeFields.length > 0 && (
-          <div className="card space-y-4 border-2 border-veriq-secondary/20 p-6">
+        {typeFields.length > 0 && propertyType !== PropertyType.SHORT_STAY && (
+          <div className="card order-2 space-y-4 border-2 border-veriq-secondary/20 p-6">
             <div>
               <h2 className="font-display text-base font-bold text-navy-900">{PROPERTY_TYPE_OPTIONS.find((item) => item.value === propertyType)?.label} Details</h2>
               <p className="mt-1 text-xs text-veriq-muted">Complete the details required for this property type.</p>
@@ -628,7 +674,7 @@ export default function EditListingPage() {
           </div>
         )}
 
-        <div className="card space-y-5 border-2 border-veriq-secondary/20 p-6">
+        <div className="card order-8 space-y-5 border-2 border-veriq-secondary/20 p-6">
           <h2 className="font-display flex items-center gap-2 text-base font-bold text-navy-900">
             <Zap className="h-4 w-4 text-veriq-secondary" /> Veriq Quick Intelligence
           </h2>
@@ -663,7 +709,7 @@ export default function EditListingPage() {
 
           {[
             ...(propertyType === PropertyType.SHORT_STAY ? [] : [['electricityInfo', 'Electricity Info', chipOptions.electricityInfo]]),
-            ['securityFeatures', 'Security Features', chipOptions.securityFeatures],
+            ...(propertyType === PropertyType.SHORT_STAY ? [] : [['securityFeatures', 'Security Features', chipOptions.securityFeatures]]),
             ['knownIssues', 'Known Issues', chipOptions.knownIssues],
           ].map(([key, label, values]) => (
             <div key={key as string}>
@@ -692,7 +738,7 @@ export default function EditListingPage() {
           </div>
         </div>
 
-        <div className="card space-y-5 p-6">
+        <div className="card order-7 space-y-5 p-6">
           <h2 className="font-display flex items-center gap-2 text-base font-bold text-navy-900">
             <Camera className="h-4 w-4 text-veriq-secondary" /> Property Images
           </h2>
@@ -757,9 +803,9 @@ export default function EditListingPage() {
           )}
         </div>
 
-        {propertyType === PropertyType.SHORT_STAY && <div className="card space-y-2 p-6"><label className="label">Booking Link</label><input type="url" value={form.bookingLink ?? ''} onChange={(event) => update('bookingLink', event.target.value || undefined)} placeholder="https://..." className="input" /><p className="text-xs text-veriq-muted">Optional. This link is visible only after unlock.</p></div>}
+        {propertyType === PropertyType.SHORT_STAY && <div className="card order-9 space-y-2 p-6"><h2 className="font-display text-base font-bold text-navy-900">Booking Link</h2><label className="label">Accommodation booking page</label><input type="url" value={form.bookingLink ?? ''} onChange={(event) => update('bookingLink', event.target.value || undefined)} placeholder="https://operator.example/accommodations/unit-name" className="input" /><p className="text-xs text-veriq-muted">Optional. Use a unit-specific HTTPS page where available. Visible only after unlock.</p></div>}
 
-        <div className="flex justify-end gap-3 pb-8">
+        <div className="order-10 flex justify-end gap-3 pb-8">
           <Link href="/dashboard/properties" className="btn-outline !py-2.5 !text-sm">Cancel</Link>
           <button type="submit" disabled={isSaving} className="btn-primary !py-2.5 !text-sm flex items-center gap-2">
             {isSaving && <LoadingSpinner size="sm" />}

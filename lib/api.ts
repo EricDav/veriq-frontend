@@ -457,6 +457,9 @@ export const propertiesApi = {
   reactivate: (id: string) =>
     api.patch<ApiResponse<Property>>(`/properties/${id}/reactivate`, {}),
 
+  archive: (id: string) =>
+    api.patch<ApiResponse<Property>>(`/properties/${id}/archive`, {}),
+
   delete: (id: string) =>
     api.delete<ApiResponse<null>>(`/properties/${id}`),
 
@@ -470,10 +473,12 @@ export const propertiesApi = {
 
 export const shortLetOperatorsApi = {
   approved: () => api.get<ApiResponse<import('@/types').ShortLetOperator[]>>('/short-let-operators/approved'),
+  managed: () => api.get<ApiResponse<import('@/types').ShortLetOperator[]>>('/short-let-operators/managed'),
   adminList: (status = '') => api.get<ApiResponse<import('@/types').ShortLetOperator[]>>(`/short-let-operators/admin${status ? `?status=${status}` : ''}`),
   create: (dto: Record<string, unknown>) => api.post<ApiResponse<import('@/types').ShortLetOperator>>('/short-let-operators/admin', dto),
   update: (id: string, dto: Record<string, unknown>) => api.patch<ApiResponse<import('@/types').ShortLetOperator>>(`/short-let-operators/admin/${id}`, dto),
   setStatus: (id: string, status: string) => api.patch<ApiResponse<import('@/types').ShortLetOperator>>(`/short-let-operators/admin/${id}/status`, { status }),
+  setPortalStatus: (id: string, status: string) => api.patch<ApiResponse<import('@/types').ShortLetOperator>>(`/short-let-operators/admin/${id}/portal-status`, { status }),
   listings: (id: string) => api.get<ApiResponse<Property[]>>(`/short-let-operators/admin/${id}/listings`),
   provision: (id: string, email: string) => api.post<ApiResponse<{ operator: import('@/types').ShortLetOperator; temporaryPassword: string }>>(`/short-let-operators/${id}/portal-access`, { email }),
   reset: (id: string) => api.post<ApiResponse<{ operator: import('@/types').ShortLetOperator; temporaryPassword: string }>>(`/short-let-operators/${id}/reset-access`, {}),

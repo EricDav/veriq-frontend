@@ -26,7 +26,7 @@ const PROPERTY_TYPES = [
   { value: PropertyType.DUPLEX, label: 'Duplex' },
   { value: PropertyType.BUNGALOW, label: 'Bungalow' },
   { value: PropertyType.HOSTEL, label: 'Hostel' },
-  { value: PropertyType.SHORT_STAY, label: 'Short Stay' },
+  { value: PropertyType.SHORT_STAY, label: 'Short Let' },
 ];
 
 const SHORT_STAY_PRICING_OPTIONS = [
@@ -471,7 +471,7 @@ export default function BrowsePropertiesPage() {
           {/* ── Short Stay filters ── */}
           {isShortStay && (
             <div className="rounded-xl border border-veriq-secondary/20 bg-veriq-secondary/5 p-4 space-y-4">
-              <p className="text-xs font-semibold text-veriq-secondary uppercase tracking-wide">Short Stay Filters</p>
+              <p className="text-xs font-semibold text-veriq-secondary uppercase tracking-wide">Short Let Filters</p>
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
                 <div>
                   <label className="label text-xs">Pricing Model</label>

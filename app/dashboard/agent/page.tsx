@@ -35,7 +35,7 @@ const NIGERIAN_BANKS = [
 const SPECIALIZATION_OPTIONS = [
   'Apartment Rentals',
   'Hostels',
-  'Short Stay',
+  'Short Let',
   'Residential Sales',
   'Commercial Properties',
 ];

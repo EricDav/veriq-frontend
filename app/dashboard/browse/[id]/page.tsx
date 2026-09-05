@@ -326,7 +326,7 @@ function ShortStayPanel({ property }: { property: Property }) {
   return (
     <div className="card p-6">
       <h2 className="font-display text-base font-bold text-navy-900 mb-4 flex items-center gap-2">
-        <Sun className="h-4 w-4 text-amber-500" /> Short Stay Intelligence
+        <Sun className="h-4 w-4 text-amber-500" /> Short Let Intelligence
       </h2>
       <div className="space-y-0">
         <QIRow label="Pricing Model" value={property.shortStayPricingModel} icon={Wallet} />
@@ -754,7 +754,7 @@ export default function DashboardPropertyDetailPage() {
             {isShortStay && (property.shortStayDailyRate || property.shortStayWeeklyRate) && (
               <div className="mt-4 rounded-xl bg-amber-50 border border-amber-100 p-4">
                 <h3 className="font-semibold text-navy-900 mb-3 flex items-center gap-2">
-                  <Sun className="h-4 w-4 text-amber-500" /> Short Stay Rates
+                  <Sun className="h-4 w-4 text-amber-500" /> Short Let Rates
                 </h3>
                 <div className="grid grid-cols-2 gap-4 text-xs">
                   {property.shortStayDailyRate && (

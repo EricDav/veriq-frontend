@@ -35,6 +35,7 @@ const STATUS_STYLES: Record<ListingStatus, string> = {
   taken: 'bg-purple-100 text-purple-700',
   expired: 'bg-red-100 text-red-600',
   unavailable: 'bg-slate-100 text-slate-700',
+  archived: 'bg-slate-200 text-slate-700',
 };
 
 const PROPERTY_TYPES = [
@@ -46,7 +47,7 @@ const PROPERTY_TYPES = [
   { value: PropertyType.DUPLEX, label: 'Duplex' },
   { value: PropertyType.BUNGALOW, label: 'Bungalow' },
   { value: PropertyType.HOSTEL, label: 'Hostel' },
-  { value: PropertyType.SHORT_STAY, label: 'Short Stay' },
+  { value: PropertyType.SHORT_STAY, label: 'Short Let' },
 ];
 
 const STATUS_OPTIONS = [
@@ -674,7 +675,7 @@ function AdminPropertiesPageInner() {
 
           {isShortStayFilter && (
             <div className="space-y-4 rounded-xl border border-veriq-secondary/20 bg-veriq-secondary/5 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-veriq-secondary">Short Stay Filters</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-veriq-secondary">Short Let Filters</p>
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
                 <div>
                   <label className="label text-xs">Pricing Model</label>
@@ -1164,7 +1165,7 @@ function AdminPropertiesPageInner() {
               )}
 
               {hasShortStayDetails && (
-                <DetailSection title="Short Stay Details">
+                <DetailSection title="Short Let Details">
                   {providedShortStayDetailFields.map((field) => (
                     <DetailItem key={field.label} label={field.label} value={field.value} />
                   ))}

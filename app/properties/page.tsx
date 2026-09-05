@@ -22,7 +22,7 @@ const PROPERTY_TYPES = [
   { value: PropertyType.DUPLEX, label: 'Duplex' },
   { value: PropertyType.BUNGALOW, label: 'Bungalow' },
   { value: PropertyType.HOSTEL, label: 'Hostel' },
-  { value: PropertyType.SHORT_STAY, label: 'Short Stay' },
+  { value: PropertyType.SHORT_STAY, label: 'Short Let' },
 ];
 
 const LIMIT = 12;

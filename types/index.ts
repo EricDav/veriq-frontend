@@ -314,6 +314,7 @@ export enum ListingStatus {
   TAKEN = 'taken',
   EXPIRED = 'expired',
   UNAVAILABLE = 'unavailable',
+  ARCHIVED = 'archived',
 }
 
 export enum ShortLetOperatorStatus { PENDING = 'pending', APPROVED = 'approved', DEACTIVATED = 'deactivated' }
@@ -322,6 +323,7 @@ export interface ShortLetOperator {
   id: string; name: string; contactPerson: string | null; phone: string; email: string | null;
   websiteUrl: string | null; status: ShortLetOperatorStatus; portalStatus: OperatorPortalStatus;
   userId: string | null; createdAt: string; updatedAt: string;
+  associatedListings?: Property[];
 }
 
 export enum FreshnessScore {

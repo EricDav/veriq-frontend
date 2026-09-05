@@ -719,7 +719,7 @@ export default function PropertyDetailPage() {
                 )}
                 {isShortStay && (
                   <IntelligenceGrid
-                    title="Short Stay Intelligence"
+                    title="Short Let Intelligence"
                     items={[
                       { label: 'Pricing Model', value: property.shortStayPricingModel },
                       { label: 'Daily Rate', value: property.shortStayDailyRate ? formatNaira(property.shortStayDailyRate) : null },

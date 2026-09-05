@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { propertiesApi, agentsApi, consultationsApi, ApiError } from '@/lib/api';
 import type { Property, Agent, Consultation } from '@/types';
-import { AgentVerificationLevel, ListingStatus, FreshnessScore, ConsultationStatus } from '@/types';
+import { AgentVerificationLevel, ListingStatus, FreshnessScore, ConsultationStatus, PropertyType } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 import { UserRole } from '@/types';
 import { PageLoader, LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -31,6 +31,7 @@ const STATUS_STYLES: Record<ListingStatus, string> = {
   taken: 'bg-purple-100 text-purple-700',
   expired: 'bg-red-100 text-red-600',
   unavailable: 'bg-slate-100 text-slate-700',
+  archived: 'bg-slate-200 text-slate-700',
 };
 
 const REFUNDABLE_STATUSES = new Set<ConsultationStatus>([
@@ -189,7 +190,7 @@ function AgentPropertiesView() {
   const [agent, setAgent] = useState<Agent | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [nowMs, setNowMs] = useState(() => Date.now());
-  const [statusTarget, setStatusTarget] = useState<{ id: string; action: 'unavailable' | 'reactivate'; title: string } | null>(null);
+  const [statusTarget, setStatusTarget] = useState<{ id: string; action: 'unavailable' | 'reactivate' | 'archive'; title: string } | null>(null);
   const [isStatusChanging, setIsStatusChanging] = useState(false);
   const [reconfirmingId, setReconfirmingId] = useState<string | null>(null);
   const [refundProperty, setRefundProperty] = useState<Property | null>(null);
@@ -234,9 +235,11 @@ function AgentPropertiesView() {
     try {
       const res = statusTarget.action === 'unavailable'
         ? await propertiesApi.markUnavailable(statusTarget.id)
-        : await propertiesApi.reactivate(statusTarget.id);
+        : statusTarget.action === 'archive'
+          ? await propertiesApi.archive(statusTarget.id)
+          : await propertiesApi.reactivate(statusTarget.id);
       setProperties((prev) => prev.map((p) => (p.id === statusTarget.id ? res.data : p)));
-      success(statusTarget.action === 'unavailable' ? 'Listing marked as rented/unavailable.' : 'Listing reactivated.');
+      success(statusTarget.action === 'unavailable' ? 'Listing marked unavailable.' : statusTarget.action === 'archive' ? 'Short Let listing archived.' : 'Listing reactivated.');
     } catch (err) {
       toastError(err instanceof ApiError ? err.message : 'Failed to update listing status');
     } finally {
@@ -307,10 +310,14 @@ function AgentPropertiesView() {
   const rentedListings = properties.filter((property) =>
     [ListingStatus.OCCUPIED, ListingStatus.TAKEN].includes(property.status),
   );
+  const unavailableListings = properties.filter((property) => property.status === ListingStatus.UNAVAILABLE);
+  const archivedListings = properties.filter((property) => property.status === ListingStatus.ARCHIVED);
   const listingGroups = [
     { key: 'active', title: 'Active', description: 'Listings currently visible to property users.', properties: activeListings, badge: 'bg-emerald-100 text-emerald-700' },
     { key: 'expired', title: 'Expired', description: 'Listings that expired before they were refreshed.', properties: expiredListings, badge: 'bg-red-100 text-red-700' },
     { key: 'rented', title: 'Rented', description: 'Completed rentals kept for records. These listings cannot be refreshed.', properties: rentedListings, badge: 'bg-blue-100 text-blue-700' },
+    { key: 'unavailable', title: 'Unavailable Short Lets', description: 'Short Let units temporarily removed from public availability.', properties: unavailableListings, badge: 'bg-slate-100 text-slate-700' },
+    { key: 'archived', title: 'Archived Short Lets', description: 'Short Let listings no longer being actively managed.', properties: archivedListings, badge: 'bg-slate-200 text-slate-700' },
   ];
 
   if (isLoading) return <PageLoader />;
@@ -458,7 +465,7 @@ function AgentPropertiesView() {
                       <td className="px-4 py-4">
                         <div className="flex items-center justify-end gap-2">
                           {/* Refresh / mark active */}
-                          <button
+                          {prop.propertyType !== PropertyType.SHORT_STAY && <button
                             onClick={() => handleReconfirm(prop.id, Number(prop.rentAmount))}
                             disabled={reconfirmingId === prop.id || [ListingStatus.OCCUPIED, ListingStatus.TAKEN].includes(prop.status)}
                             title={[ListingStatus.OCCUPIED, ListingStatus.TAKEN].includes(prop.status) ? 'Rented listings cannot be refreshed' : prop.status === 'active' ? 'Refresh active listing' : 'Refresh and mark active'}
@@ -473,7 +480,7 @@ function AgentPropertiesView() {
                             ) : (
                               <RefreshCw className="h-3.5 w-3.5" />
                             )}
-                          </button>
+                          </button>}
                           {/* View */}
                           <Link
                             href={`/properties/${prop.id}`}
@@ -500,12 +507,12 @@ function AgentPropertiesView() {
                           {prop.status === ListingStatus.ACTIVE ? (
                             <button
                               onClick={() => setStatusTarget({ id: prop.id, action: 'unavailable', title: prop.title })}
-                              title="Mark rented/unavailable"
+                              title={prop.propertyType === PropertyType.SHORT_STAY ? 'Mark Short Let unavailable' : 'Mark rented'}
                               className="rounded-lg px-2 py-1.5 text-[10px] font-bold text-blue-600 hover:bg-blue-50 transition-colors"
                             >
-                              Rented
+                              {prop.propertyType === PropertyType.SHORT_STAY ? 'Unavailable' : 'Rented'}
                             </button>
-                          ) : [ListingStatus.EXPIRED, ListingStatus.HIDDEN].includes(prop.status) ? (
+                          ) : [ListingStatus.EXPIRED, ListingStatus.HIDDEN, ListingStatus.UNAVAILABLE].includes(prop.status) ? (
                             <button
                               onClick={() => setStatusTarget({ id: prop.id, action: 'reactivate', title: prop.title })}
                               title="Reactivate listing"
@@ -513,9 +520,12 @@ function AgentPropertiesView() {
                             >
                               Reactivate
                             </button>
+                          ) : prop.status === ListingStatus.ARCHIVED ? (
+                            <span className="rounded-lg bg-slate-100 px-2 py-1.5 text-[10px] font-bold text-slate-600">Archived</span>
                           ) : (
                             <span className="rounded-lg bg-blue-50 px-2 py-1.5 text-[10px] font-bold text-blue-700">Rented</span>
                           )}
+                          {prop.propertyType === PropertyType.SHORT_STAY && prop.status !== ListingStatus.ARCHIVED && <button onClick={() => setStatusTarget({ id: prop.id, action: 'archive', title: prop.title })} title="Archive Short Let listing" className="rounded-lg px-2 py-1.5 text-[10px] font-bold text-slate-600 hover:bg-slate-100">Archive</button>}
                         </div>
                       </td>
                     </tr>
@@ -536,14 +546,16 @@ function AgentPropertiesView() {
         isOpen={!!statusTarget}
         onClose={() => setStatusTarget(null)}
         onConfirm={handleStatusChange}
-        title={statusTarget?.action === 'unavailable' ? 'Mark as Rented/Unavailable' : 'Reactivate Listing'}
+        title={statusTarget?.action === 'unavailable' ? 'Mark Listing Unavailable' : statusTarget?.action === 'archive' ? 'Archive Short Let Listing' : 'Reactivate Listing'}
         message={
           statusTarget?.action === 'unavailable'
             ? 'This listing will be removed from active search but kept for records, analytics, and future reactivation.'
-            : 'This listing will return to active search and its freshness clock will reset.'
+            : statusTarget?.action === 'archive'
+              ? 'This listing will be removed from public availability and active management. Only an admin can restore it.'
+              : 'This listing will return to active search and its freshness clock will reset.'
         }
-        confirmLabel={statusTarget?.action === 'unavailable' ? 'Mark Unavailable' : 'Reactivate'}
-        variant={statusTarget?.action === 'unavailable' ? 'danger' : 'primary'}
+        confirmLabel={statusTarget?.action === 'unavailable' ? 'Mark Unavailable' : statusTarget?.action === 'archive' ? 'Archive' : 'Reactivate'}
+        variant={statusTarget?.action === 'unavailable' || statusTarget?.action === 'archive' ? 'danger' : 'primary'}
         isLoading={isStatusChanging}
       />
 
