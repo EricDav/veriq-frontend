@@ -138,7 +138,11 @@ async function request<T>(
     const errors = Array.isArray(errBody?.message)
       ? (errBody.message as string[])
       : undefined;
-    throw new ApiError(res.status, Array.isArray(errBody?.message) ? 'Validation error' : message, errors);
+    throw new ApiError(
+      res.status,
+      errors?.length ? errors.join('. ') : message,
+      errors,
+    );
   }
 
   return data as T;

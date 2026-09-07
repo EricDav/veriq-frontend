@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Building2, Eye, Plus, X } from "lucide-react";
-import { shortLetOperatorsApi } from "@/lib/api";
+import { ApiError, shortLetOperatorsApi } from "@/lib/api";
 import {
   ListingStatus,
   OperatorPortalStatus,
@@ -19,12 +19,54 @@ const empty = {
   websiteUrl: "",
   status: ShortLetOperatorStatus.PENDING,
 };
+type OperatorForm = Partial<ShortLetOperator> & { name: string; phone: string };
+type OperatorField = "name" | "contactPerson" | "phone" | "email" | "websiteUrl";
+
+const validateOperator = (form: OperatorForm) => {
+  const errors: Partial<Record<OperatorField, string>> = {};
+  if (!form.name.trim()) errors.name = "Operator name is required.";
+  if (!form.phone.trim()) errors.phone = "Phone number is required.";
+  if (form.email?.trim() && !/^\S+@\S+\.\S+$/.test(form.email.trim())) {
+    errors.email = "Enter a valid email address.";
+  }
+  if (form.websiteUrl?.trim()) {
+    try {
+      const url = new URL(form.websiteUrl.trim());
+      if (url.protocol !== "https:") throw new Error();
+    } catch {
+      errors.websiteUrl = "Enter a complete HTTPS URL, for example https://operator.com. This field cannot contain an email address.";
+    }
+  }
+  return errors;
+};
+
+const focusFirstInvalidField = (errors: Partial<Record<OperatorField, string>>) => {
+  const firstField = (Object.keys(errors) as OperatorField[])[0];
+  if (firstField) requestAnimationFrame(() => document.getElementById(`operator-${firstField}`)?.focus());
+};
+
+const fieldErrorsFromApi = (messages: string[]) => {
+  const errors: Partial<Record<OperatorField, string>> = {};
+  for (const message of messages) {
+    const normalized = message.toLowerCase();
+    if (normalized.includes("websiteurl") || normalized.includes("website url")) {
+      errors.websiteUrl = "Enter a complete HTTPS URL, for example https://operator.com. This field cannot contain an email address.";
+    } else if (normalized.includes("email")) {
+      errors.email = "Enter a valid email address.";
+    } else if (normalized.includes("phone")) {
+      errors.phone = message;
+    } else if (normalized.includes("name")) {
+      errors.name = message;
+    }
+  }
+  return errors;
+};
+
 export default function AdminShortLetOperatorsPage() {
   const [items, setItems] = useState<ShortLetOperator[]>([]);
   const [filter, setFilter] = useState("");
-  const [form, setForm] = useState<
-    (Partial<ShortLetOperator> & { name: string; phone: string }) | null
-  >(null);
+  const [form, setForm] = useState<OperatorForm | null>(null);
+  const [formErrors, setFormErrors] = useState<Partial<Record<OperatorField, string>>>({});
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [listingOperator, setListingOperator] = useState<ShortLetOperator | null>(null);
@@ -46,6 +88,13 @@ export default function AdminShortLetOperatorsPage() {
   }, [filter]);
   const save = async () => {
     if (!form) return;
+    const validationErrors = validateOperator(form);
+    setFormErrors(validationErrors);
+    if (Object.keys(validationErrors).length) {
+      focusFirstInvalidField(validationErrors);
+      error("Please correct the highlighted fields.");
+      return;
+    }
     setSaving(true);
     try {
       const payload = {
@@ -62,8 +111,15 @@ export default function AdminShortLetOperatorsPage() {
       success("Operator saved");
       setForm(null);
       load();
-    } catch (e: any) {
-      error(e.message);
+    } catch (caught) {
+      if (caught instanceof ApiError) {
+        const serverFieldErrors = fieldErrorsFromApi(caught.errors ?? [caught.message]);
+        if (Object.keys(serverFieldErrors).length) {
+          setFormErrors(serverFieldErrors);
+          focusFirstInvalidField(serverFieldErrors);
+        }
+      }
+      error(caught instanceof ApiError ? caught.message : "Unable to save operator");
     } finally {
       setSaving(false);
     }
@@ -111,7 +167,7 @@ export default function AdminShortLetOperatorsPage() {
         </div>
         <button
           className="btn-primary flex items-center gap-2"
-          onClick={() => setForm(empty)}
+          onClick={() => { setForm({ ...empty }); setFormErrors({}); }}
         >
           <Plus className="h-4 w-4" />
           Add operator
@@ -178,7 +234,7 @@ export default function AdminShortLetOperatorsPage() {
               <div className="flex gap-2">
                 <button className="btn-outline !px-3 !py-2" title="View associated listings" onClick={() => viewListings(item)}><Eye className="h-4 w-4" /></button>
                 {item.portalStatus !== OperatorPortalStatus.NOT_CREATED && <button className="btn-outline !px-3 !py-2" onClick={() => updatePortalStatus(item)}>{item.portalStatus === OperatorPortalStatus.ACTIVE ? "Disable portal" : "Enable portal"}</button>}
-                <button className="btn-outline !px-3 !py-2" onClick={() => setForm({ ...empty, ...item, id: item.id })}>Edit</button>
+                <button className="btn-outline !px-3 !py-2" onClick={() => { setForm({ ...empty, ...item, id: item.id }); setFormErrors({}); }}>Edit</button>
               </div>
             </div>
           ))
@@ -191,7 +247,7 @@ export default function AdminShortLetOperatorsPage() {
               <h2 className="font-display text-lg font-bold">
                 {form.id ? "Edit" : "Add"} operator
               </h2>
-              <button onClick={() => setForm(null)}>
+              <button title="Close" onClick={() => setForm(null)}>
                 <X />
               </button>
             </div>
@@ -201,7 +257,7 @@ export default function AdminShortLetOperatorsPage() {
                 ["contactPerson", "Contact person"],
                 ["phone", "Phone number *"],
                 ["email", "Email address"],
-                ["websiteUrl", "Website / booking URL"],
+                ["websiteUrl", "Website / booking URL (optional)"],
               ].map(([key, label]) => (
                 <label
                   key={key}
@@ -209,7 +265,8 @@ export default function AdminShortLetOperatorsPage() {
                 >
                   <span className="label">{label}</span>
                   <input
-                    className="input"
+                    id={`operator-${key}`}
+                    className={`input ${formErrors[key as OperatorField] ? "!border-red-500 !bg-red-50/40 focus:!border-red-600 focus:!ring-2 focus:!ring-red-200" : ""}`}
                     type={
                       key === "email"
                         ? "email"
@@ -217,11 +274,22 @@ export default function AdminShortLetOperatorsPage() {
                           ? "url"
                           : "text"
                     }
-                    value={(form as any)[key]}
+                    value={(form as any)[key] ?? ""}
                     onChange={(e) =>
-                      setForm({ ...form, [key]: e.target.value })
+                      {
+                        setForm({ ...form, [key]: e.target.value });
+                        setFormErrors((current) => ({ ...current, [key]: undefined }));
+                      }
                     }
+                    placeholder={key === "websiteUrl" ? "https://operator.com" : undefined}
+                    aria-invalid={Boolean(formErrors[key as OperatorField])}
+                    aria-describedby={formErrors[key as OperatorField] ? `${key}-error` : undefined}
                   />
+                  {formErrors[key as OperatorField] && (
+                    <span id={`${key}-error`} role="alert" className="mt-1.5 block text-xs font-semibold leading-5 text-red-600">
+                      {formErrors[key as OperatorField]}
+                    </span>
+                  )}
                 </label>
               ))}
             </div>
@@ -230,7 +298,7 @@ export default function AdminShortLetOperatorsPage() {
               onClick={save}
               className="btn-primary mt-6 w-full"
             >
-              {saving ? "Saving..." : "Save operator"}
+              {saving ? "Saving..." : form.id ? "Save changes" : "Add operator"}
             </button>
           </div>
         </div>
