@@ -51,7 +51,7 @@ const PASSWORD_HINTS = [
 function RegisterPageInner() {
   const router = useRouter();
   const params = useSearchParams();
-  const defaultRole = params.get('role') === 'agent' ? UserRole.AGENT : UserRole.USER;
+  const defaultRole = params.get('role') === 'operator' ? UserRole.PROPERTY_OPERATOR : UserRole.RENTER;
 
   const { register: registerUser, loginWithGoogle } = useAuth();
   const { success } = useToast();
@@ -86,8 +86,8 @@ function RegisterPageInner() {
 
   const onSubmit = async (data: RegisterFormData) => {
     setServerError(null);
-    if (selectedRole === UserRole.AGENT && !data.phone) {
-      setServerError('Phone number is required for agent accounts.');
+    if (selectedRole === UserRole.PROPERTY_OPERATOR && !data.phone) {
+      setServerError('Phone number is required for property operator accounts.');
       return;
     }
     try {
@@ -100,10 +100,10 @@ function RegisterPageInner() {
         password: data.password,
         role: selectedRole,
       });
-      success(selectedRole === UserRole.AGENT ? 'Account created. You can sign in now; phone verification is still pending.' : 'Account created. Check your email for the verification code.');
+      success(selectedRole === UserRole.PROPERTY_OPERATOR ? 'Account created. Check your phone for the verification code.' : 'Account created. Check your email for the verification code.');
       const email = encodeURIComponent(data.email.trim().toLowerCase());
-      if (selectedRole === UserRole.AGENT) {
-        router.push(`/auth/login?email=${email}`);
+      if (selectedRole === UserRole.PROPERTY_OPERATOR) {
+        router.push(`/auth/verify-phone?email=${email}`);
       } else {
         router.push(`/auth/verify-email?email=${email}`);
       }
@@ -156,29 +156,29 @@ function RegisterPageInner() {
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
-                onClick={() => setSelectedRole(UserRole.USER)}
+                onClick={() => setSelectedRole(UserRole.RENTER)}
                 className={`flex flex-col items-center gap-2 rounded-xl border-2 py-4 text-center transition-all ${
-                  selectedRole === UserRole.USER
+                  selectedRole === UserRole.RENTER
                     ? 'border-gold-400 bg-gold-400/10'
                     : 'border-white/20 hover:border-white/40'
                 }`}
               >
-                <Home className={`h-6 w-6 ${selectedRole === UserRole.USER ? 'text-gold-400' : 'text-white/60'}`} />
-                <span className="text-sm font-semibold text-white">Property User</span>
+                <Home className={`h-6 w-6 ${selectedRole === UserRole.RENTER ? 'text-gold-400' : 'text-white/60'}`} />
+                <span className="text-sm font-semibold text-white">Renter</span>
                 <span className="text-[10px] text-white/50">Browse &amp; inspect</span>
               </button>
               <button
                 type="button"
-                onClick={() => setSelectedRole(UserRole.AGENT)}
+                onClick={() => setSelectedRole(UserRole.PROPERTY_OPERATOR)}
                 className={`flex flex-col items-center gap-2 rounded-xl border-2 py-4 text-center transition-all ${
-                  selectedRole === UserRole.AGENT
+                  selectedRole === UserRole.PROPERTY_OPERATOR
                     ? 'border-gold-400 bg-gold-400/10'
                     : 'border-white/20 hover:border-white/40'
                 }`}
               >
-                <Users className={`h-6 w-6 ${selectedRole === UserRole.AGENT ? 'text-gold-400' : 'text-white/60'}`} />
-                <span className="text-sm font-semibold text-white">Agent</span>
-                <span className="text-[10px] text-white/50">List properties</span>
+                <Users className={`h-6 w-6 ${selectedRole === UserRole.PROPERTY_OPERATOR ? 'text-gold-400' : 'text-white/60'}`} />
+                <span className="text-sm font-semibold text-white">Property Operator</span>
+                <span className="text-[10px] text-white/50">Manage property records</span>
               </button>
             </div>
           </div>
@@ -238,7 +238,7 @@ function RegisterPageInner() {
 
             {/* Phone */}
             <div>
-              <label htmlFor="register-phone" className="block text-sm font-medium text-white/80 mb-1.5">Phone Number {selectedRole === UserRole.USER && <span className="text-white/40">(optional)</span>}</label>
+              <label htmlFor="register-phone" className="block text-sm font-medium text-white/80 mb-1.5">Phone Number {selectedRole === UserRole.RENTER && <span className="text-white/40">(optional)</span>}</label>
               <input
                 id="register-phone"
                 {...register('phone')}
@@ -349,7 +349,7 @@ function RegisterPageInner() {
             </button>
           </form>
 
-          {selectedRole === UserRole.USER && (
+          {selectedRole === UserRole.RENTER && (
             <div className="mt-5 space-y-4">
               <div className="flex items-center gap-3 text-[11px] uppercase text-white/40"><span className="h-px flex-1 bg-white/15" />or<span className="h-px flex-1 bg-white/15" /></div>
               <GoogleSignInButton onCredential={async (credential) => { await loginWithGoogle(credential); router.replace('/dashboard'); }} />

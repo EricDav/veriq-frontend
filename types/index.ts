@@ -1,7 +1,9 @@
 // ─── Enums (mirrors backend) ───────────────────────────────────────────────
 
 export enum UserRole {
+  RENTER = 'renter',
   USER = 'user',
+  PROPERTY_OPERATOR = 'property_operator',
   AGENT = 'agent',
   SHORT_LET_OPERATOR = 'short_let_operator',
   ADMIN = 'admin',

@@ -4,9 +4,9 @@ import type { SiteContent } from '@/types';
 
 const STEPS = [
   { number: '01', icon: Search, title: 'Browse Properties', description: 'Explore verified listings in Port Harcourt that match your needs.', className: 'bg-emerald-600' },
-  { number: '02', icon: Unlock, title: 'Unlock Intelligence', description: 'Get the full report with property, street, and agent intelligence.', className: 'bg-blue-600' },
-  { number: '03', icon: CheckCircle2, title: 'Compare & Decide', description: 'Compare options and trust signals to choose what is worth visiting.', className: 'bg-violet-600' },
-  { number: '04', icon: MapPin, title: 'Inspect with Confidence', description: 'Walk in informed, with fewer surprises and better decisions.', className: 'bg-emerald-600' },
+  { number: '02', icon: CheckCircle2, title: 'Preview Before You Unlock', description: 'See the public summary, availability, and key signals first.', className: 'bg-blue-600' },
+  { number: '03', icon: Unlock, title: 'Unlock the Full Report', description: 'Access the exact location, full intelligence, protected images, and contact details.', className: 'bg-violet-600' },
+  { number: '04', icon: MapPin, title: 'Chat & Decide', description: 'Contact the property operator directly, then inspect with confidence.', className: 'bg-emerald-600' },
 ];
 
 const STREET_METRICS = [

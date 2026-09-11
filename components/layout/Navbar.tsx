@@ -33,7 +33,8 @@ export function Navbar() {
 
   const isDashboard = pathname.startsWith("/dashboard");
   const isAuthPage = pathname.startsWith("/auth");
-  const solidHeader = scrolled || pathname.startsWith("/street-intelligence");
+  const darkPropertyHeader = pathname.startsWith("/properties");
+  const solidHeader = !darkPropertyHeader && (scrolled || pathname.startsWith("/street-intelligence"));
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10);

@@ -15,7 +15,9 @@ import { useToast } from '@/components/ui/Toast';
 import { useRouter } from 'next/navigation';
 
 const ROLE_BADGE: Record<UserRole, string> = {
+  renter: 'bg-slate-100 text-slate-600',
   user: 'bg-slate-100 text-slate-600',
+  property_operator: 'bg-cyan-100 text-cyan-700',
   agent: 'bg-gold-100 text-gold-700',
   admin: 'bg-red-100 text-red-600',
   super_admin: 'bg-purple-100 text-purple-700',

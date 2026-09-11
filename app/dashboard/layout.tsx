@@ -68,7 +68,7 @@ const OPERATOR_NAV = [
 function getNavItems(role?: UserRole) {
   if (role === UserRole.ADMIN) return ADMIN_NAV;
   if (role === UserRole.AGENT) return AGENT_NAV;
-  if (role === UserRole.SHORT_LET_OPERATOR) return OPERATOR_NAV;
+  if (role === UserRole.SHORT_LET_OPERATOR || role === UserRole.PROPERTY_OPERATOR) return OPERATOR_NAV;
   return USER_NAV;
 }
 

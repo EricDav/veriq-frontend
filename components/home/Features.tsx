@@ -1,4 +1,4 @@
-import { ArrowRight, MapPin, Shield, UserRound } from 'lucide-react';
+import { ArrowRight, MapPin, Shield, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 import type { SiteContent } from '@/types';
 
@@ -18,11 +18,11 @@ const FEATURES = [
     href: '/street-intelligence',
   },
   {
-    icon: UserRound,
-    title: 'Agent Trust',
-    description: 'Identity verification, listing freshness, trust score, and performance history to help you choose the right agent.',
+    icon: ShieldCheck,
+    title: 'Verified Availability',
+    description: 'See whether a property or unit is available before you unlock, with freshness and verification signals.',
     className: 'bg-violet-50 text-violet-600',
-    href: '/about',
+    href: '/properties',
   },
 ];
 

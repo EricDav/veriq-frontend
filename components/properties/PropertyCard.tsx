@@ -52,10 +52,12 @@ function formatNaira(amount: number): string {
 export function PropertyCard({
   property,
   detailHref,
+  browseVariant = false,
 }: {
   property: Property;
   /** Override the link destination (e.g. /dashboard/browse/:id) */
   detailHref?: string;
+  browseVariant?: boolean;
 }) {
   const [freeUnlock, setFreeUnlock] = useState<FreeUnlockStatus | null>(null);
   const {
@@ -103,9 +105,9 @@ export function PropertyCard({
 
   return (
     <Link href={detailHref ?? `/properties/${id}`} className="group block">
-      <div className="card overflow-hidden">
+      <div className={`overflow-hidden rounded-md border transition-all duration-200 ${browseVariant ? 'border-emerald-400/20 bg-[#062129] text-white hover:border-emerald-400/50 hover:shadow-[0_12px_35px_rgba(16,185,129,0.12)]' : 'card'}`}>
         {/* Image / placeholder */}
-        <div className={`relative h-52 bg-gradient-to-br ${gradient} overflow-hidden`}>
+        <div className={`relative ${browseVariant ? 'h-48' : 'h-52'} bg-gradient-to-br ${gradient} overflow-hidden`}>
           {coverImageUrl ? (
             <Image
               src={mediaUrl(coverImageUrl)}
@@ -166,18 +168,18 @@ export function PropertyCard({
         </div>
 
         {/* Content */}
-        <div className="p-5">
-          <h3 className="font-display text-base font-bold text-navy-900 leading-snug group-hover:text-veriq-secondary transition-colors line-clamp-1 mb-1.5">
+        <div className={browseVariant ? 'p-4' : 'p-5'}>
+          <h3 className={`font-display text-base font-bold leading-snug group-hover:text-veriq-secondary transition-colors line-clamp-1 mb-1.5 ${browseVariant ? 'text-white' : 'text-navy-900'}`}>
             {title}
           </h3>
 
-          <div className="flex items-center gap-1.5 text-veriq-muted text-xs mb-4">
+          <div className={`flex items-center gap-1.5 text-xs mb-4 ${browseVariant ? 'text-white/55' : 'text-veriq-muted'}`}>
             <MapPin className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
             <span className="truncate">{location}</span>
           </div>
 
           {/* Specs */}
-          <div className="flex items-center gap-4 text-xs text-veriq-muted mb-4 pb-4 border-b border-slate-100">
+          <div className={`flex items-center gap-4 text-xs mb-4 pb-4 border-b ${browseVariant ? 'border-white/10 text-white/60' : 'border-slate-100 text-veriq-muted'}`}>
             <div className="flex items-center gap-1">
               <Bed className="h-3.5 w-3.5" />
               <span>{bedrooms} Beds</span>
@@ -196,7 +198,7 @@ export function PropertyCard({
                 <div className="h-5 w-5 rounded-full bg-veriq-secondary flex items-center justify-center text-[9px] font-bold text-white">
                   {agentInitial}
                 </div>
-                <span className="text-xs font-medium text-navy-700 max-w-[80px] truncate">{agentName}</span>
+                <span className={`text-xs font-medium max-w-[80px] truncate ${browseVariant ? 'text-white/70' : 'text-navy-700'}`}>{agentName}</span>
                 {agent?.isPlatformVerified && (
                   <Shield className="h-3 w-3 text-emerald-500 flex-shrink-0" />
                 )}
@@ -204,12 +206,18 @@ export function PropertyCard({
             </div>
             <div className="text-right">
               <p className="text-[10px] text-slate-400 uppercase tracking-wider mb-0.5">Rent</p>
-              <p className="text-base font-bold text-navy-900">
+              <p className={`text-base font-bold ${browseVariant ? 'text-emerald-300' : 'text-navy-900'}`}>
                 {formatNaira(rentAmount)}
                 <span className="text-xs font-normal text-slate-400">/yr</span>
               </p>
             </div>
           </div>
+          {browseVariant && (
+            <div className="mt-4 grid grid-cols-2 gap-2 border-t border-white/10 pt-3">
+              <span className="flex min-h-9 items-center justify-center rounded border border-white/15 text-xs font-semibold text-white/80">View Preview</span>
+              <span className="flex min-h-9 items-center justify-center gap-1.5 rounded bg-emerald-500 text-xs font-semibold text-[#03161c]"><Lock className="h-3.5 w-3.5" />{freeUnlock?.available ? 'Unlock Free' : 'Unlock Full Details'}</span>
+            </div>
+          )}
         </div>
       </div>
     </Link>
