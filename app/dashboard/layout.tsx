@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Heart, Search, User, LogOut,
   Bell, Menu, X, Home, TrendingUp, Plus,
-  Settings, ChevronRight, Users, ShieldCheck, Wallet, Landmark, FileText, MessageCircle, Mail, MapPin, BookOpen, Settings2, Building2,
+  Settings, ChevronRight, Users, ShieldCheck, Wallet, Landmark, FileText, MessageCircle, Mail, MapPin, BookOpen, Settings2, Building2, KeyRound, Undo2, ClipboardCheck,
 } from 'lucide-react';
 import Image from 'next/image';
 import { useAuth } from '@/context/AuthContext';
@@ -21,46 +21,62 @@ import { canUseNotifications, playChatSound, requestNotificationPermission, show
 const USER_NAV = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { label: 'Browse Properties', href: '/dashboard/browse', icon: Search },
+  { label: 'My Unlocks', href: '/dashboard/unlocks', icon: KeyRound },
+  { label: 'Refunds', href: '/dashboard/refunds', icon: Undo2 },
   { label: 'Street Intelligence', href: '/street-intelligence', icon: MapPin },
   { label: 'Share Intelligence', href: '/dashboard/community', icon: Users },
   { label: 'Saved', href: '/dashboard/saved', icon: Heart },
   { label: 'Chats', href: '/dashboard/chat', icon: MessageCircle },
-  { label: 'Wallet', href: '/dashboard/wallet', icon: Wallet },
+  { label: 'Veriq Wallet', href: '/dashboard/wallet', icon: Wallet },
   { label: 'Profile', href: '/dashboard/profile', icon: User },
 ];
 
 const AGENT_NAV = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { label: 'Browse Properties', href: '/dashboard/browse', icon: Search },
+  { label: 'Verification Queue', href: '/dashboard/agent/verification', icon: ClipboardCheck },
+  { label: 'Pending Revisions', href: '/dashboard/agent/revisions', icon: FileText },
+  { label: 'Shared Property', href: '/dashboard/agent/shared', icon: Users },
+  { label: 'Property for Sale', href: '/dashboard/agent/sales', icon: Landmark },
+  { label: 'Portfolio & Referral', href: '/dashboard/agent/portfolio', icon: Building2 },
+  { label: 'Earnings', href: '/dashboard/agent/earnings', icon: Wallet },
   { label: 'Street Intelligence', href: '/street-intelligence', icon: MapPin },
-  { label: 'Share Intelligence', href: '/dashboard/community', icon: Users },
-  { label: 'My Listings', href: '/dashboard/properties', icon: Home },
-  { label: 'Short Let Operators', href: '/dashboard/short-let-operators', icon: Building2 },
   { label: 'Agent Profile', href: '/dashboard/agent', icon: TrendingUp },
   { label: 'Chats', href: '/dashboard/chat', icon: MessageCircle },
-  { label: 'Transactions', href: '/dashboard/wallet', icon: Wallet },
   { label: 'Profile', href: '/dashboard/profile', icon: User },
 ];
 
 const ADMIN_NAV = [
   { label: 'Overview', href: '/dashboard', icon: LayoutDashboard },
-  { label: 'Agents', href: '/dashboard/admin/agents', icon: ShieldCheck },
+  { label: 'Assignment Queue', href: '/dashboard/admin/assignments', icon: ClipboardCheck },
+  { label: 'Veriq Agents', href: '/dashboard/admin/veriq-agents', icon: ShieldCheck },
+  { label: 'Verification Oversight', href: '/dashboard/admin/verification', icon: Home },
+  { label: 'Property for Sale', href: '/dashboard/admin/sales', icon: Landmark },
+  { label: 'Refund Queue', href: '/dashboard/admin/refunds', icon: Undo2 },
+  { label: 'Ledger', href: '/dashboard/admin/ledger', icon: Landmark },
+  { label: 'Business Rules', href: '/dashboard/admin/business-rules', icon: Settings2 },
+  { label: 'Pricing & Free Unlock', href: '/dashboard/admin/pricing', icon: KeyRound },
+  { label: 'Categories', href: '/dashboard/admin/categories', icon: Building2 },
+  { label: 'Agent Quality', href: '/dashboard/admin/quality', icon: TrendingUp },
+  { label: 'Audit Log', href: '/dashboard/admin/audit', icon: FileText },
   { label: 'Users', href: '/dashboard/admin/users', icon: Users },
-  { label: 'Properties', href: '/dashboard/admin/properties', icon: Home },
-  { label: 'Short Let Operators', href: '/dashboard/admin/short-let-operators', icon: Building2 },
   { label: 'Street Intelligence', href: '/street-intelligence', icon: MapPin },
   { label: 'Share Intelligence', href: '/dashboard/admin/community', icon: Users },
-  { label: 'Pricing', href: '/dashboard/admin/pricing', icon: Settings2 },
   { label: 'Allowed States', href: '/dashboard/admin/states', icon: MapPin },
   { label: 'Blogs', href: '/dashboard/admin/blogs', icon: BookOpen },
   { label: 'Contact Forms', href: '/dashboard/admin/contacts', icon: Mail },
   { label: 'Communications', href: '/dashboard/admin/communications', icon: MessageCircle },
   { label: 'Site Content', href: '/dashboard/admin/content', icon: FileText },
-  { label: 'Ledger', href: '/dashboard/admin/ledger', icon: Landmark },
   { label: 'Profile', href: '/dashboard/profile', icon: User },
 ];
 
 const OPERATOR_NAV = [
+  { label: 'Dashboard', href: '/dashboard/operator', icon: LayoutDashboard },
+  { label: 'My Properties', href: '/dashboard/operator/properties', icon: Home },
+  { label: 'Shared Property', href: '/dashboard/operator/shared', icon: Users },
+  { label: 'Profile', href: '/dashboard/profile', icon: User },
+];
+
+const SHORT_LET_OPERATOR_NAV = [
   { label: 'My Properties', href: '/dashboard/operator-properties', icon: Home },
   { label: 'Profile', href: '/dashboard/profile', icon: User },
 ];
@@ -68,7 +84,8 @@ const OPERATOR_NAV = [
 function getNavItems(role?: UserRole) {
   if (role === UserRole.ADMIN) return ADMIN_NAV;
   if (role === UserRole.AGENT) return AGENT_NAV;
-  if (role === UserRole.SHORT_LET_OPERATOR || role === UserRole.PROPERTY_OPERATOR) return OPERATOR_NAV;
+  if (role === UserRole.PROPERTY_OPERATOR) return OPERATOR_NAV;
+  if (role === UserRole.SHORT_LET_OPERATOR) return SHORT_LET_OPERATOR_NAV;
   return USER_NAV;
 }
 
@@ -246,15 +263,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </button>
         </div>
 
-        {/* Agent: list property CTA */}
-        {user?.role === UserRole.AGENT && (
+        {/* Primary action per role: Agents verify, Operators submit (v1.6.2 §8.1–§8.3). */}
+        {(user?.role === UserRole.AGENT || user?.role === UserRole.PROPERTY_OPERATOR) && (
           <div className="px-4 py-4">
             <Link
-              href="/dashboard/properties/new"
+              href={user?.role === UserRole.AGENT ? '/dashboard/agent/verification' : '/dashboard/operator/properties/new'}
               onClick={() => setSidebarOpen(false)}
               className="w-full flex items-center justify-center gap-2 rounded-xl bg-gold-gradient py-2.5 text-xs font-bold text-navy-900 hover:shadow-gold-glow transition-all"
             >
-              <Plus className="h-4 w-4" /> List a Property
+              <Plus className="h-4 w-4" /> {user?.role === UserRole.AGENT ? 'Open verification queue' : 'Add a Property'}
             </Link>
           </div>
         )}

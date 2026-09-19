@@ -11,17 +11,22 @@ import {
   ChevronLeft, ChevronRight, X, Play, Timer, RefreshCw,
   Building2, Trees, Sun, Cloud, Car, Users, Gift,
 } from 'lucide-react';
-import { propertiesApi, consultationsApi, mediaApi, chatApi, communityApi, ApiError } from '@/lib/api';
-import type { ConsultationAccess, Property, Consultation, MediaItem, FreeUnlockStatus } from '@/types';
+import { chatApi, ApiError } from '@/lib/api';
+import { loadPropertyForViewer, toConsultationAccess } from '@/lib/property-access';
+import { ContactActions, DocumentedUnits } from '@/components/properties/UnlockedPropertySections';
+import { StreetIntelligencePanel } from '@/components/renter/StreetIntelligencePanel';
+import { UnlockCheckout } from '@/components/renter/UnlockCheckout';
+import type { ConsultationAccess, Property, MediaItem } from '@/types';
+import type { UnlockedPropertyWithStreet } from '@/types/renter';
 import {
   AgentVerificationLevel, AgentTrustTier, FreshnessScore,
   FloodRisk, ElectricitySituation, WaterAvailability, WaterSource,
   RoadAccess, RoadAccessRain, NetworkQuality, NoiseLevel,
   SecurityFeel, PropertyCondition, CompoundCulture, PropertyType,
   ShortStayAC, ShortStayInternet, ShortStayCleanliness,
-  ShortStayFurnishing, ShortStayKitchen, UserRole,
+  ShortStayFurnishing, ShortStayKitchen,
 } from '@/types';
-import { PageLoader, LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { PageLoader } from '@/components/ui/LoadingSpinner';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/components/ui/Toast';
 import { AgentRatingButton } from '@/components/agents/AgentRatingButton';
@@ -102,26 +107,12 @@ function useCountdown(expiresAt: string | null) {
 
 // ─── Media Gallery ────────────────────────────────────────────────────────
 
-function MediaGallery({ propertyId }: { propertyId: string }) {
-  const [media, setMedia] = useState<MediaItem[]>([]);
-  const [loading, setLoading] = useState(true);
+function MediaGallery({ media }: { media: MediaItem[] }) {
   const [activeSection, setActiveSection] = useState<string>('all');
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
 
-  useEffect(() => {
-    mediaApi.getAll(propertyId).then((res) => {
-      setMedia((res.data as MediaItem[]) ?? []);
-    }).catch(() => {}).finally(() => setLoading(false));
-  }, [propertyId]);
-
   const sections = ['all', ...Array.from(new Set(media.map((m) => m.section)))];
   const filtered = activeSection === 'all' ? media : media.filter((m) => m.section === activeSection);
-
-  if (loading) return (
-    <div className="flex items-center justify-center h-48">
-      <LoadingSpinner size="md" />
-    </div>
-  );
 
   if (media.length === 0) return (
     <div className="flex flex-col items-center justify-center h-48 text-center">
@@ -305,7 +296,7 @@ function QuickIntelligencePanel({ property }: { property: Property }) {
       {property.agentObservation && (
         <div className="mt-4 rounded-xl bg-veriq-surface p-3.5">
           <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Agent Observation</p>
-          <p className="text-sm text-navy-800 italic">"{property.agentObservation}"</p>
+          <p className="text-sm text-navy-800 italic">&ldquo;{property.agentObservation}&rdquo;</p>
         </div>
       )}
     </div>
@@ -347,7 +338,7 @@ function ShortStayPanel({ property }: { property: Property }) {
       {property.shortStayAgentNote && (
         <div className="mt-4 rounded-xl bg-amber-50 p-3.5">
           <p className="text-[10px] font-semibold text-amber-600 uppercase tracking-wider mb-1">Agent Note</p>
-          <p className="text-sm text-navy-800 italic">"{property.shortStayAgentNote}"</p>
+          <p className="text-sm text-navy-800 italic">&ldquo;{property.shortStayAgentNote}&rdquo;</p>
         </div>
       )}
     </div>
@@ -407,137 +398,49 @@ function AccessTimer({ expiresAt }: { expiresAt: string }) {
 export default function DashboardPropertyDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
-  const { success, error: toastError } = useToast();
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
+  const { error: toastError } = useToast();
 
   const [property, setProperty] = useState<Property | null>(null);
-  const [consultation, setConsultation] = useState<Consultation | null>(null);
+  const [unlocked, setUnlocked] = useState<UnlockedPropertyWithStreet | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
   const [accessDetails, setAccessDetails] = useState<ConsultationAccess | null>(null);
-  const [isUnlocking, setIsUnlocking] = useState(false);
-  const [freeUnlock, setFreeUnlock] = useState<FreeUnlockStatus | null>(null);
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [notFound, setNotFound] = useState(false);
   const [isCoverPreviewOpen, setIsCoverPreviewOpen] = useState(false);
-  const [heroImgIdx, setHeroImgIdx] = useState(0);
   const [viewAsUser, setViewAsUser] = useState(false);
 
   const load = useCallback(async () => {
     setIsLoading(true);
     setNotFound(false);
     try {
-      const res = await propertiesApi.getById(id);
-      const loadedProperty = res.data;
-      setProperty(loadedProperty);
-      const freeUnlockStatus = await communityApi.freeUnlockStatus(id)
-        .then((statusRes) => statusRes.data)
-        .catch(() => null);
-      setFreeUnlock(freeUnlockStatus);
-
-      const isOwnListing =
-        !!user?.id &&
-        (loadedProperty.agent?.userId === user.id || loadedProperty.agent?.user?.id === user.id);
-
-      if (isOwnListing) {
-        setHasAccess(false);
-        setAccessDetails(null);
-        setConsultation(null);
+      const state = await loadPropertyForViewer(id, isAuthenticated);
+      if (!state) {
+        setNotFound(true);
         return;
       }
-      if (isAuthenticated) {
-        try {
-          const accessRes = await consultationsApi.checkAccess(id);
-          const access = accessRes.data?.hasAccess ?? false;
-          setHasAccess(access);
-          setAccessDetails(accessRes.data ?? null);
-          if (access) {
-            // Find active consultation for the timer
-            const myRes = await consultationsApi.getMyConsultations(1, 50);
-            const active = myRes.data.find(
-              (c) => c.propertyId === id && (c.status === 'unlocked' || c.status === 'paid'),
-            );
-            if (active) setConsultation(active);
-          }
-        } catch {
-          // no access yet — ok
-        }
-      } else {
-        setHasAccess(false);
-        setAccessDetails(null);
-        setConsultation(null);
-      }
+      setProperty(state.property);
+      setUnlocked(state.unlocked);
+      setHasAccess(state.unlocked?.access.level === 'unlocked');
+      setAccessDetails(toConsultationAccess(state.unlocked));
     } catch {
       setNotFound(true);
     } finally {
       setIsLoading(false);
     }
-  }, [id, isAuthenticated, user?.id]);
+  }, [id, isAuthenticated]);
 
   useEffect(() => { if (id && !isAuthLoading) load(); }, [id, isAuthLoading, load]);
 
-  // ── Wallet unlock flow ──
-  const handleUnlock = useCallback(async () => {
-    if (!isAuthenticated) { toastError('Please log in to unlock this report.'); return; }
-    if (property?.agent?.userId === user?.id || property?.agent?.user?.id === user?.id) {
-      toastError('Agents cannot unlock their own listings.');
-      return;
+  /** After a settled unlock, re-read the server-authorised package; the client never assumes access. */
+  const handleUnlocked = useCallback(async () => {
+    const state = await loadPropertyForViewer(id, isAuthenticated);
+    if (state?.unlocked?.access.level !== 'unlocked') {
+      toastError('Access could not be confirmed yet. Check My Unlocks for the payment status.');
     }
-
-    setIsUnlocking(true);
-    try {
-      await consultationsApi.initiate({ propertyId: id });
-      const accessRes = await consultationsApi.checkAccess(id);
-      const confirmedAccess = accessRes.data?.hasAccess ?? false;
-      setHasAccess(confirmedAccess);
-      setAccessDetails(accessRes.data ?? null);
-      if (!confirmedAccess) {
-        throw new Error('Payment was processed, but access could not be confirmed. Please refresh and try again.');
-      }
-      success('Wallet debited. Intelligence report unlocked!');
-      await load();
-    } catch (err) {
-      toastError(err instanceof ApiError || err instanceof Error ? err.message : 'Failed to unlock report.');
-    } finally {
-      setIsUnlocking(false);
-    }
-  }, [id, isAuthenticated, load, property?.agent?.user?.id, property?.agent?.userId, success, toastError, user?.id]);
-
-  const handleFreeUnlock = useCallback(async () => {
-    if (!isAuthenticated) {
-      router.push(`/auth/login?redirect=${encodeURIComponent(`/dashboard/browse/${id}`)}`);
-      return;
-    }
-    if (property?.agent?.userId === user?.id || property?.agent?.user?.id === user?.id) {
-      toastError('Agents cannot unlock their own listings.');
-      return;
-    }
-    if (freeUnlock?.eligibility?.reason === 'community_membership_required') {
-      router.push('/dashboard/community');
-      return;
-    }
-
-    setIsUnlocking(true);
-    try {
-      await communityApi.unlockFreeProperty(id);
-      const [accessRes, freeUnlockRes] = await Promise.all([
-        consultationsApi.checkAccess(id),
-        communityApi.freeUnlockStatus(id),
-      ]);
-      const confirmedAccess = accessRes.data?.hasAccess ?? false;
-      setHasAccess(confirmedAccess);
-      setAccessDetails(accessRes.data ?? null);
-      setFreeUnlock(freeUnlockRes.data);
-      if (!confirmedAccess) {
-        throw new Error('Free Unlock was created, but report access could not be confirmed. Please try again.');
-      }
-      success('Free Unlock claimed. Intelligence report unlocked!');
-      await load();
-    } catch (err) {
-      toastError(err instanceof ApiError || err instanceof Error ? err.message : 'Unable to claim Free Unlock.');
-    } finally {
-      setIsUnlocking(false);
-    }
-  }, [freeUnlock?.eligibility?.reason, id, isAuthenticated, load, property?.agent?.user?.id, property?.agent?.userId, router, success, toastError, user?.id]);
+    await load();
+  }, [id, isAuthenticated, load, toastError]);
 
   const handleStartChat = useCallback(async () => {
     if (!isAuthenticated) { toastError('Please log in to chat with this agent.'); return; }
@@ -570,7 +473,10 @@ export default function DashboardPropertyDetailPage() {
   const location = [property.area, property.city, property.state].filter(Boolean).join(', ');
   const isShortStay = property.propertyType === PropertyType.SHORT_STAY;
   const agentContact = accessDetails?.agentContact;
-  const isOwnListing = !!user?.id && user.role === UserRole.AGENT && (agent?.userId === user.id || agent?.user?.id === user.id);
+  // Manager access (assigned Agent, owning Operator or Admin) is decided server-side.
+  const isOwnListing = unlocked?.access.level === 'manager';
+  // The public projection carries the effective unlock price, so ₦0 means an active Free Unlock (§12.7).
+  const isFreeUnlock = Number(property.consultationFee) === 0;
   const ownerFullAccess = isOwnListing && !viewAsUser;
   const hasFullAccess = hasAccess || ownerFullAccess;
   const canContactAgent = hasAccess && !isOwnListing && !!agentContact?.phone;
@@ -804,8 +710,8 @@ export default function DashboardPropertyDetailPage() {
                     Full Intelligence Report Locked
                   </h3>
                   <p className="text-sm text-veriq-muted mb-4">
-                    Unlock the complete property intelligence report to access full photo gallery, environmental data,
-                    utility disclosures, and direct agent consultation — valid for 48 hours.
+                    Unlock the complete property intelligence report for the exact location, every documented Unit, the full photo gallery,
+                    verified intelligence, linked Street Intelligence and the property contacts, for the access period shown at checkout.
                   </p>
                   {isOwnListing && viewAsUser && (
                     <p className="mb-4 rounded-xl border border-blue-100 bg-white px-3 py-2 text-xs font-semibold text-blue-800">
@@ -819,42 +725,26 @@ export default function DashboardPropertyDetailPage() {
                       { icon: MapPin, label: 'Environmental report' },
                       { icon: Shield, label: 'Agent phone number' },
                       { icon: Zap, label: 'Electricity & water data' },
-                      { icon: Clock, label: '48-hour access window' },
+                      { icon: Clock, label: 'Time-limited access window' },
                     ].map(({ icon: Icon, label }) => (
                       <div key={label} className="flex items-center gap-2 text-xs text-navy-700">
                         <Icon className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0" /> {label}
                       </div>
                     ))}
                   </div>
-                  <div className="flex items-center gap-4 flex-wrap">
-                    {freeUnlock?.available && !isOwnListing && (
-                      <div className="w-full rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
-                        <div className="flex flex-wrap items-center justify-between gap-3">
-                          <div>
-                            <p className="flex items-center gap-2 text-sm font-black text-emerald-800">
-                              <Gift className="h-4 w-4" /> Free Unlock Available
-                            </p>
-                            <p className="mt-1 text-xs text-emerald-700">Active contributors can open this report without wallet payment.</p>
-                          </div>
-                          <button type="button" onClick={handleFreeUnlock} disabled={isUnlocking} className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-60">
-                            {isUnlocking ? 'Claiming…' : !isAuthenticated ? 'Sign In to Unlock' : freeUnlock.eligibility?.reason === 'community_membership_required' ? 'Join Community to Unlock' : 'Claim Free Unlock'}
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                    {!freeUnlock?.available && (
-                      <>
-                        <div className="flex items-center gap-1.5">
-                          <Wallet className="h-4 w-4 text-amber-500" />
-                          <span className="text-base font-black text-navy-900">{formatNaira(property.consultationFee)}</span>
-                          <span className="text-xs text-slate-400">one-time</span>
-                        </div>
-                        <button onClick={handleUnlock} disabled={isUnlocking || isOwnListing} className="btn-gold flex items-center gap-2">
-                          {isUnlocking ? <LoadingSpinner size="sm" className="text-navy-900" /> : <Lock className="h-4 w-4" />}
-                          {isOwnListing ? 'Own listing cannot be unlocked' : isUnlocking ? 'Unlocking…' : 'Unlock Intelligence Report'}
-                        </button>
-                      </>
-                    )}
+                  <div className="flex flex-wrap items-center gap-4">
+                    <div className="flex items-center gap-1.5">
+                      {isFreeUnlock ? <Gift className="h-4 w-4 text-emerald-500" /> : <Wallet className="h-4 w-4 text-amber-500" />}
+                      <span className="text-base font-black text-navy-900">{isFreeUnlock ? 'Free · ₦0' : formatNaira(property.consultationFee)}</span>
+                      {!isFreeUnlock && <span className="text-xs text-slate-400">one-time</span>}
+                    </div>
+                    <button type="button" onClick={() => setIsCheckoutOpen(true)} disabled={isOwnListing} className="btn-gold flex items-center gap-2">
+                      {isFreeUnlock ? <Gift className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
+                      {isOwnListing ? 'Own listing cannot be unlocked' : isFreeUnlock ? 'Unlock free' : 'Unlock Intelligence Report'}
+                    </button>
+                    <p className="w-full text-xs text-slate-500">
+                      Wallet credit is applied automatically at checkout, and you pay only any remaining amount.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -878,9 +768,9 @@ export default function DashboardPropertyDetailPage() {
                       </p>
                     </div>
                   </div>
-                  {!isOwnListing && consultation?.accessExpiresAt && (
+                  {!isOwnListing && unlocked?.access.accessExpiresAt && (
                     <div className="w-full sm:w-auto sm:flex-shrink-0">
-                      <AccessTimer expiresAt={consultation.accessExpiresAt} />
+                      <AccessTimer expiresAt={unlocked.access.accessExpiresAt} />
                     </div>
                   )}
                 </div>
@@ -939,8 +829,15 @@ export default function DashboardPropertyDetailPage() {
                 <h2 className="font-display text-base font-bold text-navy-900 mb-4 flex items-center gap-2">
                   <Eye className="h-4 w-4 text-veriq-secondary" /> Property Photos
                 </h2>
-                <MediaGallery propertyId={id} />
+                <MediaGallery media={unlocked?.media ?? []} />
               </div>
+
+              {unlocked && <DocumentedUnits units={unlocked.units} />}
+              {unlocked && hasAccess && (
+                <ContactActions contacts={unlocked.propertyContacts} agentSupport={unlocked.agentSupport} bookingLink={null} />
+              )}
+
+              <StreetIntelligencePanel presentation={unlocked?.streetIntelligence ?? null} />
 
               {/* Quick Intelligence */}
               <QuickIntelligencePanel property={property} />
@@ -980,21 +877,8 @@ export default function DashboardPropertyDetailPage() {
                 </div>
               )}
             </div>
-            <div className="space-y-2 mb-4">
-              {[
-                { label: 'Listing Accuracy', value: `${Number(agent?.listingAccuracyScore ?? 0).toFixed(0)}%` },
-                { label: 'Inspection Success', value: `${Number(agent?.inspectionSuccessRate ?? 0).toFixed(0)}%` },
-                { label: 'Total Consultations', value: agent?.totalConsultations ?? 0 },
-                { label: 'Avg Response', value: agent?.avgResponseHours ? `${Number(agent.avgResponseHours).toFixed(1)}h` : 'N/A' },
-              ].map((m) => (
-                <div key={m.label} className="flex items-center justify-between text-xs">
-                  <span className="text-slate-500">{m.label}</span>
-                  <span className="font-semibold text-navy-800">{m.value}</span>
-                </div>
-              ))}
-            </div>
             {agent?.bio && (
-              <p className="text-xs text-veriq-muted italic mb-4 leading-relaxed">"{agent.bio}"</p>
+              <p className="text-xs text-veriq-muted italic mb-4 leading-relaxed">&ldquo;{agent.bio}&rdquo;</p>
             )}
             {!hasFullAccess && (
               <p className="text-[11px] text-slate-400">
@@ -1041,8 +925,8 @@ export default function DashboardPropertyDetailPage() {
               </p>
               <p className="text-xs text-veriq-muted">One-time fee — valid 48 hours</p>
             </div>
-          ) : !isOwnListing && consultation?.accessExpiresAt ? (
-            <AccessTimer expiresAt={consultation.accessExpiresAt} />
+          ) : !isOwnListing && unlocked?.access.accessExpiresAt ? (
+            <AccessTimer expiresAt={unlocked.access.accessExpiresAt} />
           ) : null}
 
           {/* Refund protection */}
@@ -1052,8 +936,13 @@ export default function DashboardPropertyDetailPage() {
               <div>
                 <p className="text-white text-sm font-semibold mb-1">Refund Protection</p>
                 <p className="text-slate-400 text-xs leading-relaxed">
-                  If this property is unavailable after you unlock the report, you may qualify for a credit toward another available property.
+                  If a qualifying problem affected your unlock — stale availability, an invalid contact or a materially inaccurate verified fact —
+                  request a refund inside the refund window. Approved refunds are credited to your Veriq Wallet.
                 </p>
+                <div className="mt-2 flex flex-wrap gap-3">
+                  <Link href="/dashboard/unlocks" className="text-xs font-semibold text-amber-300 hover:underline">My Unlocks</Link>
+                  <Link href="/refund-policy" className="text-xs font-semibold text-amber-300 hover:underline">Refund Policy</Link>
+                </div>
               </div>
             </div>
           </div>
@@ -1067,6 +956,15 @@ export default function DashboardPropertyDetailPage() {
           </div>
         </div>
       </div>
+
+      <UnlockCheckout
+        isOpen={isCheckoutOpen}
+        onClose={() => setIsCheckoutOpen(false)}
+        targetType="property"
+        targetId={id}
+        returnPath={`/dashboard/browse/${id}`}
+        onUnlocked={handleUnlocked}
+      />
     </div>
   );
 }

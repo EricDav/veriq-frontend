@@ -10,9 +10,10 @@ import { Users, Home, Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react
 import Image from 'next/image';
 import { useAuth } from '@/context/AuthContext';
 import { ApiError, locationsApi } from '@/lib/api';
+import { referralCodesApi } from '@/lib/api/operator';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useToast } from '@/components/ui/Toast';
-import { UserRole, type AllowedState } from '@/types';
+import { UserRole, type AllowedState, type RegisterDto } from '@/types';
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 
 // ─── Validation Schema ────────────────────────────────────────────────────
@@ -62,6 +63,8 @@ function RegisterPageInner() {
   const [passwordValue, setPasswordValue] = useState('');
   const [states, setStates] = useState<AllowedState[]>([]);
   const [statesLoading, setStatesLoading] = useState(true);
+  const [referralCode, setReferralCode] = useState('');
+  const [referral, setReferral] = useState<{ status: 'idle' | 'checking' | 'valid' | 'invalid'; agentName?: string; message?: string }>({ status: 'idle' });
 
   const {
     register,
@@ -77,6 +80,36 @@ function RegisterPageInner() {
     setPasswordValue(watchedPassword ?? '');
   }, [watchedPassword]);
 
+  // Validate the optional Veriq Agent referral code as the Operator types it (§3.2).
+  useEffect(() => {
+    const code = referralCode.trim();
+    if (selectedRole !== UserRole.PROPERTY_OPERATOR || !code) {
+      setReferral({ status: 'idle' });
+      return;
+    }
+    let cancelled = false;
+    setReferral({ status: 'checking' });
+    const timer = setTimeout(() => {
+      referralCodesApi
+        .validate(code)
+        .then((response) => {
+          if (cancelled) return;
+          setReferral({ status: 'valid', agentName: response.data.agentName });
+        })
+        .catch((caught) => {
+          if (cancelled) return;
+          setReferral({
+            status: 'invalid',
+            message: caught instanceof ApiError ? caught.message : 'Referral code is not valid',
+          });
+        });
+    }, 500);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [referralCode, selectedRole]);
+
   useEffect(() => {
     locationsApi.activeStates()
       .then((res) => setStates(res.data))
@@ -90,7 +123,13 @@ function RegisterPageInner() {
       setServerError('Phone number is required for property operator accounts.');
       return;
     }
+    const code = referralCode.trim();
+    if (selectedRole === UserRole.PROPERTY_OPERATOR && code && referral.status === 'invalid') {
+      setServerError(referral.message ?? 'Referral code is not valid. Remove it or enter a valid code.');
+      return;
+    }
     try {
+      // The API accepts an optional referralCode for Property Operator signup; the shared RegisterDto type predates it.
       await registerUser({
         firstName: data.firstName,
         lastName: data.lastName,
@@ -99,7 +138,8 @@ function RegisterPageInner() {
         state: data.state,
         password: data.password,
         role: selectedRole,
-      });
+        ...(selectedRole === UserRole.PROPERTY_OPERATOR && code ? { referralCode: code } : {}),
+      } as RegisterDto & { referralCode?: string });
       success(selectedRole === UserRole.PROPERTY_OPERATOR ? 'Account created. Check your phone for the verification code.' : 'Account created. Check your email for the verification code.');
       const email = encodeURIComponent(data.email.trim().toLowerCase());
       if (selectedRole === UserRole.PROPERTY_OPERATOR) {
@@ -277,6 +317,41 @@ function RegisterPageInner() {
                 <p className="mt-1 text-xs text-amber-200">No states are currently active. Please contact support.</p>
               )}
             </div>
+
+            {/* Veriq Agent referral code (Property Operators only) */}
+            {selectedRole === UserRole.PROPERTY_OPERATOR && (
+              <div>
+                <label htmlFor="register-referral" className="block text-sm font-medium text-white/80 mb-1.5">
+                  Veriq Agent referral code <span className="text-white/40">(optional)</span>
+                </label>
+                <input
+                  id="register-referral"
+                  type="text"
+                  autoCapitalize="characters"
+                  maxLength={20}
+                  value={referralCode}
+                  onChange={(event) => setReferralCode(event.target.value.toUpperCase())}
+                  className={`w-full rounded-lg border bg-white/10 px-4 py-3 text-sm uppercase text-white placeholder:text-white/30 placeholder:normal-case outline-none transition-all focus:ring-2 focus:ring-white/10 ${
+                    referral.status === 'invalid' ? 'border-red-400/60' : 'border-white/20 focus:border-white/40'
+                  }`}
+                  placeholder="If a Veriq Agent referred you"
+                />
+                {referral.status === 'checking' && (
+                  <p className="mt-1 flex items-center gap-1.5 text-xs text-white/60"><LoadingSpinner size="sm" /> Checking code…</p>
+                )}
+                {referral.status === 'valid' && (
+                  <p className="mt-1 flex items-center gap-1.5 text-xs text-emerald-300">
+                    <CheckCircle className="h-3 w-3" /> Referred by {referral.agentName || 'a Veriq Agent'} — they will be assigned to verify your properties.
+                  </p>
+                )}
+                {referral.status === 'invalid' && (
+                  <p className="mt-1 text-xs text-red-300">{referral.message ?? 'Referral code is not valid'}</p>
+                )}
+                {referral.status === 'idle' && (
+                  <p className="mt-1 text-xs text-white/40">Leave blank and Veriq will assign an Agent after your first submission.</p>
+                )}
+              </div>
+            )}
 
             {/* Password */}
             <div>

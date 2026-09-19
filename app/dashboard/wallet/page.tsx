@@ -1,402 +1,204 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
 import {
-  Wallet as WalletIcon, Plus, ArrowDownCircle, ArrowUpCircle, RefreshCw,
-  Clock, CheckCircle, XCircle, Landmark, Timer, TrendingUp,
+  ArrowDownCircle, ArrowRight, ArrowUpCircle, CheckCircle, Clock, Info, Landmark, RefreshCw, Search, ShieldCheck, Undo2,
+  Wallet as WalletIcon, XCircle,
 } from 'lucide-react';
-import { walletApi, ApiError } from '@/lib/api';
-import type { AgentEarningsSummary, Wallet, WalletTransaction } from '@/types';
-import { UserRole, WalletTransactionType, WalletTransactionStatus } from '@/types';
-import { useToast } from '@/components/ui/Toast';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { walletCreditApi } from '@/lib/api/renter';
+import type { VeriqWallet, WalletLedgerTransaction, WalletLedgerType } from '@/types/renter';
+import { UserRole } from '@/types';
 import { useAuth } from '@/context/AuthContext';
+import { LoadingSpinner, PageLoader } from '@/components/ui/LoadingSpinner';
+import { ApiErrorNotice } from '@/components/renter/ApiErrorNotice';
+import { formatDateTime, formatNaira } from '@/components/renter/format';
 
-// ─── Formatters ───────────────────────────────────────────────────────────
+const PAGE_SIZE = 20;
 
-function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleString('en-NG', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  });
-}
+const TYPE_LABELS: Record<WalletLedgerType, string> = {
+  topup: 'Wallet funding (legacy)',
+  debit: 'Unlock payment from wallet credit',
+  refund: 'Refund credited',
+  earning: 'Earning',
+  withdrawal: 'Withdrawal',
+  ledger_migration: 'Balance moved to earnings ledger',
+};
 
-const QUICK_AMOUNTS = [1000, 5000, 10000, 25000, 50000, 100000];
+const CREDIT_TYPES: WalletLedgerType[] = ['topup', 'refund', 'earning'];
 
-// ─── Transaction row ────────────────────────────────────────────────────────
+const STATUS_STYLES = {
+  success: { icon: CheckCircle, cls: 'bg-emerald-50 text-emerald-600' },
+  pending: { icon: Clock, cls: 'bg-amber-50 text-amber-600' },
+  failed: { icon: XCircle, cls: 'bg-red-50 text-red-600' },
+} as const;
 
-function TransactionRow({ tx }: { tx: WalletTransaction }) {
-  const isCredit =
-    tx.type === WalletTransactionType.TOPUP ||
-    tx.type === WalletTransactionType.REFUND ||
-    tx.type === WalletTransactionType.EARNING;
-
-  const statusBadge = {
-    [WalletTransactionStatus.SUCCESS]: { icon: <CheckCircle className="h-3 w-3" />, cls: 'text-emerald-600 bg-emerald-50' },
-    [WalletTransactionStatus.PENDING]: { icon: <Clock className="h-3 w-3" />, cls: 'text-gold-600 bg-gold-50' },
-    [WalletTransactionStatus.FAILED]: { icon: <XCircle className="h-3 w-3" />, cls: 'text-red-600 bg-red-50' },
-  }[tx.status];
-
-  const typeLabel = {
-    [WalletTransactionType.TOPUP]: 'Wallet Top-up',
-    [WalletTransactionType.DEBIT]: 'Payment',
-    [WalletTransactionType.REFUND]: 'Refund',
-    [WalletTransactionType.EARNING]: 'Commission Earning',
-    [WalletTransactionType.WITHDRAWAL]: 'Withdrawal Request',
-  }[tx.type];
-
+function TransactionRow({ tx }: { tx: WalletLedgerTransaction }) {
+  const isCredit = CREDIT_TYPES.includes(tx.type);
+  const status = STATUS_STYLES[tx.status] ?? STATUS_STYLES.pending;
+  const StatusIcon = status.icon;
   return (
-    <div className="flex items-center gap-3 py-3 border-b border-slate-100 last:border-0">
-      <div className={`flex-shrink-0 h-9 w-9 rounded-full flex items-center justify-center ${isCredit ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'}`}>
+    <div className="flex items-center gap-3 border-b border-slate-100 py-3 last:border-0">
+      <div className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full ${isCredit ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'}`}>
         {isCredit ? <ArrowDownCircle className="h-4 w-4" /> : <ArrowUpCircle className="h-4 w-4" />}
       </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-navy-900 truncate">{tx.description || typeLabel}</p>
-        <p className="text-xs text-slate-400">{formatDate(tx.createdAt)}</p>
-      </div>
-      <div className="text-right flex-shrink-0">
-        <p className={`text-sm font-bold ${isCredit ? 'text-emerald-600' : 'text-navy-900'}`}>
-          {isCredit ? '+' : '-'}₦{Number(tx.amount).toLocaleString('en-NG')}
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-semibold text-navy-900">{tx.description || TYPE_LABELS[tx.type] || 'Wallet transaction'}</p>
+        <p className="truncate text-xs text-slate-400">
+          {TYPE_LABELS[tx.type] ?? tx.type} · {formatDateTime(tx.createdAt)}
+          {tx.paymentReference && <> · <span className="font-mono">{tx.paymentReference}</span></>}
         </p>
-        <span className={`inline-flex items-center gap-1 mt-0.5 rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize ${statusBadge.cls}`}>
-          {statusBadge.icon} {tx.status}
+      </div>
+      <div className="flex-shrink-0 text-right">
+        <p className={`text-sm font-bold ${isCredit ? 'text-emerald-600' : 'text-navy-900'}`}>{isCredit ? '+' : '−'}{formatNaira(tx.amount)}</p>
+        <span className={`mt-0.5 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize ${status.cls}`}>
+          <StatusIcon className="h-3 w-3" /> {tx.status}
         </span>
       </div>
     </div>
   );
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────
-
+/**
+ * Veriq Wallet (§14.7, §17.1): read-only refund credit — balance, credit held for a pending checkout, available credit and
+ * transaction history. Credit is applied automatically at unlock checkout; there is no top-up or cash withdrawal.
+ */
 export default function WalletPage() {
-  const { user } = useAuth();
-  const { success, error: toastError } = useToast();
-
-  const [wallet, setWallet] = useState<Wallet | null>(null);
-  const [earnings, setEarnings] = useState<AgentEarningsSummary | null>(null);
-  const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
-  const [loadingWallet, setLoadingWallet] = useState(true);
-  const [loadingEarnings, setLoadingEarnings] = useState(false);
-  const [loadingTx, setLoadingTx] = useState(true);
-
-  const [amount, setAmount] = useState('');
-  const [topUpLoading, setTopUpLoading] = useState(false);
-  const [withdrawAmount, setWithdrawAmount] = useState('');
-  const [withdrawNote, setWithdrawNote] = useState('');
-  const [withdrawLoading, setWithdrawLoading] = useState(false);
-
+  const { user, isLoading: authLoading } = useAuth();
   const isAgent = user?.role === UserRole.AGENT;
 
-  const loadWallet = () => {
-    setLoadingWallet(true);
-    walletApi
-      .getBalance()
-      .then((res) => setWallet(res.data))
-      .catch(() => {})
-      .finally(() => setLoadingWallet(false));
-  };
+  const [wallet, setWallet] = useState<VeriqWallet | null>(null);
+  const [walletError, setWalletError] = useState<unknown>(null);
+  const [transactions, setTransactions] = useState<WalletLedgerTransaction[]>([]);
+  const [txError, setTxError] = useState<unknown>(null);
+  const [page, setPage] = useState(1);
+  const [pages, setPages] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
 
-  const loadTransactions = () => {
-    setLoadingTx(true);
-    walletApi
-      .getTransactions(1, 20)
-      .then((res) => setTransactions(res.data))
-      .catch(() => {})
-      .finally(() => setLoadingTx(false));
-  };
-
-  const loadEarnings = () => {
-    if (!isAgent) return;
-    setLoadingEarnings(true);
-    walletApi
-      .getAgentEarnings()
-      .then((res) => setEarnings(res.data))
-      .catch(() => {})
-      .finally(() => setLoadingEarnings(false));
-  };
-
-  useEffect(() => {
-    loadWallet();
-    loadTransactions();
+  const load = useCallback(async () => {
+    setLoading(true);
+    setWalletError(null);
+    setTxError(null);
+    const [walletRes, txRes] = await Promise.allSettled([walletCreditApi.get(), walletCreditApi.transactions(1, PAGE_SIZE)]);
+    if (walletRes.status === 'fulfilled') setWallet(walletRes.value.data);
+    else setWalletError(walletRes.reason);
+    if (txRes.status === 'fulfilled') {
+      setTransactions(txRes.value.data);
+      setPage(1);
+      setPages(txRes.value.meta?.pages ?? 1);
+    } else {
+      setTxError(txRes.reason);
+    }
+    setLoading(false);
   }, []);
 
   useEffect(() => {
-    loadEarnings();
-  }, [isAgent]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (!authLoading) void load();
+  }, [authLoading, load]);
 
-  const handleTopUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const value = Number(amount);
-    if (!value || value < 100) {
-      toastError('Enter a valid amount (minimum ₦100)');
-      return;
-    }
-
-    setTopUpLoading(true);
+  const loadMore = async () => {
+    setLoadingMore(true);
     try {
-      // Initiate the top-up — Paystack returns a hosted checkout URL
-      const initiated = await walletApi.topUp({ amount: value });
-      const { authorizationUrl } = initiated.data;
-
-      if (!authorizationUrl) {
-        throw new Error('Payment provider did not return a checkout URL');
-      }
-
-      // Redirect to Paystack's hosted checkout. The user returns to
-      // /dashboard/wallet/callback which verifies the payment.
-      window.location.href = authorizationUrl;
+      const res = await walletCreditApi.transactions(page + 1, PAGE_SIZE);
+      setTransactions((prev) => [...prev, ...res.data]);
+      setPage(page + 1);
+      setPages(res.meta?.pages ?? pages);
     } catch (err) {
-      toastError(err instanceof ApiError ? err.message : 'Top-up failed. Please try again.');
-      setTopUpLoading(false);
-    }
-  };
-
-  const handleWithdrawal = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const value = Number(withdrawAmount);
-    if (!earnings) return;
-    if (!value || value < earnings.minWithdrawalAmount) {
-      toastError(`Minimum withdrawal is ${earnings.minWithdrawalAmountFormatted}`);
-      return;
-    }
-    if (value > earnings.availableForWithdrawal) {
-      toastError(`You can withdraw up to ${earnings.availableForWithdrawalFormatted}`);
-      return;
-    }
-
-    setWithdrawLoading(true);
-    try {
-      const res = await walletApi.requestWithdrawal({
-        amount: value,
-        note: withdrawNote.trim() || undefined,
-      });
-      setEarnings(res.data.earnings);
-      setWithdrawAmount('');
-      setWithdrawNote('');
-      success('Withdrawal request submitted.');
-      loadWallet();
-      loadTransactions();
-    } catch (err) {
-      toastError(err instanceof ApiError ? err.message : 'Withdrawal request failed.');
+      setTxError(err);
     } finally {
-      setWithdrawLoading(false);
+      setLoadingMore(false);
     }
   };
 
-  const withdrawalValue = Number(withdrawAmount);
-  const canRequestWithdrawal = !!earnings
-    && Number.isSafeInteger(withdrawalValue)
-    && withdrawalValue >= earnings.minWithdrawalAmount
-    && withdrawalValue <= earnings.availableForWithdrawal
-    && earnings.pendingWithdrawal <= 0;
+  if (authLoading || loading) return <PageLoader />;
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
-      <div>
-        <h1 className="font-display text-2xl font-bold text-navy-900">
-          {isAgent ? 'Transactions & Earnings' : 'Wallet'}
-        </h1>
-        <p className="text-sm text-veriq-muted">
-          {isAgent
-            ? 'Track commission earnings, clearance status, withdrawals, and wallet activity'
-            : 'View your balance, top up funds, and track transactions'}
-        </p>
-      </div>
-
-      {/* Balance card */}
-      <div className="card p-6 bg-navy-900 border-none">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-2">
-              <WalletIcon className="h-3.5 w-3.5" /> Wallet Balance
-            </p>
-            {loadingWallet ? (
-              <LoadingSpinner size="md" className="text-white" />
-            ) : (
-              <p className="font-display text-3xl font-black text-white">
-                {wallet?.balanceFormatted ?? '₦0'}
-              </p>
-            )}
-          </div>
-          <button
-            onClick={() => {
-              loadWallet();
-              loadEarnings();
-              loadTransactions();
-            }}
-            className="text-slate-400 hover:text-white transition-colors p-2 rounded-lg hover:bg-white/5"
-            title="Refresh"
-          >
-            <RefreshCw className="h-4 w-4" />
-          </button>
+    <div className="mx-auto max-w-5xl space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="font-display text-2xl font-bold text-navy-900">Veriq Wallet</h1>
+          <p className="text-sm text-veriq-muted">Refund credit you can put toward future unlocks. It does not expire.</p>
         </div>
+        <button type="button" onClick={() => void load()} className="btn-outline self-start !px-4 !py-2 !text-sm"><RefreshCw className="h-4 w-4" /> Refresh</button>
       </div>
 
       {isAgent && (
-        <>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-            {[
-              {
-                label: 'Total Earnings',
-                value: earnings?.totalEarningsFormatted ?? '₦0',
-                icon: TrendingUp,
-                cls: 'text-emerald-600 bg-emerald-50',
-              },
-              {
-                label: 'Available',
-                value: earnings?.availableForWithdrawalFormatted ?? '₦0',
-                icon: CheckCircle,
-                cls: 'text-veriq-secondary bg-veriq-secondary/10',
-              },
-              {
-                label: 'Pending Clearance',
-                value: earnings?.pendingClearanceFormatted ?? '₦0',
-                icon: Timer,
-                cls: 'text-gold-600 bg-gold-50',
-              },
-              {
-                label: 'Pending Withdrawal',
-                value: earnings?.pendingWithdrawalFormatted ?? '₦0',
-                icon: Landmark,
-                cls: 'text-blue-600 bg-blue-50',
-              },
-            ].map(({ label, value, icon: Icon, cls }) => (
-              <div key={label} className="card p-4">
-                <div className={`mb-3 flex h-9 w-9 items-center justify-center rounded-xl ${cls}`}>
-                  <Icon className="h-4 w-4" />
-                </div>
-                <p className="text-xs text-slate-500">{label}</p>
-                <p className="mt-1 text-xl font-black text-navy-900">
-                  {loadingEarnings ? '…' : value}
-                </p>
-              </div>
-            ))}
-          </div>
-
-          <div className="card p-6">
-            <h2 className="font-display text-base font-bold text-navy-900 mb-4 flex items-center gap-2">
-              <Landmark className="h-4 w-4 text-veriq-secondary" /> Withdraw Earnings
-            </h2>
-            <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-              <p>
-                Earnings become withdrawable after {earnings?.holdHours ?? 48} hours. Minimum withdrawal is{' '}
-                <span className="font-semibold text-navy-900">
-                  {earnings?.minWithdrawalAmountFormatted ?? '₦5,000'}
-                </span>
-                .
-              </p>
-              {earnings?.nextEligibleAt && (
-                <p className="mt-1 text-xs text-slate-500">
-                  Next pending earning clears around {formatDate(earnings.nextEligibleAt)}.
-                </p>
-              )}
+        <div className="flex flex-col gap-3 rounded-2xl border border-blue-100 bg-blue-50 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <Landmark className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-700" />
+            <div>
+              <p className="text-sm font-bold text-navy-900">Looking for your Veriq Agent earnings?</p>
+              <p className="text-xs leading-5 text-blue-900">Unlock earnings, clearance holds and withdrawals are managed in the Agent earnings ledger, separate from this wallet.</p>
             </div>
-
-            <form onSubmit={handleWithdrawal} className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_1fr_auto] md:items-end">
-              <div>
-                <label className="label">Amount (₦)</label>
-                <input
-                  type="number"
-                  required
-                  min={earnings?.minWithdrawalAmount ?? 5000}
-                  max={earnings?.availableForWithdrawal ?? undefined}
-                  step={1}
-                  value={withdrawAmount}
-                  onChange={(e) => setWithdrawAmount(e.target.value)}
-                  placeholder={earnings?.availableForWithdrawalFormatted ?? '₦0 available'}
-                  className="input"
-                />
-              </div>
-              <div>
-                <label className="label">Note <span className="font-normal text-slate-400">(optional)</span></label>
-                <input
-                  value={withdrawNote}
-                  onChange={(e) => setWithdrawNote(e.target.value)}
-                  maxLength={120}
-                  placeholder="Optional payout note"
-                  className="input"
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={withdrawLoading || !canRequestWithdrawal}
-                className="btn-primary !text-sm !py-2.5 flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50"
-              >
-                {withdrawLoading && <LoadingSpinner size="sm" />}
-                Request Withdrawal
-              </button>
-            </form>
           </div>
-        </>
-      )}
-
-      {/* Top up */}
-      {!isAgent && (
-      <div className="card p-6">
-        <h2 className="font-display text-base font-bold text-navy-900 mb-4 flex items-center gap-2">
-          <Plus className="h-4 w-4 text-veriq-secondary" /> Top Up Wallet
-        </h2>
-
-        <div className="flex flex-wrap gap-2 mb-4">
-          {QUICK_AMOUNTS.map((amt) => (
-            <button
-              key={amt}
-              type="button"
-              onClick={() => setAmount(String(amt))}
-              className={`rounded-lg px-3 py-1.5 text-xs font-semibold border transition-colors ${
-                amount === String(amt)
-                  ? 'border-veriq-secondary bg-veriq-secondary/10 text-veriq-secondary'
-                  : 'border-slate-200 text-slate-500 hover:border-slate-300'
-              }`}
-            >
-              ₦{amt.toLocaleString('en-NG')}
-            </button>
-          ))}
+          <Link href="/dashboard/agent/earnings" className="btn-primary !px-4 !py-2 !text-sm">Open Earnings <ArrowRight className="h-4 w-4" /></Link>
         </div>
-
-        <form onSubmit={handleTopUp} className="flex items-end gap-3">
-          <div className="flex-1">
-            <label className="label">Amount (₦)</label>
-            <input
-              type="number"
-              min={100}
-              step={1}
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="Enter amount"
-              className="input"
-            />
-          </div>
-          <button type="submit" disabled={topUpLoading} className="btn-primary !text-sm !py-2.5 flex items-center gap-2 whitespace-nowrap">
-            {topUpLoading && <LoadingSpinner size="sm" />}
-            Top Up
-          </button>
-        </form>
-        <p className="text-[11px] text-slate-400 mt-2">
-          You&apos;ll be redirected to Paystack to complete your payment securely. Minimum top-up is ₦100.
-        </p>
-      </div>
       )}
 
-      {/* Transaction history */}
-      <div className="card p-6">
-        <h2 className="font-display text-base font-bold text-navy-900 mb-2 flex items-center gap-2">
-          <Clock className="h-4 w-4 text-veriq-secondary" /> Transaction History
-        </h2>
-        {loadingTx ? (
-          <div className="py-8 flex justify-center">
-            <LoadingSpinner size="md" className="text-veriq-secondary" />
+      {walletError ? (
+        <ApiErrorNotice error={walletError} fallback="Your wallet balance could not be loaded." onRetry={() => void load()} />
+      ) : wallet ? (
+        <div className="card border-none bg-navy-900 p-6">
+          <p className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400"><WalletIcon className="h-3.5 w-3.5" /> Available credit</p>
+          <p className="font-display text-4xl font-black text-white">{wallet.availableFormatted}</p>
+          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-xl bg-white/5 p-3">
+              <p className="text-[11px] text-slate-400">Balance</p>
+              <p className="text-lg font-bold text-white">{wallet.balanceFormatted}</p>
+            </div>
+            <div className="rounded-xl bg-white/5 p-3">
+              <p className="text-[11px] text-slate-400">Held for a pending checkout</p>
+              <p className="text-lg font-bold text-white">{formatNaira(wallet.heldForPendingCheckout)}</p>
+            </div>
+            <div className="rounded-xl bg-white/5 p-3">
+              <p className="text-[11px] text-slate-400">Expiry</p>
+              <p className="text-lg font-bold text-white">{wallet.expires ? 'Expires' : 'Never expires'}</p>
+            </div>
           </div>
-        ) : transactions.length === 0 ? (
-          <p className="text-sm text-veriq-muted py-6 text-center">No transactions yet.</p>
+          {wallet.heldForPendingCheckout > 0 && (
+            <p className="mt-3 text-xs text-slate-400">Held credit is reserved for an unlock awaiting payment and is released automatically if that checkout is cancelled or expires.</p>
+          )}
+        </div>
+      ) : null}
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <div className="card p-5">
+          <ShieldCheck className="mb-2 h-5 w-5 text-veriq-secondary" />
+          <p className="text-sm font-bold text-navy-900">Applied automatically</p>
+          <p className="mt-1 text-xs leading-5 text-slate-600">When you unlock a listing, available credit is used first. If it covers the fee, no payment page is needed; otherwise you pay only the difference.</p>
+        </div>
+        <div className="card p-5">
+          <Undo2 className="mb-2 h-5 w-5 text-purple-600" />
+          <p className="text-sm font-bold text-navy-900">Where refunds go</p>
+          <p className="mt-1 text-xs leading-5 text-slate-600">Approved refunds for qualifying problems are credited here, never paid out as cash. Free Unlocks have no refundable value.</p>
+        </div>
+        <div className="card p-5">
+          <Info className="mb-2 h-5 w-5 text-slate-500" />
+          <p className="text-sm font-bold text-navy-900">No top-ups needed</p>
+          <p className="mt-1 text-xs leading-5 text-slate-600">You never need to fund this wallet before unlocking. Checkout collects any remaining amount directly and securely.</p>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        <Link href="/dashboard/browse" className="btn-primary !px-4 !py-2 !text-sm"><Search className="h-4 w-4" /> Browse properties</Link>
+        <Link href="/dashboard/refunds" className="btn-outline !px-4 !py-2 !text-sm"><Undo2 className="h-4 w-4" /> Refunds</Link>
+        <Link href="/refund-policy" className="btn-ghost !px-4 !py-2 !text-sm">Refund Policy</Link>
+      </div>
+
+      <div className="card p-6">
+        <h2 className="mb-2 flex items-center gap-2 font-display text-base font-bold text-navy-900"><Clock className="h-4 w-4 text-veriq-secondary" /> Transaction history</h2>
+        {txError ? <ApiErrorNotice error={txError} fallback="Wallet transactions could not be loaded." onRetry={() => void load()} /> : null}
+        {!txError && transactions.length === 0 ? (
+          <p className="py-6 text-center text-sm text-veriq-muted">No wallet activity yet. Refund credits and unlocks paid with credit will appear here with their references.</p>
         ) : (
-          <div>
-            {transactions.map((tx) => (
-              <TransactionRow key={tx.id} tx={tx} />
-            ))}
+          <div>{transactions.map((tx) => <TransactionRow key={tx.id} tx={tx} />)}</div>
+        )}
+        {page < pages && (
+          <div className="mt-4 flex justify-center">
+            <button type="button" onClick={() => void loadMore()} disabled={loadingMore} className="btn-outline !py-2.5">
+              {loadingMore && <LoadingSpinner size="sm" />} Load older transactions
+            </button>
           </div>
         )}
       </div>

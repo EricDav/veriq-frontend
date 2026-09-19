@@ -524,8 +524,72 @@ export interface Property {
   shortStayKitchen: ShortStayKitchen | null;
   shortStayAgentNote: string | null;
   coverImageUrl: string | null;
+  /** Present on the public basic-details projection. */
+  units?: PublicUnitSummary[];
+  availabilitySummary?: AvailabilitySummary;
+  accessLevel?: 'public';
   createdAt: string;
   updatedAt: string;
+}
+
+// ─── Property visibility (public vs unlock-only) ──────────────────────────
+
+export type UnitAvailability = 'available' | 'unavailable';
+
+/** Basic unit information shown before unlock. */
+export interface PublicUnitSummary {
+  id: string;
+  displayLabel: string;
+  unitType: string;
+  subtype: string | null;
+  availabilityStatus: UnitAvailability;
+  facts: Record<string, unknown>;
+  price: Record<string, unknown>;
+}
+
+export interface AvailabilitySummary {
+  documentedUnits: number;
+  availableUnits: number;
+  overall: UnitAvailability;
+  availableUnitTypes: string[];
+}
+
+/** Full documented unit, returned only inside an authorised unlocked package. */
+export interface PropertyUnitDetail {
+  id: string;
+  propertyId: string;
+  displayLabel: string;
+  unitType: string;
+  subtype: string | null;
+  facts: Record<string, unknown>;
+  commercialTerms: Record<string, unknown>;
+  intelligence: Record<string, unknown>;
+  availabilityStatus: UnitAvailability;
+  verificationStatus: string;
+  availabilityConfirmedAt: string | null;
+}
+
+export interface ContactAction {
+  role: 'property_contact' | 'veriq_agent';
+  contactType: 'operator' | 'caretaker' | 'resident' | 'seller' | 'agent';
+  name: string;
+  phone: string;
+  whatsappUrl: string | null;
+}
+
+export interface UnlockedPropertyPackage {
+  access: {
+    level: 'unlocked' | 'manager';
+    consultationId: string | null;
+    unlockedAt: string | null;
+    accessExpiresAt: string | null;
+  };
+  property: Property;
+  units: PropertyUnitDetail[];
+  media: MediaItem[];
+  bookingLink: string | null;
+  propertyContacts: ContactAction[];
+  agentSupport: ContactAction | null;
 }
 
 export interface Consultation {
@@ -883,6 +947,8 @@ export enum WalletTransactionType {
   REFUND = 'refund',
   EARNING = 'earning',
   WITHDRAWAL = 'withdrawal',
+  /** Legacy Agent wallet balance moved to the Agent earnings ledger (§15). */
+  LEDGER_MIGRATION = 'ledger_migration',
 }
 
 export enum WalletTransactionStatus {
@@ -895,6 +961,13 @@ export interface Wallet {
   id: string;
   balance: number;
   balanceFormatted: string;
+  /** Credit reserved for a checkout that has not settled yet (v1.6.2 §32.10). */
+  heldForPendingCheckout?: number;
+  /** Balance minus held credit; what a new unlock can spend. */
+  available?: number;
+  availableFormatted?: string;
+  /** Refund credit never expires (§14.7). */
+  expires?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -1084,6 +1157,8 @@ export interface RegisterDto {
   state: string;
   password: string;
   role?: UserRole;
+  /** Veriq Agent referral code; assigns a new Property Operator to that Agent (§3.2). */
+  referralCode?: string;
 }
 
 export interface LoginDto {

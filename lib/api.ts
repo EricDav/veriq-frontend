@@ -27,6 +27,8 @@ export class ApiError extends Error {
     public readonly statusCode: number,
     message: string,
     public readonly errors?: string[],
+    /** Structured detail from the API (e.g. schema issues `{ path, message }` or publication blockers `{ code, message }`). */
+    public readonly details?: unknown[],
   ) {
     super(message);
     this.name = 'ApiError';
@@ -85,6 +87,8 @@ async function ensureFreshToken(): Promise<void> {
 type HttpMethod = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
 
 interface RequestOptions {
+  /** Send the body as-is (e.g. multipart FormData); the browser sets the Content-Type boundary. */
+  raw?: boolean;
   /** Skip attaching the auth Bearer token */
   public?: boolean;
   /** Additional headers */
@@ -103,7 +107,7 @@ async function request<T>(
   }
 
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
+    ...(options?.raw ? {} : { 'Content-Type': 'application/json' }),
     ...(options?.headers ?? {}),
   };
 
@@ -117,7 +121,12 @@ async function request<T>(
   const res = await fetch(url, {
     method,
     headers,
-    body: body !== undefined ? JSON.stringify(body) : undefined,
+    body:
+      body === undefined
+        ? undefined
+        : options?.raw
+          ? (body as BodyInit)
+          : JSON.stringify(body),
   });
 
   // Parse body (could be empty on 204)
@@ -142,6 +151,7 @@ async function request<T>(
       res.status,
       errors?.length ? errors.join('. ') : message,
       errors,
+      Array.isArray(errBody?.errors) ? (errBody.errors as unknown[]) : undefined,
     );
   }
 
@@ -165,6 +175,10 @@ export const api = {
 
   delete: <T>(path: string, options?: RequestOptions) =>
     request<T>('DELETE', path, undefined, options),
+
+  /** Multipart upload (FormData) to an authenticated endpoint. */
+  upload: <T>(path: string, form: FormData, options?: RequestOptions) =>
+    request<T>('POST', path, form, { ...options, raw: true }),
 };
 
 // ─── Named API modules ────────────────────────────────────────────────────
@@ -199,18 +213,16 @@ import type {
   InitiateConsultationDto,
   RecordInspectionOutcomeDto,
   AgentTrustTier,
+  UnlockedPropertyPackage,
   Wallet,
   WalletTransaction,
-  TopUpWalletDto,
   VerifyTopUpDto,
-  InitiateTopUpResponse,
   VerifyTopUpResponse,
   AgentEarningsSummary,
   RequestWithdrawalDto,
   RequestWithdrawalResponse,
   WalletLedgerEntry,
   WalletAdminLedgerFilters,
-  WalletAdminSummary,
   SiteContent,
   UpsertSiteContentDto,
   ContactSubmission,
@@ -219,8 +231,6 @@ import type {
   AllowedState,
   BlogPost,
   UpsertBlogPostDto,
-  ConsultationPricingRule,
-  UpsertConsultationPricingRuleDto,
   UserRole,
   ContributorProfile,
   Street,
@@ -229,7 +239,6 @@ import type {
   CreateContributionDto,
   StreetContribution,
   CreateStreetDto,
-  FreeUnlockCampaign,
   FreeUnlockStatus,
   StreetStatus,
   ContributionStatus,
@@ -416,8 +425,13 @@ export const propertiesApi = {
     };
   },
 
+  /** Public basic details only — never includes exact location, intelligence or contacts. */
   getById: (id: string) =>
     api.get<ApiResponse<Property>>(`/properties/${id}`, { public: true }),
+
+  /** Full unlocked package; the server authorises the active unlock (or manager role) on every call. */
+  getUnlocked: (id: string) =>
+    api.get<ApiResponse<UnlockedPropertyPackage>>(`/properties/${id}/unlocked`),
 
   getOwnedById: (id: string) => api.get<ApiResponse<Property>>(`/properties/my/listings/${id}`),
 
@@ -440,9 +454,6 @@ export const propertiesApi = {
       },
     };
   },
-
-  create: (dto: CreatePropertyDto) =>
-    api.post<ApiResponse<Property>>('/properties', dto),
 
   update: (id: string, dto: Partial<CreatePropertyDto>) =>
     api.patch<ApiResponse<Property>>(`/properties/${id}`, dto),
@@ -494,9 +505,6 @@ export const shortLetOperatorsApi = {
 // ── Consultations ─────────────────────────────────────────────────────────
 
 export const consultationsApi = {
-  getPricing: () =>
-    api.get<ApiResponse<unknown>>('/consultations/pricing', { public: true }),
-
   initiate: (dto: InitiateConsultationDto) =>
     api.post<ApiResponse<Consultation>>('/consultations/initiate', dto),
 
@@ -520,27 +528,6 @@ export const consultationsApi = {
   getPropertyConsultations: (propertyId: string, page = 1, limit = 20) =>
     api.get<PaginatedResponse<Consultation>>(
       `/consultations/property/${propertyId}?page=${page}&limit=${limit}`,
-    ),
-
-  initiateRefund: (id: string, dto: { reason?: string }) =>
-    api.post<ApiResponse<{ consultationId: string; status: string }>>(
-      `/consultations/${id}/refund/initiate`,
-      dto,
-    ),
-
-  approveRefund: (id: string, dto: { reason?: string }) =>
-    api.post<ApiResponse<{
-      consultationId: string;
-      status: string;
-      refundedAmount: number;
-      refundedAmountFormatted: string;
-      paymentReference: string;
-    }>>(`/consultations/${id}/refund/approve`, dto),
-
-  rejectRefund: (id: string, dto: { reason?: string }) =>
-    api.post<ApiResponse<{ consultationId: string; status: string }>>(
-      `/consultations/${id}/refund/reject`,
-      dto,
     ),
 };
 
@@ -592,9 +579,7 @@ export const notificationsApi = {
 export const walletApi = {
   getBalance: () => api.get<ApiResponse<Wallet>>('/wallet'),
 
-  topUp: (dto: TopUpWalletDto) =>
-    api.post<ApiResponse<InitiateTopUpResponse>>('/wallet/topup', dto),
-
+  /** Retired: renters no longer top up. Kept to finish a top-up started before direct checkout (§14.7). */
   verifyTopUp: (dto: VerifyTopUpDto) =>
     api.post<ApiResponse<VerifyTopUpResponse>>('/wallet/topup/verify', dto),
 
@@ -620,7 +605,6 @@ export const walletApi = {
     return api.get<PaginatedResponse<WalletLedgerEntry>>(`/wallet/admin/transactions?${params}`);
   },
 
-  adminGetSummary: () => api.get<ApiResponse<WalletAdminSummary>>('/wallet/admin/summary'),
 
   adminMarkWithdrawalPaid: (transactionId: string) =>
     api.post<ApiResponse<WalletTransaction>>(`/wallet/admin/withdrawals/${transactionId}/mark-paid`, {}),
@@ -786,9 +770,6 @@ export const communityApi = {
     validUntil?: string;
   }) => api.post<ApiResponse<unknown>>('/community/admin/observations', dto),
 
-  adminCampaigns: () =>
-    api.get<ApiResponse<FreeUnlockCampaign[]>>('/community/admin/free-unlocks'),
-
   adminStreets: (filters: { status?: StreetStatus; recentHours?: number; state?: string; locationId?: string; areaId?: string; q?: string } = {}) => {
     const params = new URLSearchParams();
     if (filters.status) params.set('status', filters.status);
@@ -822,22 +803,6 @@ export const communityApi = {
 
   reviewContribution: (id: string, dto: { status: ContributionStatus; reviewNote?: string }) =>
     api.patch<ApiResponse<StreetContribution>>(`/community/admin/contributions/${id}/review`, dto),
-
-  createCampaign: (dto: {
-    propertyId: string;
-    startDate: string;
-    endDate: string;
-    maximumUnlocks?: number;
-    sponsoringAgentId?: string;
-    agreementType?: string;
-    amountPaid?: number;
-    paymentStatus?: string;
-    internalNote?: string;
-    autoReturnToPaid?: boolean;
-  }) => api.post<ApiResponse<FreeUnlockCampaign>>('/community/admin/free-unlocks', dto),
-
-  updateCampaign: (id: string, dto: Partial<FreeUnlockCampaign>) =>
-    api.patch<ApiResponse<FreeUnlockCampaign>>(`/community/admin/free-unlocks/${id}`, dto),
 };
 
 // ── Blogs ─────────────────────────────────────────────────────────────────
@@ -866,21 +831,6 @@ export const blogsApi = {
 
   delete: (id: string) =>
     api.delete<ApiResponse<null>>(`/blogs/admin/${id}`),
-};
-
-// ── Consultation Pricing ─────────────────────────────────────────────────
-
-export const consultationPricingApi = {
-  listAdmin: (agentId?: string) => {
-    const query = agentId ? `?agentId=${encodeURIComponent(agentId)}` : '';
-    return api.get<ApiResponse<ConsultationPricingRule[]>>(`/consultation-pricing/admin${query}`);
-  },
-
-  upsert: (dto: UpsertConsultationPricingRuleDto) =>
-    api.post<ApiResponse<ConsultationPricingRule>>('/consultation-pricing/admin', dto),
-
-  delete: (id: string) =>
-    api.delete<ApiResponse<null>>(`/consultation-pricing/admin/${id}`),
 };
 
 // ── Admin Communications ─────────────────────────────────────────────────

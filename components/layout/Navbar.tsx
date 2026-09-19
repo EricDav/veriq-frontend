@@ -9,14 +9,27 @@ import { useAuth } from "@/context/AuthContext";
 
 const NAV_LINKS = [
   { label: "Properties", href: "/properties" },
-  { label: "Street Intelligence", href: "/street-intelligence" },
-  { label: "Blog", href: "/blog" },
+  {
+    label: "Discover",
+    href: "#",
+    children: [
+      { label: "Shared Property", href: "/shared" },
+      { label: "Property for Sale", href: "/for-sale" },
+      { label: "Street Intelligence", href: "/street-intelligence" },
+      { label: "Blog", href: "/blog" },
+    ],
+  },
+  { label: "How It Works", href: "/how-it-works" },
   {
     label: "Company",
     href: "#",
     children: [
       { label: "About Us", href: "/about" },
       { label: "FAQ", href: "/faq" },
+      { label: "Refund Policy", href: "/refund-policy" },
+      { label: "Verification Rules", href: "/verification-rules" },
+      { label: "Safety & Verification", href: "/safety" },
+      { label: "Property Operator Terms", href: "/operator-terms" },
       { label: "Privacy Policy", href: "/privacy" },
       { label: "Terms & Conditions", href: "/terms" },
     ],

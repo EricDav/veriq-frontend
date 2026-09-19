@@ -2,17 +2,13 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { BarChart3, BellRing, CheckCircle, ChevronLeft, ChevronRight, Clock3, Flag, Gift, MapPin, Plus, RefreshCw, Search, XCircle, Trash2, Save, Pencil } from 'lucide-react';
-import { agentsApi, communityApi, locationsApi, propertiesApi } from '@/lib/api';
+import Link from 'next/link';
+import { ArrowRight, BarChart3, BellRing, CheckCircle, ChevronLeft, ChevronRight, Clock3, Flag, Gift, MapPin, Plus, RefreshCw, Search, XCircle, Trash2, Save, Pencil } from 'lucide-react';
+import { communityApi, locationsApi } from '@/lib/api';
 import {
   ContributionStatus,
-  FreeUnlockAgreementType,
   IntelligenceSourceType,
-  ListingStatus,
   StreetStatus,
-  type FreeUnlockCampaign,
-  type Agent,
-  type Property,
   type CommunityLocation,
   type Street,
   type StreetContribution,
@@ -88,16 +84,10 @@ function StreetCombobox({ label, search, onSearch, streets, selectedId, onSelect
 
 export default function AdminCommunityPage() {
   const searchParams = useSearchParams();
-  const requestedPropertyId = searchParams.get('propertyId') ?? '';
   const { success, error } = useToast();
   const [analytics, setAnalytics] = useState<Record<string, unknown> | null>(null);
-  const [campaigns, setCampaigns] = useState<FreeUnlockCampaign[]>([]);
   const [streets, setStreets] = useState<Street[]>([]);
   const [contributions, setContributions] = useState<StreetContribution[]>([]);
-  const [properties, setProperties] = useState<Property[]>([]);
-  const [agents, setAgents] = useState<Agent[]>([]);
-  const [campaignAgentId, setCampaignAgentId] = useState('');
-  const [loadingCampaignProperties, setLoadingCampaignProperties] = useState(false);
   const [hierarchy, setHierarchy] = useState<CommunityLocation[]>([]);
   const [directoryStates, setDirectoryStates] = useState<AllowedState[]>([]);
   const [categories, setCategories] = useState<IntelligenceCategory[]>([]);
@@ -129,17 +119,6 @@ export default function AdminCommunityPage() {
   const [streetLocationFilter, setStreetLocationFilter] = useState('');
   const [streetAreaFilter, setStreetAreaFilter] = useState('');
   const [contributionStatusFilter, setContributionStatusFilter] = useState<ContributionStatus | 'all'>(ContributionStatus.PENDING);
-  const [form, setForm] = useState({
-    propertyId: '',
-    startDate: '',
-    endDate: '',
-    maximumUnlocks: '25',
-    agreementType: FreeUnlockAgreementType.VERIQ_PROMOTIONAL_CAMPAIGN,
-    amountPaid: '',
-    paymentStatus: '',
-    internalNote: '',
-  });
-
   const load = async () => {
     setLoading(true);
     try {
@@ -153,10 +132,8 @@ export default function AdminCommunityPage() {
         ]).then(([pending, recent]) => ({
           data: Array.from(new Map([...pending.data, ...recent.data].map((street) => [street.id, street])).values()),
         }));
-      const [analyticsRes, campaignsRes, agentsRes, statesRes, categoriesRes] = await Promise.all([
+      const [analyticsRes, statesRes, categoriesRes] = await Promise.all([
         communityApi.adminAnalytics(),
-        communityApi.adminCampaigns(),
-        agentsApi.listAdmin(1, 100),
         locationsApi.allStates(),
         communityApi.categories(),
       ]);
@@ -166,8 +143,6 @@ export default function AdminCommunityPage() {
         communityApi.adminLocations(directoryState),
       ]);
       setAnalytics(analyticsRes.data as Record<string, unknown>);
-      setCampaigns(campaignsRes.data);
-      setAgents(agentsRes.data);
       setDirectoryStates(statesRes.data);
       setCategories(categoriesRes.data.filter((item) => item.isActive));
       setStreets(streetsRes.data);
@@ -393,95 +368,14 @@ export default function AdminCommunityPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [observation.streetId]);
 
-  useEffect(() => {
-    if (!requestedPropertyId) return;
-    let cancelled = false;
-    propertiesApi.getById(requestedPropertyId)
-      .then((response) => {
-        if (cancelled) return;
-        setCampaignAgentId(response.data.agentId);
-        setProperties([response.data]);
-      })
-      .catch((err) => error(err instanceof Error ? err.message : 'Unable to load the requested property'));
-    return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [requestedPropertyId]);
-
-  useEffect(() => {
-    if (!campaignAgentId) {
-      setProperties([]);
-      return;
-    }
-    let cancelled = false;
-    setLoadingCampaignProperties(true);
-    propertiesApi.listAdmin({ agentId: campaignAgentId, status: ListingStatus.ACTIVE, page: 1, limit: 100 })
-      .then((response) => { if (!cancelled) setProperties(response.data); })
-      .catch((err) => {
-        if (!cancelled) {
-          setProperties([]);
-          error(err instanceof Error ? err.message : 'Unable to load this agent\'s properties');
-        }
-      })
-      .finally(() => { if (!cancelled) setLoadingCampaignProperties(false); });
-    return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [campaignAgentId]);
-
-  useEffect(() => {
-    if (!requestedPropertyId || !properties.some((property) => property.id === requestedPropertyId)) return;
-    const requestedProperty = properties.find((property) => property.id === requestedPropertyId);
-    if (requestedProperty?.agentId && campaignAgentId !== requestedProperty.agentId) {
-      setCampaignAgentId(requestedProperty.agentId);
-    }
-    const start = new Date();
-    const end = new Date(start.getTime() + 7 * 86_400_000);
-    const toLocalInput = (date: Date) => {
-      const local = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
-      return local.toISOString().slice(0, 16);
-    };
-    setForm((current) => ({
-      ...current,
-      propertyId: requestedPropertyId,
-      startDate: current.startDate || toLocalInput(start),
-      endDate: current.endDate || toLocalInput(end),
-    }));
-    window.setTimeout(() => document.getElementById('free-unlocks')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
-  }, [campaignAgentId, properties, requestedPropertyId]);
-
-  const submit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    setSaving(true);
-    try {
-      await communityApi.createCampaign({
-        propertyId: form.propertyId,
-        startDate: new Date(form.startDate).toISOString(),
-        endDate: new Date(form.endDate).toISOString(),
-        maximumUnlocks: form.maximumUnlocks ? Number(form.maximumUnlocks) : undefined,
-        sponsoringAgentId: campaignAgentId,
-        agreementType: form.agreementType,
-        amountPaid: form.amountPaid ? Number(form.amountPaid) : undefined,
-        paymentStatus: form.paymentStatus || undefined,
-        internalNote: form.internalNote || undefined,
-        autoReturnToPaid: true,
-      });
-      success('Free Unlock campaign created.');
-      setForm((state) => ({ ...state, propertyId: '', internalNote: '' }));
-      await load();
-    } catch (err) {
-      error(err instanceof Error ? err.message : 'Unable to create campaign');
-    } finally {
-      setSaving(false);
-    }
-  };
-
   if (loading) return <div className="flex justify-center py-20"><LoadingSpinner size="lg" /></div>;
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="font-display text-2xl font-black text-navy-900">Community & Free Unlocks</h1>
-          <p className="mt-1 text-sm text-veriq-muted">Manage Street Intelligence health and admin-controlled Free Unlock campaigns.</p>
+          <h1 className="font-display text-2xl font-black text-navy-900">Community &amp; Street Intelligence</h1>
+          <p className="mt-1 text-sm text-veriq-muted">Manage Street Intelligence health, location governance and contribution moderation.</p>
         </div>
         <button onClick={load} className="btn-outline !py-2.5 !text-sm">
           <RefreshCw className="h-4 w-4" /> Refresh
@@ -542,92 +436,21 @@ export default function AdminCommunityPage() {
         </button>
       </section>
 
-      <div id="free-unlocks" className="scroll-mt-24 grid gap-6 lg:grid-cols-[420px_1fr]">
-        <form onSubmit={submit} className="card space-y-4 p-6">
-          <h2 className="font-display flex items-center gap-2 text-base font-bold text-navy-900">
-            <Gift className="h-4 w-4 text-gold-500" /> Create Free Unlock Campaign
-          </h2>
-          <p className="text-xs leading-5 text-veriq-muted">Select an agent first, then choose one of their active properties and configure the campaign.</p>
-          <div>
-            <label htmlFor="free-unlock-agent" className="label text-xs">Agent</label>
-            <select id="free-unlock-agent" className="input" required value={campaignAgentId} onChange={(e) => {
-              setCampaignAgentId(e.target.value);
-              setProperties([]);
-              setForm((state) => ({ ...state, propertyId: '' }));
-            }}>
-              <option value="">Select an agent</option>
-              {agents.map((agent) => {
-                const name = agent.businessName || `${agent.user?.firstName ?? ''} ${agent.user?.lastName ?? ''}`.trim() || agent.username || 'Unnamed agent';
-                return <option key={agent.id} value={agent.id}>{name}</option>;
-              })}
-            </select>
+      <div id="free-unlocks" className="scroll-mt-24 card flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+            <Gift className="h-5 w-5" />
           </div>
           <div>
-            <label htmlFor="free-unlock-property" className="label text-xs">Property</label>
-            <select id="free-unlock-property" className="input" required disabled={!campaignAgentId || loadingCampaignProperties} value={form.propertyId} onChange={(e) => setForm((s) => ({ ...s, propertyId: e.target.value }))}>
-              <option value="">{!campaignAgentId ? 'Select an agent first' : loadingCampaignProperties ? 'Loading properties...' : properties.length ? 'Select a property' : 'No active properties found'}</option>
-            {properties.map((property) => (
-              <option key={property.id} value={property.id}>{property.title} - {property.area}, {property.state}</option>
-            ))}
-            </select>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <input className="input" required type="datetime-local" value={form.startDate} onChange={(e) => setForm((s) => ({ ...s, startDate: e.target.value }))} />
-            <input className="input" required type="datetime-local" value={form.endDate} onChange={(e) => setForm((s) => ({ ...s, endDate: e.target.value }))} />
-          </div>
-          <input className="input" type="number" min="1" placeholder="Maximum campaign unlocks" value={form.maximumUnlocks} onChange={(e) => setForm((s) => ({ ...s, maximumUnlocks: e.target.value }))} />
-          <select className="input" value={form.agreementType} onChange={(e) => setForm((s) => ({ ...s, agreementType: e.target.value as FreeUnlockAgreementType }))}>
-            {Object.values(FreeUnlockAgreementType).map((value) => (
-              <option key={value} value={value}>{value.replace(/_/g, ' ')}</option>
-            ))}
-          </select>
-          <div className="grid grid-cols-2 gap-3">
-            <input className="input" type="number" min="0" placeholder="Amount paid" value={form.amountPaid} onChange={(e) => setForm((s) => ({ ...s, amountPaid: e.target.value }))} />
-            <input className="input" placeholder="Payment status" value={form.paymentStatus} onChange={(e) => setForm((s) => ({ ...s, paymentStatus: e.target.value }))} />
-          </div>
-          <textarea className="input min-h-24 resize-none" placeholder="Internal agreement notes" value={form.internalNote} onChange={(e) => setForm((s) => ({ ...s, internalNote: e.target.value }))} />
-          <button type="submit" className="btn-primary w-full justify-center" disabled={saving}>
-            {saving ? <LoadingSpinner size="sm" /> : <><Plus className="h-4 w-4" /> Create Campaign</>}
-          </button>
-        </form>
-
-        <div className="card overflow-hidden">
-          <div className="border-b border-slate-100 p-5">
-            <h2 className="font-display text-base font-bold text-navy-900">Free Unlock Campaigns</h2>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-xs text-slate-500">
-                <tr>
-                  <th className="px-4 py-3">Property</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Unlocks</th>
-                  <th className="px-4 py-3">Ends</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {campaigns.map((campaign) => (
-                  <tr key={campaign.id}>
-                    <td className="px-4 py-3">
-                      <p className="font-semibold text-navy-900">{campaign.property?.title ?? campaign.propertyId}</p>
-                      <p className="text-xs text-slate-400 capitalize">{campaign.agreementType.replace(/_/g, ' ')}</p>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="badge bg-slate-100 text-[10px] capitalize text-slate-600">{campaign.status}</span>
-                    </td>
-                    <td className="px-4 py-3 text-xs text-slate-600">{campaign.unlockCount} / {campaign.maximumUnlocks ?? '∞'}</td>
-                    <td className="px-4 py-3 text-xs text-slate-600">{new Date(campaign.endDate).toLocaleDateString()}</td>
-                  </tr>
-                ))}
-                {campaigns.length === 0 && (
-                  <tr>
-                    <td className="px-4 py-8 text-center text-sm text-slate-500" colSpan={4}>No Free Unlock campaigns yet.</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+            <h2 className="font-display text-base font-bold text-navy-900">Free Unlock has moved</h2>
+            <p className="mt-1 text-xs leading-5 text-veriq-muted">
+              Free Unlock is now managed per listing under Pricing: select the Property Operator first, then the listing, and set an optional schedule with an internal reason.
+            </p>
           </div>
         </div>
+        <Link href="/dashboard/admin/pricing?tab=free-unlock" className="btn-outline !py-2.5 !text-sm whitespace-nowrap">
+          Open Free Unlock Management <ArrowRight className="h-4 w-4" />
+        </Link>
       </div>
 
       <section className="card overflow-hidden" aria-labelledby="moderation-workspace-title">

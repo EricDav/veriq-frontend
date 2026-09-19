@@ -7,9 +7,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import {
-  Plus, TrendingUp, CheckCircle, Clock, AlertCircle, Shield,
-  Upload, FileText, Eye, ChevronDown, X, Camera, CreditCard,
-  MapPin, Briefcase, User, Lock, ExternalLink, Copy, Check, Share2, Phone,
+  CheckCircle, Clock, AlertCircle, Shield, Upload, FileText, X, Camera, CreditCard,
+  Briefcase, User, Lock, ExternalLink, Copy, Check, Share2, Phone,
+  ClipboardCheck, FileClock, Landmark, Users, Wallet,
 } from 'lucide-react';
 import { agentsApi, ApiError, authApi, locationsApi } from '@/lib/api';
 import { ACCEPTED_IMAGE_INPUT, uploadToFileService } from '@/lib/upload';
@@ -18,6 +18,7 @@ import { AgentVerificationLevel, AgentTrustTier } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/components/ui/Toast';
 import { LoadingSpinner, PageLoader } from '@/components/ui/LoadingSpinner';
+import { AgentSummaryHeader } from '@/components/agent/AgentSummaryHeader';
 
 // ─── Constants ────────────────────────────────────────────────────────────
 
@@ -478,10 +479,13 @@ export default function AgentProfilePage() {
             </span>
           </div>
         </div>
-        <Link href="/dashboard/properties/new" className="btn-gold !text-sm !py-2.5">
-          <Plus className="h-4 w-4" /> Add New Listing
+        <Link href="/dashboard/agent/verification" className="btn-primary !text-sm !py-2.5">
+          <ClipboardCheck className="h-4 w-4" /> Verification queue
         </Link>
       </div>
+
+      {/* ── Work summary (§17.3) ── */}
+      <AgentSummaryHeader />
 
       <div className="card p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
@@ -578,45 +582,6 @@ export default function AgentProfilePage() {
           </div>
         )}
       </div>
-
-      {/* ── Performance metrics ── */}
-      {agent && (agent.totalConsultations > 0 || agent.isPlatformVerified) && (
-        <div className="card p-6">
-          <h2 className="font-display text-base font-bold text-navy-900 mb-5">Performance Metrics</h2>
-          <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
-            {[
-              { label: 'Listing Accuracy', value: Number(agent.listingAccuracyScore), color: 'bg-blue-500' },
-              { label: 'Inspection Success', value: Number(agent.inspectionSuccessRate), color: 'bg-emerald-500' },
-              { label: 'Satisfaction', value: Number(agent.consultationSatisfactionRating) * 20, color: 'bg-purple-500' },
-              { label: 'Availability', value: Number(agent.availabilityReliabilityScore), color: 'bg-amber-500' },
-            ].map((metric) => (
-              <div key={metric.label}>
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-xs text-slate-500">{metric.label}</p>
-                  <p className="text-sm font-bold text-navy-900">{metric.value.toFixed(0)}%</p>
-                </div>
-                <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
-                  <div className={`h-2 rounded-full ${metric.color}`} style={{ width: `${Math.min(metric.value, 100)}%` }} />
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="mt-4 grid grid-cols-3 gap-4 text-center border-t border-slate-100 pt-4">
-            <div>
-              <p className="text-lg font-black text-navy-900">{agent.totalConsultations}</p>
-              <p className="text-xs text-slate-500">Total Consultations</p>
-            </div>
-            <div>
-              <p className="text-lg font-black text-navy-900">{agent.successfulInspections}</p>
-              <p className="text-xs text-slate-500">Successful Inspections</p>
-            </div>
-            <div>
-              <p className="text-lg font-black text-navy-900">{Number(agent.avgResponseHours).toFixed(1)}h</p>
-              <p className="text-xs text-slate-500">Avg Response Time</p>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ══════════════════════════════════════════════════════════════
           SECTION 1: PERSONAL INFORMATION & BUSINESS PROFILE
@@ -1050,11 +1015,20 @@ export default function AgentProfilePage() {
 
       {/* ── Quick links ── */}
       <div className="flex flex-wrap gap-3">
-        <Link href="/dashboard/properties" className="btn-primary !text-sm !py-2.5 flex items-center gap-2">
-          <Eye className="h-4 w-4" /> View My Listings
+        <Link href="/dashboard/agent/verification" className="btn-primary !text-sm !py-2.5 flex items-center gap-2">
+          <ClipboardCheck className="h-4 w-4" /> Verification queue
         </Link>
-        <Link href="/dashboard/properties/new" className="btn-gold !text-sm !py-2.5 flex items-center gap-2">
-          <Plus className="h-4 w-4" /> Add New Listing
+        <Link href="/dashboard/agent/revisions" className="btn-outline !text-sm !py-2.5 flex items-center gap-2">
+          <FileClock className="h-4 w-4" /> Pending revisions
+        </Link>
+        <Link href="/dashboard/agent/sales" className="btn-outline !text-sm !py-2.5 flex items-center gap-2">
+          <Landmark className="h-4 w-4" /> Property for Sale
+        </Link>
+        <Link href="/dashboard/agent/earnings" className="btn-outline !text-sm !py-2.5 flex items-center gap-2">
+          <Wallet className="h-4 w-4" /> Earnings &amp; withdrawals
+        </Link>
+        <Link href="/dashboard/agent/portfolio" className="btn-outline !text-sm !py-2.5 flex items-center gap-2">
+          <Users className="h-4 w-4" /> Portfolio &amp; referral
         </Link>
       </div>
     </div>

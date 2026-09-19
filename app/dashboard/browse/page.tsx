@@ -6,7 +6,8 @@ import {
   ChevronLeft, ChevronRight, X, Unlock,
 } from 'lucide-react';
 import { PropertyCard } from '@/components/properties/PropertyCard';
-import { agentsApi, consultationsApi, locationsApi, propertiesApi } from '@/lib/api';
+import { agentsApi,  locationsApi, propertiesApi } from '@/lib/api';
+import { unlocksApi } from '@/lib/api/renter';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useAuth } from '@/context/AuthContext';
 import type { Agent, AllowedState, Property, FilterPropertiesDto } from '@/types';
@@ -139,16 +140,19 @@ export default function BrowsePropertiesPage() {
       let unlockedProperties: Property[] = [];
       if (isAuthenticated) {
         try {
-          const consultations = await consultationsApi.getMyConsultations(1, 100);
-          const now = Date.now();
-          const activeConsultations = consultations.data.filter((item) =>
-            item.status === 'unlocked' &&
-            item.accessExpiresAt &&
-            new Date(item.accessExpiresAt).getTime() > now &&
-            item.property,
+          // Active property unlocks (v1.6.2 §12): the unlock history carries a listing summary,
+          // so the full public record is fetched for the cards that are shown.
+          const history = await unlocksApi.my(1, 100);
+          const activeProperties = history.data.filter(
+            (item) => item.targetType === 'property' && item.isActive,
           );
-          unlocked = new Set(activeConsultations.map((item) => item.propertyId));
-          unlockedProperties = activeConsultations.map((item) => item.property);
+          unlocked = new Set(activeProperties.map((item) => item.targetId));
+          const loaded = await Promise.all(
+            activeProperties.slice(0, 24).map((item) =>
+              propertiesApi.getById(item.targetId).then((res) => res.data).catch(() => null),
+            ),
+          );
+          unlockedProperties = loaded.filter((property): property is Property => property !== null);
         } catch {
           unlocked = new Set<string>();
           unlockedProperties = [];

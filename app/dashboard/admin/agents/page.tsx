@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   CheckCircle, XCircle, Clock, ChevronLeft, ChevronRight,
-  Search, RefreshCw, User, ExternalLink, Phone, MessageCircle, Mail,
+  Search, RefreshCw, User, ExternalLink, Phone, MessageCircle, Mail, UserCog, ArrowRight,
 } from 'lucide-react';
 import { agentsApi, usersApi, ApiError } from '@/lib/api';
 import type { Agent } from '@/types';
@@ -208,6 +208,20 @@ export default function AdminAgentsPage() {
         <button onClick={load} className="btn-primary !text-sm !py-2.5 flex items-center gap-2">
           <RefreshCw className="h-4 w-4" /> Refresh
         </button>
+      </div>
+
+      {/* Veriq Agent account controls */}
+      <div className="flex flex-col gap-3 rounded-xl border border-emerald-100 bg-emerald-50/70 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-3">
+          <UserCog className="mt-0.5 h-5 w-5 flex-shrink-0 text-emerald-600" />
+          <p className="text-sm leading-6 text-emerald-900">
+            <strong>Veriq Agent accounts are Admin-created.</strong> Create accounts, issue referral codes, suspend or restore Agents,
+            change publishing permission and set per-Agent commission share from Veriq Agents. This page keeps legacy verification document review.
+          </p>
+        </div>
+        <Link href="/dashboard/admin/veriq-agents" className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-700">
+          Open Veriq Agents <ArrowRight className="h-4 w-4" />
+        </Link>
       </div>
 
       {/* Stats */}

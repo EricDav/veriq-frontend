@@ -1,11 +1,10 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { MapPin, CheckCircle, Bed, Bath, Lock, Shield, Home, Gift } from 'lucide-react';
-import { communityApi } from '@/lib/api';
-import type { FreeUnlockStatus, Property } from '@/types';
+import type { Property } from '@/types';
 import { AgentVerificationLevel, FreshnessScore } from '@/types';
 
 // Colour gradient pool keyed by property type for visual variety
@@ -59,7 +58,6 @@ export function PropertyCard({
   detailHref?: string;
   browseVariant?: boolean;
 }) {
-  const [freeUnlock, setFreeUnlock] = useState<FreeUnlockStatus | null>(null);
   const {
     id,
     title,
@@ -75,7 +73,16 @@ export function PropertyCard({
     status,
     isVerified,
     coverImageUrl,
+    consultationFee,
   } = property as Property & { isVerified?: boolean };
+
+  // The public list returns the effective unlock price, so ₦0 means this listing is currently free to unlock (§12.7).
+  const isFreeUnlock = typeof consultationFee === 'number' && consultationFee === 0;
+  const unlockLabel = isFreeUnlock
+    ? 'Free unlock · ₦0'
+    : typeof consultationFee === 'number' && consultationFee > 0
+      ? `Unlock ₦${consultationFee.toLocaleString('en-NG')}`
+      : 'Unlock full details';
 
   const gradient = TYPE_COLORS[propertyType] ?? TYPE_COLORS.other;
   const freshness = FRESHNESS_BADGE[freshnessScore];
@@ -87,21 +94,6 @@ export function PropertyCard({
     (agent?.verificationLevel ?? 0) >= AgentVerificationLevel.BASIC;
   const location = [area, city, state].filter(Boolean).join(', ');
   const isActive = status === 'active';
-
-  useEffect(() => {
-    let cancelled = false;
-    communityApi
-      .freeUnlockStatus(id)
-      .then((res) => {
-        if (!cancelled) setFreeUnlock(res.data);
-      })
-      .catch(() => {
-        if (!cancelled) setFreeUnlock(null);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [id]);
 
   return (
     <Link href={detailHref ?? `/properties/${id}`} className="group block">
@@ -146,17 +138,17 @@ export function PropertyCard({
             </div>
           )}
 
-          {freeUnlock?.available && (
+          {isFreeUnlock && (
             <div className="absolute top-12 right-3 flex items-center gap-1 rounded-full bg-emerald-500 px-2.5 py-1 text-white shadow-sm">
               <Gift className="h-3 w-3" />
               <span className="text-xs font-bold">Free Unlock</span>
             </div>
           )}
 
-          {/* Unlock report CTA */}
-          <div className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-lg bg-navy-900/80 backdrop-blur-sm px-3 py-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-            {freeUnlock?.available ? <Gift className="h-3 w-3 text-emerald-300" /> : <Lock className="h-3 w-3 text-gold-400" />}
-            <span className="text-xs font-semibold text-white">{freeUnlock?.available ? 'Claim Free Unlock' : 'Unlock Report'}</span>
+          {/* Unlock fee CTA */}
+          <div className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-lg bg-navy-900/80 px-3 py-1.5 backdrop-blur-sm">
+            {isFreeUnlock ? <Gift className="h-3 w-3 text-emerald-300" /> : <Lock className="h-3 w-3 text-gold-400" />}
+            <span className="text-xs font-semibold text-white">{unlockLabel}</span>
           </div>
 
           {/* Type label */}
@@ -215,7 +207,7 @@ export function PropertyCard({
           {browseVariant && (
             <div className="mt-4 grid grid-cols-2 gap-2 border-t border-white/10 pt-3">
               <span className="flex min-h-9 items-center justify-center rounded border border-white/15 text-xs font-semibold text-white/80">View Preview</span>
-              <span className="flex min-h-9 items-center justify-center gap-1.5 rounded bg-emerald-500 text-xs font-semibold text-[#03161c]"><Lock className="h-3.5 w-3.5" />{freeUnlock?.available ? 'Unlock Free' : 'Unlock Full Details'}</span>
+              <span className="flex min-h-9 items-center justify-center gap-1.5 rounded bg-emerald-500 text-xs font-semibold text-[#03161c]">{isFreeUnlock ? <Gift className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}{isFreeUnlock ? 'Unlock Free' : 'Unlock Full Details'}</span>
             </div>
           )}
         </div>

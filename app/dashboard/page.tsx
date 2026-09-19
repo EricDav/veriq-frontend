@@ -624,14 +624,15 @@ export default function DashboardPage() {
             <RefreshCw className="h-4 w-4" /> Admin Overview
           </Link>
         )}
-        {(user?.role === UserRole.SHORT_LET_OPERATOR || user?.role === UserRole.PROPERTY_OPERATOR) && <Link href="/dashboard/operator-properties" className="btn-primary !py-2.5 !text-sm">My Properties</Link>}
+        {user?.role === UserRole.SHORT_LET_OPERATOR && <Link href="/dashboard/operator-properties" className="btn-primary !py-2.5 !text-sm">My Properties</Link>}
+        {user?.role === UserRole.PROPERTY_OPERATOR && <Link href="/dashboard/operator" className="btn-primary !py-2.5 !text-sm">Operator Dashboard</Link>}
       </div>
 
       {/* Role-specific content */}
       {user?.role === UserRole.ADMIN && <AdminDashboard />}
       {user?.role === UserRole.AGENT && <AgentDashboard agentUserId={user.id} />}
       {(user?.role === UserRole.USER || user?.role === UserRole.RENTER) && <UserDashboard userId={user.id} />}
-      {(user?.role === UserRole.SHORT_LET_OPERATOR || user?.role === UserRole.PROPERTY_OPERATOR) && <div className="rounded-lg border border-slate-200 bg-white p-8 text-center"><h2 className="font-display text-xl font-semibold">Manage property records</h2><p className="mt-2 text-sm text-veriq-muted">Open your assigned properties to maintain facts, media and unit availability. Veriq intelligence remains controlled by your assigned agent.</p><Link href="/dashboard/operator-properties" className="btn-primary mt-5 inline-flex">Open My Properties</Link></div>}
+      {(user?.role === UserRole.SHORT_LET_OPERATOR || user?.role === UserRole.PROPERTY_OPERATOR) && <div className="rounded-lg border border-slate-200 bg-white p-8 text-center"><h2 className="font-display text-xl font-semibold">Manage property records</h2><p className="mt-2 text-sm text-veriq-muted">Submit and maintain your properties, units, media and availability. Your assigned Veriq Agent verifies and publishes each listing.</p><Link href={user?.role === UserRole.PROPERTY_OPERATOR ? '/dashboard/operator' : '/dashboard/operator-properties'} className="btn-primary mt-5 inline-flex">Open My Properties</Link></div>}
     </div>
   );
 }

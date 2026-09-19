@@ -1,563 +1,759 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { Suspense, useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
-  Landmark, Wallet as WalletIcon, TrendingUp, Users, RefreshCw,
-  ChevronLeft, ChevronRight, Search, ArrowDownCircle, ArrowUpCircle,
-  Clock, CheckCircle, XCircle, Award,
+  AlertTriangle,
+  Banknote,
+  Coins,
+  Gift,
+  Landmark,
+  Plus,
+  Search,
+  Undo2,
+  Users,
+  Wallet,
 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/context/AuthContext';
-import { walletApi, ApiError } from '@/lib/api';
-import type { WalletLedgerEntry, WalletAdminSummary } from '@/types';
-import { UserRole, WalletTransactionType, WalletTransactionStatus } from '@/types';
-import { PageLoader, LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { ledgerAdminApi } from '@/lib/api/admin';
+import type {
+  AgentBalanceRow,
+  AgentPayout,
+  AgentPayoutStatus,
+  EarningBuckets,
+  LedgerOverview,
+  LedgerTransaction,
+  PageMeta,
+  RevenueSplitRow,
+  UnlockStatus,
+  WalletLedgerRow,
+  WalletTransactionStatus,
+  WalletTransactionType,
+} from '@/types/admin';
+import {
+  PAYOUT_STATUSES,
+  UNLOCK_STATUSES,
+  WALLET_TRANSACTION_STATUSES,
+  WALLET_TRANSACTION_TYPES,
+} from '@/types/admin';
+import { PageLoader } from '@/components/ui/LoadingSpinner';
 import { useToast } from '@/components/ui/Toast';
+import { ReasonDialog } from '@/components/admin/ReasonDialog';
+import {
+  dateOnly,
+  dateTime,
+  describeError,
+  errorText,
+  humanize,
+  naira,
+  signedNaira,
+  type DescribedError,
+} from '@/components/admin/format';
+import {
+  AdminPageHeader,
+  EmptyState,
+  ErrorPanel,
+  LoadingBlock,
+  Pagination,
+  Panel,
+  StatCard,
+  StatusBadge,
+  TableScroll,
+  Tabs,
+  td,
+  th,
+  useAdminGuard,
+} from '@/components/admin/ui';
 
-// ─── Formatters ───────────────────────────────────────────────────────────
+type TabId = 'overview' | 'transactions' | 'revenue' | 'wallet' | 'balances' | 'withdrawals';
 
-function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleString('en-NG', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  });
-}
-
-function fmtNaira(n: number): string {
-  return `₦${Number(n).toLocaleString('en-NG')}`;
-}
-
-const TYPE_LABEL: Record<WalletTransactionType, string> = {
-  [WalletTransactionType.TOPUP]: 'Top-up',
-  [WalletTransactionType.DEBIT]: 'Debit',
-  [WalletTransactionType.REFUND]: 'Refund',
-  [WalletTransactionType.EARNING]: 'Agent Earning',
-  [WalletTransactionType.WITHDRAWAL]: 'Withdrawal',
+const TARGET_LABELS: Record<string, string> = {
+  property: 'Property',
+  shared_opportunity: 'Shared opportunity',
+  sale_listing: 'Sale listing',
 };
 
-const STATUS_BADGE: Record<WalletTransactionStatus, { icon: React.ReactNode; cls: string }> = {
-  [WalletTransactionStatus.SUCCESS]: { icon: <CheckCircle className="h-3 w-3" />, cls: 'text-emerald-600 bg-emerald-50' },
-  [WalletTransactionStatus.PENDING]: { icon: <Clock className="h-3 w-3" />, cls: 'text-gold-600 bg-gold-50' },
-  [WalletTransactionStatus.FAILED]: { icon: <XCircle className="h-3 w-3" />, cls: 'text-red-600 bg-red-50' },
-};
+const BUCKET_LABELS: Array<{ key: keyof EarningBuckets; label: string }> = [
+  { key: 'pending', label: 'Pending' },
+  { key: 'refundReviewHold', label: 'Refund review hold' },
+  { key: 'withdrawable', label: 'Withdrawable' },
+  { key: 'inWithdrawal', label: 'In withdrawal' },
+  { key: 'withdrawn', label: 'Withdrawn' },
+  { key: 'cancelled', label: 'Cancelled' },
+  { key: 'adjustments', label: 'Adjustments' },
+];
 
-const CREDIT_TYPES = new Set([WalletTransactionType.TOPUP, WalletTransactionType.REFUND, WalletTransactionType.EARNING]);
-
-// ─── Summary card ───────────────────────────────────────────────────────────
-
-function SummaryCard({
-  icon: Icon, iconCls, label, value, sub,
-}: { icon: React.ElementType; iconCls: string; label: string; value: string; sub?: string }) {
-  return (
-    <div className="card p-5">
-      <div className={`h-9 w-9 rounded-xl flex items-center justify-center mb-3 ${iconCls}`}>
-        <Icon className="h-4.5 w-4.5" />
-      </div>
-      <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">{label}</p>
-      <p className="font-display text-xl font-black text-navy-900">{value}</p>
-      {sub && <p className="text-[11px] text-veriq-muted mt-1">{sub}</p>}
-    </div>
-  );
+function defaultRange() {
+  const to = new Date();
+  const from = new Date(to.getTime() - 30 * 86_400_000);
+  return { from: from.toISOString().slice(0, 10), to: to.toISOString().slice(0, 10) };
 }
 
-// ─── Ledger row ─────────────────────────────────────────────────────────────
-
-function LedgerRow({
-  tx,
-  onMarkPaid,
-  onReject,
-  isActioning,
-}: {
-  tx: WalletLedgerEntry;
-  onMarkPaid: (id: string) => void;
-  onReject: (id: string) => void;
-  isActioning: boolean;
-}) {
-  const isCredit = CREDIT_TYPES.has(tx.type);
-  const statusBadge = STATUS_BADGE[tx.status];
-  const canActionWithdrawal =
-    tx.type === WalletTransactionType.WITHDRAWAL &&
-    tx.status === WalletTransactionStatus.PENDING;
-
-  return (
-    <tr className="border-b border-slate-100 last:border-0 hover:bg-slate-50/60">
-      <td className="py-3 px-3">
-        <div className="flex items-center gap-2.5">
-          <div className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center ${isCredit ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'}`}>
-            {isCredit ? <ArrowDownCircle className="h-4 w-4" /> : <ArrowUpCircle className="h-4 w-4" />}
-          </div>
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-navy-900 truncate">
-              {tx.user ? tx.user.name : 'Unknown user'}
-            </p>
-            <p className="text-xs text-slate-400 truncate">{tx.user?.email}</p>
-          </div>
-        </div>
-      </td>
-      <td className="py-3 px-3">
-        <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600 capitalize">
-          {TYPE_LABEL[tx.type]}
-        </span>
-      </td>
-      <td className="py-3 px-3 max-w-[220px]">
-        <p className="text-sm text-navy-900 truncate">{tx.description || '—'}</p>
-        {tx.paymentReference && <p className="text-[11px] text-slate-400 truncate">{tx.paymentReference}</p>}
-      </td>
-      <td className="py-3 px-3 text-right">
-        <p className={`text-sm font-bold whitespace-nowrap ${isCredit ? 'text-emerald-600' : 'text-navy-900'}`}>
-          {isCredit ? '+' : '-'}{fmtNaira(tx.amount)}
-        </p>
-      </td>
-      <td className="py-3 px-3">
-        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize ${statusBadge.cls}`}>
-          {statusBadge.icon} {tx.status}
-        </span>
-      </td>
-      <td className="py-3 px-3 text-right whitespace-nowrap">
-        {canActionWithdrawal ? (
-          <div className="flex flex-col items-end gap-1.5">
-            <button
-              type="button"
-              disabled={isActioning}
-              onClick={() => onMarkPaid(tx.id)}
-              className="rounded-lg bg-emerald-600 px-2.5 py-1 text-[10px] font-bold text-white hover:bg-emerald-700 disabled:opacity-50"
-            >
-              Mark paid
-            </button>
-            <button
-              type="button"
-              disabled={isActioning}
-              onClick={() => onReject(tx.id)}
-              className="text-[10px] font-bold text-red-500 hover:underline disabled:opacity-50"
-            >
-              Reject
-            </button>
-          </div>
-        ) : (
-          <p className="text-xs text-slate-400">{formatDate(tx.createdAt)}</p>
-        )}
-      </td>
-    </tr>
-  );
-}
-
-// ─── Page ─────────────────────────────────────────────────────────────────
-
-export default function AdminLedgerPage() {
-  const { user, isLoading: authLoading } = useAuth();
+function AdminLedgerInner() {
+  const { ready, loading: authLoading } = useAdminGuard();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const { success, error: toastError } = useToast();
 
-  const [summary, setSummary] = useState<WalletAdminSummary | null>(null);
-  const [loadingSummary, setLoadingSummary] = useState(true);
+  const tabParam = searchParams.get('tab');
+  const tab: TabId = (['overview', 'transactions', 'revenue', 'wallet', 'balances', 'withdrawals'] as TabId[]).includes(tabParam as TabId)
+    ? (tabParam as TabId)
+    : 'overview';
 
-  const [entries, setEntries] = useState<WalletLedgerEntry[]>([]);
-  const [pendingWithdrawals, setPendingWithdrawals] = useState<WalletLedgerEntry[]>([]);
-  const [loadingWithdrawals, setLoadingWithdrawals] = useState(true);
-  const [loadingEntries, setLoadingEntries] = useState(true);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [total, setTotal] = useState(0);
+  const [range, setRange] = useState(defaultRange);
 
-  const [typeFilter, setTypeFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [search, setSearch] = useState('');
-  const [searchInput, setSearchInput] = useState('');
-  const [actioningTxId, setActioningTxId] = useState<string | null>(null);
+  const [overview, setOverview] = useState<LedgerOverview | null>(null);
+  const [overviewLoading, setOverviewLoading] = useState(true);
+  const [overviewError, setOverviewError] = useState<DescribedError | null>(null);
 
-  useEffect(() => {
-    if (!authLoading && user?.role !== UserRole.ADMIN) {
-      router.push('/dashboard');
-    }
-  }, [authLoading, user, router]);
+  const [txStatus, setTxStatus] = useState<UnlockStatus | ''>((searchParams.get('status') as UnlockStatus | null) ?? '');
+  const [txSearch, setTxSearch] = useState('');
+  const [txSearchInput, setTxSearchInput] = useState('');
+  const [txPage, setTxPage] = useState(1);
+  const [transactions, setTransactions] = useState<LedgerTransaction[]>([]);
+  const [txMeta, setTxMeta] = useState<PageMeta>({ total: 0, page: 1, limit: 25, pages: 0 });
+  const [txLoading, setTxLoading] = useState(false);
+  const [txError, setTxError] = useState<DescribedError | null>(null);
 
-  const loadSummary = useCallback(() => {
-    setLoadingSummary(true);
-    walletApi
-      .adminGetSummary()
-      .then((res) => setSummary(res.data))
-      .catch(() => toastError('Failed to load revenue summary'))
-      .finally(() => setLoadingSummary(false));
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const [revenue, setRevenue] = useState<RevenueSplitRow[]>([]);
+  const [revenueLoading, setRevenueLoading] = useState(false);
+  const [revenueError, setRevenueError] = useState<DescribedError | null>(null);
 
-  const loadEntries = useCallback(() => {
-    setLoadingEntries(true);
-    walletApi
-      .adminGetLedger({
-        page,
-        limit: 20,
-        type: (typeFilter || undefined) as never,
-        status: (statusFilter || undefined) as never,
-        search: search || undefined,
-      })
-      .then((res) => {
-        setEntries(res.data);
-        setTotal(res.meta.total);
-        setTotalPages(res.meta.pages);
-      })
-      .catch(() => toastError('Failed to load wallet ledger'))
-      .finally(() => setLoadingEntries(false));
-  }, [page, typeFilter, statusFilter, search]); // eslint-disable-line react-hooks/exhaustive-deps
+  const [walletType, setWalletType] = useState<WalletTransactionType | ''>('');
+  const [walletStatus, setWalletStatus] = useState<WalletTransactionStatus | ''>('');
+  const [walletUserId, setWalletUserId] = useState(searchParams.get('userId') ?? '');
+  const [walletSearch, setWalletSearch] = useState('');
+  const [walletSearchInput, setWalletSearchInput] = useState('');
+  const [walletPage, setWalletPage] = useState(1);
+  const [walletRows, setWalletRows] = useState<WalletLedgerRow[]>([]);
+  const [walletMeta, setWalletMeta] = useState<PageMeta>({ total: 0, page: 1, limit: 25, pages: 0 });
+  const [walletLoading, setWalletLoading] = useState(false);
+  const [walletError, setWalletError] = useState<DescribedError | null>(null);
 
-  const loadPendingWithdrawals = useCallback(() => {
-    setLoadingWithdrawals(true);
-    walletApi.adminGetLedger({
-      page: 1,
-      limit: 50,
-      type: WalletTransactionType.WITHDRAWAL,
-      status: WalletTransactionStatus.PENDING,
-    })
-      .then((res) => setPendingWithdrawals(res.data))
-      .catch(() => toastError('Failed to load pending withdrawal requests'))
-      .finally(() => setLoadingWithdrawals(false));
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const [balances, setBalances] = useState<AgentBalanceRow[]>([]);
+  const [balancesLoading, setBalancesLoading] = useState(false);
+  const [balancesError, setBalancesError] = useState<DescribedError | null>(null);
+  const [adjustAgent, setAdjustAgent] = useState<AgentBalanceRow | null>(null);
+  const [adjustAmount, setAdjustAmount] = useState('');
 
-  useEffect(() => {
-    loadSummary();
-  }, [loadSummary]);
+  const [payoutStatus, setPayoutStatus] = useState<AgentPayoutStatus | ''>('requested');
+  const [payoutPage, setPayoutPage] = useState(1);
+  const [payouts, setPayouts] = useState<AgentPayout[]>([]);
+  const [payoutMeta, setPayoutMeta] = useState<PageMeta>({ total: 0, page: 1, limit: 20, pages: 0 });
+  const [payoutsLoading, setPayoutsLoading] = useState(false);
+  const [payoutsError, setPayoutsError] = useState<DescribedError | null>(null);
+  const [payoutAction, setPayoutAction] = useState<{ payout: AgentPayout; kind: 'paid' | 'reject' } | null>(null);
 
-  useEffect(() => {
-    loadEntries();
-  }, [loadEntries]);
-
-  useEffect(() => {
-    loadPendingWithdrawals();
-  }, [loadPendingWithdrawals]);
-
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setPage(1);
-    setSearch(searchInput.trim());
+  const setTab = (next: TabId) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('tab', next);
+    router.replace(`/dashboard/admin/ledger?${params.toString()}`, { scroll: false });
   };
 
-  const refreshAll = () => {
-    loadSummary();
-    loadEntries();
-    loadPendingWithdrawals();
-  };
-
-  const handleMarkWithdrawalPaid = async (transactionId: string) => {
-    setActioningTxId(transactionId);
+  const loadOverview = useCallback(async () => {
+    setOverviewLoading(true);
     try {
-      await walletApi.adminMarkWithdrawalPaid(transactionId);
-      success('Withdrawal marked as paid.');
-      refreshAll();
+      const res = await ledgerAdminApi.overview({ from: range.from || undefined, to: range.to || undefined });
+      setOverview(res.data);
+      setOverviewError(null);
     } catch (err) {
-      toastError(err instanceof ApiError ? err.message : 'Failed to update withdrawal');
+      setOverviewError(describeError(err, 'Could not load the ledger overview'));
     } finally {
-      setActioningTxId(null);
+      setOverviewLoading(false);
+    }
+  }, [range.from, range.to]);
+
+  const loadTransactions = useCallback(async () => {
+    setTxLoading(true);
+    try {
+      const res = await ledgerAdminApi.transactions({
+        from: range.from || undefined,
+        to: range.to || undefined,
+        status: txStatus || undefined,
+        search: txSearch || undefined,
+        page: txPage,
+        limit: 25,
+      });
+      setTransactions(res.data);
+      setTxMeta(res.meta);
+      setTxError(null);
+    } catch (err) {
+      setTxError(describeError(err, 'Could not load unlock transactions'));
+    } finally {
+      setTxLoading(false);
+    }
+  }, [range.from, range.to, txStatus, txSearch, txPage]);
+
+  const loadRevenue = useCallback(async () => {
+    setRevenueLoading(true);
+    try {
+      const res = await ledgerAdminApi.revenueSplit({ from: range.from || undefined, to: range.to || undefined });
+      setRevenue(res.data);
+      setRevenueError(null);
+    } catch (err) {
+      setRevenueError(describeError(err, 'Could not load the revenue split'));
+    } finally {
+      setRevenueLoading(false);
+    }
+  }, [range.from, range.to]);
+
+  const loadWallet = useCallback(async () => {
+    setWalletLoading(true);
+    try {
+      const res = await ledgerAdminApi.wallet({
+        type: walletType || undefined,
+        walletStatus: walletStatus || undefined,
+        userId: walletUserId.trim() || undefined,
+        search: walletSearch || undefined,
+        page: walletPage,
+        limit: 25,
+      });
+      setWalletRows(res.data);
+      setWalletMeta(res.meta);
+      setWalletError(null);
+    } catch (err) {
+      setWalletError(describeError(err, 'Could not load the Veriq Wallet ledger'));
+    } finally {
+      setWalletLoading(false);
+    }
+  }, [walletType, walletStatus, walletUserId, walletSearch, walletPage]);
+
+  const loadBalances = useCallback(async () => {
+    setBalancesLoading(true);
+    try {
+      const res = await ledgerAdminApi.agentBalances();
+      setBalances(res.data);
+      setBalancesError(null);
+    } catch (err) {
+      setBalancesError(describeError(err, 'Could not load Agent balances'));
+    } finally {
+      setBalancesLoading(false);
+    }
+  }, []);
+
+  const loadPayouts = useCallback(async () => {
+    setPayoutsLoading(true);
+    try {
+      const res = await ledgerAdminApi.withdrawals({ status: payoutStatus || undefined, page: payoutPage, limit: 20 });
+      setPayouts(res.data);
+      setPayoutMeta(res.meta);
+      setPayoutsError(null);
+    } catch (err) {
+      setPayoutsError(describeError(err, 'Could not load withdrawals'));
+    } finally {
+      setPayoutsLoading(false);
+    }
+  }, [payoutStatus, payoutPage]);
+
+  useEffect(() => {
+    if (!ready) return;
+    if (tab === 'overview') void loadOverview();
+    if (tab === 'transactions') void loadTransactions();
+    if (tab === 'revenue') void loadRevenue();
+    if (tab === 'wallet') void loadWallet();
+    if (tab === 'balances') void loadBalances();
+    if (tab === 'withdrawals') void loadPayouts();
+  }, [ready, tab, loadOverview, loadTransactions, loadRevenue, loadWallet, loadBalances, loadPayouts]);
+
+  const refresh = () => {
+    if (tab === 'overview') void loadOverview();
+    if (tab === 'transactions') void loadTransactions();
+    if (tab === 'revenue') void loadRevenue();
+    if (tab === 'wallet') void loadWallet();
+    if (tab === 'balances') void loadBalances();
+    if (tab === 'withdrawals') void loadPayouts();
+  };
+
+  const adjustValue = Number(adjustAmount);
+  const adjustValid = adjustAmount.trim() !== '' && Number.isInteger(adjustValue) && adjustValue !== 0;
+
+  const confirmAdjustment = async (note: string) => {
+    if (!adjustAgent || !adjustValid) return;
+    try {
+      const res = await ledgerAdminApi.adjust({ agentId: adjustAgent.agentId, amount: adjustValue, note });
+      success(res.message);
+      setAdjustAgent(null);
+      setAdjustAmount('');
+      void loadBalances();
+    } catch (err) {
+      toastError(errorText(err, 'Could not record the adjustment'));
     }
   };
 
-  const handleRejectWithdrawal = async (transactionId: string) => {
-    setActioningTxId(transactionId);
+  const confirmPayout = async (note: string) => {
+    if (!payoutAction) return;
     try {
-      await walletApi.adminRejectWithdrawal(transactionId);
-      success('Withdrawal rejected and funds returned.');
-      refreshAll();
+      const res =
+        payoutAction.kind === 'paid'
+          ? await ledgerAdminApi.markPayoutPaid(payoutAction.payout.id, note || undefined)
+          : await ledgerAdminApi.rejectPayout(payoutAction.payout.id, note || undefined);
+      success(res.message);
+      setPayoutAction(null);
+      void loadPayouts();
+      void loadBalances();
     } catch (err) {
-      toastError(err instanceof ApiError ? err.message : 'Failed to reject withdrawal');
-    } finally {
-      setActioningTxId(null);
+      toastError(errorText(err, 'Could not update the withdrawal'));
     }
   };
 
   if (authLoading) return <PageLoader />;
-  if (user?.role !== UserRole.ADMIN) return null;
+  if (!ready) return null;
+
+  const rangeControls = (
+    <div className="card flex flex-col gap-3 p-4 hover:shadow-card sm:flex-row sm:items-end">
+      <div>
+        <label className="label text-xs" htmlFor="ledger-from">From</label>
+        <input id="ledger-from" type="date" className="input" value={range.from} onChange={(event) => setRange((r) => ({ ...r, from: event.target.value }))} />
+      </div>
+      <div>
+        <label className="label text-xs" htmlFor="ledger-to">To</label>
+        <input id="ledger-to" type="date" className="input" value={range.to} onChange={(event) => setRange((r) => ({ ...r, to: event.target.value }))} />
+      </div>
+      <button type="button" onClick={() => { setTxPage(1); refresh(); }} className="btn-outline !py-2.5 !text-sm">Apply range</button>
+      <p className="text-xs text-slate-500 sm:ml-auto">Unlock and revenue figures use settlement dates in this range.</p>
+    </div>
+  );
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="mx-auto max-w-7xl space-y-6">
+      <AdminPageHeader
+        icon={Landmark}
+        eyebrow="Finance"
+        title="Ledger"
+        description="One ledger over separate immutable records: unlock payments, the Veriq Wallet ledger, Agent earnings and payouts. Historical rows are never rewritten; corrections are explicit adjustments."
+        onRefresh={refresh}
+        refreshing={overviewLoading || txLoading || walletLoading || balancesLoading || payoutsLoading || revenueLoading}
+      />
+
+      <Tabs<TabId>
+        label="Ledger tabs"
+        active={tab}
+        onChange={setTab}
+        tabs={[
+          { id: 'overview', label: 'Overview' },
+          { id: 'transactions', label: 'Unlock Transactions' },
+          { id: 'revenue', label: 'Revenue Split' },
+          { id: 'wallet', label: 'Veriq Wallet' },
+          { id: 'balances', label: 'Agent Balances' },
+          { id: 'withdrawals', label: 'Withdrawals' },
+        ]}
+      />
+
+      {tab === 'overview' && (
+        <div className="space-y-4">
+          {rangeControls}
+          {overviewError && <ErrorPanel error={overviewError} onRetry={() => void loadOverview()} />}
+          {overviewLoading && !overview ? (
+            <LoadingBlock />
+          ) : overview ? (
+            <>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <StatCard icon={Coins} label="Gross unlock revenue" value={naira(overview.revenue.gross)} sub={`${overview.unlocks.count.toLocaleString('en-NG')} settled unlocks`} />
+                <StatCard icon={Landmark} tone="blue" label="Veriq share" value={naira(overview.revenue.veriqShare)} sub="Recorded on each unlock" />
+                <StatCard icon={Users} tone="purple" label="Agent share" value={naira(overview.revenue.agentShare)} sub="Earnings created from unlocks" />
+                <StatCard icon={Gift} tone="slate" label="Free unlocks" value={overview.unlocks.freeUnlocks.toLocaleString('en-NG')} sub="₦0 charge · no Agent earning" />
+                <StatCard icon={Wallet} tone="green" label="Wallet-funded" value={naira(overview.revenue.walletFunded)} sub="Paid with renter wallet credit" />
+                <StatCard icon={Banknote} tone="green" label="Externally funded" value={naira(overview.revenue.externallyFunded)} sub="Collected at checkout" />
+                <StatCard icon={Undo2} tone="amber" label="Refunds credited" value={naira(overview.refunds.credited)} sub={`${overview.refunds.approved} approved · ${overview.refunds.open} open`} />
+                <StatCard icon={AlertTriangle} tone={overview.paymentExceptions > 0 ? 'red' : 'slate'} label="Payment exceptions" value={overview.paymentExceptions} sub="Duplicate or failed charges to review" />
+              </div>
+
+              <Panel title="Agent earnings balances" description="Totals across all Agents, by earning state.">
+                <div className="grid grid-cols-2 gap-2 p-4 sm:grid-cols-4 lg:grid-cols-7">
+                  {BUCKET_LABELS.map(({ key, label }) => (
+                    <div key={key} className="rounded-xl bg-slate-50 p-3">
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">{label}</p>
+                      <p className="mt-1 text-sm font-bold text-navy-900">{naira(overview.agentBalances[key] ?? 0)}</p>
+                    </div>
+                  ))}
+                </div>
+              </Panel>
+
+              <div className="flex flex-wrap gap-2">
+                <button type="button" onClick={() => setTab('transactions')} className="btn-outline !py-2.5 !text-sm">Review unlock transactions</button>
+                <Link href="/dashboard/admin/refunds" className="btn-outline !py-2.5 !text-sm"><Undo2 className="h-4 w-4" /> Refund queue</Link>
+                <button type="button" onClick={() => setTab('withdrawals')} className="btn-outline !py-2.5 !text-sm">Pending withdrawals</button>
+              </div>
+            </>
+          ) : null}
+        </div>
+      )}
+
+      {tab === 'transactions' && (
+        <div className="space-y-4">
+          {rangeControls}
+          <div className="card grid grid-cols-1 gap-3 p-4 hover:shadow-card sm:grid-cols-[1fr_220px]">
+            <form
+              onSubmit={(event) => { event.preventDefault(); setTxPage(1); setTxSearch(txSearchInput.trim()); }}
+              className="relative"
+            >
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input aria-label="Search unlock transactions" className="input !pl-9" value={txSearchInput} onChange={(event) => setTxSearchInput(event.target.value)} placeholder="Payment reference or renter email — press Enter" />
+            </form>
+            <select aria-label="Unlock status" className="input" value={txStatus} onChange={(event) => { setTxPage(1); setTxStatus(event.target.value as UnlockStatus | ''); }}>
+              <option value="">All statuses</option>
+              {UNLOCK_STATUSES.map((value) => <option key={value} value={value}>{humanize(value)}</option>)}
+            </select>
+          </div>
+          {txError && <ErrorPanel error={txError} onRetry={() => void loadTransactions()} />}
+          <Panel title="Unlock transactions" description="Every settled, failed and duplicate charge. Amounts are the values recorded at checkout.">
+            {txLoading && transactions.length === 0 ? (
+              <LoadingBlock />
+            ) : transactions.length === 0 ? (
+              <EmptyState icon={Coins} title="No unlock transactions in this range" />
+            ) : (
+              <>
+                <TableScroll>
+                  <table className="w-full min-w-[1080px]">
+                    <thead className="bg-slate-50">
+                      <tr>
+                        <th className={th}>Created</th>
+                        <th className={th}>Renter</th>
+                        <th className={th}>Listing</th>
+                        <th className={th}>Status</th>
+                        <th className={`${th} text-right`}>Charged</th>
+                        <th className={`${th} text-right`}>Veriq / Agent</th>
+                        <th className={th}>Reference</th>
+                        <th className={th}><span className="sr-only">Actions</span></th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {transactions.map((tx) => (
+                        <tr key={tx.id} className="hover:bg-slate-50/60">
+                          <td className={td}><span className="whitespace-nowrap text-xs">{dateTime(tx.createdAt)}</span></td>
+                          <td className={td}>
+                            <p className="text-xs font-semibold">{tx.user ? `${tx.user.firstName} ${tx.user.lastName}`.trim() : 'Unknown'}</p>
+                            <p className="text-[11px] text-slate-500">{tx.user?.email ?? tx.id}</p>
+                          </td>
+                          <td className={td}>
+                            <p className="text-xs">{TARGET_LABELS[tx.targetType] ?? humanize(tx.targetType)}</p>
+                            <p className="break-all font-mono text-[11px] text-slate-400">{tx.propertyId ?? tx.sharedOpportunityId ?? tx.saleListingId ?? '—'}</p>
+                          </td>
+                          <td className={td}>
+                            <StatusBadge status={tx.status} />
+                            {tx.failureReason && <p className="mt-1 max-w-[180px] text-[11px] text-red-600">{tx.failureReason}</p>}
+                          </td>
+                          <td className={`${td} text-right`}>
+                            <p className="whitespace-nowrap font-semibold">{naira(tx.feeAmount)}</p>
+                            <p className="whitespace-nowrap text-[11px] text-slate-500">{naira(tx.walletAmount)} wallet · {naira(tx.externalAmount)} direct</p>
+                            {tx.priceSource && <p className="whitespace-nowrap text-[11px] text-slate-400">{humanize(tx.priceSource)}</p>}
+                          </td>
+                          <td className={`${td} text-right`}>
+                            <p className="whitespace-nowrap text-xs">{naira(tx.platformShareAmount ?? 0)} / {naira(tx.agentShareAmount ?? 0)}</p>
+                            {tx.agentSharePercent !== null && <p className="whitespace-nowrap text-[11px] text-slate-500">{Number(tx.agentSharePercent)}% Agent share</p>}
+                          </td>
+                          <td className={td}>
+                            <p className="break-all font-mono text-[11px]">{tx.paymentReference ?? '—'}</p>
+                            <p className="text-[11px] text-slate-500">{tx.paymentProvider ? humanize(tx.paymentProvider) : ''}{tx.settledAt ? ` · settled ${dateOnly(tx.settledAt)}` : ''}</p>
+                          </td>
+                          <td className={`${td} text-right`}>
+                            <Link href={`/dashboard/admin/refunds?unlockId=${encodeURIComponent(tx.id)}`} className="whitespace-nowrap rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-bold text-navy-700 hover:bg-slate-50">
+                              Refund case
+                            </Link>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </TableScroll>
+                <Pagination page={txMeta.page} pages={txMeta.pages} total={txMeta.total} onChange={setTxPage} noun="transactions" />
+              </>
+            )}
+          </Panel>
+        </div>
+      )}
+
+      {tab === 'revenue' && (
+        <div className="space-y-4">
+          {rangeControls}
+          {revenueError && <ErrorPanel error={revenueError} onRetry={() => void loadRevenue()} />}
+          <Panel title="Revenue split by Veriq Agent" description="Gross is the configured unlock price the Agent share was calculated on. Veriq keeps the remainder. Cancelled earnings come from approved unlock-purchase refunds.">
+            {revenueLoading && revenue.length === 0 ? (
+              <LoadingBlock />
+            ) : revenue.length === 0 ? (
+              <EmptyState icon={Users} title="No earnings recorded in this range" />
+            ) : (
+              <TableScroll>
+                <table className="w-full min-w-[760px]">
+                  <thead className="bg-slate-50">
+                    <tr>
+                      <th className={th}>Veriq Agent</th>
+                      <th className={`${th} text-right`}>Unlocks</th>
+                      <th className={`${th} text-right`}>Gross</th>
+                      <th className={`${th} text-right`}>Agent share</th>
+                      <th className={`${th} text-right`}>Veriq share</th>
+                      <th className={`${th} text-right`}>Cancelled</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {revenue.map((row) => (
+                      <tr key={row.agentId} className="hover:bg-slate-50/60">
+                        <td className={td}>
+                          <p className="font-semibold">{row.agentName?.trim() || row.agentId}</p>
+                          <p className="font-mono text-[11px] text-slate-400">{row.agentId}</p>
+                        </td>
+                        <td className={`${td} text-right`}>{row.unlocks.toLocaleString('en-NG')}</td>
+                        <td className={`${td} whitespace-nowrap text-right`}>{naira(row.gross)}</td>
+                        <td className={`${td} whitespace-nowrap text-right font-semibold`}>{naira(row.agentShare)}</td>
+                        <td className={`${td} whitespace-nowrap text-right`}>{naira(Math.max(0, row.gross - row.agentShare))}</td>
+                        <td className={`${td} whitespace-nowrap text-right text-slate-500`}>{naira(row.cancelled)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </TableScroll>
+            )}
+          </Panel>
+        </div>
+      )}
+
+      {tab === 'wallet' && (
+        <div className="space-y-4">
+          <div className="card grid grid-cols-1 gap-3 p-4 hover:shadow-card sm:grid-cols-2 lg:grid-cols-4">
+            <form onSubmit={(event) => { event.preventDefault(); setWalletPage(1); setWalletSearch(walletSearchInput.trim()); }} className="relative lg:col-span-2">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input aria-label="Search the wallet ledger" className="input !pl-9" value={walletSearchInput} onChange={(event) => setWalletSearchInput(event.target.value)} placeholder="Name, email, reference or description — press Enter" />
+            </form>
+            <select aria-label="Transaction type" className="input" value={walletType} onChange={(event) => { setWalletPage(1); setWalletType(event.target.value as WalletTransactionType | ''); }}>
+              <option value="">All types</option>
+              {WALLET_TRANSACTION_TYPES.map((value) => <option key={value} value={value}>{humanize(value)}</option>)}
+            </select>
+            <select aria-label="Transaction status" className="input" value={walletStatus} onChange={(event) => { setWalletPage(1); setWalletStatus(event.target.value as WalletTransactionStatus | ''); }}>
+              <option value="">All statuses</option>
+              {WALLET_TRANSACTION_STATUSES.map((value) => <option key={value} value={value}>{humanize(value)}</option>)}
+            </select>
+            <div className="lg:col-span-2">
+              <label className="label text-xs" htmlFor="wallet-user">Filter by renter user ID</label>
+              <div className="flex gap-2">
+                <input id="wallet-user" className="input font-mono" value={walletUserId} onChange={(event) => setWalletUserId(event.target.value)} placeholder="Exact user ID" />
+                <button type="button" onClick={() => { setWalletPage(1); void loadWallet(); }} className="btn-outline !px-4 !py-2.5 !text-sm">Apply</button>
+              </div>
+            </div>
+          </div>
+          {walletError && <ErrorPanel error={walletError} onRetry={() => void loadWallet()} />}
+          <Panel title="Veriq Wallet ledger" description="Renter wallet credits and debits. Approved refunds are credited here; renters are never asked to top up.">
+            {walletLoading && walletRows.length === 0 ? (
+              <LoadingBlock />
+            ) : walletRows.length === 0 ? (
+              <EmptyState icon={Wallet} title="No wallet transactions match" />
+            ) : (
+              <>
+                <TableScroll>
+                  <table className="w-full min-w-[900px]">
+                    <thead className="bg-slate-50">
+                      <tr>
+                        <th className={th}>When</th>
+                        <th className={th}>Account</th>
+                        <th className={th}>Type</th>
+                        <th className={`${th} text-right`}>Amount</th>
+                        <th className={`${th} text-right`}>Balance after</th>
+                        <th className={th}>Status</th>
+                        <th className={th}>Description</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {walletRows.map((row) => (
+                        <tr key={row.id} className="hover:bg-slate-50/60">
+                          <td className={td}><span className="whitespace-nowrap text-xs">{dateTime(row.createdAt)}</span></td>
+                          <td className={td}>
+                            <p className="text-xs font-semibold">{row.user?.name?.trim() || 'Unknown'}</p>
+                            <p className="text-[11px] text-slate-500">{row.user?.email ?? row.userId}</p>
+                          </td>
+                          <td className={td}><StatusBadge status={row.type} label={humanize(row.type)} tone={row.type === 'refund' ? 'green' : row.type === 'debit' ? 'slate' : 'blue'} /></td>
+                          <td className={`${td} whitespace-nowrap text-right font-semibold`}>{naira(row.amount)}</td>
+                          <td className={`${td} whitespace-nowrap text-right text-slate-500`}>{row.balanceAfter === null ? '—' : naira(row.balanceAfter)}</td>
+                          <td className={td}><StatusBadge status={row.status} /></td>
+                          <td className={td}>
+                            <p className="max-w-[240px] text-xs text-slate-600">{row.description || '—'}</p>
+                            {row.paymentReference && <p className="break-all font-mono text-[11px] text-slate-400">{row.paymentReference}</p>}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </TableScroll>
+                <Pagination page={walletMeta.page} pages={walletMeta.pages} total={walletMeta.total} onChange={setWalletPage} noun="wallet entries" />
+              </>
+            )}
+          </Panel>
+        </div>
+      )}
+
+      {tab === 'balances' && (
+        <div className="space-y-4">
+          {balancesError && <ErrorPanel error={balancesError} onRetry={() => void loadBalances()} />}
+          <Panel title="Agent balances" description="Earning states per Agent. Corrections after withdrawal are explicit adjustments, never silent edits.">
+            {balancesLoading && balances.length === 0 ? (
+              <LoadingBlock />
+            ) : balances.length === 0 ? (
+              <EmptyState icon={Users} title="No Agent balances yet" />
+            ) : (
+              <TableScroll>
+                <table className="w-full min-w-[1040px]">
+                  <thead className="bg-slate-50">
+                    <tr>
+                      <th className={th}>Agent</th>
+                      {BUCKET_LABELS.map(({ key, label }) => (
+                        <th key={key} className={`${th} text-right`}>{label}</th>
+                      ))}
+                      <th className={th}><span className="sr-only">Actions</span></th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {balances.map((row) => (
+                      <tr key={row.agentId} className="hover:bg-slate-50/60">
+                        <td className={td}>
+                          <p className="font-semibold">{row.agentName?.trim() || row.agentId}</p>
+                          <StatusBadge status={row.isActive ? 'active' : 'suspended'} />
+                        </td>
+                        {BUCKET_LABELS.map(({ key }) => (
+                          <td key={key} className={`${td} whitespace-nowrap text-right`}>
+                            {key === 'adjustments' ? signedNaira(row.buckets[key]) : naira(row.buckets[key])}
+                          </td>
+                        ))}
+                        <td className={`${td} text-right`}>
+                          <button type="button" onClick={() => { setAdjustAmount(''); setAdjustAgent(row); }} className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-bold text-navy-700 hover:bg-slate-50">
+                            <Plus className="h-3.5 w-3.5" /> Adjustment
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </TableScroll>
+            )}
+          </Panel>
+        </div>
+      )}
+
+      {tab === 'withdrawals' && (
+        <div className="space-y-4">
+          <div className="card flex flex-col gap-3 p-4 hover:shadow-card sm:flex-row sm:items-center">
+            <select aria-label="Withdrawal status" className="input sm:!w-56" value={payoutStatus} onChange={(event) => { setPayoutPage(1); setPayoutStatus(event.target.value as AgentPayoutStatus | ''); }}>
+              <option value="">All withdrawals</option>
+              {PAYOUT_STATUSES.map((value) => <option key={value} value={value}>{humanize(value)}</option>)}
+            </select>
+            <p className="text-xs text-slate-500">Mark a withdrawal paid only after the bank transfer is complete. Rejecting returns the amount to withdrawable.</p>
+          </div>
+          {payoutsError && <ErrorPanel error={payoutsError} onRetry={() => void loadPayouts()} />}
+          <Panel title="Withdrawals" description="Agent payout requests drawn from withdrawable earnings.">
+            {payoutsLoading && payouts.length === 0 ? (
+              <LoadingBlock />
+            ) : payouts.length === 0 ? (
+              <EmptyState icon={Banknote} title="No withdrawals in this view" />
+            ) : (
+              <>
+                <TableScroll>
+                  <table className="w-full min-w-[960px]">
+                    <thead className="bg-slate-50">
+                      <tr>
+                        <th className={th}>Requested</th>
+                        <th className={th}>Agent</th>
+                        <th className={`${th} text-right`}>Amount</th>
+                        <th className={th}>Payout details</th>
+                        <th className={th}>Status</th>
+                        <th className={th}>Decision</th>
+                        <th className={th}><span className="sr-only">Actions</span></th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {payouts.map((payout) => (
+                        <tr key={payout.id} className="hover:bg-slate-50/60">
+                          <td className={td}>
+                            <p className="whitespace-nowrap text-xs">{dateTime(payout.createdAt)}</p>
+                            <p className="break-all font-mono text-[11px] text-slate-400">{payout.reference}</p>
+                          </td>
+                          <td className={td}>
+                            <p className="text-xs font-semibold">{payout.agentName?.trim() || payout.agentId}</p>
+                            {payout.note && <p className="max-w-[180px] text-[11px] text-slate-500">{payout.note}</p>}
+                          </td>
+                          <td className={`${td} whitespace-nowrap text-right font-bold`}>{naira(payout.amount)}</td>
+                          <td className={td}>
+                            <p className="text-xs">{payout.bankSnapshot?.bankName ?? '—'}</p>
+                            <p className="text-[11px] text-slate-500">{payout.bankSnapshot?.bankAccountName ?? ''}</p>
+                            <p className="font-mono text-[11px] text-slate-500">{payout.bankSnapshot?.bankAccountNumber ?? ''}</p>
+                          </td>
+                          <td className={td}><StatusBadge status={payout.status} /></td>
+                          <td className={td}>
+                            <p className="whitespace-nowrap text-[11px] text-slate-500">{payout.decidedAt ? dateTime(payout.decidedAt) : 'Awaiting decision'}</p>
+                            {payout.decisionNote && <p className="max-w-[180px] text-[11px] text-slate-600">{payout.decisionNote}</p>}
+                          </td>
+                          <td className={`${td} text-right`}>
+                            {payout.status === 'requested' && (
+                              <div className="flex justify-end gap-1.5">
+                                <button type="button" onClick={() => setPayoutAction({ payout, kind: 'reject' })} className="whitespace-nowrap rounded-lg border border-red-200 px-2.5 py-1.5 text-xs font-bold text-red-600 hover:bg-red-50">Reject</button>
+                                <button type="button" onClick={() => setPayoutAction({ payout, kind: 'paid' })} className="whitespace-nowrap rounded-lg bg-emerald-600 px-2.5 py-1.5 text-xs font-bold text-white hover:bg-emerald-700">Mark paid</button>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </TableScroll>
+                <Pagination page={payoutMeta.page} pages={payoutMeta.pages} total={payoutMeta.total} onChange={setPayoutPage} noun="withdrawals" />
+              </>
+            )}
+          </Panel>
+        </div>
+      )}
+
+      <ReasonDialog
+        isOpen={!!adjustAgent}
+        onClose={() => setAdjustAgent(null)}
+        onConfirm={confirmAdjustment}
+        title="Record an earnings adjustment"
+        confirmLabel="Record adjustment"
+        reasonLabel="Reason for the adjustment (recorded on the earning and in the audit log)"
+        maxLength={300}
+        canConfirm={adjustValid}
+        acknowledgement="I understand this creates a new, immediately withdrawable adjustment entry and does not edit any existing earning."
+        message={
+          adjustAgent ? (
+            <div className="space-y-2">
+              <p><strong className="text-navy-900">{adjustAgent.agentName?.trim() || adjustAgent.agentId}</strong> · withdrawable today {naira(adjustAgent.buckets.withdrawable)}</p>
+              <p className="text-xs text-slate-500">Use a negative amount to correct an overpayment and a positive amount to credit an owed sum.</p>
+            </div>
+          ) : null
+        }
+      >
         <div>
-          <div className="flex items-center gap-3 mb-1">
-            <div className="h-10 w-10 rounded-xl bg-gold-100 flex items-center justify-center">
-              <Landmark className="h-5 w-5 text-gold-600" />
-            </div>
-            <h1 className="font-display text-2xl font-bold text-navy-900">Wallet Ledger & Revenue</h1>
-          </div>
-          <p className="text-sm text-veriq-muted">
-            Every wallet transaction across the platform, plus the revenue split between Veriq and listing agents.
-          </p>
+          <label className="label text-xs" htmlFor="adjust-amount">Amount (₦, whole naira, may be negative)</label>
+          <input id="adjust-amount" type="number" step={1} className="input" value={adjustAmount} onChange={(event) => setAdjustAmount(event.target.value)} />
+          <p className="mt-1 text-[11px] text-slate-500">{adjustValid ? signedNaira(adjustValue) : 'Enter a non-zero whole number.'}</p>
         </div>
-        <button
-          onClick={refreshAll}
-          className="text-slate-400 hover:text-navy-900 transition-colors p-2 rounded-lg hover:bg-slate-100"
-          title="Refresh"
-        >
-          <RefreshCw className="h-4 w-4" />
-        </button>
-      </div>
+      </ReasonDialog>
 
-      {/* Revenue split summary */}
-      {loadingSummary ? (
-        <div className="card p-8 flex justify-center">
-          <LoadingSpinner size="md" className="text-veriq-secondary" />
-        </div>
-      ) : summary ? (
-        <>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <SummaryCard
-              icon={WalletIcon}
-              iconCls="bg-navy-900 text-white"
-              label="Customer Wallet Balances"
-              value={summary.wallets.customerBalanceFormatted}
-              sub={`${summary.wallets.walletCount} wallets · excludes agent earnings`}
-            />
-            <SummaryCard
-              icon={TrendingUp}
-              iconCls="bg-emerald-100 text-emerald-600"
-              label="Total Top-ups"
-              value={summary.transactions.totalTopUpsFormatted}
-              sub="All-time successful top-ups"
-            />
-            <SummaryCard
-              icon={Landmark}
-              iconCls="bg-gold-100 text-gold-600"
-              label="Veriq Revenue (Company Share)"
-              value={summary.revenue.platformShareFormatted}
-              sub={`${summary.revenue.commissionLabel} · ${summary.revenue.paidConsultations} consultations`}
-            />
-            <SummaryCard
-              icon={Award}
-              iconCls="bg-purple-100 text-purple-600"
-              label="Agent Earnings (Commission)"
-              value={summary.revenue.agentShareFormatted}
-              sub="Actual agent share from paid consultations"
-            />
-          </div>
-
-          <div className="card p-5">
-            <h2 className="font-display text-sm font-bold text-navy-900 mb-3 flex items-center gap-2">
-              <Users className="h-4 w-4 text-veriq-secondary" /> Revenue Breakdown
-            </h2>
-            <p className="mb-4 text-xs text-veriq-muted">
-              Splits vary by pricing tier and partner-specific rules. These totals use the actual
-              split saved on each paid consultation, excluding approved refunds.
+      <ReasonDialog
+        isOpen={!!payoutAction}
+        onClose={() => setPayoutAction(null)}
+        onConfirm={confirmPayout}
+        title={payoutAction?.kind === 'paid' ? 'Mark withdrawal paid' : 'Reject withdrawal'}
+        confirmLabel={payoutAction?.kind === 'paid' ? 'Mark as paid' : 'Reject withdrawal'}
+        variant={payoutAction?.kind === 'paid' ? 'primary' : 'danger'}
+        reasonRequired={payoutAction?.kind !== 'paid'}
+        reasonLabel={payoutAction?.kind === 'paid' ? 'Payment note (optional, e.g. bank transfer reference)' : 'Reason shown to the Agent'}
+        maxLength={300}
+        acknowledgement={payoutAction?.kind === 'paid' ? 'I confirm the bank transfer has been completed outside Veriq.' : undefined}
+        message={
+          payoutAction ? (
+            <p>
+              {naira(payoutAction.payout.amount)} to <strong className="text-navy-900">{payoutAction.payout.agentName?.trim() || payoutAction.payout.agentId}</strong>
+              {payoutAction.kind === 'paid'
+                ? '. The allocated earnings become Withdrawn.'
+                : '. The allocations are voided and the amount stays withdrawable for the Agent.'}
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
-              <div className="flex items-center justify-between sm:flex-col sm:items-start gap-1">
-                <span className="text-veriq-muted">Total consultation revenue</span>
-                <span className="font-bold text-navy-900">{summary.revenue.totalConsultationRevenueFormatted}</span>
-              </div>
-              <div className="flex items-center justify-between sm:flex-col sm:items-start gap-1">
-                <span className="text-veriq-muted">Veriq share (actual)</span>
-                <span className="font-bold text-gold-600">{summary.revenue.platformShareFormatted}</span>
-              </div>
-              <div className="flex items-center justify-between sm:flex-col sm:items-start gap-1">
-                <span className="text-veriq-muted">Agent share (actual)</span>
-                <span className="font-bold text-purple-600">{summary.revenue.agentShareFormatted}</span>
-              </div>
-            </div>
-            {(summary.transactions.totalDebits > 0 || summary.transactions.totalRefunds > 0) && (
-              <div className="mt-4 pt-4 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-veriq-muted">Total wallet debits (payments)</span>
-                  <span className="font-bold text-navy-900">{summary.transactions.totalDebitsFormatted}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-veriq-muted">Total refunds</span>
-                  <span className="font-bold text-navy-900">{summary.transactions.totalRefundsFormatted}</span>
-                </div>
-              </div>
-            )}
-            {summary.revenue.refundedConsultations > 0 && (
-              <div className="mt-4 pt-4 border-t border-slate-100">
-                <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-veriq-muted">
-                  Reversed by approved refunds ({summary.revenue.refundedConsultations})
-                </p>
-                <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-3">
-                  <div className="flex items-center justify-between sm:flex-col sm:items-start gap-1">
-                    <span className="text-veriq-muted">Refunded unlock value</span>
-                    <span className="font-bold text-navy-900">{summary.revenue.refundedConsultationRevenueFormatted}</span>
-                  </div>
-                  <div className="flex items-center justify-between sm:flex-col sm:items-start gap-1">
-                    <span className="text-veriq-muted">Veriq share reversed</span>
-                    <span className="font-bold text-gold-600">{summary.revenue.refundedPlatformShareFormatted}</span>
-                  </div>
-                  <div className="flex items-center justify-between sm:flex-col sm:items-start gap-1">
-                    <span className="text-veriq-muted">Agent share reversed</span>
-                    <span className="font-bold text-purple-600">{summary.revenue.refundedAgentShareFormatted}</span>
-                  </div>
-                </div>
-              </div>
-            )}
-            <div className="mt-4 pt-4 border-t border-slate-100 grid grid-cols-1 gap-4 text-sm sm:grid-cols-3">
-              <div className="flex items-center justify-between sm:flex-col sm:items-start">
-                <span className="text-veriq-muted">Agent wallet balances</span>
-                <span className="font-bold text-navy-900">{summary.wallets.agentBalanceFormatted}</span>
-              </div>
-              <div className="flex items-center justify-between sm:flex-col sm:items-start">
-                <span className="text-veriq-muted">Top-ups minus customer balances</span>
-                <span className="font-bold text-navy-900">{summary.revenue.topUpsLessCustomerBalancesFormatted}</span>
-              </div>
-              <div className="flex items-center justify-between sm:flex-col sm:items-start">
-                <span className="text-veriq-muted">Difference vs Veriq + agent earnings</span>
-                <span className={`font-bold ${Math.abs(summary.revenue.reconciliationDifference) < 1 ? 'text-emerald-600' : 'text-red-600'}`}>
-                  {summary.revenue.reconciliationDifferenceFormatted}
-                </span>
-              </div>
-            </div>
-          </div>
-        </>
-      ) : null}
-
-      <section className="card overflow-hidden p-0">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
-          <div>
-            <h2 className="font-display text-base font-bold text-navy-900">Pending Withdrawal Requests</h2>
-            <p className="mt-1 text-xs text-veriq-muted">Review reserved agent funds, then complete or decline each payout.</p>
-          </div>
-          <span className="inline-flex min-w-8 items-center justify-center rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">
-            {pendingWithdrawals.length}
-          </span>
-        </div>
-        {loadingWithdrawals ? (
-          <div className="flex justify-center py-10"><LoadingSpinner size="md" className="text-veriq-secondary" /></div>
-        ) : pendingWithdrawals.length === 0 ? (
-          <div className="px-5 py-10 text-center">
-            <CheckCircle className="mx-auto mb-2 h-7 w-7 text-emerald-500" />
-            <p className="text-sm font-semibold text-navy-900">No pending withdrawals</p>
-            <p className="mt-1 text-xs text-veriq-muted">New agent requests will appear here automatically.</p>
-          </div>
-        ) : (
-          <div className="divide-y divide-slate-100">
-            {pendingWithdrawals.map((tx) => (
-              <article key={tx.id} className="grid gap-4 px-5 py-4 md:grid-cols-[minmax(0,1fr)_auto_auto] md:items-center">
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="font-semibold text-navy-900">{tx.user?.name ?? 'Unknown agent'}</p>
-                    <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700">Pending</span>
-                  </div>
-                  <p className="mt-1 text-xs text-slate-500">{tx.user?.email}</p>
-                  <p className="mt-2 break-words text-xs leading-5 text-slate-600">{tx.description}</p>
-                  <p className="mt-1 text-[11px] text-slate-400">{tx.paymentReference} · {formatDate(tx.createdAt)}</p>
-                </div>
-                <p className="text-lg font-black text-navy-900">{fmtNaira(tx.amount)}</p>
-                <div className="flex flex-wrap gap-2 md:justify-end">
-                  <button type="button" disabled={actioningTxId === tx.id} onClick={() => handleMarkWithdrawalPaid(tx.id)} className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-50">
-                    Complete
-                  </button>
-                  <button type="button" disabled={actioningTxId === tx.id} onClick={() => handleRejectWithdrawal(tx.id)} className="rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50 disabled:opacity-50">
-                    Decline
-                  </button>
-                </div>
-              </article>
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* Filters */}
-      <div className="card p-4">
-        <div className="flex flex-wrap items-center gap-3">
-          <form onSubmit={handleSearchSubmit} className="flex-1 min-w-[200px] flex items-center gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <input
-                type="text"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                placeholder="Search by name, email, or reference"
-                className="input !pl-9"
-              />
-            </div>
-          </form>
-
-          <select
-            value={typeFilter}
-            onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }}
-            className="input !w-auto"
-          >
-            <option value="">All types</option>
-            {Object.values(WalletTransactionType).map((t) => (
-              <option key={t} value={t}>{TYPE_LABEL[t]}</option>
-            ))}
-          </select>
-
-          <select
-            value={statusFilter}
-            onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-            className="input !w-auto"
-          >
-            <option value="">All statuses</option>
-            {Object.values(WalletTransactionStatus).map((s) => (
-              <option key={s} value={s} className="capitalize">{s}</option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      {/* Ledger table */}
-      <div className="card p-0 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="border-b border-slate-100 text-xs font-semibold uppercase tracking-wider text-slate-400">
-                <th className="py-3 px-3">User</th>
-                <th className="py-3 px-3">Type</th>
-                <th className="py-3 px-3">Description</th>
-                <th className="py-3 px-3 text-right">Amount</th>
-                <th className="py-3 px-3">Status</th>
-                <th className="py-3 px-3 text-right">Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loadingEntries ? (
-                <tr>
-                  <td colSpan={6} className="py-10 text-center">
-                    <LoadingSpinner size="md" className="text-veriq-secondary mx-auto" />
-                  </td>
-                </tr>
-              ) : entries.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="py-10 text-center text-sm text-veriq-muted">
-                    No transactions found.
-                  </td>
-                </tr>
-              ) : (
-                entries.map((tx) => (
-                  <LedgerRow
-                    key={tx.id}
-                    tx={tx}
-                    onMarkPaid={handleMarkWithdrawalPaid}
-                    onReject={handleRejectWithdrawal}
-                    isActioning={actioningTxId === tx.id}
-                  />
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3">
-            <p className="text-xs text-veriq-muted">
-              Page {page} of {totalPages} · {total.toLocaleString('en-NG')} transactions
-            </p>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page <= 1}
-                className="rounded-lg p-1.5 border border-slate-200 text-slate-500 disabled:opacity-40 hover:border-slate-300"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page >= totalPages}
-                className="rounded-lg p-1.5 border border-slate-200 text-slate-500 disabled:opacity-40 hover:border-slate-300"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
+          ) : null
+        }
+      />
     </div>
+  );
+}
+
+export default function AdminLedgerPage() {
+  return (
+    <Suspense fallback={<PageLoader />}>
+      <AdminLedgerInner />
+    </Suspense>
   );
 }

@@ -12,24 +12,27 @@ const TikTokIcon = () => (
 );
 
 const FOOTER_LINKS = {
-  Platform: [
+  Explore: [
     { label: "Browse Properties", href: "/properties" },
+    { label: "Shared Property", href: "/shared" },
+    { label: "Property for Sale", href: "/for-sale" },
     { label: "Street Intelligence", href: "/street-intelligence" },
-    { label: "How It Works", href: "/#how-it-works" },
-    { label: "Trust Scores", href: "/#features" },
     { label: "For Agents", href: "/auth/register?role=agent" },
   ],
   Company: [
+    { label: "How It Works", href: "/how-it-works" },
     { label: "About Us", href: "/about" },
     { label: "Contact Us", href: "/contact" },
     { label: "FAQ", href: "/faq" },
-    { label: "Blog", href: "#" },
+    { label: "Blog", href: "/blog" },
   ],
-  Legal: [
+  "Trust & Legal": [
+    { label: "Refund Policy", href: "/refund-policy" },
+    { label: "Verification Rules", href: "/verification-rules" },
+    { label: "Safety & Verification", href: "/safety" },
+    { label: "Property Operator Terms", href: "/operator-terms" },
     { label: "Terms of Service", href: "/terms" },
     { label: "Privacy Policy", href: "/privacy" },
-    { label: "Agent Terms", href: "/terms#agent-terms" },
-    { label: "Refund Policy", href: "/terms#refunds" },
   ],
 };
 

@@ -77,6 +77,30 @@ function propertyFixture() {
   };
 }
 
+/** Public basic-details projection: no exact address, intelligence or contacts. */
+function publicPropertyFixture() {
+  const { address: _address, description: _description, ...rest } = propertyFixture();
+  return {
+    ...rest,
+    agent: { id: 'agent-1', username: null, isPlatformVerified: true, verificationLevel: 1, trustTier: 'bronze', profilePhotoUrl: null, businessName: null, bio: null, user: { firstName: 'Ada', lastName: 'Agent' } },
+    units: [{ id: 'unit-1', displayLabel: 'Apartment 1', unitType: '2-Bedroom Flat', subtype: null, availabilityStatus: 'available', facts: { bedrooms: 2 }, price: { rentAmount: 1200000 } }],
+    availabilitySummary: { documentedUnits: 1, availableUnits: 1, overall: 'available', availableUnitTypes: ['2-Bedroom Flat'] },
+    accessLevel: 'public',
+  };
+}
+
+function unlockedPackageFixture() {
+  return {
+    access: { level: 'unlocked', consultationId: 'consultation-free-1', unlockedAt: new Date().toISOString(), accessExpiresAt: new Date(Date.now() + 48 * 3600 * 1000).toISOString() },
+    property: propertyFixture(),
+    units: [{ id: 'unit-1', propertyId, displayLabel: 'Apartment 1', unitType: '2-Bedroom Flat', subtype: null, facts: { bedrooms: 2 }, commercialTerms: { rentAmount: 1200000 }, intelligence: {}, availabilityStatus: 'available', verificationStatus: 'verified', availabilityConfirmedAt: null }],
+    media: [],
+    bookingLink: null,
+    propertyContacts: [{ role: 'property_contact', contactType: 'caretaker', name: 'Mr Caretaker', phone: '08031234567', whatsappUrl: 'https://wa.me/2348031234567?text=Hello' }],
+    agentSupport: { role: 'veriq_agent', contactType: 'agent', name: 'Ada Agent', phone: '08011111111', whatsappUrl: 'https://wa.me/2348011111111?text=Hello' },
+  };
+}
+
 async function seedAuth(context: BrowserContext, page: Page, role: 'user' | 'admin') {
   await context.addCookies([
     { name: 'veriq_authed', value: '1', domain: '127.0.0.1', path: '/' },
@@ -107,12 +131,15 @@ async function mockSharedShell(page: Page, role: 'user' | 'admin' = 'user') {
   });
 }
 
-test('signed-in renter must claim a Free Unlock before viewing the report', async ({ context, page }) => {
+test('a Free Unlock listing is unlocked at \u20a60 through the unlock checkout', async ({ context, page }) => {
   await seedAuth(context, page, 'user');
   await mockSharedShell(page, 'user');
 
   let unlocked = false;
-  let paidUnlockRequests = 0;
+  let legacyClaims = 0;
+  let legacyPaidUnlocks = 0;
+  let initiatePayload: Record<string, unknown> | null = null;
+
   await page.route(`${API_BASE}/properties*`, async (route) => {
     await route.fulfill({
       status: 200,
@@ -129,62 +156,135 @@ test('signed-in renter must claim a Free Unlock before viewing the report', asyn
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ statusCode: 200, message: 'Property retrieved', data: propertyFixture() }),
+      body: JSON.stringify({
+        statusCode: 200,
+        message: 'Property retrieved',
+        // Free Unlock is priced at the listing, so the public record already shows \u20a60.
+        data: { ...publicPropertyFixture(), consultationFee: 0, isFreeUnlock: true },
+      }),
     });
   });
-  await page.route(`${API_BASE}/properties/${propertyId}/media`, async (route) => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ statusCode: 200, message: 'Media', data: [] }) });
+  await page.route(`${API_BASE}/properties/${propertyId}/unlocked`, async (route) => {
+    if (!unlocked) {
+      await route.fulfill({
+        status: 403,
+        contentType: 'application/json',
+        body: JSON.stringify({ statusCode: 403, message: 'Unlock this property to view protected information' }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ statusCode: 200, message: 'Unlocked property retrieved', data: unlockedPackageFixture() }),
+    });
   });
-  await page.route(`${API_BASE}/community/free-unlocks/${propertyId}/status`, async (route) => {
+  // v1.6.2 \u00a712.7: a Free Unlock listing is priced at \u20a60 by the same quote; there is no separate claim step.
+  await page.route(`${API_BASE}/unlocks/quote**`, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
         statusCode: 200,
-        message: 'Free Unlock status retrieved',
-        data: { available: true, eligibility: { eligible: true, reason: null } },
+        message: 'Unlock quote retrieved',
+        data: {
+          listing: { targetType: 'property', targetId: propertyId, title: 'Test Property', category: 'residential', area: 'Rumuokoro', city: 'Obio-Akpor' },
+          price: 0,
+          priceFormatted: '\u20a60',
+          standardPrice: 2500,
+          isFreeUnlock: true,
+          freeUnlockEndsAt: null,
+          walletCreditAvailable: 0,
+          walletCreditApplied: 0,
+          remainingToPay: 0,
+          noAdditionalPaymentNeeded: true,
+          accessHours: 48,
+          refundWindowHours: 48,
+          availability: { overall: 'available', documentedUnits: 1, availableUnits: 1, disclosure: null },
+          included: ['Exact verified address', 'Verified contact'],
+          disclosures: { refund: 'Approved refunds are credited to your Veriq Wallet.', value: 'You are paying for verified intelligence.' },
+          alreadyUnlocked: null,
+          viewerIsManager: false,
+          signInRequired: false,
+        },
       }),
     });
   });
-  await page.route(`${API_BASE}/community/free-unlocks/${propertyId}/unlock`, async (route) => {
+  await page.route(`${API_BASE}/unlocks`, async (route) => {
+    initiatePayload = route.request().postDataJSON() as Record<string, unknown>;
     unlocked = true;
     await route.fulfill({
       status: 201,
       contentType: 'application/json',
-      body: JSON.stringify({ statusCode: 201, message: 'Property unlocked successfully', data: { id: 'unlock-1' } }),
+      body: JSON.stringify({
+        statusCode: 201,
+        message: 'Unlock confirmed',
+        data: {
+          state: 'unlocked',
+          unlock: {
+            id: 'unlock-free-1', targetType: 'property', targetId: propertyId, status: 'unlocked', isActive: true,
+            feeAmount: 0, walletAmount: 0, externalAmount: 0, priceSource: 'free_unlock', paymentReference: 'VRQ-UNL-FREE',
+            unlockedAt: new Date().toISOString(), accessExpiresAt: new Date(Date.now() + 86_400_000).toISOString(),
+            refundDeadlineAt: null, refundWindowOpen: false, failureReason: null, checkoutUrl: null, createdAt: new Date().toISOString(),
+          },
+          checkout: null,
+        },
+      }),
     });
   });
+  await page.route(`${API_BASE}/community/free-unlocks/${propertyId}/unlock`, async (route) => {
+    legacyClaims += 1;
+    await route.fulfill({ status: 410, contentType: 'application/json', body: JSON.stringify({ statusCode: 410, message: 'Gone' }) });
+  });
   await page.route(`${API_BASE}/consultations/initiate`, async (route) => {
-    paidUnlockRequests += 1;
+    legacyPaidUnlocks += 1;
     await route.fulfill({
       status: 500,
       contentType: 'application/json',
-      body: JSON.stringify({ statusCode: 500, message: 'Paid unlock must not be called for a Free Unlock' }),
-    });
-  });
-  await page.route(`${API_BASE}/consultations/check-access/${propertyId}`, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        statusCode: 200,
-        message: 'Access checked',
-        data: { hasAccess: unlocked, unlockedAt: unlocked ? new Date().toISOString() : null, expiresAt: unlocked ? new Date(Date.now() + 48 * 3600 * 1000).toISOString() : null },
-      }),
+      body: JSON.stringify({ statusCode: 500, message: 'The retired consultation checkout must not be called' }),
     });
   });
 
   await page.goto('/properties');
-  await expect(page.getByText('Free Unlock', { exact: true })).toBeVisible();
+  await expect(page.getByText('Free Unlock', { exact: true }).first()).toBeVisible();
 
   await page.goto(`/properties/${propertyId}`);
-  await expect(page.getByRole('heading', { name: 'Full Intelligence Report Locked' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Unlock Intelligence Report' })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Claim Free Unlock' }).click();
-  await expect(page.getByRole('heading', { name: 'Intelligence Report Unlocked' })).toBeVisible();
-  await expect(page.getByText('12 Test Road')).toBeVisible();
-  expect(unlocked).toBe(true);
-  expect(paidUnlockRequests).toBe(0);
+  await expect(page.getByText('Apartment 1')).toBeVisible();
+  await expect(page.getByText('12 Test Road')).toHaveCount(0);
+  await page.getByRole('button', { name: /Unlock Full Report Free/ }).click();
+  await page.getByRole('dialog').getByRole('button', { name: /Unlock free/ }).click();
+  await expect(page.getByText('12 Test Road').first()).toBeVisible();
+  await expect(page.getByRole('link', { name: 'WhatsApp', exact: true })).toHaveAttribute('href', /wa\.me\/2348031234567/);
+  await expect.poll(() => initiatePayload).not.toBeNull();
+  expect(initiatePayload).toEqual(expect.objectContaining({ targetType: 'property', targetId: propertyId }));
+  expect(legacyClaims).toBe(0);
+  expect(legacyPaidUnlocks).toBe(0);
+});
+
+test('dashboard property view loads protected details only from the authorised unlocked package', async ({ context, page }) => {
+  await seedAuth(context, page, 'user');
+  await mockSharedShell(page, 'user');
+  await page.route(`${API_BASE}/properties/${propertyId}`, (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ statusCode: 200, message: 'Property retrieved', data: publicPropertyFixture() }),
+  }));
+  await page.route(`${API_BASE}/properties/${propertyId}/unlocked`, (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ statusCode: 200, message: 'Unlocked property retrieved', data: unlockedPackageFixture() }),
+  }));
+  await page.route(`${API_BASE}/community/free-unlocks/${propertyId}/status`, (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ statusCode: 200, message: 'Free Unlock status retrieved', data: { available: false } }),
+  }));
+
+  await page.goto(`/dashboard/browse/${propertyId}`);
+
+  await expect(page.getByText('Documented Units (1)')).toBeVisible();
+  await expect(page.getByText('Mr Caretaker')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'WhatsApp Veriq Agent' })).toHaveAttribute('href', /wa\.me\/2348011111111/);
 });
 
 test('agent rating uses structured feedback and limits users to two selections', async ({ context, page }) => {
@@ -435,16 +535,11 @@ test('admin can moderate proposed streets and pending contributions', async ({ c
   await expect.poll(() => observationPayload).not.toBeNull();
   expect(observationPayload).toEqual(expect.objectContaining({ streetId: approvedStreet.id, categoryId: 'cat-electricity', optionId: 'opt-good', sourceType: 'veriq_initial' }));
 
-  await expect(page.getByLabel('Property')).toBeDisabled();
-  await page.getByLabel('Agent').selectOption('agent-1');
-  await expect(page.getByLabel('Property')).toBeEnabled();
-  await page.getByLabel('Property').selectOption(propertyId);
-  await page.locator('input[type="datetime-local"]').first().fill('2026-07-16T09:00');
-  await page.locator('input[type="datetime-local"]').nth(1).fill('2026-07-20T09:00');
-  await page.getByRole('button', { name: 'Create Campaign' }).click();
-  await expect.poll(() => campaignPayload).not.toBeNull();
-  expect((campaignPayload as { propertyId?: string } | null)?.propertyId).toBe(propertyId);
-  expect((campaignPayload as { sponsoringAgentId?: string } | null)?.sponsoringAgentId).toBe('agent-1');
+  // v1.6.2 §12.7 / §30.4: Free Unlock is Operator-first and lives under Pricing, no longer on this page.
+  await expect(page.getByRole('heading', { name: 'Free Unlock has moved' })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Open Free Unlock Management/ })).toHaveAttribute('href', '/dashboard/admin/pricing?tab=free-unlock');
+  await expect(page.getByRole('button', { name: 'Create Campaign' })).toHaveCount(0);
+  expect(campaignPayload).toBeNull();
 
   await streetModeration.getByPlaceholder('Search street, area, location or landmark').fill('Pipeline');
   await streetModeration.getByRole('button', { name: 'Approve', exact: true }).click();

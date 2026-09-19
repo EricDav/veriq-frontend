@@ -10,14 +10,19 @@ import {
   Phone, MessageCircle, X, ChevronLeft, ChevronRight, Gift,
   ImageIcon, Building2, BarChart3, UsersRound, PhoneCall, KeyRound, ArrowRight,
 } from 'lucide-react';
-import { propertiesApi, consultationsApi, chatApi, mediaApi, communityApi, ApiError } from '@/lib/api';
-import type { ConsultationAccess, FreeUnlockStatus, MediaItem, Property } from '@/types';
+import { chatApi, ApiError } from '@/lib/api';
+import type { ConsultationAccess, MediaItem, Property } from '@/types';
+import type { UnlockedPropertyWithStreet } from '@/types/renter';
+import { loadPropertyForViewer, toConsultationAccess } from '@/lib/property-access';
 import { AgentVerificationLevel, AgentTrustTier, FreshnessScore, PropertyType } from '@/types';
-import { PageLoader, LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { PageLoader } from '@/components/ui/LoadingSpinner';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/components/ui/Toast';
 import { AgentRatingButton } from '@/components/agents/AgentRatingButton';
 import { MoveInEstimate } from '@/components/properties/MoveInEstimate';
+import { ContactActions, DocumentedUnits, PublicUnitList } from '@/components/properties/UnlockedPropertySections';
+import { StreetIntelligencePanel } from '@/components/renter/StreetIntelligencePanel';
+import { UnlockCheckout } from '@/components/renter/UnlockCheckout';
 
 const FRESHNESS_INFO: Record<FreshnessScore, { label: string; cls: string; width: string }> = {
   freshly_verified: { label: 'Freshly verified — within 24 hours', cls: 'bg-emerald-500', width: 'w-full' },
@@ -86,21 +91,21 @@ interface PublicPreviewProps {
   coverImageSrc: string | null;
   location: string;
   agentVerified: boolean;
-  freeUnlock: FreeUnlockStatus | null;
-  isAuthenticated: boolean;
-  isUnlocking: boolean;
+  isFreeUnlock: boolean;
   onUnlock: () => void;
-  onFreeUnlock: () => void;
   onOpenCover: () => void;
   isCoverOpen: boolean;
   onCloseCover: () => void;
 }
 
-function PublicPropertyPreview({ property, coverImageSrc, location, agentVerified, freeUnlock,
-  isAuthenticated, isUnlocking, onUnlock, onFreeUnlock, onOpenCover, isCoverOpen, onCloseCover }: PublicPreviewProps) {
+function PublicPropertyPreview({ property, coverImageSrc, location, agentVerified, isFreeUnlock,
+  onUnlock, onOpenCover, isCoverOpen, onCloseCover }: PublicPreviewProps) {
   const category = propertyCategoryLabel(property.propertyType);
-  const unlockFee = formatNaira(property.consultationFee || 1500);
-  const availableLabel = property.status === 'active' ? 'Available now' : pretty(property.status);
+  const unlockFee = isFreeUnlock ? 'Free · ₦0' : formatNaira(property.consultationFee);
+  const summary = property.availabilitySummary;
+  const isUnavailable = summary ? summary.overall === 'unavailable' : property.status !== 'active';
+  const availableLabel = isUnavailable ? 'Currently unavailable' : 'Available now';
+  const units = property.units ?? [];
 
   return (
     <main className="min-h-screen bg-[#03131a] pb-14 pt-24 text-white">
@@ -119,21 +124,22 @@ function PublicPropertyPreview({ property, coverImageSrc, location, agentVerifie
         <section className="mt-5 rounded-lg border border-emerald-400/60 bg-gradient-to-r from-[#063038] to-[#052a27] p-5 sm:p-7">
           <div className="flex flex-wrap gap-2"><span className="inline-flex items-center gap-2 rounded bg-white px-3 py-2 text-xs font-bold text-[#03131a]"><Home className="h-4 w-4 text-emerald-600" />{category}</span>{agentVerified && <span className="inline-flex items-center gap-2 rounded bg-emerald-400/15 px-3 py-2 text-xs font-semibold text-emerald-200"><Shield className="h-4 w-4" /> Verified</span>}</div>
           <h2 className="mt-4 font-display text-2xl font-bold sm:text-3xl">{property.title}</h2>
-          <div className="mt-4 flex flex-wrap gap-x-8 gap-y-3 text-sm text-white/70"><span className="flex items-center gap-2"><MapPin className="h-4 w-4" />{location}</span><span className="flex items-center gap-2"><Building2 className="h-4 w-4" />1 documented unit</span><span className="flex items-center gap-2"><Bed className="h-4 w-4" />1 available now</span><span className="flex items-center gap-2"><Bed className="h-4 w-4" />{property.bedrooms}-Bedroom</span></div>
+          <div className="mt-4 flex flex-wrap gap-x-8 gap-y-3 text-sm text-white/70"><span className="flex items-center gap-2"><MapPin className="h-4 w-4" />{location}</span>{summary && summary.documentedUnits > 0 ? <><span className="flex items-center gap-2"><Building2 className="h-4 w-4" />{summary.documentedUnits} documented {summary.documentedUnits === 1 ? 'unit' : 'units'}</span><span className="flex items-center gap-2"><Bed className="h-4 w-4" />{summary.availableUnits} available now</span></> : <span className="flex items-center gap-2"><Bed className="h-4 w-4" />{property.bedrooms}-Bedroom</span>}</div>
+          {isUnavailable && <p className="mt-4 flex items-start gap-2 rounded border border-amber-300/50 bg-amber-400/10 px-3 py-2 text-xs leading-5 text-amber-100"><AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />This property is currently unavailable. You can still unlock it to research it for future availability, but knowingly unlocking an unavailable property is not by itself a refund reason.</p>}
           <p className="mt-5 border-t border-white/15 pt-5 text-sm leading-6 text-white/70">This quick preview helps you confirm the essentials first. Unlock the full report to view complete details, protected photos, verified location, and contact access.</p>
         </section>
 
-        <section className="mt-7"><h2 className="font-display text-xl font-semibold">Available Units</h2><p className="mt-1 text-xs text-white/50">Units currently available at this property.</p>
-          <div className="mt-3 grid gap-3 md:grid-cols-2"><div className="rounded-lg border border-emerald-400/60 bg-gradient-to-r from-[#063039] to-[#06312e] p-5"><div className="flex items-start justify-between"><div><h3 className="font-display text-lg font-semibold">{property.title}</h3><span className="mt-2 inline-block rounded bg-cyan-400/10 px-2 py-1 text-xs text-cyan-300">{property.bedrooms}-Bedroom</span></div><ChevronRight className="h-5 w-5" /></div><p className="mt-3 text-xl font-bold text-cyan-300">{formatNaira(property.rentAmount)} <span className="text-sm font-normal">/ yr</span></p><div className="mt-4 flex flex-wrap gap-5 text-xs text-white/65"><span className="flex items-center gap-2"><KeyRound className="h-4 w-4" />{property.bedrooms}-Bedroom</span><span className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-cyan-300" />{availableLabel}</span></div></div></div>
+        <section className="mt-7"><h2 className="font-display text-xl font-semibold">Documented Units</h2><p className="mt-1 text-xs text-white/50">Unit types, basic prices and current availability. Unit photos and details unlock with the full report.</p>
+          {units.length > 0 ? <PublicUnitList units={units} /> : <div className="mt-3 grid gap-3 md:grid-cols-2"><div className="rounded-lg border border-emerald-400/60 bg-gradient-to-r from-[#063039] to-[#06312e] p-5"><div className="flex items-start justify-between"><div><h3 className="font-display text-lg font-semibold">{property.title}</h3><span className="mt-2 inline-block rounded bg-cyan-400/10 px-2 py-1 text-xs text-cyan-300">{property.bedrooms}-Bedroom</span></div><ChevronRight className="h-5 w-5" /></div><p className="mt-3 text-xl font-bold text-cyan-300">{formatNaira(property.rentAmount)} <span className="text-sm font-normal">/ yr</span></p><div className="mt-4 flex flex-wrap gap-5 text-xs text-white/65"><span className="flex items-center gap-2"><KeyRound className="h-4 w-4" />{property.bedrooms}-Bedroom</span><span className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-cyan-300" />{availableLabel}</span></div></div></div>}
         </section>
 
         <section className="mt-7"><h2 className="font-display text-xl font-semibold">What Unlock Covers</h2><p className="mt-1 text-xs text-white/50">Get the complete picture with verified information and direct contacts.</p>
           <div className="mt-3 grid gap-5 rounded-lg border border-emerald-400/60 bg-[#052b2d] p-5 sm:grid-cols-2 lg:grid-cols-3">{[
-            [MapPin, 'Exact property location'], [ImageIcon, 'Full gallery'], [FileText, 'All documented units'], [BarChart3, 'Full property intelligence'], [Home, 'Unit-specific intelligence'], [PhoneCall, 'Operator or caretaker contact'], [UsersRound, 'Assigned Veriq Agent support'], [Clock, '48 hours access'], [Wallet, `Access fee: ${unlockFee}`],
+            [MapPin, 'Exact property location'], [ImageIcon, 'Full gallery'], [FileText, 'All documented units'], [BarChart3, 'Full property intelligence'], [Home, 'Unit-specific intelligence'], [PhoneCall, 'Operator or caretaker contact'], [UsersRound, 'Assigned Veriq Agent support'], [Clock, 'Time-limited access period'], [Wallet, `Unlock fee: ${unlockFee}`],
           ].map(([Icon, label]) => { const ItemIcon = Icon as React.ElementType; return <div key={String(label)} className="flex items-center gap-3 text-xs text-white/75"><ItemIcon className="h-5 w-5 shrink-0 text-cyan-300" />{String(label)}</div>; })}</div>
         </section>
 
-        <section className="mt-5 flex flex-col gap-5 rounded-lg border border-emerald-400/50 bg-[#063038] p-5 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-center gap-4"><span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-cyan-400/15 text-cyan-300"><Lock className="h-5 w-5" /></span><div><h2 className="font-display text-lg font-semibold">Unlock Full Intelligence Report</h2><p className="mt-1 text-xs text-white/55">Get complete property details, verified information, and direct contacts.</p></div></div><button type="button" onClick={freeUnlock?.available ? onFreeUnlock : onUnlock} disabled={isUnlocking} className="flex min-h-12 items-center justify-center gap-2 rounded bg-gradient-to-r from-cyan-400 to-emerald-400 px-7 text-sm font-bold text-[#03161b] disabled:opacity-60"><Lock className="h-4 w-4" />{isUnlocking ? 'Unlocking...' : freeUnlock?.available ? (!isAuthenticated ? 'Sign In to Unlock Free' : 'Unlock Full Report Free') : (!isAuthenticated ? 'Sign In to Unlock' : `Unlock Full Report - ${unlockFee}`)}<ArrowRight className="h-4 w-4" /></button></section>
+        <section className="mt-5 flex flex-col gap-5 rounded-lg border border-emerald-400/50 bg-[#063038] p-5 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-center gap-4"><span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-cyan-400/15 text-cyan-300"><Lock className="h-5 w-5" /></span><div><h2 className="font-display text-lg font-semibold">Unlock Full Intelligence Report</h2><p className="mt-1 text-xs text-white/55">Wallet credit is applied automatically at checkout, and approved refunds are credited back to your Veriq Wallet.</p></div></div><button type="button" onClick={onUnlock} className="flex min-h-12 items-center justify-center gap-2 rounded bg-gradient-to-r from-cyan-400 to-emerald-400 px-7 text-sm font-bold text-[#03161b]">{isFreeUnlock ? <Gift className="h-4 w-4" /> : <Lock className="h-4 w-4" />}{isFreeUnlock ? 'Unlock Full Report Free' : `Unlock Full Report — ${unlockFee}`}<ArrowRight className="h-4 w-4" /></button></section>
       </div>
       {isCoverOpen && coverImageSrc && <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4" onClick={onCloseCover}><button type="button" onClick={onCloseCover} className="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white" aria-label="Close image preview"><X className="h-6 w-6" /></button><Image src={coverImageSrc} alt={property.title} width={1600} height={1000} className="max-h-[88vh] w-auto max-w-full rounded-lg object-contain" /></div>}
     </main>
@@ -209,26 +215,9 @@ function IntelligenceGrid({ title, items }: { title: string; items: Array<{ labe
   );
 }
 
-function UnlockedMediaGallery({ propertyId }: { propertyId: string }) {
-  const [media, setMedia] = useState<MediaItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+function UnlockedMediaGallery({ media }: { media: MediaItem[] }) {
   const [activeSection, setActiveSection] = useState('all');
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
-
-  useEffect(() => {
-    mediaApi.getAll(propertyId)
-      .then((res) => setMedia((res.data as MediaItem[]) ?? []))
-      .catch(() => setMedia([]))
-      .finally(() => setIsLoading(false));
-  }, [propertyId]);
-
-  if (isLoading) {
-    return (
-      <div className="card flex h-44 items-center justify-center p-6">
-        <LoadingSpinner size="md" className="text-veriq-secondary" />
-      </div>
-    );
-  }
 
   if (media.length === 0) return null;
 
@@ -338,52 +327,34 @@ export default function PropertyDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
-  const { success, error: toastError } = useToast();
+  const { error: toastError } = useToast();
 
   const [property, setProperty] = useState<Property | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
   const [accessDetails, setAccessDetails] = useState<ConsultationAccess | null>(null);
-  const [isUnlocking, setIsUnlocking] = useState(false);
-  const [freeUnlock, setFreeUnlock] = useState<FreeUnlockStatus | null>(null);
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [notFound, setNotFound] = useState(false);
   const [isCoverPreviewOpen, setIsCoverPreviewOpen] = useState(false);
+  const [unlocked, setUnlocked] = useState<UnlockedPropertyWithStreet | null>(null);
+
+  const applyViewerState = (state: Awaited<ReturnType<typeof loadPropertyForViewer>>) => {
+    if (!state) {
+      setNotFound(true);
+      return;
+    }
+    setProperty(state.property);
+    setUnlocked(state.unlocked);
+    setHasAccess(state.unlocked?.access.level === 'unlocked');
+    setAccessDetails(toConsultationAccess(state.unlocked));
+  };
 
   useEffect(() => {
     async function load() {
       setIsLoading(true);
       setNotFound(false);
       try {
-        const res = await propertiesApi.getById(id);
-        const loadedProperty = res.data;
-        setProperty(loadedProperty);
-        const freeUnlockStatus = await communityApi.freeUnlockStatus(id)
-          .then((statusRes) => statusRes.data)
-          .catch(() => null);
-        setFreeUnlock(freeUnlockStatus);
-
-        const isOwnListing =
-          !!user?.id &&
-          (loadedProperty.agent?.userId === user.id || loadedProperty.agent?.user?.id === user.id);
-
-        if (isOwnListing) {
-          setHasAccess(true);
-          setAccessDetails(null);
-          return;
-        }
-        // Check if user already has access
-        if (isAuthenticated) {
-          try {
-            const accessRes = await consultationsApi.checkAccess(id);
-            setHasAccess(accessRes.data?.hasAccess ?? false);
-            setAccessDetails(accessRes.data ?? null);
-          } catch {
-            // Ignore — means no access
-          }
-        } else {
-          setHasAccess(false);
-          setAccessDetails(null);
-        }
+        applyViewerState(await loadPropertyForViewer(id, isAuthenticated));
       } catch {
         setNotFound(true);
       } finally {
@@ -393,63 +364,12 @@ export default function PropertyDetailPage() {
     if (id && !isAuthLoading) load();
   }, [id, isAuthenticated, isAuthLoading, user?.id]);
 
-  const handleUnlock = async () => {
-    if (!isAuthenticated) {
-      window.location.href = `/auth/login?redirect=/properties/${id}`;
-      return;
-    }
-    setIsUnlocking(true);
-    try {
-      await consultationsApi.initiate({ propertyId: id });
-      const accessRes = await consultationsApi.checkAccess(id);
-      const confirmedAccess = accessRes.data?.hasAccess ?? false;
-      setHasAccess(confirmedAccess);
-      setAccessDetails(accessRes.data ?? null);
-      if (!confirmedAccess) {
-        throw new Error('Payment was processed, but access could not be confirmed. Please refresh and try again.');
-      }
-      success('Wallet debited. Intelligence report unlocked!');
-    } catch (err) {
-      if (err instanceof ApiError) {
-        toastError(err.message);
-      } else if (err instanceof Error) {
-        toastError(err.message);
-      } else {
-        toastError('Failed to unlock report. Please try again.');
-      }
-    } finally {
-      setIsUnlocking(false);
-    }
-  };
-
-  const handleFreeUnlock = async () => {
-    if (!isAuthenticated) {
-      window.location.href = `/auth/login?redirect=/properties/${id}`;
-      return;
-    }
-    if (freeUnlock?.eligibility?.reason === 'community_membership_required') {
-      window.location.href = '/dashboard/community';
-      return;
-    }
-    setIsUnlocking(true);
-    try {
-      await communityApi.unlockFreeProperty(id);
-      const [accessRes, freeUnlockRes] = await Promise.all([
-        consultationsApi.checkAccess(id),
-        communityApi.freeUnlockStatus(id),
-      ]);
-      const confirmedAccess = accessRes.data?.hasAccess ?? false;
-      setHasAccess(confirmedAccess);
-      setAccessDetails(accessRes.data ?? null);
-      setFreeUnlock(freeUnlockRes.data);
-      if (!confirmedAccess) {
-        throw new Error('Free Unlock was created, but report access could not be confirmed. Please try again.');
-      }
-      success('Free Unlock claimed. Intelligence report unlocked!');
-    } catch (err) {
-      toastError(err instanceof ApiError || err instanceof Error ? err.message : 'Unable to claim Free Unlock.');
-    } finally {
-      setIsUnlocking(false);
+  /** Re-reads the server-authorised package after a settled unlock; access is never inferred on the client. */
+  const refreshAccess = async () => {
+    const state = await loadPropertyForViewer(id, isAuthenticated);
+    applyViewerState(state);
+    if (state?.unlocked?.access.level !== 'unlocked') {
+      toastError('Access could not be confirmed yet. Check My Unlocks for the payment status.');
     }
   };
 
@@ -487,7 +407,8 @@ export default function PropertyDetailPage() {
   const freshness = FRESHNESS_INFO[property.freshnessScore] ?? FRESHNESS_INFO.unverified;
   const tierBadge = TRUST_TIER_BADGE[agent?.trustTier ?? AgentTrustTier.BRONZE] ?? TRUST_TIER_BADGE.bronze;
   const agentContact = accessDetails?.agentContact;
-  const isOwnListing = !!user?.id && (agent?.userId === user.id || agent?.user?.id === user.id);
+  // Managers (assigned Agent, owning Operator, Admin) are authorised server-side via the unlocked package.
+  const isOwnListing = unlocked?.access.level === 'manager';
   const hasFullAccess = hasAccess || isOwnListing;
   const canContactAgent = hasAccess && !isOwnListing && !!agentContact?.phone;
   const location = [property.area, property.city, property.state].filter(Boolean).join(', ');
@@ -495,22 +416,33 @@ export default function PropertyDetailPage() {
   const coverImageSrc = property.coverImageUrl ? mediaUrl(property.coverImageUrl) : null;
   const isHostel = property.propertyType === PropertyType.HOSTEL;
   const isShortStay = property.propertyType === PropertyType.SHORT_STAY;
+  // The public projection carries the effective unlock price, so ₦0 means an active Free Unlock (§12.7).
+  const isFreeUnlock = Number(property.consultationFee) === 0;
 
   if (!hasFullAccess) {
-    return <PublicPropertyPreview
-      property={property}
-      coverImageSrc={coverImageSrc}
-      location={location}
-      agentVerified={agentVerified}
-      freeUnlock={freeUnlock}
-      isAuthenticated={isAuthenticated}
-      isUnlocking={isUnlocking}
-      onUnlock={handleUnlock}
-      onFreeUnlock={handleFreeUnlock}
-      onOpenCover={() => setIsCoverPreviewOpen(true)}
-      isCoverOpen={isCoverPreviewOpen}
-      onCloseCover={() => setIsCoverPreviewOpen(false)}
-    />;
+    return (
+      <>
+        <PublicPropertyPreview
+          property={property}
+          coverImageSrc={coverImageSrc}
+          location={location}
+          agentVerified={agentVerified}
+          isFreeUnlock={isFreeUnlock}
+          onUnlock={() => setIsCheckoutOpen(true)}
+          onOpenCover={() => setIsCoverPreviewOpen(true)}
+          isCoverOpen={isCoverPreviewOpen}
+          onCloseCover={() => setIsCoverPreviewOpen(false)}
+        />
+        <UnlockCheckout
+          isOpen={isCheckoutOpen}
+          onClose={() => setIsCheckoutOpen(false)}
+          targetType="property"
+          targetId={id}
+          returnPath={`/properties/${id}`}
+          onUnlocked={refreshAccess}
+        />
+      </>
+    );
   }
 
   return (
@@ -660,60 +592,6 @@ export default function PropertyDetailPage() {
                   </div>
                 </div>
               </div>
-            ) : !hasFullAccess ? (
-              <div className="card p-6 border-2 border-dashed border-gold-300 bg-gold-50/50">
-                <div className="flex items-start gap-4">
-                  <div className="h-12 w-12 rounded-2xl bg-gold-100 flex items-center justify-center flex-shrink-0">
-                    <Lock className="h-6 w-6 text-gold-600" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-display text-base font-bold text-navy-900 mb-1">Full Intelligence Report Locked</h3>
-                    <p className="text-sm text-veriq-muted mb-4">
-                      Unlock the complete property intelligence report to access detailed images, environmental data, utility disclosures, and direct agent consultation.
-                    </p>
-                    <div className="grid grid-cols-2 gap-3 mb-4">
-                      {[
-                        { icon: Eye, label: 'Full photo gallery' },
-                        { icon: FileText, label: 'Utility disclosures' },
-                        { icon: MapPin, label: 'Environmental report' },
-                        { icon: Shield, label: 'Agent consultation' },
-                      ].map(({ icon: Icon, label }) => (
-                        <div key={label} className="flex items-center gap-2 text-xs text-navy-700">
-                          <Icon className="h-4 w-4 text-emerald-500" />
-                          {label}
-                        </div>
-                      ))}
-                    </div>
-                    {freeUnlock?.available && (
-                      <div className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
-                        <div className="flex flex-wrap items-center justify-between gap-3">
-                          <div>
-                            <p className="flex items-center gap-2 text-sm font-black text-emerald-800">
-                              <Gift className="h-4 w-4" /> Free Unlock Available
-                            </p>
-                            <p className="mt-1 text-xs text-emerald-700">Active contributors can open this report without wallet payment.</p>
-                          </div>
-                          <button type="button" onClick={handleFreeUnlock} disabled={isUnlocking} className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-60">
-                            {isUnlocking ? 'Claiming…' : !isAuthenticated ? 'Sign In to Unlock' : freeUnlock.eligibility?.reason === 'community_membership_required' ? 'Join Community to Unlock' : 'Claim Free Unlock'}
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                    {!freeUnlock?.available && (
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-1.5 text-sm font-bold text-navy-900">
-                          <Wallet className="h-4 w-4 text-gold-500" />
-                          {formatNaira(property.consultationFee)}
-                        </div>
-                        <button onClick={handleUnlock} disabled={isUnlocking} className="btn-gold flex items-center gap-2">
-                          {isUnlocking ? <LoadingSpinner size="sm" className="text-navy-900" /> : <Lock className="h-4 w-4" />}
-                          {isUnlocking ? 'Unlocking…' : 'Unlock Intelligence Report'}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
             ) : (
               <div className="card p-6 border-2 border-emerald-200 bg-emerald-50/50">
                 <div className="flex items-start gap-4">
@@ -745,8 +623,9 @@ export default function PropertyDetailPage() {
                         This agent has not enabled direct contact for unlocked reports.
                       </p>
                     )}
-                    <div className="mt-4">
+                    <div className="mt-4 flex flex-wrap items-center gap-2">
                       <AgentRatingButton propertyId={id} propertyTitle={property.title} />
+                      <Link href="/dashboard/unlocks" className="btn-ghost !py-2.5 !text-sm">Unlock history &amp; refunds</Link>
                     </div>
                   </div>
                 </div>
@@ -755,7 +634,12 @@ export default function PropertyDetailPage() {
 
             {hasFullAccess && (
               <div className="space-y-5">
-                <UnlockedMediaGallery propertyId={id} />
+                <UnlockedMediaGallery media={unlocked?.media ?? []} />
+                {unlocked && <DocumentedUnits units={unlocked.units} />}
+                {unlocked && hasAccess && (
+                  <ContactActions contacts={unlocked.propertyContacts} agentSupport={unlocked.agentSupport} bookingLink={unlocked.bookingLink} />
+                )}
+                <StreetIntelligencePanel presentation={unlocked?.streetIntelligence ?? null} />
                 <IntelligenceGrid
                   title="Location & Access Intelligence"
                   items={[
@@ -862,22 +746,8 @@ export default function PropertyDetailPage() {
                 )}
               </div>
 
-              <div className="space-y-2 mb-4">
-                {[
-                  { label: 'Listing Accuracy', value: `${Number(agent?.listingAccuracyScore ?? 0).toFixed(0)}%` },
-                  { label: 'Inspection Success', value: `${Number(agent?.inspectionSuccessRate ?? 0).toFixed(0)}%` },
-                  { label: 'Total Consultations', value: agent?.totalConsultations ?? 0 },
-                  { label: 'Avg Response', value: agent?.avgResponseHours ? `${Number(agent.avgResponseHours).toFixed(1)}h` : 'N/A' },
-                ].map((m) => (
-                  <div key={m.label} className="flex items-center justify-between text-xs">
-                    <span className="text-slate-500">{m.label}</span>
-                    <span className="font-semibold text-navy-800">{m.value}</span>
-                  </div>
-                ))}
-              </div>
-
               {agent?.bio && (
-                <p className="text-xs text-veriq-muted italic mb-4 leading-relaxed">"{agent.bio}"</p>
+                <p className="text-xs text-veriq-muted italic mb-4 leading-relaxed">&ldquo;{agent.bio}&rdquo;</p>
               )}
 
               {!hasFullAccess && (
@@ -916,13 +786,15 @@ export default function PropertyDetailPage() {
 
             {!isOwnListing && (
               <>
-                {/* Consultation fee info */}
+                {/* Unlock fee */}
                 <div className="card p-5 bg-gradient-to-br from-navy-50 to-blue-50 border-blue-100">
-                  <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Intelligence Access Fee</p>
+                  <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Unlock fee</p>
                   <p className="text-2xl font-black text-navy-900 mb-1">
-                    {formatNaira(property.consultationFee)}
+                    {isFreeUnlock ? 'Free · ₦0' : formatNaira(property.consultationFee)}
                   </p>
-                  <p className="text-xs text-veriq-muted">One-time fee for full report access (valid 48 hours)</p>
+                  <p className="text-xs text-veriq-muted">
+                    One unlock covers this property and every documented Unit for the access period shown on your unlock.
+                  </p>
                 </div>
 
                 {/* Refund protection */}
@@ -932,8 +804,10 @@ export default function PropertyDetailPage() {
                     <div>
                       <p className="text-white text-sm font-semibold mb-1">Refund Protection</p>
                       <p className="text-slate-400 text-xs leading-relaxed">
-                        If this property is unavailable after you unlock the report, you may qualify for a credit toward a similar available property.
+                        If a qualifying problem affected your unlock — stale availability, an invalid contact or a materially inaccurate verified fact —
+                        request a refund inside the refund window. Approved refunds are credited to your Veriq Wallet.
                       </p>
+                      <Link href="/refund-policy" className="mt-2 inline-flex text-xs font-semibold text-gold-400 hover:underline">Refund Policy</Link>
                     </div>
                   </div>
                 </div>

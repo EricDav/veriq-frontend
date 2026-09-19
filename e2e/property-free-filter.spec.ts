@@ -28,9 +28,11 @@ test('Free Listing toggle filters through the property API', async ({ page }) =>
   }));
 
   await page.goto('/properties');
-  const toggle = page.getByRole('switch', { name: 'Free Listing only' });
+  // v1.6.2 §12.7 / Appendix E: the Free Unlock filter is applied with the rest of the search.
+  const toggle = page.getByRole('switch', { name: 'Free Unlock' });
   await expect(toggle).toHaveAttribute('aria-checked', 'false');
   await toggle.click();
   await expect(toggle).toHaveAttribute('aria-checked', 'true');
+  await page.getByRole('button', { name: 'Search Properties' }).click();
   await expect.poll(() => propertyRequests.some((url) => url.searchParams.get('freeIntelligenceOnly') === 'true')).toBe(true);
 });

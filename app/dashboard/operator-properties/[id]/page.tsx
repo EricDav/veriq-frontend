@@ -2,11 +2,13 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
 import { ArrowLeft, Camera, Trash2, Upload } from 'lucide-react';
 import { mediaApi, shortLetOperatorsApi } from '@/lib/api';
 import { ACCEPTED_IMAGE_INPUT, uploadToFileService } from '@/lib/upload';
 import { MEDIA_REQUIREMENTS } from '@/lib/property-listing-spec';
-import { MediaItem, MediaSection, Property, PropertyType } from '@/types';
+import { MediaItem, MediaSection, Property, PropertyType, UserRole } from '@/types';
+import { PageLoader } from '@/components/ui/LoadingSpinner';
 import { useToast } from '@/components/ui/Toast';
 
 const AMENITIES = ['Wi-Fi', 'Air Conditioning', 'Generator / Power Backup', 'Kitchen', 'Hot Water', 'Parking', 'Security / Gate', 'Laundry', 'Smart TV', 'Swimming Pool', 'Refrigerator', 'Microwave', 'Balcony', 'Gym'];
@@ -23,6 +25,8 @@ const DETAIL_FIELDS = [
 export default function OperatorPropertyPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const { user, isLoading: authLoading } = useAuth();
+  const isPropertyOperator = user?.role === UserRole.PROPERTY_OPERATOR;
   const [property, setProperty] = useState<Property | null>(null);
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [saving, setSaving] = useState(false);
@@ -42,7 +46,10 @@ export default function OperatorPropertyPage() {
     }
   };
 
-  useEffect(() => { void load(); }, [id]);
+  // Property Operators manage this Property in the Operator portal, where Units, revisions and evidence live (§30.2).
+  useEffect(() => { if (isPropertyOperator) router.replace(`/dashboard/operator/properties/${id}`); }, [isPropertyOperator, id, router]);
+
+  useEffect(() => { if (!authLoading && !isPropertyOperator) void load(); }, [id, authLoading, isPropertyOperator]);
 
   const details = property?.listingDetails || {};
   const mediaCategories = useMemo(() => (MEDIA_REQUIREMENTS[PropertyType.SHORT_STAY] ?? []).filter((category) => {
@@ -53,6 +60,8 @@ export default function OperatorPropertyPage() {
     if (category.section === MediaSection.COMPOUND) return (details.amenities as string[] | undefined)?.includes('Parking');
     return true;
   }), [details]);
+
+  if (authLoading || isPropertyOperator) return <PageLoader />;
 
   if (!property) return <div className="p-8 text-center text-sm text-slate-500">Loading associated property...</div>;
 
