@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useId, useState } from 'react';
 import { FileText, Lock, Upload } from 'lucide-react';
-import { propertySubmissionsApi, sharedPropertiesApi } from '@/lib/api/operator';
+import { ownerSaleListingsApi, propertySubmissionsApi, sharedPropertiesApi } from '@/lib/api/operator';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { Select } from '@/components/ui/Select';
 import { useToast } from '@/components/ui/Toast';
 import type { EvidenceKind, EvidenceRecord } from '@/types/operator';
 import { errorMessage } from './issues';
@@ -21,33 +22,53 @@ export interface EvidenceKindOption {
 }
 
 export interface EvidenceUploaderProps {
-  ownerType: 'property' | 'shared_opportunity';
+  ownerType: 'property' | 'shared_opportunity' | 'sale_listing';
   ownerId: string;
   kinds: EvidenceKindOption[];
   disabled?: boolean;
+  /**
+   * Records to list, for an owner type whose uploads arrive inside a larger payload rather than from an evidence
+   * endpoint of its own (a sale listing). When given, this component lists these instead of fetching.
+   */
+  records?: EvidenceRecord[];
   onChanged?: (records: EvidenceRecord[]) => void;
 }
 
 /** Private verification evidence (§7.2–7.4, §25.3): visible only to you, your assigned Veriq Agent and Admin. */
-export function EvidenceUploader({ ownerType, ownerId, kinds, disabled = false, onChanged }: EvidenceUploaderProps) {
+export function EvidenceUploader({
+  ownerType,
+  ownerId,
+  kinds,
+  disabled = false,
+  records: suppliedRecords,
+  onChanged,
+}: EvidenceUploaderProps) {
   const inputId = useId();
-  const [records, setRecords] = useState<EvidenceRecord[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [fetched, setFetched] = useState<EvidenceRecord[]>([]);
+  const [loading, setLoading] = useState(!suppliedRecords);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [kind, setKind] = useState<EvidenceKind>(kinds[0]?.kind ?? 'other');
+  // §7 Forms: the evidence type starts blank on a Select placeholder rather than preselecting the first kind.
+  const [kind, setKind] = useState('');
   const [notes, setNotes] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const { success, error } = useToast();
 
+  const records = suppliedRecords ?? fetched;
+
   const load = useCallback(async () => {
+    if (suppliedRecords) {
+      onChanged?.(suppliedRecords);
+      setLoading(false);
+      return;
+    }
     setLoadError(null);
     try {
       const response =
         ownerType === 'property'
           ? await propertySubmissionsApi.evidence(ownerId)
           : await sharedPropertiesApi.evidence(ownerId);
-      setRecords(response.data);
+      setFetched(response.data);
       onChanged?.(response.data);
     } catch (caught) {
       setLoadError(errorMessage(caught, 'Unable to load verification evidence'));
@@ -56,14 +77,18 @@ export function EvidenceUploader({ ownerType, ownerId, kinds, disabled = false, 
     }
     // onChanged is intentionally excluded so parents can pass inline callbacks without reload loops.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ownerType, ownerId]);
+  }, [ownerType, ownerId, suppliedRecords]);
 
   useEffect(() => {
-    setLoading(true);
+    if (!suppliedRecords) setLoading(true);
     void load();
-  }, [load]);
+  }, [load, suppliedRecords]);
 
   const upload = async () => {
+    if (!kind) {
+      error('Choose which kind of evidence this is.');
+      return;
+    }
     if (!file) {
       error('Choose the evidence file to upload.');
       return;
@@ -79,13 +104,17 @@ export function EvidenceUploader({ ownerType, ownerId, kinds, disabled = false, 
     }
     setUploading(true);
     try {
+      const selected = kind as EvidenceKind;
       const response =
         ownerType === 'property'
-          ? await propertySubmissionsApi.addEvidence(ownerId, kind, file, notes)
-          : await sharedPropertiesApi.addEvidence(ownerId, kind, file, notes);
+          ? await propertySubmissionsApi.addEvidence(ownerId, selected, file, notes)
+          : ownerType === 'sale_listing'
+            ? await ownerSaleListingsApi.addEvidence(ownerId, selected, file, notes)
+            : await sharedPropertiesApi.addEvidence(ownerId, selected, file, notes);
       success(response.message || 'Evidence saved privately for verification');
       setFile(null);
       setNotes('');
+      setKind('');
       await load();
     } catch (caught) {
       error(errorMessage(caught, 'Unable to upload evidence'));
@@ -111,19 +140,20 @@ export function EvidenceUploader({ ownerType, ownerId, kinds, disabled = false, 
 
       {!disabled && (
         <div className="grid gap-3 rounded-xl border border-slate-200 p-4 sm:grid-cols-2">
-          <label className="block">
-            <span className="label">Evidence type</span>
-            <select className="input" value={kind} onChange={(event) => setKind(event.target.value as EvidenceKind)}>
-              {kinds.map((option) => (
-                <option key={option.kind} value={option.kind}>
-                  {EVIDENCE_KIND_LABELS[option.kind]}{option.required ? ' (required)' : ''}
-                </option>
-              ))}
-            </select>
-            {selectedHelp && <span className="mt-1 block text-xs text-slate-500">{selectedHelp}</span>}
-          </label>
+          <Select
+            id={`${inputId}-kind`}
+            label="Evidence type"
+            options={kinds.map((option) => ({
+              value: option.kind,
+              label: `${EVIDENCE_KIND_LABELS[option.kind]}${option.required ? ' (required)' : ' (optional)'}`,
+            }))}
+            value={kind}
+            onValueChange={setKind}
+            hint={selectedHelp}
+            required
+          />
           <div>
-            <span className="label">File (PDF or photo, max 10 MB)</span>
+            <span className="label">File (PDF or photo, max 10 MB) <span className="text-red-500">*</span></span>
             <label
               htmlFor={inputId}
               className="flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-slate-300 px-4 py-3 text-sm text-slate-600 hover:bg-slate-50"
@@ -144,7 +174,7 @@ export function EvidenceUploader({ ownerType, ownerId, kinds, disabled = false, 
             <input className="input" maxLength={1000} value={notes} onChange={(event) => setNotes(event.target.value)} />
           </label>
           <div className="sm:col-span-2">
-            <button type="button" className="btn-primary w-full !py-2.5 sm:w-auto" disabled={uploading || !file} onClick={() => void upload()}>
+            <button type="button" className="btn-primary w-full !py-2.5 sm:w-auto" disabled={uploading || !file || !kind} onClick={() => void upload()}>
               {uploading && <LoadingSpinner size="sm" />} Upload evidence
             </button>
           </div>

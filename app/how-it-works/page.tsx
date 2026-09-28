@@ -28,13 +28,13 @@ const STEPS = [
     icon: Lock,
     title: '3. Unlock at the listed fee',
     body:
-      'Clicking Unlock opens a checkout that shows the effective fee, any Veriq Wallet credit applied, the remaining amount, the access period, current availability and the refund rules. Some listings are marked Free, and unlock at ₦0.',
+      'Clicking Unlock opens a checkout that shows the effective fee, any Veriq Wallet credit applied, the remaining amount, the 24-hour access period, current availability and the refund rules. Some listings are marked Free, and unlock at ₦0. A property with no available unit cannot be unlocked at all — you can ask to be told when one is free instead.',
   },
   {
     icon: KeyRound,
-    title: '4. Use your access period',
+    title: '4. Use your 24 hours of access',
     body:
-      'Once payment is confirmed you get the exact verified location, all documented Units, protected photos, property-type intelligence, the linked Street Intelligence and the contact routes — for the access period recorded on your unlock.',
+      'Once payment is confirmed you get the exact verified location, all documented Units, protected photos, property-type intelligence, the linked Street Intelligence and the contact routes — for 24 hours from that confirmation. The exact expiry time is shown on your unlock.',
   },
   {
     icon: MessageCircle,
@@ -46,7 +46,7 @@ const STEPS = [
     icon: Clock,
     title: '6. Tell us what happened',
     body:
-      'When the access period ends, protected details lock again and Veriq asks whether you took the property, did not take it, or are still considering. If you took it, you can tell us which Unit and opt into sharing resident experience later.',
+      'When your 24 hours end, protected details lock again and Veriq asks whether you took the property, did not take it, or are still considering. If you took it, you can tell us which Unit and opt into sharing resident experience later.',
   },
 ];
 
@@ -91,7 +91,7 @@ const CATEGORY_NOTES = [
 export default function HowItWorksPage() {
   return (
     <>
-      <section className="bg-[#03131a] pb-14 pt-28 text-white sm:pt-32">
+      <section className="bg-navy-900 pb-14 pt-28 text-white sm:pt-32">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
           <p className="text-xs font-bold uppercase tracking-wider text-emerald-300">How Veriq works</p>
           <h1 className="mt-2 font-display text-3xl font-bold leading-tight sm:text-5xl">Know before you go — and know exactly what you are paying for.</h1>

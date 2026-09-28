@@ -69,7 +69,7 @@ export const DEFAULT_FAQS: FAQItem[] = [
   },
   {
     "q": "How long can I access an unlocked Property Intelligence report?",
-    "a": "The applicable access period will be shown before you unlock the report.\nWhere access is time-limited, the expiry period will be clearly displayed on the platform.",
+    "a": "A paid unlock covers the property intelligence for 24 hours from confirmed payment, and the exact expiry time is shown on your unlock before and after you pay.\nThe refund window is the same 24 hours and never outlives your access, so a refund request has to reach Veriq before your access expires.",
     "categories": [
       "property-user"
     ]

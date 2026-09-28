@@ -45,9 +45,9 @@ const AGENT_LINKS: Destination[] = [
     primary: true,
   },
   {
-    href: '/dashboard/agent/sales/new',
-    label: 'Create a Property for Sale listing',
-    description: 'Sale Listings are created and managed by Veriq Agents after seller identity and authority-to-sell verification (§8.5).',
+    href: '/dashboard/agent/sales',
+    label: 'Property for Sale submissions',
+    description: 'Only the owner may submit a property for sale. Owner submissions assigned to you arrive here for the physical visit, document review, the signed sales agreement and publication.',
     icon: Landmark,
   },
 ];
@@ -95,7 +95,7 @@ export default function LegacyCreatePropertyPage() {
         ? {
             heading: 'Veriq Agents verify Operator submissions',
             explanation:
-              'Agents no longer create ordinary listings from this page. Properties, Short Lets and Hostels are submitted by their Property Operator and reach you in the verification queue, where you confirm authority, location, facts, intelligence and media before publishing. Property for Sale remains Agent-created.',
+              'Agents no longer create listings from this page. Properties, Short Lets, Hostels and Property for Sale are all submitted by their owner or Operator and reach you for verification, where you confirm authority, location, facts, intelligence and media before publishing.',
             links: AGENT_LINKS,
           }
         : role === UserRole.ADMIN || role === UserRole.SUPER_ADMIN

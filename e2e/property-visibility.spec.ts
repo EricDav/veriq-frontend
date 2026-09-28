@@ -39,6 +39,11 @@ function publicProperty(overrides: Record<string, unknown> = {}) {
       { id: 'u2', displayLabel: 'Apartment 2', unitType: 'Self-Contain', subtype: null, availabilityStatus: 'unavailable', facts: {}, price: { rentAmount: 600_000 } },
     ],
     availabilitySummary: { documentedUnits: 2, availableUnits: 0, overall: 'unavailable', availableUnitTypes: [] },
+    // No available unit means no paid unlock (Master Blueprint §5).
+    canUnlock: false,
+    unlockBlockedReason: 'no_available_unit',
+    notifyMeAvailable: true,
+    similarAvailable: [],
     accessLevel: 'public',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -65,7 +70,7 @@ test('locked preview discloses unit availability and never renders protected loc
   await expect(page.getByRole('heading', { name: 'Preview this Property' })).toBeVisible();
   await expect(page.getByText('2 documented units')).toBeVisible();
   await expect(page.getByText('0 available now')).toBeVisible();
-  await expect(page.getByText(/This property is currently unavailable/)).toBeVisible();
+  await expect(page.getByText(/Veriq does not take payment for a property with no available unit/)).toBeVisible();
   await expect(page.getByText('Apartment 2')).toBeVisible();
   await expect(page.getByText('Self-Contain')).toBeVisible();
   await expect(page.getByText(EXACT_ADDRESS)).toHaveCount(0);

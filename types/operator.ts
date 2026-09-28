@@ -57,15 +57,18 @@ export type ContactType = 'operator' | 'caretaker';
 
 export type EvidenceKind =
   | 'identity'
+  | 'selfie_with_id'
   | 'business_registration'
   | 'ownership'
   | 'operating_authority'
   | 'occupancy'
   | 'permission_declaration'
   | 'landlord_confirmation'
+  | 'authority_to_sell'
+  | 'sale_document'
   | 'other';
 
-export type MediaOwnerType = 'property' | 'unit' | 'shared_opportunity';
+export type MediaOwnerType = 'property' | 'unit' | 'shared_opportunity' | 'sale_listing';
 
 // ─── Form schemas (Appendix F/G) ─────────────────────────────────────────
 
@@ -628,4 +631,177 @@ export interface SharedUpdateResult {
 export interface ReferralCodeValidation {
   valid: boolean;
   agentName: string;
+}
+
+// ─── Operator posting gate (Blueprint §3) ────────────────────────────────
+
+export type PostingRequirementKey = 'phone_otp' | 'government_id' | 'selfie_with_id';
+
+/** One requirement of the pre-posting gate, with the wording the API supplies for it. */
+export interface PostingRequirement {
+  requirement: PostingRequirementKey;
+  code: string;
+  label: string;
+  message: string;
+  satisfied: boolean;
+}
+
+/**
+ * Whether this Operator may post yet. Signup needs only category, name, email and Operator Terms; phone OTP, a
+ * government ID and a selfie holding that ID are required before posting, and Veriq may ask for limited further
+ * evidence (Master Blueprint §3).
+ */
+export interface PostingReadiness {
+  operatorId: string;
+  categories: PropertyCategoryValue[];
+  legalName: string | null;
+  termsAccepted: boolean;
+  termsVersion: string | null;
+  termsAcceptedAt: string | null;
+  identityStatus: OperatorIdentityStatus;
+  identityReviewNote: string | null;
+  canPost: boolean;
+  requirements: PostingRequirement[];
+  furtherEvidenceRequested: boolean;
+  furtherEvidenceRequestedAt: string | null;
+  furtherEvidenceNote: string | null;
+}
+
+export type OperatorIdentityEvidenceKind = 'government_id' | 'selfie_with_id';
+
+export interface OperatorIdentityEvidenceInput {
+  kind: OperatorIdentityEvidenceKind;
+  file: File;
+  /** Which government ID this is, for example nin or international_passport. Required for a government ID. */
+  idType?: string;
+  /** Only the last characters are retained by Veriq; the full number is never stored. */
+  idNumber?: string;
+  notes?: string;
+}
+
+export interface OperatorIdentityEvidenceRecord {
+  id: string;
+  kind: string;
+  fileName: string | null;
+  notes?: string | null;
+  createdAt: string;
+}
+
+export interface OperatorIdentityEvidenceResult extends OperatorIdentityEvidenceRecord {
+  identityStatus: OperatorIdentityStatus;
+  canPost: boolean;
+  requirements: PostingRequirement[];
+}
+
+// ─── Operator listing declaration (Blueprint §3) ─────────────────────────
+
+export interface ListingDeclarationClause {
+  id: string;
+  text: string;
+}
+
+/** The versioned four-clause declaration. Every submission renders these clauses verbatim. */
+export interface ListingDeclaration {
+  id: string;
+  version: string;
+  effectiveFrom: string;
+  clauses: ListingDeclarationClause[];
+}
+
+/** Sent with every submission, including a re-submission after a correction: acceptance is never carried over. */
+export interface ListingDeclarationAcceptanceInput {
+  version: string;
+  accepted: true;
+}
+
+export interface SubmitListingInput {
+  declaration: ListingDeclarationAcceptanceInput;
+}
+
+// ─── Property for Sale, owner side (Blueprint §6) ────────────────────────
+
+export type SaleSubtype = 'built_property' | 'land';
+export type SalePriceBasis = 'total' | 'per_plot' | 'per_square_metre';
+export type SaleOutcomeValue = 'completed' | 'withdrawn';
+export type PartyVerificationStatus = 'not_required' | 'pending' | 'verified' | 'failed';
+export type SalesAgreementStatus = 'draft' | 'signed' | 'cancelled';
+
+export interface SaleDocumentStatusView {
+  documentType: string;
+  label: string;
+  availability: string;
+  availabilityLabel: string;
+  legalSearchStatus: string;
+  legalSearchLabel: string;
+  checkedAt: string | null;
+}
+
+export interface SalesAgreementView {
+  id: string;
+  status: SalesAgreementStatus;
+  commissionPercent: number;
+  agentSharePercent: number;
+  signedAt: string | null;
+  signedByOwnerName: string | null;
+  signedByAdminUserId: string | null;
+  documentUrl: string | null;
+}
+
+export interface SaleSubmissionSummary {
+  id: string;
+  title: string;
+  subtype: SaleSubtype;
+  publicationStatus: PublicationStatus;
+  availabilityStatus: UnitAvailabilityStatus;
+  saleOutcome: SaleOutcomeValue | null;
+  askingPrice: number;
+  correctionNote: string | null;
+  updatedAt: string;
+}
+
+/** The owner's own view of their submission: what they sent, and what Veriq still needs. */
+export interface SaleOwnerView {
+  sale: SaleSubmissionSummary & {
+    propertyId: string;
+    facts: Record<string, unknown>;
+    intelligence: Record<string, unknown>;
+    priceBasis: SalePriceBasis | string;
+    negotiable: boolean | null;
+    ownerIdentityStatus: PartyVerificationStatus;
+    authorityToSellStatus: PartyVerificationStatus;
+    physicalVisitAt: string | null;
+    submittedAt: string | null;
+    publishedAt: string | null;
+    salePriceAmount: number | null;
+    commissionAmount: number | null;
+  };
+  property: { id: string; state: string; city: string; area: string };
+  documentChecklist: Array<{ key: string; label: string }>;
+  documentStatuses: SaleDocumentStatusView[];
+  myDocuments: OperatorIdentityEvidenceRecord[];
+  agreement: SalesAgreementView | null;
+  outstanding: ReadinessBlocker[];
+}
+
+export interface CreateSaleListingInput {
+  /** Active acceptance that the submitter owns the property and may sell it; never defaulted (§6). */
+  ownerDeclaration: true;
+  subtype: SaleSubtype;
+  title: string;
+  propertyId?: string;
+  location?: SubmissionLocationInput;
+  askingPrice: number;
+  priceBasis: SalePriceBasis;
+  negotiable?: boolean;
+  facts?: AnswerMap;
+  intelligence?: AnswerMap;
+}
+
+export interface UpdateSaleListingInput {
+  title?: string;
+  askingPrice?: number;
+  priceBasis?: SalePriceBasis;
+  negotiable?: boolean;
+  facts?: AnswerMap;
+  intelligence?: AnswerMap;
 }

@@ -8,6 +8,7 @@ import { unlocksApi } from '@/lib/api/renter';
 import type { UnlockHistoryItem, UnlockView } from '@/types/renter';
 import { useAuth } from '@/context/AuthContext';
 import { LoadingSpinner, PageLoader } from '@/components/ui/LoadingSpinner';
+import { BackToDashboard } from '@/components/ui/BackToDashboard';
 import { AccessCountdown } from '@/components/renter/AccessCountdown';
 import { ApiErrorNotice } from '@/components/renter/ApiErrorNotice';
 import { clearPendingCheckout, readPendingCheckout } from '@/components/renter/pendingCheckout';
@@ -240,8 +241,11 @@ function CallbackInner() {
 function Shell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-navy-900 px-4 pb-16 pt-28">
-      <div className="mx-auto w-full max-w-md">
+      <div className="mx-auto w-full max-w-md space-y-3">
         <div className="card p-8 text-center">{children}</div>
+        <div className="flex justify-center">
+          <BackToDashboard className="!text-white/70 hover:!text-white" />
+        </div>
       </div>
     </div>
   );

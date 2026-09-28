@@ -18,6 +18,7 @@ import {
   VERIQ_MANAGED_OPERATOR_ID,
 } from '@/types/admin';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
+import { Select } from '@/components/ui/Select';
 import { Modal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
 import { ReasonDialog } from '@/components/admin/ReasonDialog';
@@ -81,7 +82,7 @@ export default function AdminVerificationPage() {
   const [evidence, setEvidence] = useState<VerificationEvidenceRow[]>([]);
 
   const [dialog, setDialog] = useState<DialogKind>(null);
-  const [identityStatus, setIdentityStatus] = useState<OperatorIdentityStatus>('identity_verified');
+  const [identityStatus, setIdentityStatus] = useState('');
   const [operatorQuery, setOperatorQuery] = useState('');
   const debouncedOperatorQuery = useDebounced(operatorQuery);
   const [operatorResults, setOperatorResults] = useState<SelectorOperator[]>([]);
@@ -222,7 +223,7 @@ export default function AdminVerificationPage() {
         }
         case 'identity': {
           if (!workspace.operator) return;
-          const res = await verificationAdminApi.operatorIdentity(workspace.operator.id, identityStatus, reason || undefined);
+          const res = await verificationAdminApi.operatorIdentity(workspace.operator.id, identityStatus as OperatorIdentityStatus, reason || undefined);
           success(res.message);
           break;
         }
@@ -584,12 +585,15 @@ export default function AdminVerificationPage() {
           ) : null
         }
       >
-        <div>
-          <label className="label text-xs" htmlFor="identity-status">Identity status</label>
-          <select id="identity-status" className="input" value={identityStatus} onChange={(event) => setIdentityStatus(event.target.value as OperatorIdentityStatus)}>
-            {OPERATOR_IDENTITY_STATUSES.map((value) => <option key={value} value={value}>{humanize(value)}</option>)}
-          </select>
-        </div>
+        <Select
+          id="identity-status"
+          label="Identity status"
+          labelClassName="text-xs"
+          options={OPERATOR_IDENTITY_STATUSES.map((value) => ({ value, label: humanize(value) }))}
+          value={identityStatus}
+          onValueChange={setIdentityStatus}
+          required
+        />
       </ReasonDialog>
     </div>
   );

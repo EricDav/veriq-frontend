@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { chatApi, ApiError } from '@/lib/api';
 import type { ConsultationAccess, MediaItem, Property } from '@/types';
-import type { UnlockedPropertyWithStreet } from '@/types/renter';
+import type { UnlockBlockedReason, UnlockedPropertyWithStreet } from '@/types/renter';
 import { loadPropertyForViewer, toConsultationAccess } from '@/lib/property-access';
 import { AgentVerificationLevel, AgentTrustTier, FreshnessScore, PropertyType } from '@/types';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
@@ -22,7 +22,9 @@ import { AgentRatingButton } from '@/components/agents/AgentRatingButton';
 import { MoveInEstimate } from '@/components/properties/MoveInEstimate';
 import { ContactActions, DocumentedUnits, PublicUnitList } from '@/components/properties/UnlockedPropertySections';
 import { StreetIntelligencePanel } from '@/components/renter/StreetIntelligencePanel';
+import { UnlockBlockedCallout } from '@/components/renter/UnlockBlockedCallout';
 import { UnlockCheckout } from '@/components/renter/UnlockCheckout';
+import { DateRangeFields, EMPTY_STAY, isCompleteStay, stayError, type StayRange } from '@/components/ui/DateRangeFields';
 
 const FRESHNESS_INFO: Record<FreshnessScore, { label: string; cls: string; width: string }> = {
   freshly_verified: { label: 'Freshly verified — within 24 hours', cls: 'bg-emerald-500', width: 'w-full' },
@@ -92,6 +94,10 @@ interface PublicPreviewProps {
   location: string;
   agentVerified: boolean;
   isFreeUnlock: boolean;
+  isAuthenticated: boolean;
+  isShortLet: boolean;
+  stay: StayRange;
+  onStayChange: (next: StayRange) => void;
   onUnlock: () => void;
   onOpenCover: () => void;
   isCoverOpen: boolean;
@@ -99,47 +105,76 @@ interface PublicPreviewProps {
 }
 
 function PublicPropertyPreview({ property, coverImageSrc, location, agentVerified, isFreeUnlock,
-  onUnlock, onOpenCover, isCoverOpen, onCloseCover }: PublicPreviewProps) {
+  isAuthenticated, isShortLet, stay, onStayChange, onUnlock, onOpenCover, isCoverOpen, onCloseCover }: PublicPreviewProps) {
   const category = propertyCategoryLabel(property.propertyType);
   const unlockFee = isFreeUnlock ? 'Free · ₦0' : formatNaira(property.consultationFee);
   const summary = property.availabilitySummary;
   const isUnavailable = summary ? summary.overall === 'unavailable' : property.status !== 'active';
   const availableLabel = isUnavailable ? 'Currently unavailable' : 'Available now';
   const units = property.units ?? [];
+  // No available unit means no paid unlock and no direct contact (Master Blueprint §5). `canUnlock` is authoritative
+  // when the API sends it; an older payload falls back to the availability summary.
+  const canUnlock = property.canUnlock === undefined ? !isUnavailable : property.canUnlock;
+  const blockedReason: UnlockBlockedReason = property.unlockBlockedReason ?? 'no_available_unit';
+  const dateError = isShortLet ? stayError(stay) : null;
 
   return (
-    <main className="min-h-screen bg-[#03131a] pb-14 pt-24 text-white">
+    <main className="min-h-screen bg-navy-900 pb-14 pt-24 text-white">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <nav className="flex items-center gap-2 overflow-hidden text-xs text-white/45" aria-label="Breadcrumb"><Link href="/" className="hover:text-white">Home</Link><ChevronRight className="h-3 w-3" /><Link href="/properties" className="hover:text-white">Properties</Link><ChevronRight className="h-3 w-3" /><span className="truncate">{category}</span><ChevronRight className="h-3 w-3" /><span className="text-white">Preview</span></nav>
         <div className="mt-8 flex flex-col gap-4 border-l-2 border-transparent lg:flex-row lg:items-end lg:justify-between">
-          <div><p className="text-xs font-bold uppercase text-cyan-300">Property preview</p><h1 className="mt-2 font-display text-4xl font-bold sm:text-5xl">Preview this <span className="text-cyan-300">Property</span></h1><p className="mt-3 text-sm text-white/65 sm:text-base">See the essentials first, so you only unlock when the property looks right for you.</p></div>
+          <div><p className="text-xs font-bold uppercase text-emerald-300">Property preview</p><h1 className="mt-2 font-display text-4xl font-bold sm:text-5xl">Preview this <span className="text-emerald-300">Property</span></h1><p className="mt-3 text-sm text-white/65 sm:text-base">See the essentials first, so you only unlock when the property looks right for you.</p></div>
           <p className="max-w-[190px] border-l-2 border-emerald-400 pl-4 text-xs leading-5 text-white/70">A more transparent property market for a better Nigeria.</p>
         </div>
 
-        <button type="button" onClick={onOpenCover} disabled={!coverImageSrc} className="group relative mt-7 block aspect-[16/7] min-h-64 w-full overflow-hidden rounded-lg border border-emerald-400/60 bg-[#07303a] text-left disabled:cursor-default">
+        <button type="button" onClick={onOpenCover} disabled={!coverImageSrc} className="group relative mt-7 block aspect-[16/7] min-h-64 w-full overflow-hidden rounded-lg border border-emerald-400/60 bg-navy-800 text-left disabled:cursor-default">
           {coverImageSrc ? <Image src={coverImageSrc} alt={property.title} fill priority className="object-cover transition-transform duration-500 group-hover:scale-[1.01]" sizes="100vw" /> : <span className="absolute inset-0 grid place-items-center"><Home className="h-20 w-20 text-white/10" /></span>}
           <span className="absolute bottom-4 left-4 flex items-center gap-2 rounded border border-white/20 bg-black/55 px-3 py-2 text-xs font-semibold backdrop-blur"><ImageIcon className="h-4 w-4" /> Public preview</span>
         </button>
 
-        <section className="mt-5 rounded-lg border border-emerald-400/60 bg-gradient-to-r from-[#063038] to-[#052a27] p-5 sm:p-7">
-          <div className="flex flex-wrap gap-2"><span className="inline-flex items-center gap-2 rounded bg-white px-3 py-2 text-xs font-bold text-[#03131a]"><Home className="h-4 w-4 text-emerald-600" />{category}</span>{agentVerified && <span className="inline-flex items-center gap-2 rounded bg-emerald-400/15 px-3 py-2 text-xs font-semibold text-emerald-200"><Shield className="h-4 w-4" /> Verified</span>}</div>
+        <section className="mt-5 rounded-lg border border-emerald-400/60 bg-gradient-to-r from-navy-900 to-navy-800 p-5 sm:p-7">
+          <div className="flex flex-wrap gap-2"><span className="inline-flex items-center gap-2 rounded bg-white px-3 py-2 text-xs font-bold text-navy-900"><Home className="h-4 w-4 text-emerald-600" />{category}</span>{agentVerified && <span className="inline-flex items-center gap-2 rounded bg-emerald-400/15 px-3 py-2 text-xs font-semibold text-emerald-200"><Shield className="h-4 w-4" /> Verified</span>}</div>
           <h2 className="mt-4 font-display text-2xl font-bold sm:text-3xl">{property.title}</h2>
           <div className="mt-4 flex flex-wrap gap-x-8 gap-y-3 text-sm text-white/70"><span className="flex items-center gap-2"><MapPin className="h-4 w-4" />{location}</span>{summary && summary.documentedUnits > 0 ? <><span className="flex items-center gap-2"><Building2 className="h-4 w-4" />{summary.documentedUnits} documented {summary.documentedUnits === 1 ? 'unit' : 'units'}</span><span className="flex items-center gap-2"><Bed className="h-4 w-4" />{summary.availableUnits} available now</span></> : <span className="flex items-center gap-2"><Bed className="h-4 w-4" />{property.bedrooms}-Bedroom</span>}</div>
-          {isUnavailable && <p className="mt-4 flex items-start gap-2 rounded border border-amber-300/50 bg-amber-400/10 px-3 py-2 text-xs leading-5 text-amber-100"><AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />This property is currently unavailable. You can still unlock it to research it for future availability, but knowingly unlocking an unavailable property is not by itself a refund reason.</p>}
+          {!canUnlock && <p className="mt-4 flex items-start gap-2 rounded border border-amber-300/50 bg-amber-400/10 px-3 py-2 text-xs leading-5 text-amber-100"><AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />Currently unavailable. Veriq does not take payment for a property with no available unit, so paid unlock and direct contact are switched off until a unit is free again.</p>}
           <p className="mt-5 border-t border-white/15 pt-5 text-sm leading-6 text-white/70">This quick preview helps you confirm the essentials first. Unlock the full report to view complete details, protected photos, verified location, and contact access.</p>
         </section>
 
         <section className="mt-7"><h2 className="font-display text-xl font-semibold">Documented Units</h2><p className="mt-1 text-xs text-white/50">Unit types, basic prices and current availability. Unit photos and details unlock with the full report.</p>
-          {units.length > 0 ? <PublicUnitList units={units} /> : <div className="mt-3 grid gap-3 md:grid-cols-2"><div className="rounded-lg border border-emerald-400/60 bg-gradient-to-r from-[#063039] to-[#06312e] p-5"><div className="flex items-start justify-between"><div><h3 className="font-display text-lg font-semibold">{property.title}</h3><span className="mt-2 inline-block rounded bg-cyan-400/10 px-2 py-1 text-xs text-cyan-300">{property.bedrooms}-Bedroom</span></div><ChevronRight className="h-5 w-5" /></div><p className="mt-3 text-xl font-bold text-cyan-300">{formatNaira(property.rentAmount)} <span className="text-sm font-normal">/ yr</span></p><div className="mt-4 flex flex-wrap gap-5 text-xs text-white/65"><span className="flex items-center gap-2"><KeyRound className="h-4 w-4" />{property.bedrooms}-Bedroom</span><span className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-cyan-300" />{availableLabel}</span></div></div></div>}
+          {units.length > 0 ? <PublicUnitList units={units} /> : <div className="mt-3 grid gap-3 md:grid-cols-2"><div className="rounded-lg border border-emerald-400/60 bg-gradient-to-r from-navy-900 to-navy-800 p-5"><div className="flex items-start justify-between"><div><h3 className="font-display text-lg font-semibold">{property.title}</h3><span className="mt-2 inline-block rounded bg-emerald-400/10 px-2 py-1 text-xs text-emerald-300">{property.bedrooms}-Bedroom</span></div><ChevronRight className="h-5 w-5" /></div><p className="mt-3 text-xl font-bold text-emerald-300">{formatNaira(property.rentAmount)} <span className="text-sm font-normal">/ yr</span></p><div className="mt-4 flex flex-wrap gap-5 text-xs text-white/65"><span className="flex items-center gap-2"><KeyRound className="h-4 w-4" />{property.bedrooms}-Bedroom</span><span className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-emerald-300" />{availableLabel}</span></div></div></div>}
         </section>
 
         <section className="mt-7"><h2 className="font-display text-xl font-semibold">What Unlock Covers</h2><p className="mt-1 text-xs text-white/50">Get the complete picture with verified information and direct contacts.</p>
-          <div className="mt-3 grid gap-5 rounded-lg border border-emerald-400/60 bg-[#052b2d] p-5 sm:grid-cols-2 lg:grid-cols-3">{[
+          <div className="mt-3 grid gap-5 rounded-lg border border-emerald-400/60 bg-navy-800 p-5 sm:grid-cols-2 lg:grid-cols-3">{[
             [MapPin, 'Exact property location'], [ImageIcon, 'Full gallery'], [FileText, 'All documented units'], [BarChart3, 'Full property intelligence'], [Home, 'Unit-specific intelligence'], [PhoneCall, 'Operator or caretaker contact'], [UsersRound, 'Assigned Veriq Agent support'], [Clock, 'Time-limited access period'], [Wallet, `Unlock fee: ${unlockFee}`],
-          ].map(([Icon, label]) => { const ItemIcon = Icon as React.ElementType; return <div key={String(label)} className="flex items-center gap-3 text-xs text-white/75"><ItemIcon className="h-5 w-5 shrink-0 text-cyan-300" />{String(label)}</div>; })}</div>
+          ].map(([Icon, label]) => { const ItemIcon = Icon as React.ElementType; return <div key={String(label)} className="flex items-center gap-3 text-xs text-white/75"><ItemIcon className="h-5 w-5 shrink-0 text-emerald-300" />{String(label)}</div>; })}</div>
         </section>
 
-        <section className="mt-5 flex flex-col gap-5 rounded-lg border border-emerald-400/50 bg-[#063038] p-5 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-center gap-4"><span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-cyan-400/15 text-cyan-300"><Lock className="h-5 w-5" /></span><div><h2 className="font-display text-lg font-semibold">Unlock Full Intelligence Report</h2><p className="mt-1 text-xs text-white/55">Wallet credit is applied automatically at checkout, and approved refunds are credited back to your Veriq Wallet.</p></div></div><button type="button" onClick={onUnlock} className="flex min-h-12 items-center justify-center gap-2 rounded bg-gradient-to-r from-cyan-400 to-emerald-400 px-7 text-sm font-bold text-[#03161b]">{isFreeUnlock ? <Gift className="h-4 w-4" /> : <Lock className="h-4 w-4" />}{isFreeUnlock ? 'Unlock Full Report Free' : `Unlock Full Report — ${unlockFee}`}<ArrowRight className="h-4 w-4" /></button></section>
+        {isShortLet && (
+          <section className="mt-5 rounded-lg border border-emerald-400/50 bg-navy-800 p-5">
+            <h2 className="font-display text-lg font-semibold">Choose your dates</h2>
+            <p className="mt-1 text-xs text-white/55">Short Let availability is checked against the nights you select, and those dates travel with your unlock.</p>
+            <div className="mt-4 [&_.label]:text-white/80 [&_input]:bg-white [&_p]:text-white/60">
+              <DateRangeFields idPrefix="short-let-stay" value={stay} onChange={onStayChange} optional error={dateError} hint="Leave blank to see the property's overall availability." />
+            </div>
+          </section>
+        )}
+
+        {canUnlock ? (
+          <section className="mt-5 flex flex-col gap-5 rounded-lg border border-emerald-400/50 bg-navy-800 p-5 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-center gap-4"><span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-emerald-400/15 text-emerald-300"><Lock className="h-5 w-5" /></span><div><h2 className="font-display text-lg font-semibold">Unlock Full Intelligence Report</h2><p className="mt-1 text-xs text-white/55">Wallet credit is applied automatically at checkout, and approved refunds are credited back to your Veriq Wallet.</p></div></div><button type="button" onClick={onUnlock} disabled={!!dateError} className="flex min-h-12 items-center justify-center gap-2 rounded bg-gradient-to-r from-emerald-400 to-emerald-500 px-7 text-sm font-bold text-navy-900 disabled:cursor-not-allowed disabled:opacity-60">{isFreeUnlock ? <Gift className="h-4 w-4" /> : <Lock className="h-4 w-4" />}{isFreeUnlock ? 'Unlock Full Report Free' : `Unlock Full Report — ${unlockFee}`}<ArrowRight className="h-4 w-4" /></button></section>
+        ) : (
+          <div className="mt-5">
+            <UnlockBlockedCallout
+              reason={blockedReason}
+              targetType="property"
+              targetId={property.id}
+              notifyMeAvailable={property.notifyMeAvailable ?? true}
+              similarAvailable={property.similarAvailable ?? []}
+              isAuthenticated={isAuthenticated}
+              returnPath={`/properties/${property.id}`}
+            />
+          </div>
+        )}
       </div>
       {isCoverOpen && coverImageSrc && <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4" onClick={onCloseCover}><button type="button" onClick={onCloseCover} className="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white" aria-label="Close image preview"><X className="h-6 w-6" /></button><Image src={coverImageSrc} alt={property.title} width={1600} height={1000} className="max-h-[88vh] w-auto max-w-full rounded-lg object-contain" /></div>}
     </main>
@@ -337,6 +372,8 @@ export default function PropertyDetailPage() {
   const [notFound, setNotFound] = useState(false);
   const [isCoverPreviewOpen, setIsCoverPreviewOpen] = useState(false);
   const [unlocked, setUnlocked] = useState<UnlockedPropertyWithStreet | null>(null);
+  // Short Let stay: the dates the renter is searching for, carried into the quote and the unlock itself (§5).
+  const [stay, setStay] = useState<StayRange>(EMPTY_STAY);
 
   const applyViewerState = (state: Awaited<ReturnType<typeof loadPropertyForViewer>>) => {
     if (!state) {
@@ -428,6 +465,10 @@ export default function PropertyDetailPage() {
           location={location}
           agentVerified={agentVerified}
           isFreeUnlock={isFreeUnlock}
+          isAuthenticated={isAuthenticated}
+          isShortLet={isShortStay}
+          stay={stay}
+          onStayChange={setStay}
           onUnlock={() => setIsCheckoutOpen(true)}
           onOpenCover={() => setIsCoverPreviewOpen(true)}
           isCoverOpen={isCoverPreviewOpen}
@@ -439,6 +480,8 @@ export default function PropertyDetailPage() {
           targetType="property"
           targetId={id}
           returnPath={`/properties/${id}`}
+          stay={isShortStay && isCompleteStay(stay) ? stay : undefined}
+          onChangeDates={isShortStay ? () => document.getElementById('short-let-stay-check-in')?.focus() : undefined}
           onUnlocked={refreshAccess}
         />
       </>
@@ -637,7 +680,12 @@ export default function PropertyDetailPage() {
                 <UnlockedMediaGallery media={unlocked?.media ?? []} />
                 {unlocked && <DocumentedUnits units={unlocked.units} />}
                 {unlocked && hasAccess && (
-                  <ContactActions contacts={unlocked.propertyContacts} agentSupport={unlocked.agentSupport} bookingLink={unlocked.bookingLink} />
+                  <ContactActions
+                    contacts={unlocked.propertyContacts}
+                    agentSupport={unlocked.agentSupport}
+                    bookingLink={unlocked.bookingLink}
+                    contactDisabledReason={unlocked.contactDisabledReason}
+                  />
                 )}
                 <StreetIntelligencePanel presentation={unlocked?.streetIntelligence ?? null} />
                 <IntelligenceGrid

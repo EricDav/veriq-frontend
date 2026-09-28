@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ChevronRight, Landmark, Plus, RefreshCw, Search } from 'lucide-react';
+import { ChevronRight, Landmark, RefreshCw, Search } from 'lucide-react';
 import type { SaleManagedItem } from '@/types/agent';
 import { UserRole } from '@/types';
 import { saleListingsApi } from '@/lib/api/agent';
@@ -10,6 +10,16 @@ import { useAuth } from '@/context/AuthContext';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
 import { PUBLICATION_STATUS_STYLES, errorMessage, formatDateTime, formatNaira, humanize } from '@/components/agent/format';
 import { EmptyBlock, ErrorBlock, InlineNotice, LoadingBlock, PageHeader, StatusPill, smallButton } from '@/components/agent/ui';
+import { Select } from '@/components/ui/Select';
+
+const SUBTYPE_OPTIONS = [
+  { value: 'built_property', label: 'Built Property' },
+  { value: 'land', label: 'Land' },
+];
+
+const STATUS_OPTIONS = ['draft', 'submitted', 'verification_in_progress', 'needs_correction', 'ready_to_publish', 'published', 'suspended', 'archived'].map(
+  (value) => ({ value, label: humanize(value) }),
+);
 
 export default function SaleListingsPage() {
   const { user, isLoading: authLoading } = useAuth();
@@ -53,24 +63,20 @@ export default function SaleListingsPage() {
     <div className="mx-auto max-w-5xl space-y-6">
       <PageHeader
         title="Property for Sale"
-        subtitle="Agent-led sale listings: seller verification, document checklist, media, intelligence, availability and publication (§6.5, §8.5)."
+        subtitle="Owner-submitted sale listings you manage: owner verification, physical visit, document checklist, the signed sales agreement, buyer enquiries and publication."
         backHref="/dashboard/agent"
         backLabel="Agent dashboard"
         actions={
-          <>
-            <button type="button" className={smallButton} onClick={load} disabled={loading}>
-              <RefreshCw className="h-3.5 w-3.5" /> Refresh
-            </button>
-            <Link href="/dashboard/agent/sales/new" className="btn-primary !px-4 !py-2 text-sm">
-              <Plus className="h-4 w-4" /> New Sale Listing
-            </Link>
-          </>
+          <button type="button" className={smallButton} onClick={load} disabled={loading}>
+            <RefreshCw className="h-3.5 w-3.5" /> Refresh
+          </button>
         }
       />
 
       <InlineNotice tone="info">
-        Sellers never self-list. You source the opportunity, verify the seller/owner and authority to sell, confirm the property or land, and
-        publish when verification is complete.
+        Only the owner may submit a property for sale, so these listings arrive from your assigned Operators. You visit the property in person,
+        review ownership and authority to sell, and publish once Veriq and the owner have signed the sales representation agreement. Viewing a
+        published sale listing is free for buyers and every enquiry comes to you.
       </InlineNotice>
 
       <div className="card !shadow-sm grid grid-cols-1 gap-3 p-4 sm:grid-cols-4">
@@ -79,19 +85,26 @@ export default function SaleListingsPage() {
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input className="input !py-2 !pl-9 text-sm" placeholder="Search by title" value={query} onChange={(event) => setQuery(event.target.value)} />
         </label>
-        <select className="input !py-2 text-sm" value={subtype} onChange={(event) => setSubtype(event.target.value)} aria-label="Subtype">
-          <option value="">All subtypes</option>
-          <option value="built_property">Built Property</option>
-          <option value="land">Land</option>
-        </select>
-        <select className="input !py-2 text-sm" value={status} onChange={(event) => setStatus(event.target.value)} aria-label="Publication status">
-          <option value="">All statuses</option>
-          {['draft', 'published', 'suspended', 'archived'].map((value) => (
-            <option key={value} value={value}>
-              {humanize(value)}
-            </option>
-          ))}
-        </select>
+        <Select
+          id="sales-subtype"
+          label="Subtype"
+          labelClassName="sr-only"
+          placeholder="All subtypes"
+          className="!py-2 text-sm"
+          options={SUBTYPE_OPTIONS}
+          value={subtype}
+          onValueChange={setSubtype}
+        />
+        <Select
+          id="sales-status"
+          label="Publication status"
+          labelClassName="sr-only"
+          placeholder="All statuses"
+          className="!py-2 text-sm"
+          options={STATUS_OPTIONS}
+          value={status}
+          onValueChange={setStatus}
+        />
       </div>
 
       {loadError ? (
@@ -100,13 +113,8 @@ export default function SaleListingsPage() {
         <LoadingBlock label="Loading Sale Listings…" />
       ) : filtered.length === 0 ? (
         <EmptyBlock
-          title={items && items.length ? 'No listings match these filters' : 'No Sale Listings yet'}
-          message="Create a draft Sale Listing for a Built Property or Land, then verify and publish it."
-          action={
-            <Link href="/dashboard/agent/sales/new" className="btn-primary !px-4 !py-2 text-sm">
-              <Plus className="h-4 w-4" /> New Sale Listing
-            </Link>
-          }
+          title={items && items.length ? 'No listings match these filters' : 'No sale submissions yet'}
+          message="Sale listings appear here when an owner you are assigned to submits a property for Veriq to represent."
         />
       ) : (
         <ul className="space-y-3">
@@ -124,7 +132,8 @@ export default function SaleListingsPage() {
                     <span className={`badge !px-2 !py-0.5 text-[11px] ${item.availabilityStatus === 'available' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
                       {humanize(item.availabilityStatus)}
                     </span>
-                    {item.escalationOpen && <span className="badge bg-red-100 !px-2 !py-0.5 text-[11px] text-red-800">Escalated to Admin</span>}
+                    {item.saleOutcome && <span className="badge bg-slate-100 !px-2 !py-0.5 text-[11px] text-slate-700">Sale {humanize(item.saleOutcome)}</span>}
+                    {item.correctionNote && <span className="badge bg-amber-50 !px-2 !py-0.5 text-[11px] text-amber-800">Correction requested</span>}
                   </div>
                 </div>
                 <ChevronRight className="h-4 w-4 flex-shrink-0 text-slate-400" />

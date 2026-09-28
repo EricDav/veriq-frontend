@@ -36,7 +36,7 @@ function PropertyIntelligenceBridge() {
             Need intelligence on a <span className="text-veriq-secondary">specific property?</span>
           </h2>
           <p className="mt-4 text-sm leading-6 text-veriq-muted">
-            Our Property Intelligence reports reveal what photos cannot. Every report is prepared by verified agents who have inspected or verified the property.
+            Our Property Intelligence reports reveal what photos cannot. Property Operators provide structured details, while Veriq Agents independently review and verify them.
           </p>
           <Link href="/properties" className="btn-primary mt-6 inline-flex items-center gap-2">
             Explore Property Intelligence <ArrowRight className="h-4 w-4" />
@@ -67,7 +67,7 @@ function PropertyIntelligenceBridge() {
           <div className="flex items-center justify-between gap-4 p-4 sm:p-5">
             <div>
               <p className="text-sm font-bold text-navy-900">Real property. Real inspections. Real insights.</p>
-              <p className="mt-1 text-xs leading-5 text-veriq-muted">Photos, condition, amenities, access road and more from trusted, verified agents.</p>
+              <p className="mt-1 text-xs leading-5 text-veriq-muted">Photos, condition, amenities, access road and more from verified Property Operators.</p>
             </div>
             <Link href="/properties" aria-label="Browse Property Intelligence" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-veriq-secondary text-white transition hover:bg-emerald-700">
               <ArrowRight className="h-4 w-4" />

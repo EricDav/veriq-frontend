@@ -34,7 +34,7 @@ function getTestimonials(content?: SiteContent): Testimonial[] {
 export function TrustStats({ content }: { content?: SiteContent }) {
   const testimonials = getTestimonials(content);
   return (
-    <section className="bg-[#06101c] py-16 text-white sm:py-20">
+    <section className="bg-navy-900 py-16 text-white sm:py-20">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <div className="text-center">
           <h2 className="font-display text-3xl font-black">Built for smarter property decisions</h2>

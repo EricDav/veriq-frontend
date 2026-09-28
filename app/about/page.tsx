@@ -90,7 +90,7 @@ export default async function AboutPage() {
 
   return (
     <>
-      <section className="relative min-h-[540px] overflow-hidden bg-[#020a12] pb-24 pt-32 sm:min-h-[580px] lg:pt-36">
+      <section className="relative min-h-[540px] overflow-hidden bg-navy-950 pb-24 pt-32 sm:min-h-[580px] lg:pt-36">
         <Image
           src="/images/web-background-visual-layer.png"
           alt=""
@@ -99,7 +99,7 @@ export default async function AboutPage() {
           sizes="100vw"
           className="object-cover object-center opacity-90"
         />
-        <div className="absolute inset-0 bg-[#020a12]/20" />
+        <div className="absolute inset-0 bg-navy-950/20" />
         <div className="relative mx-auto flex max-w-5xl flex-col items-center px-4 text-center sm:px-6 lg:px-8">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-4 py-1.5 text-xs font-semibold text-emerald-300">
             <Target className="h-3.5 w-3.5" />

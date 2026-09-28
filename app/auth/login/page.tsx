@@ -195,8 +195,8 @@ function LoginPageInner() {
         </div>
 
         <div className="mt-6 flex items-center justify-center gap-4">
-          <Link href="/auth/register?role=agent" className="text-xs text-white/50 hover:text-white/70 transition-colors">
-            Join as Agent
+          <Link href="/auth/register?role=operator" className="text-xs text-white/50 hover:text-white/70 transition-colors">
+            Join as Property Operator
           </Link>
           <span className="text-white/20">•</span>
           <Link href="/terms" className="text-xs text-white/50 hover:text-white/70 transition-colors">

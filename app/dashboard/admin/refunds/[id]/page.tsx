@@ -17,6 +17,7 @@ import { auditAdminApi, refundsAdminApi } from '@/lib/api/admin';
 import type { AdminRefund, AuditEvent, RefundResponsibleSource } from '@/types/admin';
 import { REFUND_RESPONSIBLE_SOURCES } from '@/types/admin';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
+import { Select } from '@/components/ui/Select';
 import { useToast } from '@/components/ui/Toast';
 import { ReasonDialog } from '@/components/admin/ReasonDialog';
 import { useAgentDirectory } from '@/components/admin/useAgentDirectory';
@@ -76,7 +77,7 @@ export default function AdminRefundDetailPage() {
   const [eventsError, setEventsError] = useState<DescribedError | null>(null);
   const [dialog, setDialog] = useState<DialogKind>(null);
   const [responsibleSource, setResponsibleSource] = useState<RefundResponsibleSource | ''>('');
-  const [evidenceFrom, setEvidenceFrom] = useState<'renter' | 'agent' | 'operator'>('renter');
+  const [evidenceFrom, setEvidenceFrom] = useState('');
   const [creditNotice, setCreditNotice] = useState<{ credited: number; balance: number; message: string | null } | null>(null);
 
   const load = useCallback(async () => {
@@ -149,9 +150,12 @@ export default function AdminRefundDetailPage() {
   };
 
   const requestEvidence = async (message: string) => {
-    if (!refund) return;
+    if (!refund || !evidenceFrom) return;
     try {
-      const res = await refundsAdminApi.requestEvidence(refund.id, { message, from: evidenceFrom });
+      const res = await refundsAdminApi.requestEvidence(refund.id, {
+        message,
+        from: evidenceFrom as 'renter' | 'agent' | 'operator',
+      });
       success(res.message);
       setDialog(null);
       refreshAll();
@@ -428,14 +432,15 @@ export default function AdminRefundDetailPage() {
         reasonPlaceholder="Describe exactly what is needed and why"
         message={<p>The case moves to Under review. Evidence informs the decision; the renter, Agent or Operator never decides the outcome.</p>}
       >
-        <div>
-          <label className="label text-xs" htmlFor="evidence-from">Ask</label>
-          <select id="evidence-from" className="input" value={evidenceFrom} onChange={(event) => setEvidenceFrom(event.target.value as 'renter' | 'agent' | 'operator')}>
-            {EVIDENCE_SOURCES.map((option) => (
-              <option key={option.value} value={option.value}>{option.label}</option>
-            ))}
-          </select>
-        </div>
+        <Select
+          id="evidence-from"
+          label="Ask"
+          labelClassName="text-xs"
+          options={EVIDENCE_SOURCES}
+          value={evidenceFrom}
+          onValueChange={setEvidenceFrom}
+          required
+        />
       </ReasonDialog>
     </div>
   );

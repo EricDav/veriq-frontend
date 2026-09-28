@@ -12,7 +12,7 @@ const TYPE_COLORS: Record<string, string> = {
   flat: 'from-blue-600 to-blue-800',
   duplex: 'from-indigo-600 to-indigo-800',
   bungalow: 'from-teal-600 to-teal-800',
-  self_contain: 'from-cyan-600 to-cyan-800',
+  self_contain: 'from-emerald-600 to-emerald-800',
   studio: 'from-purple-600 to-purple-800',
   penthouse: 'from-navy-700 to-navy-900',
   mansion: 'from-slate-700 to-slate-900',
@@ -97,7 +97,7 @@ export function PropertyCard({
 
   return (
     <Link href={detailHref ?? `/properties/${id}`} className="group block">
-      <div className={`overflow-hidden rounded-md border transition-all duration-200 ${browseVariant ? 'border-emerald-400/20 bg-[#062129] text-white hover:border-emerald-400/50 hover:shadow-[0_12px_35px_rgba(16,185,129,0.12)]' : 'card'}`}>
+      <div className={`overflow-hidden rounded-md border transition-all duration-200 ${browseVariant ? 'border-emerald-400/20 bg-navy-800 text-white hover:border-emerald-400/50 hover:shadow-[0_12px_35px_rgba(16,185,129,0.12)]' : 'card'}`}>
         {/* Image / placeholder */}
         <div className={`relative ${browseVariant ? 'h-48' : 'h-52'} bg-gradient-to-br ${gradient} overflow-hidden`}>
           {coverImageUrl ? (
@@ -207,7 +207,7 @@ export function PropertyCard({
           {browseVariant && (
             <div className="mt-4 grid grid-cols-2 gap-2 border-t border-white/10 pt-3">
               <span className="flex min-h-9 items-center justify-center rounded border border-white/15 text-xs font-semibold text-white/80">View Preview</span>
-              <span className="flex min-h-9 items-center justify-center gap-1.5 rounded bg-emerald-500 text-xs font-semibold text-[#03161c]">{isFreeUnlock ? <Gift className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}{isFreeUnlock ? 'Unlock Free' : 'Unlock Full Details'}</span>
+              <span className="flex min-h-9 items-center justify-center gap-1.5 rounded bg-emerald-500 text-xs font-semibold text-navy-900">{isFreeUnlock ? <Gift className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}{isFreeUnlock ? 'Unlock Free' : 'Unlock Full Details'}</span>
             </div>
           )}
         </div>

@@ -9,10 +9,20 @@ import type {
   AvailabilityEventRecord,
   ContactInput,
   CreatePropertySubmissionInput,
+  CreateSaleListingInput,
   CreateSharedOpportunityInput,
   EvidenceKind,
   EvidenceRecord,
   FormSchema,
+  ListingDeclaration,
+  OperatorIdentityEvidenceInput,
+  OperatorIdentityEvidenceRecord,
+  OperatorIdentityEvidenceResult,
+  PostingReadiness,
+  SaleOwnerView,
+  SaleSubmissionSummary,
+  SubmitListingInput,
+  UpdateSaleListingInput,
   ListingMediaItem,
   ListingMediaView,
   ListingRevisionRecord,
@@ -90,9 +100,11 @@ export const propertySubmissionsApi = {
   updateUnit: (unitId: string, input: UpdateUnitSubmissionInput) =>
     api.patch<ApiResponse<UnitUpdateResult>>(`/listing-submissions/units/${enc(unitId)}`, input),
 
-  submit: (propertyId: string) =>
+  /** The listing declaration is accepted on every submission, including a re-submission after a correction (§3). */
+  submit: (propertyId: string, input: SubmitListingInput) =>
     api.post<ApiResponse<PropertyManagerData>>(
       `/listing-submissions/properties/${enc(propertyId)}/submit`,
+      input,
     ),
 
   replaceContact: (propertyId: string, input: ContactInput) =>
@@ -188,8 +200,8 @@ export const sharedPropertiesApi = {
   evidence: (id: string) =>
     api.get<ApiResponse<EvidenceRecord[]>>(`/shared-properties/${enc(id)}/evidence`),
 
-  submit: (id: string) =>
-    api.post<ApiResponse<SharedManagerData>>(`/shared-properties/${enc(id)}/submit`),
+  submit: (id: string, input: SubmitListingInput) =>
+    api.post<ApiResponse<SharedManagerData>>(`/shared-properties/${enc(id)}/submit`, input),
 
   availability: (id: string, status: UnitAvailabilityStatus, reason?: string) =>
     api.patch<ApiResponse<SharedManagerData>>(`/shared-properties/${enc(id)}/availability`, {
@@ -205,6 +217,57 @@ export const referralCodesApi = {
     }),
 };
 
+/**
+ * Operator account: the pre-posting gate (phone OTP, government ID, selfie holding that ID) and the versioned
+ * listing declaration every submission must render and accept (Master Blueprint §3).
+ */
+export const operatorAccountsApi = {
+  postingReadiness: () =>
+    api.get<ApiResponse<PostingReadiness>>('/operator-accounts/me/posting-readiness'),
+
+  listingDeclaration: () =>
+    api.get<ApiResponse<ListingDeclaration>>('/operator-accounts/listing-declaration'),
+
+  identityEvidence: () =>
+    api.get<ApiResponse<OperatorIdentityEvidenceRecord[]>>('/operator-accounts/me/identity-evidence'),
+
+  submitIdentityEvidence: (input: OperatorIdentityEvidenceInput) => {
+    const form = new FormData();
+    form.append('kind', input.kind);
+    if (input.idType?.trim()) form.append('idType', input.idType.trim());
+    if (input.idNumber?.trim()) form.append('idNumber', input.idNumber.trim());
+    if (input.notes?.trim()) form.append('notes', input.notes.trim());
+    form.append('file', input.file);
+    return api.upload<ApiResponse<OperatorIdentityEvidenceResult>>(
+      '/operator-accounts/me/identity-evidence',
+      form,
+    );
+  },
+};
+
+/** Property for Sale, owner side: only the owner may submit a property for Veriq to represent (§6). */
+export const ownerSaleListingsApi = {
+  mine: () => api.get<ApiResponse<SaleSubmissionSummary[]>>('/sale-listings/mine'),
+
+  /** Adds Property for Sale (owner) to the Operator account before the first submission. */
+  declareOwnership: () =>
+    api.post<ApiResponse<{ operatorId: string; category: string }>>('/sale-listings/owner-declaration', {}),
+
+  create: (input: CreateSaleListingInput) =>
+    api.post<ApiResponse<SaleOwnerView>>('/sale-listings', input),
+
+  get: (id: string) => api.get<ApiResponse<SaleOwnerView>>(`/sale-listings/${enc(id)}/submission`),
+
+  update: (id: string, input: UpdateSaleListingInput) =>
+    api.patch<ApiResponse<SaleOwnerView>>(`/sale-listings/${enc(id)}`, input),
+
+  addEvidence: (id: string, kind: EvidenceKind, file: File, notes?: string) =>
+    api.upload<ApiResponse<EvidenceRecord>>(`/sale-listings/${enc(id)}/evidence`, evidenceForm(kind, file, notes)),
+
+  submit: (id: string, input: SubmitListingInput) =>
+    api.post<ApiResponse<SaleOwnerView>>(`/sale-listings/${enc(id)}/submit`, input),
+};
+
 export const operatorApi = {
   schemas: propertySchemasApi,
   submissions: propertySubmissionsApi,
@@ -212,4 +275,6 @@ export const operatorApi = {
   availability: unitAvailabilityApi,
   shared: sharedPropertiesApi,
   referrals: referralCodesApi,
+  account: operatorAccountsApi,
+  sales: ownerSaleListingsApi,
 };

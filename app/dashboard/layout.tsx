@@ -6,12 +6,13 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Heart, Search, User, LogOut,
   Bell, Menu, X, Home, TrendingUp, Plus,
-  Settings, ChevronRight, Users, ShieldCheck, Wallet, Landmark, FileText, MessageCircle, Mail, MapPin, BookOpen, Settings2, Building2, KeyRound, Undo2, ClipboardCheck,
+  Settings, ChevronRight, Users, ShieldCheck, Wallet, Landmark, FileText, MessageCircle, Mail, MapPin, BookOpen, Settings2, Building2, KeyRound, Undo2, ClipboardCheck, BellRing,
 } from 'lucide-react';
 import Image from 'next/image';
 import { useAuth } from '@/context/AuthContext';
 import { UserRole, type AppNotification } from '@/types';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
+import { BackToDashboard, dashboardHomeFor } from '@/components/ui/BackToDashboard';
 import { chatApi, notificationsApi } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 import { canUseNotifications, playChatSound, requestNotificationPermission, showChatNotification } from '@/lib/notify';
@@ -22,6 +23,7 @@ const USER_NAV = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { label: 'Browse Properties', href: '/dashboard/browse', icon: Search },
   { label: 'My Unlocks', href: '/dashboard/unlocks', icon: KeyRound },
+  { label: 'Availability alerts', href: '/dashboard/availability-notifications', icon: BellRing },
   { label: 'Refunds', href: '/dashboard/refunds', icon: Undo2 },
   { label: 'Street Intelligence', href: '/street-intelligence', icon: MapPin },
   { label: 'Share Intelligence', href: '/dashboard/community', icon: Users },
@@ -37,6 +39,7 @@ const AGENT_NAV = [
   { label: 'Pending Revisions', href: '/dashboard/agent/revisions', icon: FileText },
   { label: 'Shared Property', href: '/dashboard/agent/shared', icon: Users },
   { label: 'Property for Sale', href: '/dashboard/agent/sales', icon: Landmark },
+  { label: 'Refund Confirmations', href: '/dashboard/agent/refunds', icon: Undo2 },
   { label: 'Portfolio & Referral', href: '/dashboard/agent/portfolio', icon: Building2 },
   { label: 'Earnings', href: '/dashboard/agent/earnings', icon: Wallet },
   { label: 'Street Intelligence', href: '/street-intelligence', icon: MapPin },
@@ -73,10 +76,13 @@ const OPERATOR_NAV = [
   { label: 'Dashboard', href: '/dashboard/operator', icon: LayoutDashboard },
   { label: 'My Properties', href: '/dashboard/operator/properties', icon: Home },
   { label: 'Shared Property', href: '/dashboard/operator/shared', icon: Users },
+  { label: 'Property for Sale', href: '/dashboard/operator/sales', icon: Landmark },
+  { label: 'My Verification', href: '/dashboard/operator/verification', icon: ShieldCheck },
   { label: 'Profile', href: '/dashboard/profile', icon: User },
 ];
 
 const SHORT_LET_OPERATOR_NAV = [
+  { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { label: 'My Properties', href: '/dashboard/operator-properties', icon: Home },
   { label: 'Profile', href: '/dashboard/profile', icon: User },
 ];
@@ -226,6 +232,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (!isAuthenticated) return <PageLoader />;
 
   const navItems = getNavItems(user?.role);
+  const dashboardHome = dashboardHomeFor(user?.role);
+  const isDashboardHome = pathname === dashboardHome;
   const initials = getInitials(user?.firstName, user?.lastName);
   const displayName = user ? `${user.firstName} ${user.lastName}` : 'User';
   // Chat messages are persisted as notifications, so adding chatUnread here
@@ -360,14 +368,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             >
               <Menu className="h-5 w-5" />
             </button>
-            <div>
-              <p className="text-sm font-semibold text-navy-900">
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-navy-900">
                 Welcome back, {user?.firstName ?? 'there'}
               </p>
-              <p className="text-[11px] text-slate-400 capitalize">{user?.role}</p>
+              <p className="text-[11px] capitalize text-slate-400">{user?.role}</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            {!isDashboardHome && (
+              <BackToDashboard
+                variant="ghost"
+                labelClassName="hidden sm:inline"
+                onNavigate={() => setSidebarOpen(false)}
+              />
+            )}
             <div className="relative">
               <button
                 type="button"

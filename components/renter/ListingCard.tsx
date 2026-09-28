@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { Gift, Home, KeyRound, Landmark, Lock, MapPin, Users } from 'lucide-react';
-import type { FormSchemaDefinition, PortfolioItem, SaleListingPublic, SharedListingPublic } from '@/types/renter';
+import { Eye, Gift, Home, KeyRound, Landmark, Lock, MapPin, Users } from 'lucide-react';
+import type { FormSchemaDefinition, PortfolioItem, SaleListingCardData, SharedListingPublic } from '@/types/renter';
 import { answerValue } from './SchemaAnswers';
 import { CATEGORY_LABELS, formatNaira, listingHref, locationLine, mediaSrc } from './format';
 
@@ -9,7 +9,6 @@ const PRICE_BASIS_LABELS: Record<string, string> = {
   total: 'total',
   per_plot: 'per plot',
   per_square_metre: 'per m²',
-  other: '',
 };
 
 function UnlockFeeBadge({ isFree, price }: { isFree: boolean; price: number }) {
@@ -34,13 +33,14 @@ function CardShell({
 }: {
   href: string;
   image: string | null;
+  /** Also the card link's accessible name, so it is never announced as a bare "link". */
   alt: string;
   badge?: ReactNode;
   categoryLabel: string;
   children: ReactNode;
 }) {
   return (
-    <Link href={href} className="group block h-full">
+    <Link href={href} aria-label={`${categoryLabel}: ${alt}`} className="group block h-full">
       <article className="card flex h-full flex-col overflow-hidden">
         <div className="relative h-48 overflow-hidden bg-gradient-to-br from-navy-700 to-navy-900">
           {image ? (
@@ -86,19 +86,26 @@ export function SharedListingCard({ listing, schema = null }: { listing: SharedL
   );
 }
 
-/** Public Property for Sale card: subtype, general area, asking price, document status count and unlock fee. */
-export function SaleListingCard({ listing }: { listing: SaleListingPublic }) {
+/**
+ * Public Property for Sale card. There is no unlock and no fee for a sale listing, so the badge says the listing is
+ * free to view rather than advertising a price to unlock it (Master Blueprint §6).
+ */
+export function SaleListingCard({ listing }: { listing: SaleListingCardData }) {
   const basis = PRICE_BASIS_LABELS[listing.priceBasis] ?? '';
   const bedrooms = listing.basics.bedrooms;
   const landArea = typeof listing.basics.land_area === 'string' ? listing.basics.land_area : null;
-  const recorded = listing.documentAvailability.length;
+  const recorded = listing.documentStatuses.length;
   return (
     <CardShell
       href={`/for-sale/${listing.id}`}
       image={listing.coverImageUrl}
       alt={listing.title}
       categoryLabel="Property for Sale"
-      badge={<UnlockFeeBadge isFree={listing.isFreeUnlock} price={listing.unlockPrice} />}
+      badge={
+        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500 px-2.5 py-1 text-[11px] font-bold text-white">
+          <Eye className="h-3 w-3" /> Free to view
+        </span>
+      }
     >
       <p className="flex items-center gap-1.5 text-xs font-semibold text-veriq-secondary"><Landmark className="h-3.5 w-3.5" /> {listing.subtypeLabel}</p>
       <h3 className="mt-1.5 line-clamp-2 font-display text-base font-bold text-navy-900 group-hover:text-veriq-secondary">{listing.title}</h3>

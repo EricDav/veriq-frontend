@@ -1,4 +1,4 @@
-import { AlertTriangle, FileCheck2, Scale } from 'lucide-react';
+import { FileCheck2, Scale } from 'lucide-react';
 import type { SaleDocumentStatus } from '@/types/renter';
 import { formatDate } from './format';
 
@@ -18,23 +18,30 @@ const LEGAL_STYLES: Record<string, string> = {
 };
 
 /**
- * Sale document STATUSES only (§6.5, Appendix D). Source documents and identity evidence are never shown.
- * Notes and discrepancy flags appear only when the unlocked package includes them.
+ * Sale document STATUSES only (Master Blueprint §6). The buyer view is free, so these statuses are public, but the
+ * source documents, the Agent's private notes and the owner's identity evidence are never shown.
  */
-export function SaleDocumentStatusList({ documents, unlocked = false }: { documents: SaleDocumentStatus[]; unlocked?: boolean }) {
+export function SaleDocumentStatusList({
+  documents,
+  disclaimer,
+}: {
+  documents: SaleDocumentStatus[];
+  /** The review disclaimer as the API words it; a local fallback keeps the warning present either way. */
+  disclaimer?: string;
+}) {
   return (
     <section className="card p-6">
       <h2 className="mb-1 flex items-center gap-2 font-display text-base font-bold text-navy-900"><FileCheck2 className="h-4 w-4 text-veriq-secondary" /> Document status</h2>
       <p className="mb-4 text-xs leading-5 text-slate-500">
-        Statuses record what the Veriq Agent was shown or could confirm. Veriq never publishes the documents themselves{unlocked ? ', including after unlock' : ''}.
+        Statuses record what the Veriq Agent was shown or could confirm. Veriq never publishes the documents themselves.
       </p>
 
       <div className="mb-4 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs leading-5 text-amber-900">
         <Scale className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600" />
         <span>
-          <span className="font-semibold">A document sighted by a Veriq Agent is not a legal search.</span> Sighting or availability does not mean a title
-          is legally verified. An independent legal search is shown separately only where one was actually performed. Instruct your own lawyer and
-          surveyor before paying for any property or land.
+          <span className="font-semibold">A document sighted by a Veriq Agent is not a legal search.</span>{' '}
+          {disclaimer ??
+            'Sighting or availability does not mean a title is legally verified. An independent legal search is shown separately only where one was actually performed. Instruct your own lawyer and surveyor before paying for any property or land.'}
         </span>
       </div>
 
@@ -50,10 +57,6 @@ export function SaleDocumentStatusList({ documents, unlocked = false }: { docume
               </div>
               <p className={`mt-1 text-xs ${LEGAL_STYLES[doc.legalSearchStatus] ?? 'text-slate-500'}`}>{doc.legalSearchLabel}</p>
               {doc.checkedAt && <p className="text-[11px] text-slate-400">Last checked {formatDate(doc.checkedAt)}</p>}
-              {unlocked && doc.discrepancyFound && (
-                <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-red-700"><AlertTriangle className="h-3.5 w-3.5" /> Discrepancy recorded by the Veriq Agent</p>
-              )}
-              {unlocked && doc.notes && <p className="mt-1.5 rounded-lg bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-700">{doc.notes}</p>}
             </li>
           ))}
         </ul>

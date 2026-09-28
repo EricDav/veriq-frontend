@@ -1,9 +1,9 @@
 import { expect, test } from '@playwright/test';
 
 /**
- * v1.6.2 §8.1/§8.5: Veriq Agents no longer create listings from a form. Property Operators submit properties and
- * Shared Property opportunities, and Agents verify and publish them; Property for Sale has its own Agent workspace.
- * The retired route must explain the new path instead of posting to the removed endpoint.
+ * Master Blueprint §3 and §6: Veriq Agents no longer create listings from a form. Property Operators submit
+ * properties and Shared Property opportunities, and only the owner may submit a Property for Sale; Agents verify
+ * and publish. The retired route must explain the new path instead of posting to the removed endpoint.
  */
 
 const API_BASE = 'http://localhost:3007/api/v1';
@@ -53,7 +53,7 @@ test('the retired Agent listing form points a Veriq Agent to verification and th
   await page.goto('/dashboard/properties/new');
   const main = page.locator('main');
   await expect(main.getByRole('link', { name: /Verification queue/i })).toHaveAttribute('href', '/dashboard/agent/verification');
-  await expect(main.getByRole('link', { name: /Create a Property for Sale listing/i })).toHaveAttribute('href', '/dashboard/agent/sales/new');
+  await expect(main.getByRole('link', { name: /Property for Sale submissions/i })).toHaveAttribute('href', '/dashboard/agent/sales');
   await expect(page.locator('input[name="title"]')).toHaveCount(0);
   expect(createCalls).toBe(0);
 });

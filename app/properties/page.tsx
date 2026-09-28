@@ -13,6 +13,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useAuth } from '@/context/AuthContext';
 import type { Property, FilterPropertiesDto } from '@/types';
 import { PropertyType } from '@/types';
+import { DateRangeFields, EMPTY_STAY, isCompleteStay, stayError, type StayRange } from '@/components/ui/DateRangeFields';
 
 const PROPERTY_TYPES = [
   { value: '', label: 'All Types' },
@@ -100,20 +101,24 @@ interface BrowseExperienceProps {
   handleTypeChange: (value: string) => void;
   handleCategoryChange: (value: BrowseCategory) => void;
   handleClearFilters: () => void;
+  showDates: boolean;
+  stay: StayRange;
+  setStay: React.Dispatch<React.SetStateAction<StayRange>>;
 }
 
 function BrowsePropertyExperience(props: BrowseExperienceProps) {
   const { properties, total, page, totalPages, isLoading, search, pendingFilters, category,
     accessFilter, isAuthenticated, activeFilterCount, pageNumbers, setSearch,
     setPendingFilters, setAccessFilter, setPage, handleSearchSubmit, handleTypeChange,
-    handleCategoryChange, handleClearFilters } = props;
+    handleCategoryChange, handleClearFilters, showDates, stay, setStay } = props;
   const categoryLabel = BROWSE_CATEGORIES.find((item) => item.value === category)?.label.toLowerCase();
+  const dateError = stayError(stay);
 
   return (
-    <main className="min-h-screen bg-[#03171d] text-white">
+    <main className="min-h-screen bg-navy-900 text-white">
       <section className="relative overflow-hidden border-b border-emerald-400/15 pb-8 pt-28">
         <div className="absolute inset-0 bg-[url('/images/web-background-visual-layer.png')] bg-cover bg-center opacity-30" />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#03171d] via-[#05242a]/95 to-[#07353a]/70" />
+        <div className="absolute inset-0 bg-gradient-to-r from-navy-900 via-navy-900/95 to-navy-800/70" />
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <span className="inline-flex items-center gap-2 rounded-full bg-emerald-400/10 px-3 py-1.5 text-[11px] font-semibold uppercase text-emerald-300"><Search className="h-3.5 w-3.5" /> Find your next property</span>
           <h1 className="mt-4 font-display text-4xl font-bold sm:text-5xl">Browse <span className="text-emerald-400">Properties</span></h1>
@@ -123,27 +128,32 @@ function BrowsePropertyExperience(props: BrowseExperienceProps) {
             {BROWSE_CATEGORIES.map(({ value, label, icon: Icon }) => <button key={value} type="button" role="tab" aria-selected={category === value} onClick={() => handleCategoryChange(value)} className={`flex min-h-12 items-center justify-center gap-2 rounded border px-3 text-xs font-semibold transition-colors ${category === value ? 'border-emerald-400 bg-emerald-400/15 text-emerald-300' : 'border-white/10 bg-white/[0.03] text-white/70 hover:border-white/25 hover:text-white'}`}><Icon className="h-4 w-4 shrink-0" /><span>{label}</span></button>)}
           </div>
 
-          <form onSubmit={handleSearchSubmit} className="mt-3 rounded-md border border-emerald-400/15 bg-[#05242c]/95 p-3 shadow-2xl">
+          <form onSubmit={handleSearchSubmit} className="mt-3 rounded-md border border-emerald-400/15 bg-navy-800/95 p-3 shadow-2xl">
             <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-[1.6fr_0.8fr_0.8fr]">
-              <label className="flex min-h-12 items-center gap-2 rounded border border-white/10 bg-[#031b22] px-3"><Search className="h-4 w-4 text-emerald-400" /><input value={search} onChange={(event) => setSearch(event.target.value)} className="min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-white/35" placeholder="Search by property name, area or keyword..." /></label>
-              <label className="flex min-h-12 items-center gap-2 rounded border border-white/10 bg-[#031b22] px-3"><MapPin className="h-4 w-4 text-white/50" /><input value={pendingFilters.state ?? ''} onChange={(event) => setPendingFilters((current) => ({ ...current, state: event.target.value || undefined }))} className="min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-white/35" placeholder="State" /></label>
-              <label className="flex min-h-12 items-center gap-2 rounded border border-white/10 bg-[#031b22] px-3"><MapPin className="h-4 w-4 text-white/50" /><input value={pendingFilters.area ?? ''} onChange={(event) => setPendingFilters((current) => ({ ...current, area: event.target.value || undefined }))} className="min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-white/35" placeholder="Area" /></label>
+              <label className="flex min-h-12 items-center gap-2 rounded border border-white/10 bg-navy-950 px-3"><Search className="h-4 w-4 text-emerald-400" /><input value={search} onChange={(event) => setSearch(event.target.value)} className="min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-white/35" placeholder="Search by property name, area or keyword..." /></label>
+              <label className="flex min-h-12 items-center gap-2 rounded border border-white/10 bg-navy-950 px-3"><MapPin className="h-4 w-4 text-white/50" /><input value={pendingFilters.state ?? ''} onChange={(event) => setPendingFilters((current) => ({ ...current, state: event.target.value || undefined }))} className="min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-white/35" placeholder="State" /></label>
+              <label className="flex min-h-12 items-center gap-2 rounded border border-white/10 bg-navy-950 px-3"><MapPin className="h-4 w-4 text-white/50" /><input value={pendingFilters.area ?? ''} onChange={(event) => setPendingFilters((current) => ({ ...current, area: event.target.value || undefined }))} className="min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-white/35" placeholder="Area" /></label>
             </div>
             <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
-              <select aria-label="Unit type" value={pendingFilters.propertyType ?? ''} onChange={(event) => handleTypeChange(event.target.value)} className="min-h-12 rounded border border-white/10 bg-[#031b22] px-3 text-sm text-white outline-none"><option value="">Unit Type</option>{PROPERTY_TYPES.filter((item) => item.value).map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select>
-              <select aria-label="Price range" value={pendingFilters.maxRent ?? ''} onChange={(event) => setPendingFilters((current) => ({ ...current, maxRent: event.target.value ? Number(event.target.value) : undefined }))} className="min-h-12 rounded border border-white/10 bg-[#031b22] px-3 text-sm text-white outline-none"><option value="">Price Range</option><option value="500000">Up to ₦500k</option><option value="1000000">Up to ₦1m</option><option value="2000000">Up to ₦2m</option><option value="5000000">Up to ₦5m</option></select>
-              <button type="button" disabled={!isAuthenticated} onClick={() => { setAccessFilter(accessFilter === 'unlocked' ? 'all' : 'unlocked'); setPage(1); }} className={`flex min-h-12 items-center justify-center gap-2 rounded border text-sm disabled:cursor-not-allowed disabled:opacity-50 ${accessFilter === 'unlocked' ? 'border-emerald-400 bg-emerald-400/15 text-emerald-300' : 'border-white/10 bg-[#031b22] text-white/75'}`}><CalendarDays className="h-4 w-4" />{accessFilter === 'unlocked' ? 'My Unlocks' : 'Availability'}</button>
-              <button type="button" role="switch" aria-checked={Boolean(pendingFilters.freeIntelligenceOnly)} onClick={() => setPendingFilters((current) => ({ ...current, freeIntelligenceOnly: current.freeIntelligenceOnly ? undefined : true }))} className={`flex min-h-12 items-center justify-center gap-2 rounded border text-sm ${pendingFilters.freeIntelligenceOnly ? 'border-emerald-400 bg-emerald-400/15 text-emerald-300' : 'border-white/10 bg-[#031b22] text-white/75'}`}><Gift className="h-4 w-4" />Free Unlock</button>
-              <button type="submit" className="flex min-h-12 items-center justify-center gap-2 rounded bg-emerald-500 px-5 text-sm font-semibold text-[#02161c] hover:bg-emerald-400"><Search className="h-4 w-4" /> Search Properties <ArrowRight className="h-4 w-4" /></button>
+              <select aria-label="Unit type" value={pendingFilters.propertyType ?? ''} onChange={(event) => handleTypeChange(event.target.value)} className="min-h-12 rounded border border-white/10 bg-navy-950 px-3 text-sm text-white outline-none"><option value="">Unit Type</option>{PROPERTY_TYPES.filter((item) => item.value).map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select>
+              <select aria-label="Price range" value={pendingFilters.maxRent ?? ''} onChange={(event) => setPendingFilters((current) => ({ ...current, maxRent: event.target.value ? Number(event.target.value) : undefined }))} className="min-h-12 rounded border border-white/10 bg-navy-950 px-3 text-sm text-white outline-none"><option value="">Price Range</option><option value="500000">Up to ₦500k</option><option value="1000000">Up to ₦1m</option><option value="2000000">Up to ₦2m</option><option value="5000000">Up to ₦5m</option></select>
+              <button type="button" disabled={!isAuthenticated} onClick={() => { setAccessFilter(accessFilter === 'unlocked' ? 'all' : 'unlocked'); setPage(1); }} className={`flex min-h-12 items-center justify-center gap-2 rounded border text-sm disabled:cursor-not-allowed disabled:opacity-50 ${accessFilter === 'unlocked' ? 'border-emerald-400 bg-emerald-400/15 text-emerald-300' : 'border-white/10 bg-navy-950 text-white/75'}`}><CalendarDays className="h-4 w-4" />{accessFilter === 'unlocked' ? 'My Unlocks' : 'Availability'}</button>
+              <button type="button" role="switch" aria-checked={Boolean(pendingFilters.freeIntelligenceOnly)} onClick={() => setPendingFilters((current) => ({ ...current, freeIntelligenceOnly: current.freeIntelligenceOnly ? undefined : true }))} className={`flex min-h-12 items-center justify-center gap-2 rounded border text-sm ${pendingFilters.freeIntelligenceOnly ? 'border-emerald-400 bg-emerald-400/15 text-emerald-300' : 'border-white/10 bg-navy-950 text-white/75'}`}><Gift className="h-4 w-4" />Free Unlock</button>
+              <button type="submit" disabled={!!dateError} className="flex min-h-12 items-center justify-center gap-2 rounded bg-emerald-500 px-5 text-sm font-semibold text-navy-900 hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-60"><Search className="h-4 w-4" /> Search Properties <ArrowRight className="h-4 w-4" /></button>
             </div>
+            {showDates && (
+              <div className="mt-3 border-t border-white/10 pt-3 [&_.label]:text-white/80 [&_input]:min-h-12 [&_input]:bg-navy-950 [&_input]:text-white [&_p]:text-white/60">
+                <DateRangeFields idPrefix="search-stay" value={stay} onChange={setStay} optional error={dateError} hint="Short Let availability is checked against the nights you choose." />
+              </div>
+            )}
           </form>
         </div>
       </section>
 
       <section className="pb-16 pt-8"><div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><h2 className="font-display text-xl font-semibold">Showing <span className="text-emerald-400">{isLoading ? '...' : total}</span> verified {category === 'all' ? '' : categoryLabel} properties</h2><p className="mt-1 text-xs text-white/45">Clear previews before unlocking full property details.</p></div>{activeFilterCount > 0 && <button type="button" onClick={handleClearFilters} className="text-xs font-medium text-emerald-300">Clear active filters</button>}</div>
-        {isLoading ? <div className="flex justify-center py-24"><LoadingSpinner size="lg" className="text-emerald-400" /></div> : properties.length === 0 ? <div className="rounded-md border border-white/10 bg-white/[0.03] py-20 text-center"><Search className="mx-auto h-9 w-9 text-white/25" /><h3 className="mt-4 font-display text-lg font-semibold">No matching properties</h3><p className="mt-2 text-sm text-white/45">Try another category, area, or price range.</p>{activeFilterCount > 0 && <button type="button" onClick={handleClearFilters} className="mt-5 rounded bg-emerald-500 px-4 py-2 text-xs font-semibold text-[#02161c]">Clear filters</button>}</div> : <><div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">{properties.map((property) => <PropertyCard key={property.id} property={property} detailHref={`/properties/${property.id}`} browseVariant />)}</div>{totalPages > 1 && <div className="mt-8 flex items-center justify-center gap-2"><button aria-label="Previous page" disabled={page === 1} onClick={() => setPage((value) => value - 1)} className="grid h-9 w-9 place-items-center rounded border border-white/15 disabled:opacity-30"><ChevronLeft className="h-4 w-4" /></button>{pageNumbers.map((value) => <button key={value} onClick={() => setPage(value)} className={`h-9 w-9 rounded text-sm ${value === page ? 'bg-emerald-500 font-semibold text-[#02161c]' : 'border border-white/15 text-white/70'}`}>{value}</button>)}<button aria-label="Next page" disabled={page === totalPages} onClick={() => setPage((value) => value + 1)} className="grid h-9 w-9 place-items-center rounded border border-white/15 disabled:opacity-30"><ChevronRight className="h-4 w-4" /></button></div>}</>}
-        <div className="mt-10 grid gap-px overflow-hidden rounded-md border border-emerald-400/20 bg-emerald-400/20 md:grid-cols-3">{[{ icon: Search, title: 'Preview what is available', copy: 'See key details, photos and availability before you unlock.' }, { icon: Unlock, title: 'Unlock only when it is worth it', copy: 'Get complete details and contact information after unlock.' }, { icon: UserCheck, title: 'Make a smarter decision', copy: 'Compare properties and choose with confidence.' }].map(({ icon: Icon, title, copy }) => <div key={title} className="flex gap-4 bg-[#062129] p-5"><span className="grid h-11 w-11 shrink-0 place-items-center rounded bg-emerald-400/10 text-emerald-300"><Icon className="h-5 w-5" /></span><div><h3 className="text-sm font-semibold">{title}</h3><p className="mt-1 text-xs leading-5 text-white/45">{copy}</p></div></div>)}</div>
+        {isLoading ? <div className="flex justify-center py-24"><LoadingSpinner size="lg" className="text-emerald-400" /></div> : properties.length === 0 ? <div className="rounded-md border border-white/10 bg-white/[0.03] py-20 text-center"><Search className="mx-auto h-9 w-9 text-white/25" /><h3 className="mt-4 font-display text-lg font-semibold">No matching properties</h3><p className="mt-2 text-sm text-white/45">Try another category, area, or price range.</p>{activeFilterCount > 0 && <button type="button" onClick={handleClearFilters} className="mt-5 rounded bg-emerald-500 px-4 py-2 text-xs font-semibold text-navy-900">Clear filters</button>}</div> : <><div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">{properties.map((property) => <PropertyCard key={property.id} property={property} detailHref={`/properties/${property.id}`} browseVariant />)}</div>{totalPages > 1 && <div className="mt-8 flex items-center justify-center gap-2"><button aria-label="Previous page" disabled={page === 1} onClick={() => setPage((value) => value - 1)} className="grid h-9 w-9 place-items-center rounded border border-white/15 disabled:opacity-30"><ChevronLeft className="h-4 w-4" /></button>{pageNumbers.map((value) => <button key={value} onClick={() => setPage(value)} className={`h-9 w-9 rounded text-sm ${value === page ? 'bg-emerald-500 font-semibold text-navy-900' : 'border border-white/15 text-white/70'}`}>{value}</button>)}<button aria-label="Next page" disabled={page === totalPages} onClick={() => setPage((value) => value + 1)} className="grid h-9 w-9 place-items-center rounded border border-white/15 disabled:opacity-30"><ChevronRight className="h-4 w-4" /></button></div>}</>}
+        <div className="mt-10 grid gap-px overflow-hidden rounded-md border border-emerald-400/20 bg-emerald-400/20 md:grid-cols-3">{[{ icon: Search, title: 'Preview what is available', copy: 'See key details, photos and availability before you unlock.' }, { icon: Unlock, title: 'Unlock only when it is worth it', copy: 'Get complete details and contact information after unlock.' }, { icon: UserCheck, title: 'Make a smarter decision', copy: 'Compare properties and choose with confidence.' }].map(({ icon: Icon, title, copy }) => <div key={title} className="flex gap-4 bg-navy-800 p-5"><span className="grid h-11 w-11 shrink-0 place-items-center rounded bg-emerald-400/10 text-emerald-300"><Icon className="h-5 w-5" /></span><div><h3 className="text-sm font-semibold">{title}</h3><p className="mt-1 text-xs leading-5 text-white/45">{copy}</p></div></div>)}</div>
       </div></section>
     </main>
   );
@@ -162,6 +172,8 @@ export default function PropertiesPage() {
   const [pendingFilters, setPendingFilters] = useState<FilterPropertiesDto>({});
   const [accessFilter, setAccessFilter] = useState<AccessFilter>('all');
   const [category, setCategory] = useState<BrowseCategory>('all');
+  // Short Let stay: sent to the API as checkIn/checkOut so availability is judged against those nights (§5).
+  const [stay, setStay] = useState<StayRange>(EMPTY_STAY);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -173,6 +185,9 @@ export default function PropertiesPage() {
       streetId: params.get('streetId') || undefined,
       propertyType: (params.get('propertyType') as PropertyType) || undefined,
     };
+    const checkIn = params.get('checkIn') ?? '';
+    const checkOut = params.get('checkOut') ?? '';
+    if (checkIn && checkOut) setStay({ checkIn, checkOut });
     if (!Object.values(locationFilters).some(Boolean)) return;
     setFilters(locationFilters);
     setPendingFilters(locationFilters);
@@ -251,17 +266,27 @@ export default function PropertiesPage() {
     setFilters({});
     setAccessFilter('all');
     setSearch('');
+    setStay(EMPTY_STAY);
     setPage(1);
   };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (stayError(stay)) return;
     const query = search.trim();
     const newFilters: FilterPropertiesDto = { ...pendingFilters };
     if (query) {
       newFilters.q = query;
     } else {
       delete newFilters.q;
+    }
+    // A partial range is no range at all: the API needs both dates or neither.
+    if (isCompleteStay(stay)) {
+      newFilters.checkIn = stay.checkIn;
+      newFilters.checkOut = stay.checkOut;
+    } else {
+      delete newFilters.checkIn;
+      delete newFilters.checkOut;
     }
     setFilters(newFilters);
     setPendingFilters(newFilters);
@@ -272,13 +297,20 @@ export default function PropertiesPage() {
     setPendingFilters((current) => ({ ...current, propertyType: (value as PropertyType) || undefined }));
   };
 
+  const showDates = category === 'short_let' || pendingFilters.propertyType === PropertyType.SHORT_STAY;
+
   const handleCategoryChange = (next: BrowseCategory) => {
     setCategory(next);
     const type = next === 'short_let' ? PropertyType.SHORT_STAY
       : next === 'hostel' ? PropertyType.HOSTEL
       : next === 'shared' ? PropertyType.SHARED_APARTMENT
       : undefined;
-    const nextFilters = { ...pendingFilters, propertyType: type };
+    const nextFilters: FilterPropertiesDto = { ...pendingFilters, propertyType: type };
+    // Dates only narrow a Short Let search, so leaving that category drops them.
+    if (type !== PropertyType.SHORT_STAY) {
+      delete nextFilters.checkIn;
+      delete nextFilters.checkOut;
+    }
     setPendingFilters(nextFilters);
     setFilters(nextFilters);
     setPage(1);
@@ -309,6 +341,9 @@ export default function PropertiesPage() {
     handleTypeChange={handleTypeChange}
     handleCategoryChange={handleCategoryChange}
     handleClearFilters={handleClearFilters}
+    showDates={showDates}
+    stay={stay}
+    setStay={setStay}
   />;
 
 }

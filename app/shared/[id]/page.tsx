@@ -38,11 +38,11 @@ function LockedView({ listing, onUnlock, isAuthenticated }: { listing: SharedLis
   const schema = useFormSchema(`shared_property.opportunity.${listing.opportunityType}`);
   return (
     <main className="min-h-screen bg-veriq-surface pb-16">
-      <section className="bg-[#03131a] pb-10 pt-24 text-white">
+      <section className="bg-navy-900 pb-10 pt-24 text-white">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <Link href="/shared" className="inline-flex items-center gap-2 text-sm text-white/60 hover:text-white"><ArrowLeft className="h-4 w-4" /> Shared Property</Link>
           <div className="mt-6 grid gap-6 lg:grid-cols-[1.2fr_1fr] lg:items-center">
-            <div className="relative aspect-[16/10] overflow-hidden rounded-2xl border border-emerald-400/40 bg-[#07303a]">
+            <div className="relative aspect-[16/10] overflow-hidden rounded-2xl border border-emerald-400/40 bg-navy-800">
               {listing.coverImageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={mediaSrc(listing.coverImageUrl)} alt={listing.displayLabel} className="h-full w-full object-cover" />

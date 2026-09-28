@@ -4,7 +4,7 @@ import type { SiteContent } from '@/types';
 
 export function CTA({ content: _content }: { content?: SiteContent }) {
   return (
-    <section className="relative overflow-hidden bg-[#063c36] py-12 sm:py-16">
+    <section className="relative overflow-hidden bg-emerald-900 py-12 sm:py-16">
       <div className="pointer-events-none absolute inset-y-0 right-0 w-1/2 bg-[radial-gradient(circle_at_center,rgba(16,185,129,0.18),transparent_65%)]" />
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <span className="text-xs font-bold uppercase text-emerald-300">Take the next step</span>

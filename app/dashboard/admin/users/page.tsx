@@ -17,11 +17,11 @@ import { useRouter } from 'next/navigation';
 const ROLE_BADGE: Record<UserRole, string> = {
   renter: 'bg-slate-100 text-slate-600',
   user: 'bg-slate-100 text-slate-600',
-  property_operator: 'bg-cyan-100 text-cyan-700',
+  property_operator: 'bg-emerald-100 text-emerald-700',
   agent: 'bg-gold-100 text-gold-700',
   admin: 'bg-red-100 text-red-600',
   super_admin: 'bg-purple-100 text-purple-700',
-  short_let_operator: 'bg-cyan-100 text-cyan-700',
+  short_let_operator: 'bg-emerald-50 text-emerald-700',
 };
 
 type ActionType = 'deactivate' | 'activate';

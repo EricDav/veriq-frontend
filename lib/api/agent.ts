@@ -13,7 +13,6 @@ import type {
   ChecklistItemStatus,
   CorrectPropertyInput,
   CorrectUnitInput,
-  CreateSaleListingInput,
   DocumentCheckInput,
   DuplicateDecisionInput,
   EvidenceKind,
@@ -27,12 +26,18 @@ import type {
   MediaOwnerType,
   OperatorIdentityStatus,
   PartyStatusInput,
+  PhysicalVisitInput,
   Readiness,
   SaleAvailabilityInput,
   SaleDocumentTypesPayload,
+  SaleEnquiry,
+  SaleEnquiryStatus,
   SaleManageView,
   SaleManagedItem,
+  SaleOutcomeInput,
+  SalesAgreementInput,
   SaleSubtype,
+  SignSalesAgreementInput,
   SchemaCatalogue,
   SharedLocationInput,
   SharedManageView,
@@ -41,6 +46,7 @@ import type {
   StreetLinkState,
   StreetLinkTargetType,
   UnitAvailabilityRecord,
+  UpdateSaleEnquiryInput,
   UpdateSaleListingInput,
   UpdateSharedInput,
   VerificationCase,
@@ -292,24 +298,35 @@ export const sharedVerificationApi = {
 
 // ── Property for Sale (§6.5, §8.5) ───────────────────────────────────────
 
+/**
+ * Property for Sale, Agent and Admin side (Master Blueprint §6). The owner submits; the Agent physically visits,
+ * reviews the documents, prepares the sales representation agreement and handles buyer enquiries. Signing the
+ * agreement, recording the outcome and cancelling are Admin actions, and the server enforces that.
+ */
 export const saleListingsApi = {
   documentTypes: (subtype: SaleSubtype) =>
     api.get<ApiResponse<SaleDocumentTypesPayload>>(`/sale-listings/document-types/${subtype}`, { public: true }),
 
   managed: () => api.get<ApiResponse<SaleManagedItem[]>>('/sale-listings/managed'),
 
-  create: (input: CreateSaleListingInput) => api.post<ApiResponse<SaleManageView>>('/sale-listings', input),
-
   manage: (id: string) => api.get<ApiResponse<SaleManageView>>(`/sale-listings/${enc(id)}/manage`),
 
   update: (id: string, input: UpdateSaleListingInput) =>
     api.patch<ApiResponse<SaleManageView>>(`/sale-listings/${enc(id)}`, input),
 
+  requestCorrection: (id: string, reason: string) =>
+    api.post<ApiResponse<SaleManageView>>(`/sale-listings/${enc(id)}/request-correction`, { reason }),
+
   recordDocument: (id: string, input: DocumentCheckInput) =>
     api.post<ApiResponse<SaleManageView>>(`/sale-listings/${enc(id)}/documents`, input),
 
+  /** Owner identity and authority to sell, decided from the submitted documents. */
   setPartyStatus: (id: string, input: PartyStatusInput) =>
-    api.patch<ApiResponse<SaleManageView>>(`/sale-listings/${enc(id)}/seller-verification`, input),
+    api.patch<ApiResponse<SaleManageView>>(`/sale-listings/${enc(id)}/owner-verification`, input),
+
+  /** The Agent's physical visit to the property: a publication blocker in its own right (§6). */
+  recordPhysicalVisit: (id: string, input: PhysicalVisitInput) =>
+    api.post<ApiResponse<SaleManageView>>(`/sale-listings/${enc(id)}/visit`, input),
 
   uploadEvidence: (id: string, input: { file: File; kind: EvidenceKind; notes?: string }) => {
     const form = new FormData();
@@ -325,12 +342,47 @@ export const saleListingsApi = {
   escalate: (id: string, reason: string) =>
     api.post<ApiResponse<SaleManageView>>(`/sale-listings/${enc(id)}/escalate`, { reason }),
 
+  clearEscalation: (id: string, reason: string) =>
+    api.post<ApiResponse<SaleManageView>>(`/sale-listings/${enc(id)}/clear-escalation`, { reason }),
+
   readiness: (id: string) => api.get<ApiResponse<Readiness>>(`/sale-listings/${enc(id)}/readiness`),
 
   publish: (id: string) => api.post<ApiResponse<SaleManageView>>(`/sale-listings/${enc(id)}/publish`, {}),
 
+  suspend: (id: string, reason: string) =>
+    api.post<ApiResponse<SaleManageView>>(`/sale-listings/${enc(id)}/suspend`, { reason }),
+
   availability: (id: string, input: SaleAvailabilityInput) =>
     api.patch<ApiResponse<SaleManageView>>(`/sale-listings/${enc(id)}/availability`, input),
+
+  /** Sales representation agreement: prepared by the Agent, signed by Veriq and the owner before publication. */
+  prepareAgreement: (id: string, input: SalesAgreementInput) =>
+    api.post<ApiResponse<SaleManageView>>(`/sale-listings/${enc(id)}/agreement`, input),
+
+  signAgreement: (id: string, input: SignSalesAgreementInput) =>
+    api.post<ApiResponse<SaleManageView>>(`/sale-listings/${enc(id)}/agreement/sign`, input),
+
+  cancelAgreement: (id: string, reason: string) =>
+    api.post<ApiResponse<SaleManageView>>(`/sale-listings/${enc(id)}/agreement/cancel`, { reason }),
+
+  /** Recording a completed sale is what triggers the owner-paid commission (§6). Admin only. */
+  recordOutcome: (id: string, input: SaleOutcomeInput) =>
+    api.post<ApiResponse<SaleManageView>>(`/sale-listings/${enc(id)}/outcome`, input),
+};
+
+/** Buyer enquiries reach the managing Veriq Agent, never the owner (Master Blueprint §6). */
+export const saleEnquiriesApi = {
+  list: (query: { saleListingId?: string; status?: SaleEnquiryStatus; page?: number; limit?: number } = {}) => {
+    const search = new URLSearchParams();
+    Object.entries(query).forEach(([key, value]) => {
+      if (value !== undefined && value !== '') search.set(key, String(value));
+    });
+    const suffix = search.toString();
+    return api.get<PaginatedResponse<SaleEnquiry>>(`/sale-enquiries${suffix ? `?${suffix}` : ''}`);
+  },
+
+  updateStatus: (enquiryId: string, input: UpdateSaleEnquiryInput) =>
+    api.patch<ApiResponse<SaleEnquiry>>(`/sale-enquiries/${enc(enquiryId)}`, input),
 };
 
 // ── Schemas (Appendix F/G) ───────────────────────────────────────────────

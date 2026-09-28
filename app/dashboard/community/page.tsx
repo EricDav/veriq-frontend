@@ -20,6 +20,7 @@ import {
   type StreetContribution,
 } from '@/types';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { Select } from '@/components/ui/Select';
 import { useToast } from '@/components/ui/Toast';
 
 const relationshipOptions = [
@@ -82,8 +83,8 @@ export default function CommunityDashboardPage() {
   const [streetMode, setStreetMode] = useState<'existing' | 'new'>(requestedNewStreet ? 'new' : 'existing');
   const [streetId, setStreetId] = useState(preselectedStreetId);
   const [street, setStreet] = useState({ state: requestedState, city: requestedCity, area: requestedArea, streetName: '', landmark: '' });
-  const [relationshipType, setRelationshipType] = useState<StreetRelationshipType>(StreetRelationshipType.CURRENTLY_LIVE);
-  const [relationshipRecency, setRelationshipRecency] = useState<StreetRelationshipRecency>(StreetRelationshipRecency.CURRENT);
+  const [relationshipType, setRelationshipType] = useState('');
+  const [relationshipRecency, setRelationshipRecency] = useState('');
   const [answers, setAnswers] = useState<Record<string, AnswerDraft>>({});
   const [questionIndex, setQuestionIndex] = useState(0);
   const preserveRequestedCity = React.useRef(Boolean(requestedState && requestedCity));
@@ -239,11 +240,15 @@ export default function CommunityDashboardPage() {
       error('Complete, skip, or mark every Street Intelligence question as unknown.');
       return;
     }
+    if (!relationshipType || !relationshipRecency) {
+      error('Tell us how you know this street and how recently.');
+      return;
+    }
     setSubmitting(true);
     try {
       const dto: CreateContributionDto = {
-        relationshipType,
-        relationshipRecency,
+        relationshipType: relationshipType as StreetRelationshipType,
+        relationshipRecency: relationshipRecency as StreetRelationshipRecency,
         answers: categories.map((category) => ({ categoryId: category.id, ...answers[category.id] })),
       };
       if (!editingContributionId) {
@@ -423,12 +428,24 @@ export default function CommunityDashboardPage() {
           {streetMode === 'existing' && (
           <>
           <div className="grid gap-3">
-            <select className="input" value={relationshipType} onChange={(e) => setRelationshipType(e.target.value as StreetRelationshipType)}>
-              {relationshipOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-            </select>
-            <select className="input" value={relationshipRecency} onChange={(e) => setRelationshipRecency(e.target.value as StreetRelationshipRecency)}>
-              {recencyOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-            </select>
+            <Select
+              id="street-relationship-type"
+              label="How do you know this street?"
+              placeholder="Select…"
+              options={relationshipOptions}
+              value={relationshipType}
+              onValueChange={setRelationshipType}
+              required
+            />
+            <Select
+              id="street-relationship-recency"
+              label="How recently?"
+              placeholder="Select…"
+              options={recencyOptions}
+              value={relationshipRecency}
+              onValueChange={setRelationshipRecency}
+              required
+            />
           </div>
 
           {currentCategory && (
@@ -514,7 +531,7 @@ export default function CommunityDashboardPage() {
           </>
           )}
 
-          <button type="submit" className="btn-primary w-full justify-center" disabled={submitting || (streetMode === 'existing' && (!answeredAll || !streetId))}>
+          <button type="submit" className="btn-primary w-full justify-center" disabled={submitting || (streetMode === 'existing' && (!answeredAll || !streetId || !relationshipType || !relationshipRecency))}>
             {submitting ? <LoadingSpinner size="sm" /> : <><Send className="h-4 w-4" /> {streetMode === 'new' ? 'Submit Street for Approval' : editingContributionId ? 'Save Intelligence Update' : 'Submit Intelligence'}</>}
           </button>
         </form>

@@ -60,6 +60,8 @@ import {
   type ContactValue,
   type LocationValue,
 } from '@/components/listing-forms';
+import { ListingDeclarationPanel, useListingDeclaration } from '@/components/listing-forms';
+import { UnitCalendarPanel } from '@/components/availability/UnitCalendarPanel';
 import type {
   ListingRevisionRecord,
   PropertyManagerData,
@@ -95,6 +97,7 @@ function PropertyEditor() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<{ message: string; issues: SchemaIssue[] } | null>(null);
+  const declaration = useListingDeclaration();
 
   const loadRevisions = useCallback(async () => {
     try {
@@ -167,13 +170,20 @@ function PropertyEditor() {
   const displayIssues = submitError?.issues.length ? submitError.issues : derivedIssues;
 
   const submit = async () => {
+    if (!declaration.payload) {
+      setSubmitError({ message: 'Accept the Veriq listing declaration to submit', issues: [] });
+      document.getElementById('submission-checklist')?.scrollIntoView({ behavior: 'smooth' });
+      return;
+    }
     setSubmitting(true);
     setSubmitError(null);
     try {
-      const response = await propertySubmissionsApi.submit(property.id);
+      const response = await propertySubmissionsApi.submit(property.id, declaration.payload);
       setData(response.data);
       success(response.message || 'Submitted for verification');
       void loadRevisions();
+      // A re-submission after a correction is a fresh acceptance, so the tick is cleared again (§3 step 1).
+      declaration.reset();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (caught) {
       const parsed = parseApiError(caught, 'Unable to submit this property');
@@ -203,10 +213,10 @@ function PropertyEditor() {
             </div>
           </div>
           {canSubmit && (
-            <button type="button" className="btn-primary !py-2.5" disabled={submitting} onClick={() => void submit()}>
-              {submitting ? <LoadingSpinner size="sm" /> : <Send className="h-4 w-4" />}
+            <a href="#submission-checklist" className="btn-primary !py-2.5">
+              <Send className="h-4 w-4" />
               {status === 'needs_correction' ? 'Resubmit for verification' : 'Submit for verification'}
-            </button>
+            </a>
           )}
         </div>
         <nav className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 text-xs font-semibold sm:mx-0 sm:px-0" aria-label="Sections">
@@ -283,6 +293,13 @@ function PropertyEditor() {
           ) : !submitError ? (
             <IssueList title="Required answers still missing" issues={derivedIssues.length ? derivedIssues : [{ path: 'units', message: 'Add at least one currently documentable Unit' }]} />
           ) : null}
+          <ListingDeclarationPanel state={declaration} idPrefix="property-declaration" disabled={submitting} />
+          <div className="flex justify-end">
+            <button type="button" className="btn-primary !py-2.5" disabled={submitting || !declaration.canSubmit} onClick={() => void submit()}>
+              {submitting ? <LoadingSpinner size="sm" /> : <Send className="h-4 w-4" />}
+              {status === 'needs_correction' ? 'Resubmit for verification' : 'Submit for verification'}
+            </button>
+          </div>
         </SectionCard>
       )}
 
@@ -303,6 +320,7 @@ function PropertyEditor() {
               propertyStatus={status}
               frozen={property.sensitiveChangesFrozen}
               subtypes={unitSubtypes}
+              isShortLet={property.category === 'short_let'}
               extraIssues={scopeIssues(submitError?.issues ?? [], `units.${unit.displayLabel}.`)}
               onChanged={reloadAll}
             />
@@ -546,6 +564,7 @@ function UnitCard({
   propertyStatus,
   frozen,
   subtypes,
+  isShortLet,
   extraIssues,
   onChanged,
 }: {
@@ -553,6 +572,8 @@ function UnitCard({
   propertyStatus: PublicationStatus;
   frozen: boolean;
   subtypes: SchemaCatalogueSubtype[];
+  /** Short Let availability is checked against dates, so its Units carry a booked/blocked calendar (§5). */
+  isShortLet: boolean;
   extraIssues: SchemaIssue[];
   onChanged: () => void;
 }) {
@@ -704,6 +725,8 @@ function UnitCard({
               loadHistory={async () => (await unitAvailabilityApi.history(unit.id)).data}
             />
           </div>
+
+          {isShortLet && <UnitCalendarPanel unitId={unit.id} unitLabel={unit.displayLabel} />}
 
           <div className="space-y-3">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">

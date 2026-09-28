@@ -87,7 +87,7 @@ const COVER_GRADIENTS = [
   'from-amber-500 to-orange-600',
   'from-purple-600 to-pink-700',
   'from-red-600 to-rose-700',
-  'from-cyan-600 to-blue-700',
+  'from-emerald-600 to-emerald-800',
   'from-slate-600 to-slate-800',
   'from-teal-600 to-emerald-700',
 ];

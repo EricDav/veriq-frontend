@@ -18,6 +18,7 @@ import {
   IssueList,
   LocationSelector,
   Notice,
+  ListingDeclarationPanel,
   OperatorGuard,
   SchemaForm,
   SchemaTabs,
@@ -34,6 +35,7 @@ import {
   type ContactValue,
   type LocationValue,
 } from '@/components/listing-forms';
+import { PostingGate, useListingDeclaration, usePostingReadiness } from '@/components/listing-forms';
 import type {
   FormSchema,
   OperatorPropertyCategory,
@@ -96,6 +98,7 @@ function CreatePropertyWizard() {
   const [issues, setIssues] = useState<SchemaIssue[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState<'validate' | 'draft' | 'submit' | null>(null);
+  const declaration = useListingDeclaration();
   const [validated, setValidated] = useState(false);
   const [createdId, setCreatedId] = useState<string | null>(null);
 
@@ -320,7 +323,7 @@ function CreatePropertyWizard() {
       return;
     }
     try {
-      const response = await propertySubmissionsApi.submit(propertyId);
+      const response = await propertySubmissionsApi.submit(propertyId, declaration.payload!);
       success(response.message || 'Submitted for verification');
       router.push(`/dashboard/operator/properties/${propertyId}`);
     } catch (caught) {
@@ -582,6 +585,8 @@ function CreatePropertyWizard() {
               After saving, open the property editor to upload category-based images for the property and each Unit, and private identity/authority evidence for your Agent.
             </Notice>
 
+            <ListingDeclarationPanel state={declaration} idPrefix="new-property-declaration" disabled={busy !== null} />
+
             <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
               <button type="button" className="btn-ghost" disabled={busy !== null} onClick={() => void check()}>
                 {busy === 'validate' ? <LoadingSpinner size="sm" /> : <CheckCircle2 className="h-4 w-4" />} Check answers
@@ -589,8 +594,13 @@ function CreatePropertyWizard() {
               <button type="button" className="btn-outline" disabled={busy !== null} onClick={() => void save(false)}>
                 {busy === 'draft' ? <LoadingSpinner size="sm" /> : <Save className="h-4 w-4" />} Save draft
               </button>
-              <button type="button" className="btn-primary" disabled={busy !== null} onClick={() => void save(true)}>
-                {busy === 'submit' ? <LoadingSpinner size="sm" /> : <Send className="h-4 w-4" />} Save & submit for verification
+              <button
+                type="button"
+                className="btn-primary"
+                disabled={busy !== null || !declaration.canSubmit}
+                onClick={() => void save(true)}
+              >
+                {busy === 'submit' ? <LoadingSpinner size="sm" /> : <Send className="h-4 w-4" />} Save &amp; submit for verification
               </button>
             </div>
           </SectionCard>
@@ -749,7 +759,20 @@ function UnitSchemaSection({ schema, unit, issues, onAnswers }: { schema: FormSc
 export default function NewOperatorPropertyPage() {
   return (
     <OperatorGuard>
-      <CreatePropertyWizard />
+      <PostingGateway />
     </OperatorGuard>
+  );
+}
+
+/**
+ * Before posting, the Operator needs phone OTP, a government ID and a selfie holding that ID (Master Blueprint §3).
+ * Blocking the wizard here explains what is missing instead of letting the submit fail at the server.
+ */
+function PostingGateway() {
+  const readiness = usePostingReadiness();
+  return (
+    <PostingGate state={readiness}>
+      <CreatePropertyWizard />
+    </PostingGate>
   );
 }

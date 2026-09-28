@@ -504,6 +504,7 @@ export type EvidenceKind =
   | 'occupancy'
   | 'permission_declaration'
   | 'landlord_confirmation'
+  | 'selfie_with_id'
   | 'seller_identity'
   | 'authority_to_sell'
   | 'sale_document'
@@ -642,9 +643,11 @@ export interface UpdateSharedInput {
 
 export type SaleSubtype = 'built_property' | 'land';
 export type SalePriceBasis = 'total' | 'per_plot' | 'per_square_metre' | 'other';
-export type SaleContactRoute = 'veriq_agent' | 'seller';
 export type SaleUnavailableReason = 'sold' | 'withdrawn' | 'no_longer_offered';
 export type PartyVerificationStatus = 'not_required' | 'pending' | 'verified' | 'failed';
+export type SaleOutcomeValue = 'completed' | 'withdrawn';
+export type SalesAgreementStatus = 'draft' | 'signed' | 'cancelled';
+export type SaleEnquiryStatus = 'new' | 'contacted' | 'closed';
 export type SaleDocumentAvailability =
   | 'available'
   | 'not_available'
@@ -670,26 +673,28 @@ export interface SaleDocumentTypesPayload {
 }
 
 export interface SaleDocumentCheck {
-  id: string;
-  saleListingId: string;
   documentType: string;
-  otherLabel: string | null;
+  label: string;
   availability: SaleDocumentAvailability;
+  availabilityLabel: string;
   legalSearchStatus: LegalSearchStatus;
-  legalSearchReference: string | null;
-  source: string | null;
-  notes: string | null;
-  discrepancyFound: boolean;
-  checkedAt: string;
-  checkedByUserId: string;
-  createdAt: string;
-  updatedAt: string;
+  legalSearchLabel: string;
+  checkedAt: string | null;
+  notes?: string | null;
+  source?: string | null;
+  legalSearchReference?: string | null;
+  discrepancyFound?: boolean;
 }
 
+/**
+ * Owner-submitted Sale Listing as the managing Agent and Admin see it (Master Blueprint §6). There is no
+ * Agent-created listing and no unlock fee; Veriq is the buyer contact and the owner's contact is never displayed.
+ */
 export interface SaleListing {
   id: string;
   propertyId: string;
   subtype: SaleSubtype;
+  operatorId: string;
   managingAgentId: string;
   title: string;
   askingPrice: number;
@@ -701,25 +706,34 @@ export interface SaleListing {
   availabilityConfirmedAt: string | null;
   freshnessExpiresAt: string | null;
   publicationStatus: PublicationStatus;
-  sellerName: string;
-  sellerPhone: string | null;
-  sellerWhatsappPhone: string | null;
-  sellerIsOwner: boolean;
-  sellerIdentityStatus: PartyVerificationStatus;
+  ownerDeclaredAt: string | null;
+  ownerIdentityStatus: PartyVerificationStatus;
   authorityToSellStatus: PartyVerificationStatus;
-  contactRoute: SaleContactRoute;
+  physicalVisitAt: string | null;
+  physicalVisitByUserId: string | null;
+  physicalVisitNotes: string | null;
   facts: Record<string, unknown>;
   intelligence: Record<string, unknown>;
-  publicIntelligenceKeys: string[];
   componentCounts: Record<string, number>;
-  agentObservation: string | null;
   escalationOpen: boolean;
   escalationReason: string | null;
   escalationClearedAt: string | null;
+  correctionNote: string | null;
+  submittedAt: string | null;
   verifiedAt: string | null;
   publishedAt: string | null;
   suspendedAt: string | null;
   suspensionReason: string | null;
+  saleOutcome: SaleOutcomeValue | null;
+  salePriceAmount: number | null;
+  saleCompletedAt: string | null;
+  outcomeNotes: string | null;
+  outcomeRecordedAt: string | null;
+  commissionAmount: number | null;
+  commissionPercentApplied: number | null;
+  agentShareAmount: number | null;
+  agentSharePercentApplied: number | null;
+  createdByUserId: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -730,13 +744,44 @@ export interface SaleManagedItem {
   subtype: SaleSubtype;
   publicationStatus: PublicationStatus;
   availabilityStatus: AvailabilityStatus;
-  escalationOpen: boolean;
+  saleOutcome: SaleOutcomeValue | null;
   askingPrice: number;
+  correctionNote: string | null;
   updatedAt: string;
+}
+
+export interface SalesAgreement {
+  id: string;
+  status: SalesAgreementStatus;
+  commissionPercent: number;
+  agentSharePercent: number;
+  signedAt: string | null;
+  signedByOwnerName: string | null;
+  signedByAdminUserId: string | null;
+  documentUrl: string | null;
+}
+
+/** A buyer enquiry routed to Veriq: the only contact route for a sale listing (§6). */
+export interface SaleEnquiry {
+  id: string;
+  name: string;
+  phone: string;
+  email: string | null;
+  message: string;
+  status: SaleEnquiryStatus;
+  handledByUserId: string | null;
+  createdAt: string;
 }
 
 export interface SaleManageView {
   sale: SaleListing & { schemaId: string; components: ComponentInstance[]; issues: SchemaIssue[] };
+  owner: {
+    operatorId: string;
+    userId: string;
+    legalName: string | null;
+    identityStatus: OperatorIdentityStatus | null;
+    declaredAt: string | null;
+  };
   property: {
     id: string;
     title: string;
@@ -748,10 +793,20 @@ export interface SaleManageView {
     latitude: number | string | null;
     longitude: number | string | null;
     agentId: string | null;
+    operatorId: string | null;
   };
   documentChecklist: SaleDocumentType[];
   documents: SaleDocumentCheck[];
-  evidence: Array<{ id: string; kind: EvidenceKind; fileName: string | null; url: string; createdAt: string }>;
+  evidence: Array<{
+    id: string;
+    kind: EvidenceKind;
+    fileName: string | null;
+    url: string;
+    uploadedByUserId: string;
+    createdAt: string;
+  }>;
+  agreement: SalesAgreement | null;
+  enquiries: SaleEnquiry[];
   readiness: Readiness;
   media: MediaChecklist;
   street: StreetLinkState;
@@ -769,39 +824,13 @@ export interface SubmissionLocationInput {
   longitude?: number;
 }
 
-export interface SellerInput {
-  name: string;
-  phone?: string;
-  whatsappPhone?: string;
-  isOwner: boolean;
-}
-
-export interface CreateSaleListingInput {
-  subtype: SaleSubtype;
-  title: string;
-  propertyId?: string;
-  location?: SubmissionLocationInput;
-  askingPrice: number;
-  priceBasis: SalePriceBasis;
-  negotiable?: boolean;
-  seller: SellerInput;
-  contactRoute?: SaleContactRoute;
-  facts?: Record<string, unknown>;
-  intelligence?: Record<string, unknown>;
-  publicIntelligenceKeys?: string[];
-}
-
 export interface UpdateSaleListingInput {
   title?: string;
   askingPrice?: number;
   priceBasis?: SalePriceBasis;
   negotiable?: boolean;
-  seller?: SellerInput;
-  contactRoute?: SaleContactRoute;
   facts?: Record<string, unknown>;
   intelligence?: Record<string, unknown>;
-  publicIntelligenceKeys?: string[];
-  agentObservation?: string;
 }
 
 export interface DocumentCheckInput {
@@ -815,15 +844,48 @@ export interface DocumentCheckInput {
   discrepancyFound?: boolean;
 }
 
+/** Owner identity and authority to sell, reviewed from the submitted documents (§6). */
 export interface PartyStatusInput {
-  sellerIdentityStatus?: PartyVerificationStatus;
+  ownerIdentityStatus?: PartyVerificationStatus;
   authorityToSellStatus?: PartyVerificationStatus;
   note?: string;
+}
+
+export interface PhysicalVisitInput {
+  /** ISO timestamp of the visit; defaults to now and may never be in the future. */
+  visitedAt?: string;
+  notes: string;
+}
+
+export interface SalesAgreementInput {
+  commissionPercent?: number;
+  agentSharePercent?: number;
+  notes?: string;
+}
+
+export interface SignSalesAgreementInput {
+  signedByOwnerName: string;
+  signedAt?: string;
+  documentUrl?: string;
+  notes?: string;
+}
+
+/** Recording a completed sale is what triggers the owner-paid commission (§6). */
+export interface SaleOutcomeInput {
+  outcome: SaleOutcomeValue;
+  salePriceAmount?: number;
+  completedAt?: string;
+  notes?: string;
 }
 
 export interface SaleAvailabilityInput {
   status: AvailabilityStatus;
   reason?: SaleUnavailableReason;
+  note?: string;
+}
+
+export interface UpdateSaleEnquiryInput {
+  status: SaleEnquiryStatus;
   note?: string;
 }
 

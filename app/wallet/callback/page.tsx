@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { CheckCircle, XCircle, ArrowLeft, Wallet as WalletIcon } from 'lucide-react';
 import { walletApi, ApiError } from '@/lib/api';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { BackToDashboard } from '@/components/ui/BackToDashboard';
 
 type VerifyState = 'verifying' | 'success' | 'error';
 
@@ -95,6 +96,9 @@ function WalletCallbackInner() {
               </div>
             </>
           )}
+        </div>
+        <div className="mt-3 flex justify-center">
+          <BackToDashboard />
         </div>
       </div>
     </div>

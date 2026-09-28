@@ -12,6 +12,7 @@ import type {
 } from '@/types/admin';
 import { SALE_UNAVAILABLE_REASONS } from '@/types/admin';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
+import { Select } from '@/components/ui/Select';
 import { Modal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
 import { ReasonDialog } from '@/components/admin/ReasonDialog';
@@ -83,8 +84,8 @@ function AdminSalesInner() {
   const [detailError, setDetailError] = useState<DescribedError | null>(null);
 
   const [dialog, setDialog] = useState<DialogKind>(null);
-  const [availabilityStatus, setAvailabilityStatus] = useState<AvailabilityState>('unavailable');
-  const [unavailableReason, setUnavailableReason] = useState<SaleUnavailableReason>('sold');
+  const [availabilityStatus, setAvailabilityStatus] = useState('');
+  const [unavailableReason, setUnavailableReason] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -163,11 +164,12 @@ function AdminSalesInner() {
   };
 
   const changeAvailability = async (note: string) => {
-    if (!detail) return;
+    if (!detail || !availabilityStatus) return;
+    if (availabilityStatus === 'unavailable' && !unavailableReason) return;
     try {
       const res = await salesAdminApi.setAvailability(detail.sale.id, {
-        status: availabilityStatus,
-        reason: availabilityStatus === 'unavailable' ? unavailableReason : undefined,
+        status: availabilityStatus as AvailabilityState,
+        reason: availabilityStatus === 'unavailable' ? (unavailableReason as SaleUnavailableReason) : undefined,
         note: note || undefined,
       });
       success(res.message);
@@ -442,20 +444,31 @@ function AdminSalesInner() {
         message={<p>Only Available published listings are discoverable. Marking a listing unavailable removes it from discovery immediately.</p>}
       >
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div>
-            <label className="label text-xs" htmlFor="sale-availability">Availability</label>
-            <select id="sale-availability" className="input" value={availabilityStatus} onChange={(event) => setAvailabilityStatus(event.target.value as AvailabilityState)}>
-              <option value="available">Available (confirm)</option>
-              <option value="unavailable">Unavailable</option>
-            </select>
-          </div>
+          <Select
+            id="sale-availability"
+            label="Availability"
+            labelClassName="text-xs"
+            options={[
+              { value: 'available', label: 'Available (confirm)' },
+              { value: 'unavailable', label: 'Unavailable' },
+            ]}
+            value={availabilityStatus}
+            onValueChange={(value) => {
+              setAvailabilityStatus(value);
+              if (value !== 'unavailable') setUnavailableReason('');
+            }}
+            required
+          />
           {availabilityStatus === 'unavailable' && (
-            <div>
-              <label className="label text-xs" htmlFor="sale-unavailable-reason">Reason</label>
-              <select id="sale-unavailable-reason" className="input" value={unavailableReason} onChange={(event) => setUnavailableReason(event.target.value as SaleUnavailableReason)}>
-                {SALE_UNAVAILABLE_REASONS.map((value) => <option key={value} value={value}>{humanize(value)}</option>)}
-              </select>
-            </div>
+            <Select
+              id="sale-unavailable-reason"
+              label="Reason"
+              labelClassName="text-xs"
+              options={SALE_UNAVAILABLE_REASONS.map((value: SaleUnavailableReason) => ({ value, label: humanize(value) }))}
+              value={unavailableReason}
+              onValueChange={setUnavailableReason}
+              required
+            />
           )}
         </div>
       </ReasonDialog>

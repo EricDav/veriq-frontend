@@ -78,7 +78,7 @@ const SECTIONS = [
   {
     href: '/dashboard/admin/business-rules',
     icon: Settings2,
-    cls: 'bg-cyan-100 text-cyan-600',
+    cls: 'bg-emerald-100 text-emerald-700',
     title: 'Business Rules',
     description: 'Effective-dated prices, windows, holds, shares and limits. Changes are never retroactive.',
   },

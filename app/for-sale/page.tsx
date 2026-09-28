@@ -3,10 +3,11 @@
 import { Suspense, useCallback, useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { ChevronLeft, ChevronRight, FileCheck2, Filter, Landmark, Lock, RotateCcw, ShieldCheck } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Eye, FileCheck2, Filter, Landmark, MessageSquare, RotateCcw, ShieldCheck } from 'lucide-react';
 import { saleListingsApi } from '@/lib/api/renter';
-import type { SaleListingPublic, SaleListQuery, SalePriceBasis, SaleSubtype } from '@/types/renter';
+import type { SaleListingCardData, SaleListQuery, SalePriceBasis, SaleSubtype } from '@/types/renter';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { Select } from '@/components/ui/Select';
 import { ApiErrorNotice } from '@/components/renter/ApiErrorNotice';
 import { DiscoveryHero } from '@/components/renter/DiscoveryHero';
 import { SaleListingCard } from '@/components/renter/ListingCard';
@@ -22,8 +23,9 @@ const PRICE_BASIS: Array<{ value: SalePriceBasis; label: string }> = [
   { value: 'total', label: 'Total price' },
   { value: 'per_plot', label: 'Per plot' },
   { value: 'per_square_metre', label: 'Per square metre' },
-  { value: 'other', label: 'Other basis' },
 ];
+
+const BEDROOM_OPTIONS = [1, 2, 3, 4, 5, 6].map((count) => ({ value: String(count), label: `${count}+` }));
 
 interface FilterState {
   subtype: string;
@@ -73,7 +75,7 @@ function SaleDiscovery() {
   const page = Math.max(1, Number(params.get('page')) || 1);
 
   const [draft, setDraft] = useState<FilterState>(() => readFilters(new URLSearchParams(paramsKey)));
-  const [listings, setListings] = useState<SaleListingPublic[]>([]);
+  const [listings, setListings] = useState<SaleListingCardData[]>([]);
   const [total, setTotal] = useState(0);
   const [pages, setPages] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -129,16 +131,17 @@ function SaleDiscovery() {
         title={<>Built Property and Land, <span className="text-emerald-300">verified by Veriq Agents</span></>}
         description={
           <p>
-            Sellers do not self-list. A Veriq Agent verifies the seller&apos;s identity and authority to sell, confirms the physical property or land,
-            and records the status of each sale document. Only available listings are shown. Exact location, full sale intelligence and the
-            contact route unlock for the access period.
+            Only the owner may ask Veriq to represent a property for sale. The assigned Veriq Agent visits the property in person, reviews
+            ownership and authority to sell, and records the status of each sale document. These listings are free to view — there is no unlock
+            fee — and Veriq is your contact, so send an enquiry and an Agent will get back to you.
           </p>
         }
       >
         <div className="mt-6 flex flex-wrap gap-3 text-xs text-white/70">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-3 py-1.5"><ShieldCheck className="h-3.5 w-3.5 text-emerald-300" /> Seller authority checked</span>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-3 py-1.5"><ShieldCheck className="h-3.5 w-3.5 text-emerald-300" /> Owner authority checked</span>
           <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-3 py-1.5"><FileCheck2 className="h-3.5 w-3.5 text-emerald-300" /> Document statuses, never the files</span>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-3 py-1.5"><Lock className="h-3.5 w-3.5 text-emerald-300" /> Location and contact after unlock</span>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-3 py-1.5"><Eye className="h-3.5 w-3.5 text-emerald-300" /> Free to view, no unlock fee</span>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-3 py-1.5"><MessageSquare className="h-3.5 w-3.5 text-emerald-300" /> Veriq handles buyer contact</span>
         </div>
       </DiscoveryHero>
 
@@ -149,13 +152,14 @@ function SaleDiscovery() {
               <Filter className="h-4 w-4" /> Filters{activeCount ? ` (${activeCount})` : ''}
             </button>
             <form onSubmit={apply} className={`card space-y-4 p-5 ${filtersOpen ? 'block' : 'hidden'} lg:sticky lg:top-24 lg:block`}>
-              <div>
-                <label htmlFor="fs-subtype" className="label">Type</label>
-                <select id="fs-subtype" value={draft.subtype} onChange={set('subtype')} className="input">
-                  <option value="">Built Property and Land</option>
-                  {SUBTYPES.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-                </select>
-              </div>
+              <Select
+                id="fs-subtype"
+                label="Type"
+                placeholder="Built Property and Land"
+                options={SUBTYPES}
+                value={draft.subtype}
+                onValueChange={(value) => setDraft((prev) => ({ ...prev, subtype: value }))}
+              />
               <div>
                 <label htmlFor="fs-city" className="label">City</label>
                 <input id="fs-city" value={draft.city} onChange={set('city')} className="input" placeholder="e.g. Port Harcourt" />
@@ -172,21 +176,23 @@ function SaleDiscovery() {
                 </div>
               </div>
               {draft.subtype !== 'land' && (
-                <div>
-                  <label htmlFor="fs-bedrooms" className="label">Minimum bedrooms</label>
-                  <select id="fs-bedrooms" value={draft.bedrooms} onChange={set('bedrooms')} className="input">
-                    <option value="">Any</option>
-                    {[1, 2, 3, 4, 5, 6].map((count) => <option key={count} value={count}>{count}+</option>)}
-                  </select>
-                </div>
+                <Select
+                  id="fs-bedrooms"
+                  label="Minimum bedrooms"
+                  placeholder="Any"
+                  options={BEDROOM_OPTIONS}
+                  value={draft.bedrooms}
+                  onValueChange={(value) => setDraft((prev) => ({ ...prev, bedrooms: value }))}
+                />
               )}
-              <div>
-                <label htmlFor="fs-basis" className="label">Price basis</label>
-                <select id="fs-basis" value={draft.priceBasis} onChange={set('priceBasis')} className="input">
-                  <option value="">Any basis</option>
-                  {PRICE_BASIS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-                </select>
-              </div>
+              <Select
+                id="fs-basis"
+                label="Price basis"
+                placeholder="Any basis"
+                options={PRICE_BASIS}
+                value={draft.priceBasis}
+                onValueChange={(value) => setDraft((prev) => ({ ...prev, priceBasis: value }))}
+              />
               <div className="flex gap-2">
                 <button type="submit" className="btn-primary flex-1 !py-2.5">Apply</button>
                 <button type="button" onClick={() => { setDraft(EMPTY); navigate(EMPTY, 1); }} className="btn-outline !px-3 !py-2.5" aria-label="Clear filters">
@@ -235,7 +241,7 @@ function SaleDiscovery() {
 
 export default function PropertyForSalePage() {
   return (
-    <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-[#03131a]"><LoadingSpinner size="lg" className="text-emerald-300" /></div>}>
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-navy-900"><LoadingSpinner size="lg" className="text-emerald-300" /></div>}>
       <SaleDiscovery />
     </Suspense>
   );

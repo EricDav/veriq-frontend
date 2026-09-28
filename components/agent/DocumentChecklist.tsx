@@ -10,6 +10,7 @@ import type {
   SaleDocumentType,
 } from '@/types/agent';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { Select } from '@/components/ui/Select';
 import { cn } from '@/lib/utils';
 import { formatDateTime } from './format';
 import { Field, InlineNotice, smallButton, smallPrimaryButton } from './ui';
@@ -53,11 +54,11 @@ function DocumentForm({
   legalLabels: Record<LegalSearchStatus, string>;
 }) {
   const [availability, setAvailability] = useState<SaleDocumentAvailability | ''>(existing?.availability ?? '');
-  const [legalSearchStatus, setLegalSearchStatus] = useState<LegalSearchStatus>(existing?.legalSearchStatus ?? 'not_performed');
+  const [legalSearchStatus, setLegalSearchStatus] = useState<LegalSearchStatus | ''>(existing?.legalSearchStatus ?? '');
   const [legalSearchReference, setLegalSearchReference] = useState(existing?.legalSearchReference ?? '');
   const [source, setSource] = useState(existing?.source ?? '');
   const [notes, setNotes] = useState(existing?.notes ?? '');
-  const [otherLabel, setOtherLabel] = useState(existing?.otherLabel ?? '');
+  const [otherLabel, setOtherLabel] = useState(existing && existing.documentType === 'other' ? existing.label : '');
   const [discrepancyFound, setDiscrepancyFound] = useState(existing?.discrepancyFound ?? false);
   const [saving, setSaving] = useState(false);
   const [localError, setLocalError] = useState('');
@@ -66,6 +67,7 @@ function DocumentForm({
 
   const submit = async () => {
     if (!availability) return setLocalError('Select the document status.');
+    if (!legalSearchStatus) return setLocalError('State the independent legal search position.');
     if (type.key === 'other' && !otherLabel.trim()) return setLocalError('Name the other document.');
     setLocalError('');
     setSaving(true);
@@ -96,44 +98,45 @@ function DocumentForm({
         </Field>
       )}
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        <Field label="Document status (availability / sighting)">
-          <select className="input !py-2 text-sm" value={availability} onChange={(event) => setAvailability(event.target.value as SaleDocumentAvailability)}>
-            <option value="">Select…</option>
-            {(Object.keys(availabilityLabels) as SaleDocumentAvailability[]).map((key) => (
-              <option key={key} value={key}>
-                {availabilityLabels[key]}
-              </option>
-            ))}
-          </select>
-        </Field>
-        <Field label="Independent legal search (separate state)">
-          <select className="input !py-2 text-sm" value={legalSearchStatus} onChange={(event) => setLegalSearchStatus(event.target.value as LegalSearchStatus)}>
-            {(Object.keys(legalLabels) as LegalSearchStatus[]).map((key) => (
-              <option key={key} value={key}>
-                {legalLabels[key]}
-              </option>
-            ))}
-          </select>
-        </Field>
-        <Field label="Legal search reference (optional)">
+        <Select
+          id={`document-availability-${type.key}`}
+          label="Document status (availability / sighting)"
+          labelClassName="!mb-1 !text-xs"
+          className="!py-2 text-sm"
+          options={(Object.keys(availabilityLabels) as SaleDocumentAvailability[]).map((key) => ({ value: key, label: availabilityLabels[key] }))}
+          value={availability}
+          onValueChange={(value) => setAvailability(value as SaleDocumentAvailability | '')}
+          required
+        />
+        <Select
+          id={`document-legal-search-${type.key}`}
+          label="Independent legal search (separate state)"
+          labelClassName="!mb-1 !text-xs"
+          className="!py-2 text-sm"
+          options={(Object.keys(legalLabels) as LegalSearchStatus[]).map((key) => ({ value: key, label: legalLabels[key] }))}
+          value={legalSearchStatus}
+          onValueChange={(value) => setLegalSearchStatus(value as LegalSearchStatus | '')}
+          required
+        />
+        <Field label="Legal search reference" hint="Optional">
           <input className="input !py-2 text-sm" maxLength={200} value={legalSearchReference} onChange={(event) => setLegalSearchReference(event.target.value)} />
         </Field>
-        <Field label="Source (optional)" hint="e.g. original sighted at seller's office, certified copy">
+        <Field label="Source" hint="Optional — e.g. original sighted at the owner's home, certified copy">
           <input className="input !py-2 text-sm" maxLength={200} value={source} onChange={(event) => setSource(event.target.value)} />
         </Field>
       </div>
-      <Field label="Agent notes">
+      <Field label="Agent notes" hint="Optional — kept internal">
         <textarea className="input resize-y !py-2 text-sm" rows={2} maxLength={2000} value={notes} onChange={(event) => setNotes(event.target.value)} />
       </Field>
       <label className="flex items-start gap-2 rounded-xl border border-red-100 bg-red-50/40 px-3 py-2">
         <input type="checkbox" className="mt-0.5 h-4 w-4" checked={discrepancyFound} onChange={(event) => setDiscrepancyFound(event.target.checked)} />
         <span className="text-xs text-red-800">
-          <strong>Material discrepancy found</strong> between seller identity, property identity, survey/location information or documents presented.
+          <strong>Material discrepancy found</strong> between owner identity, property identity, survey or location information and the documents presented.
         </span>
       </label>
       {escalates && (
         <InlineNotice tone="danger">
-          Saving escalates this Sale Listing to Admin. Publication is blocked until Admin clears the escalation.
+          Saving escalates this sale listing to Admin. Publication is blocked until Admin clears the escalation.
         </InlineNotice>
       )}
       {localError && <p className="text-xs text-red-600">{localError}</p>}
@@ -181,7 +184,7 @@ export function DocumentChecklist({
     if (type.key !== 'other') {
       return [{ id: type.key, type, record: documents.find((doc) => doc.documentType === type.key) ?? null }];
     }
-    return documents.filter((doc) => doc.documentType === 'other').map((doc) => ({ id: `other-${doc.id}`, type, record: doc }));
+    return documents.filter((doc) => doc.documentType === 'other').map((doc) => ({ id: `other-${doc.label}`, type, record: doc }));
   });
   const otherType = types.find((type) => type.key === 'other');
 
@@ -201,7 +204,7 @@ export function DocumentChecklist({
           <li key={id} className={cn('rounded-xl border p-3', record?.discrepancyFound ? 'border-red-200' : 'border-slate-100')}>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-navy-900">{record?.otherLabel ? `Other: ${record.otherLabel}` : type.label}</p>
+                <p className="text-sm font-semibold text-navy-900">{record && record.documentType === 'other' ? `Other: ${record.label}` : type.label}</p>
                 {record ? (
                   <div className="mt-1 space-y-1">
                     <div className="flex flex-wrap gap-1.5">

@@ -37,6 +37,7 @@ import {
   withClearedKeys,
   type ContactValue,
 } from '@/components/listing-forms';
+import { ListingDeclarationPanel, useListingDeclaration } from '@/components/listing-forms';
 import type {
   EvidenceRecord,
   PublicationStatus,
@@ -59,6 +60,7 @@ function SharedOpportunityManager() {
   const [evidence, setEvidence] = useState<EvidenceRecord[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<{ message: string; issues: SchemaIssue[] } | null>(null);
+  const declaration = useListingDeclaration();
 
   const load = useCallback(async () => {
     setLoadError(null);
@@ -193,12 +195,17 @@ function SharedOpportunityManager() {
   };
 
   const submit = async () => {
+    if (!declaration.payload) {
+      setSubmitError({ message: 'Accept the Veriq listing declaration to submit', issues: [] });
+      return;
+    }
     setSubmitting(true);
     setSubmitError(null);
     try {
-      const response = await sharedPropertiesApi.submit(opportunity.id);
+      const response = await sharedPropertiesApi.submit(opportunity.id, declaration.payload);
       setData(response.data);
       success(response.message || 'Submitted for verification');
+      declaration.reset();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (caught) {
       const parsed = parseApiError(caught, 'Unable to submit this opportunity');
@@ -226,10 +233,10 @@ function SharedOpportunityManager() {
             </div>
           </div>
           {canSubmit && (
-            <button type="button" className="btn-primary !py-2.5" disabled={submitting} onClick={() => void submit()}>
-              {submitting ? <LoadingSpinner size="sm" /> : <Send className="h-4 w-4" />}
+            <a href="#shared-declaration" className="btn-primary !py-2.5">
+              <Send className="h-4 w-4" />
               {status === 'needs_correction' ? 'Resubmit' : 'Submit for verification'}
-            </button>
+            </a>
           )}
         </div>
       </div>
@@ -256,6 +263,15 @@ function SharedOpportunityManager() {
               <Notice tone="success">Your answers are complete.</Notice>
             )}
             {!hasOccupancy && <Notice tone="warning" title="Proof of occupancy required">Upload evidence that you currently live in this home before submitting.</Notice>}
+            <div id="shared-declaration" className="space-y-3">
+              <ListingDeclarationPanel state={declaration} idPrefix="shared-declaration" disabled={submitting} />
+              <div className="flex justify-end">
+                <button type="button" className="btn-primary !py-2.5" disabled={submitting || !declaration.canSubmit} onClick={() => void submit()}>
+                  {submitting ? <LoadingSpinner size="sm" /> : <Send className="h-4 w-4" />}
+                  {status === 'needs_correction' ? 'Resubmit' : 'Submit for verification'}
+                </button>
+              </div>
+            </div>
           </div>
         )}
         {status !== 'draft' && !data.readiness.ready && data.readiness.blockers.length > 0 && (

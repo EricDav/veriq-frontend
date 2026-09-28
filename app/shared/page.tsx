@@ -242,7 +242,7 @@ function SharedDiscovery() {
 
 export default function SharedPropertyPage() {
   return (
-    <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-[#03131a]"><LoadingSpinner size="lg" className="text-emerald-300" /></div>}>
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-navy-900"><LoadingSpinner size="lg" className="text-emerald-300" /></div>}>
       <SharedDiscovery />
     </Suspense>
   );

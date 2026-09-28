@@ -31,7 +31,17 @@ export async function loadPropertyForViewer(id: string, isAuthenticated: boolean
 
   if (unlocked) {
     return {
-      property: { ...unlocked.property, units: publicProperty?.units, availabilitySummary: publicProperty?.availabilitySummary },
+      // The unlock gate and similar-available list live on the public projection, so they are carried across for
+      // the availability messaging a manager or unlock holder still needs to see (Master Blueprint §5).
+      property: {
+        ...unlocked.property,
+        units: publicProperty?.units,
+        availabilitySummary: publicProperty?.availabilitySummary,
+        canUnlock: publicProperty?.canUnlock,
+        unlockBlockedReason: publicProperty?.unlockBlockedReason ?? null,
+        notifyMeAvailable: publicProperty?.notifyMeAvailable,
+        similarAvailable: publicProperty?.similarAvailable,
+      },
       publicProperty,
       unlocked,
     };

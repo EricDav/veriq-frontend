@@ -11,7 +11,9 @@ import type { ListingTargetType, UnlockQuote, UnlockView } from '@/types/renter'
 import { Modal } from '@/components/ui/Modal';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useToast } from '@/components/ui/Toast';
+import { formatStay, type StayRange } from '@/components/ui/DateRangeFields';
 import { ApiErrorNotice } from './ApiErrorNotice';
+import { UnlockBlockedCallout } from './UnlockBlockedCallout';
 import { formatDateTime, formatHours, formatNaira, locationLine, newIdempotencyKey } from './format';
 import { savePendingCheckout } from './pendingCheckout';
 
@@ -24,6 +26,10 @@ interface UnlockCheckoutProps {
   targetId: string;
   /** Page the renter returns to after sign-in or payment. */
   returnPath: string;
+  /** Short Let stay the unlock is bought for; availability is judged against exactly these nights (§5). */
+  stay?: StayRange;
+  /** Offered when only the selected nights are taken, so the renter is never left at a dead end. */
+  onChangeDates?: () => void;
   /** Called once access is confirmed (new or existing) so the page can load the unlocked package. */
   onUnlocked: () => void | Promise<void>;
 }
@@ -33,7 +39,7 @@ interface UnlockCheckoutProps {
  * availability and refund-to-wallet disclosure before confirmation, then payment status. Access is granted only by
  * the server after settlement; returning from the payment page is verified on /unlocks/callback.
  */
-export function UnlockCheckout({ isOpen, onClose, targetType, targetId, returnPath, onUnlocked }: UnlockCheckoutProps) {
+export function UnlockCheckout({ isOpen, onClose, targetType, targetId, returnPath, stay, onChangeDates, onUnlocked }: UnlockCheckoutProps) {
   const { success } = useToast();
   const [quote, setQuote] = useState<UnlockQuote | null>(null);
   const [quoteLoading, setQuoteLoading] = useState(false);
@@ -45,12 +51,19 @@ export function UnlockCheckout({ isOpen, onClose, targetType, targetId, returnPa
   const [busyAction, setBusyAction] = useState<'confirm' | 'cancel' | null>(null);
   const idempotencyKey = useRef(newIdempotencyKey());
 
+  // Only a complete range is quotable, and the two dates are kept as primitives so the quote re-runs when they
+  // change rather than on every render (Master Blueprint §5).
+  const checkIn = stay?.checkIn && stay.checkOut ? stay.checkIn : undefined;
+  const checkOut = stay?.checkIn && stay.checkOut ? stay.checkOut : undefined;
+
   const loadQuote = useCallback(async () => {
     setQuoteLoading(true);
     setQuoteError(null);
+    const dates = checkIn && checkOut ? { checkIn, checkOut } : {};
     try {
-      const res = await unlocksApi.quote(targetType, targetId).catch((err: unknown) => {
-        if (err instanceof ApiError && err.statusCode === 401) return unlocksApi.quotePublic(targetType, targetId);
+      const res = await unlocksApi.quote(targetType, targetId, dates).catch((err: unknown) => {
+        if (err instanceof ApiError && err.statusCode === 401)
+          return unlocksApi.quotePublic(targetType, targetId, dates);
         throw err;
       });
       setQuote(res.data);
@@ -60,7 +73,7 @@ export function UnlockCheckout({ isOpen, onClose, targetType, targetId, returnPa
     } finally {
       setQuoteLoading(false);
     }
-  }, [targetId, targetType]);
+  }, [checkIn, checkOut, targetId, targetType]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -82,7 +95,12 @@ export function UnlockCheckout({ isOpen, onClose, targetType, targetId, returnPa
     setPhase('processing');
     setActionError(null);
     try {
-      const res = await unlocksApi.initiate({ targetType, targetId, idempotencyKey: idempotencyKey.current });
+      const res = await unlocksApi.initiate({
+        targetType,
+        targetId,
+        idempotencyKey: idempotencyKey.current,
+        ...(checkIn && checkOut ? { checkIn, checkOut } : {}),
+      });
       const { state, unlock, checkout } = res.data;
       if (state === 'unlocked' || state === 'already_unlocked') {
         await finish(res.message || 'Unlock confirmed');
@@ -164,6 +182,8 @@ export function UnlockCheckout({ isOpen, onClose, targetType, targetId, returnPa
 
   const loginHref = `/auth/login?redirect=${encodeURIComponent(returnPath)}`;
   const isFree = !!quote && (quote.isFreeUnlock || quote.price === 0);
+  // The quote's own gate decides; where it is absent, the availability in the same payload does (§5).
+  const unlockBlocked = !!quote && (quote.canUnlock === false || (quote.canUnlock === undefined && quote.availability.overall !== 'available'));
 
   let primaryLabel = 'Confirm unlock';
   if (quote) {
@@ -221,7 +241,27 @@ export function UnlockCheckout({ isOpen, onClose, targetType, targetId, returnPa
             </div>
           )}
 
-          {quote.viewerIsManager ? (
+          {unlockBlocked && !quote.viewerIsManager && !quote.alreadyUnlocked ? (
+            // The quote still renders for an unavailable listing so the renter has somewhere to go; only the
+            // purchase itself is refused (Master Blueprint §5).
+            <UnlockBlockedCallout
+              reason={quote.blockedReason ?? 'no_available_unit'}
+              targetType={targetType}
+              targetId={targetId}
+              notifyMeAvailable={quote.notifyMeAvailable}
+              similarAvailable={[]}
+              isAuthenticated={!quote.signInRequired}
+              returnPath={returnPath}
+              onChangeDates={
+                onChangeDates
+                  ? () => {
+                      onClose();
+                      onChangeDates();
+                    }
+                  : undefined
+              }
+            />
+          ) : quote.viewerIsManager ? (
             <div className="flex items-start gap-2 rounded-xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-800">
               <Info className="mt-0.5 h-4 w-4 flex-shrink-0" /> You manage this listing, so its protected details are already available to you and it cannot be unlocked.
             </div>
@@ -278,6 +318,9 @@ export function UnlockCheckout({ isOpen, onClose, targetType, targetId, returnPa
                   <p className="font-semibold">{quote.availability.overall === 'available' ? 'Currently available' : 'Currently unavailable'}</p>
                   {quote.availability.documentedUnits > 0 && (
                     <p className="mt-1">{quote.availability.availableUnits} of {quote.availability.documentedUnits} documented Unit{quote.availability.documentedUnits === 1 ? '' : 's'} available now.</p>
+                  )}
+                  {quote.availability.requestedDates && (
+                    <p className="mt-1 font-medium">Checked for {formatStay(quote.availability.requestedDates)}.</p>
                   )}
                 </div>
               </div>

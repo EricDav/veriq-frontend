@@ -15,9 +15,11 @@ import { chatApi, ApiError } from '@/lib/api';
 import { loadPropertyForViewer, toConsultationAccess } from '@/lib/property-access';
 import { ContactActions, DocumentedUnits } from '@/components/properties/UnlockedPropertySections';
 import { StreetIntelligencePanel } from '@/components/renter/StreetIntelligencePanel';
+import { UnlockBlockedCallout } from '@/components/renter/UnlockBlockedCallout';
 import { UnlockCheckout } from '@/components/renter/UnlockCheckout';
+import { DateRangeFields, EMPTY_STAY, isCompleteStay, stayError, type StayRange } from '@/components/ui/DateRangeFields';
 import type { ConsultationAccess, Property, MediaItem } from '@/types';
-import type { UnlockedPropertyWithStreet } from '@/types/renter';
+import type { UnlockBlockedReason, UnlockedPropertyWithStreet } from '@/types/renter';
 import {
   AgentVerificationLevel, AgentTrustTier, FreshnessScore,
   FloodRisk, ElectricitySituation, WaterAvailability, WaterSource,
@@ -407,6 +409,8 @@ export default function DashboardPropertyDetailPage() {
   const [hasAccess, setHasAccess] = useState(false);
   const [accessDetails, setAccessDetails] = useState<ConsultationAccess | null>(null);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  // Short Let stay: availability and the unlock are judged against exactly these nights (Master Blueprint §5).
+  const [stay, setStay] = useState<StayRange>(EMPTY_STAY);
   const [notFound, setNotFound] = useState(false);
   const [isCoverPreviewOpen, setIsCoverPreviewOpen] = useState(false);
   const [viewAsUser, setViewAsUser] = useState(false);
@@ -480,6 +484,9 @@ export default function DashboardPropertyDetailPage() {
   const ownerFullAccess = isOwnListing && !viewAsUser;
   const hasFullAccess = hasAccess || ownerFullAccess;
   const canContactAgent = hasAccess && !isOwnListing && !!agentContact?.phone;
+  const canUnlock = property.canUnlock ?? property.availabilitySummary?.overall !== 'unavailable';
+  const blockedReason: UnlockBlockedReason = property.unlockBlockedReason ?? 'no_available_unit';
+  const dateError = isShortStay ? stayError(stay) : null;
 
   // Hero image — cover or gradient fallback
   const hasCover = !!property.coverImageUrl;
@@ -698,7 +705,19 @@ export default function DashboardPropertyDetailPage() {
           </div>
 
           {/* ── Intelligence Report Block ── */}
-          {!hasFullAccess ? (
+          {!hasFullAccess && !canUnlock ? (
+            <UnlockBlockedCallout
+              reason={blockedReason}
+              targetType="property"
+              targetId={id}
+              notifyMeAvailable={property.notifyMeAvailable ?? true}
+              similarAvailable={property.similarAvailable ?? []}
+              isAuthenticated
+              returnPath={`/dashboard/browse/${id}`}
+              inDashboard
+              onChangeDates={isShortStay ? () => document.getElementById('short-let-stay-check-in')?.focus() : undefined}
+            />
+          ) : !hasFullAccess ? (
             /* Lock panel */
             <div className="card p-6 border-2 border-dashed border-amber-300 bg-amber-50/40">
               <div className="flex items-start gap-4">
@@ -732,13 +751,27 @@ export default function DashboardPropertyDetailPage() {
                       </div>
                     ))}
                   </div>
+                  {isShortStay && (
+                    <div className="mb-5 rounded-xl border border-slate-200 bg-white p-4">
+                      <p className="mb-2 text-sm font-semibold text-navy-900">Your dates</p>
+                      <DateRangeFields
+                        idPrefix="short-let-stay"
+                        value={stay}
+                        onChange={setStay}
+                        optional
+                        error={dateError}
+                        hint="Leave blank to see this property's overall availability."
+                        compact
+                      />
+                    </div>
+                  )}
                   <div className="flex flex-wrap items-center gap-4">
                     <div className="flex items-center gap-1.5">
                       {isFreeUnlock ? <Gift className="h-4 w-4 text-emerald-500" /> : <Wallet className="h-4 w-4 text-amber-500" />}
                       <span className="text-base font-black text-navy-900">{isFreeUnlock ? 'Free · ₦0' : formatNaira(property.consultationFee)}</span>
                       {!isFreeUnlock && <span className="text-xs text-slate-400">one-time</span>}
                     </div>
-                    <button type="button" onClick={() => setIsCheckoutOpen(true)} disabled={isOwnListing} className="btn-gold flex items-center gap-2">
+                    <button type="button" onClick={() => setIsCheckoutOpen(true)} disabled={isOwnListing || !!dateError} className="btn-gold flex items-center gap-2">
                       {isFreeUnlock ? <Gift className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
                       {isOwnListing ? 'Own listing cannot be unlocked' : isFreeUnlock ? 'Unlock free' : 'Unlock Intelligence Report'}
                     </button>
@@ -834,7 +867,12 @@ export default function DashboardPropertyDetailPage() {
 
               {unlocked && <DocumentedUnits units={unlocked.units} />}
               {unlocked && hasAccess && (
-                <ContactActions contacts={unlocked.propertyContacts} agentSupport={unlocked.agentSupport} bookingLink={null} />
+                <ContactActions
+                  contacts={unlocked.propertyContacts}
+                  agentSupport={unlocked.agentSupport}
+                  bookingLink={null}
+                  contactDisabledReason={unlocked.contactDisabledReason}
+                />
               )}
 
               <StreetIntelligencePanel presentation={unlocked?.streetIntelligence ?? null} />
@@ -923,7 +961,7 @@ export default function DashboardPropertyDetailPage() {
               <p className="text-2xl font-black text-navy-900 mb-0.5">
                 {formatNaira(property.consultationFee)}
               </p>
-              <p className="text-xs text-veriq-muted">One-time fee — valid 48 hours</p>
+              <p className="text-xs text-veriq-muted">One-time fee — 24 hours of access from confirmed payment</p>
             </div>
           ) : !isOwnListing && unlocked?.access.accessExpiresAt ? (
             <AccessTimer expiresAt={unlocked.access.accessExpiresAt} />
@@ -963,6 +1001,8 @@ export default function DashboardPropertyDetailPage() {
         targetType="property"
         targetId={id}
         returnPath={`/dashboard/browse/${id}`}
+        stay={isShortStay && isCompleteStay(stay) ? stay : undefined}
+        onChangeDates={() => document.getElementById('short-let-stay-check-in')?.focus()}
         onUnlocked={handleUnlocked}
       />
     </div>

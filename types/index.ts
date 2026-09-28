@@ -1,3 +1,5 @@
+import type { SimilarAvailableListing, UnlockBlockedReason } from './renter';
+
 // ─── Enums (mirrors backend) ───────────────────────────────────────────────
 
 export enum UserRole {
@@ -528,6 +530,14 @@ export interface Property {
   units?: PublicUnitSummary[];
   availabilitySummary?: AvailabilitySummary;
   accessLevel?: 'public';
+  /**
+   * No available unit means no paid unlock (Master Blueprint §5): the property stays visible as Currently
+   * Unavailable, and the page offers Notify me when available plus similar available properties instead.
+   */
+  canUnlock?: boolean;
+  unlockBlockedReason?: UnlockBlockedReason | null;
+  notifyMeAvailable?: boolean;
+  similarAvailable?: SimilarAvailableListing[];
   createdAt: string;
   updatedAt: string;
 }
@@ -588,6 +598,11 @@ export interface UnlockedPropertyPackage {
   units: PropertyUnitDetail[];
   media: MediaItem[];
   bookingLink: string | null;
+  /**
+   * Why direct Operator or Caretaker contact is withheld even inside an active unlock (Master Blueprint §5): the
+   * server empties `propertyContacts` while no unit is available, and Veriq support stays reachable.
+   */
+  contactDisabledReason: 'no_available_unit' | null;
   propertyContacts: ContactAction[];
   agentSupport: ContactAction | null;
 }
@@ -1342,6 +1357,9 @@ export interface FilterPropertiesDto {
   maxDailyRate?: number;
   maxNights?: number;
   shortStayPricingModel?: ShortStayPricingModel;
+  /** Short Let stay, half-open `[checkIn, checkOut)`. Both are required together (Master Blueprint §5). */
+  checkIn?: string;
+  checkOut?: string;
   page?: number;
   limit?: number;
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ExternalLink, MessageCircle, Phone, ShieldCheck } from 'lucide-react';
+import { AlertCircle, ExternalLink, MessageCircle, Phone, ShieldCheck } from 'lucide-react';
 import type { ContactAction, PropertyUnitDetail, PublicUnitSummary } from '@/types';
 
 function label(value: unknown) {
@@ -47,15 +47,15 @@ export function PublicUnitList({ units }: { units: PublicUnitSummary[] }) {
       {units.map((unit) => {
         const price = unitHeadlinePrice(unit.price);
         return (
-          <div key={unit.id} className="rounded-lg border border-emerald-400/60 bg-gradient-to-r from-[#063039] to-[#06312e] p-5">
+          <div key={unit.id} className="rounded-lg border border-emerald-400/60 bg-gradient-to-r from-navy-900 to-navy-800 p-5">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <h3 className="font-display text-lg font-semibold">{unit.displayLabel}</h3>
-                <span className="mt-2 inline-block rounded bg-cyan-400/10 px-2 py-1 text-xs text-cyan-300">{unit.unitType}</span>
+                <span className="mt-2 inline-block rounded bg-emerald-400/10 px-2 py-1 text-xs text-emerald-300">{unit.unitType}</span>
               </div>
               <AvailabilityBadge status={unit.availabilityStatus} tone="dark" />
             </div>
-            {price && <p className="mt-3 text-xl font-bold text-cyan-300">{price.amount} <span className="text-sm font-normal">/ {price.basis}</span></p>}
+            {price && <p className="mt-3 text-xl font-bold text-emerald-300">{price.amount} <span className="text-sm font-normal">/ {price.basis}</span></p>}
           </div>
         );
       })}
@@ -130,12 +130,30 @@ export function DocumentedUnits({ units }: { units: PropertyUnitDetail[] }) {
 }
 
 /** Contact capabilities after unlock: property contact (WhatsApp + call) and Veriq Agent support (§13). */
-export function ContactActions({ contacts, agentSupport, bookingLink }: { contacts: ContactAction[]; agentSupport: ContactAction | null; bookingLink: string | null }) {
-  if (!contacts.length && !agentSupport && !bookingLink) return null;
+export function ContactActions({
+  contacts,
+  agentSupport,
+  bookingLink,
+  contactDisabledReason = null,
+}: {
+  contacts: ContactAction[];
+  agentSupport: ContactAction | null;
+  bookingLink: string | null;
+  /** Set while no unit is available: direct Operator or Caretaker contact is off, Veriq support is not (§5). */
+  contactDisabledReason?: 'no_available_unit' | null;
+}) {
+  if (!contacts.length && !agentSupport && !bookingLink && !contactDisabledReason) return null;
   return (
     <div className="card p-6">
       <h3 className="font-display mb-4 text-base font-bold text-navy-900">Contacts</h3>
       <div className="space-y-3">
+        {contactDisabledReason === 'no_available_unit' && (
+          <p className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
+            <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600" />
+            This property has no available unit right now, so direct Operator or Caretaker contact is switched off.
+            Your Veriq Agent can still help, and you can ask to be told when a unit is free again.
+          </p>
+        )}
         {contacts.map((contact) => (
           <div key={`${contact.contactType}-${contact.phone}`} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 p-4">
             <div>

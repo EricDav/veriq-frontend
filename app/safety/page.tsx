@@ -31,7 +31,7 @@ const MONEY = [
 export default function SafetyPage() {
   return (
     <>
-      <section className="bg-[#03131a] pb-14 pt-28 text-white sm:pt-32">
+      <section className="bg-navy-900 pb-14 pt-28 text-white sm:pt-32">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
           <p className="text-xs font-bold uppercase tracking-wider text-emerald-300">Safety &amp; Verification</p>
           <h1 className="mt-2 font-display text-3xl font-bold leading-tight sm:text-4xl">Inspect smarter, and stay safe doing it</h1>

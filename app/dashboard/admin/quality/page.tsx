@@ -14,6 +14,7 @@ import type {
 } from '@/types/admin';
 import { QUALITY_AUDIT_OUTCOMES, QUALITY_COMPONENT_KEYS } from '@/types/admin';
 import { PageLoader, LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { Select } from '@/components/ui/Select';
 import { Modal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
 import { dateTime, describeError, errorText, humanize, type DescribedError } from '@/components/admin/format';
@@ -103,7 +104,7 @@ function AdminQualityInner() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState<DescribedError | null>(null);
 
-  const [auditOutcome, setAuditOutcome] = useState<QualityAuditOutcome>('passed');
+  const [auditOutcome, setAuditOutcome] = useState('');
   const [auditScore, setAuditScore] = useState('80');
   const [auditTargetType, setAuditTargetType] = useState('');
   const [auditTargetId, setAuditTargetId] = useState('');
@@ -173,7 +174,7 @@ function AdminQualityInner() {
     try {
       const res = await qualityAdminApi.recordAudit({
         agentId: detailAgentId,
-        outcome: auditOutcome,
+        outcome: auditOutcome as QualityAuditOutcome,
         score: scoreValue,
         targetType: auditTargetType.trim() || undefined,
         targetId: auditTargetId.trim() || undefined,
@@ -323,12 +324,15 @@ function AdminQualityInner() {
               </h3>
               {auditError && <ErrorPanel error={auditError} />}
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div>
-                  <label className="label text-xs" htmlFor="audit-outcome">Outcome</label>
-                  <select id="audit-outcome" className="input" value={auditOutcome} onChange={(event) => setAuditOutcome(event.target.value as QualityAuditOutcome)}>
-                    {QUALITY_AUDIT_OUTCOMES.map((value) => <option key={value} value={value}>{humanize(value)}</option>)}
-                  </select>
-                </div>
+                <Select
+                  id="audit-outcome"
+                  label="Outcome"
+                  labelClassName="text-xs"
+                  options={QUALITY_AUDIT_OUTCOMES.map((value) => ({ value, label: humanize(value) }))}
+                  value={auditOutcome}
+                  onValueChange={setAuditOutcome}
+                  required
+                />
                 <div>
                   <label className="label text-xs" htmlFor="audit-score">Score (0–100)</label>
                   <input id="audit-score" type="number" min={0} max={100} step={1} className="input" value={auditScore} onChange={(event) => setAuditScore(event.target.value)} required />

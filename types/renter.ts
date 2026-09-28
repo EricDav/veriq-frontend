@@ -22,6 +22,88 @@ export interface ListingSummary {
   city: string | null;
 }
 
+// ─── No available unit → no unlock (Blueprint §5) ──────────────────────────
+
+/**
+ * Why a paid unlock is unavailable. `no_available_unit` means the whole listing has nothing available, so a
+ * "Notify me when available" watch is the right next step; `no_unit_for_dates` means only the selected nights are
+ * taken, which different dates fix.
+ */
+export type UnlockBlockedReason = 'no_available_unit' | 'no_unit_for_dates';
+
+/** A published listing in the same area and category that does have an available unit right now. */
+export interface SimilarAvailableListing {
+  id: string;
+  title: string;
+  category: ListingCategory | string;
+  area: string | null;
+  city: string | null;
+  coverImageUrl: string | null;
+  rentAmount: number;
+}
+
+/** The unlock gate carried by both the public detail payload and the unlock quote. */
+export interface UnlockGate {
+  canUnlock: boolean;
+  unlockBlockedReason: UnlockBlockedReason | null;
+  notifyMeAvailable: boolean;
+  similarAvailable: SimilarAvailableListing[];
+}
+
+// ─── Availability notifications (Blueprint §5) ─────────────────────────────
+
+export type AvailabilityWatchStatus = 'waiting' | 'notified' | 'cancelled';
+
+export interface AvailabilityWatch {
+  id: string;
+  targetType: ListingTargetType;
+  targetId: string;
+  title: string | null;
+  area: string | null;
+  city: string | null;
+  status: AvailabilityWatchStatus;
+  notifiedAt: string | null;
+  createdAt: string;
+}
+
+// ─── Short Let unit calendar (Blueprint §5) ────────────────────────────────
+
+export type UnitCalendarPeriodKind = 'booked' | 'blocked';
+
+/** A half-open `[startDate, endDate)` range: the Unit is free again on the end date. */
+export interface UnitCalendarPeriod {
+  id: string;
+  unitId: string;
+  kind: UnitCalendarPeriodKind;
+  startDate: string;
+  endDate: string;
+  nights: number;
+  reason: string | null;
+  source: string | null;
+  cancelledAt: string | null;
+  createdAt: string;
+}
+
+export interface UnitCalendar {
+  unitId: string;
+  propertyId: string;
+  displayLabel: string;
+  availabilityStatus: AvailabilityStatus;
+  today: string;
+  bookableFrom: string;
+  bookableUntil: string;
+  maxStayNights: number;
+  viewerIsManager: boolean;
+  periods: UnitCalendarPeriod[];
+}
+
+export interface AddUnitCalendarPeriodInput {
+  kind: UnitCalendarPeriodKind;
+  startDate: string;
+  endDate: string;
+  reason?: string;
+}
+
 // ─── Unlocks ──────────────────────────────────────────────────────────────
 
 export type UnlockStatus =
@@ -54,8 +136,13 @@ export interface UnlockQuote {
     overall: AvailabilityStatus;
     documentedUnits: number;
     availableUnits: number;
+    /** The dates the quote was checked against, for a Short Let searched by date. */
+    requestedDates: { checkIn: string; checkOut: string; nights: number } | null;
     disclosure: string | null;
   };
+  canUnlock: boolean;
+  blockedReason: UnlockBlockedReason | null;
+  notifyMeAvailable: boolean;
   included: string[];
   disclosures: { refund: string; value: string };
   alreadyUnlocked: { consultationId: string; accessExpiresAt: string | null } | null;
@@ -99,6 +186,9 @@ export interface InitiateUnlockDto {
   targetType: ListingTargetType;
   targetId: string;
   idempotencyKey?: string;
+  /** Short Let stay the unlock is bought for; availability is judged against exactly these dates (§5). */
+  checkIn?: string;
+  checkOut?: string;
 }
 
 /** Saved before redirecting to the payment page so the callback can find the checkout again. */
@@ -133,11 +223,42 @@ export type RefundStatus = 'requested' | 'under_review' | 'approved' | 'rejected
 export type RefundCaseType = 'unlock_purchase' | 'excess_payment';
 
 export interface RefundPolicy {
+  /** The launch refund rule in one plain sentence (Master Blueprint §5). */
+  launchRule: string;
   qualifying: string[];
   nonQualifying: string[];
   creditOnly: string;
   freeUnlock: string;
   reasons: RefundReason[];
+}
+
+/**
+ * The launch refund test as it was checked when the case opened (Master Blueprint §5). Recorded once so the
+ * decision is auditable against what was true at the time.
+ */
+export interface RefundEligibility {
+  availableAtPayment: boolean;
+  unavailableNow: boolean;
+  renterDidNotTake: boolean;
+  requestedBeforeExpiry: boolean;
+  meetsLaunchRule: boolean;
+  checkedAt: string;
+}
+
+export type AgentRefundDecision = 'confirm' | 'dispute';
+
+/** The listing's Veriq Agent confirming or disputing the availability claim behind a refund. */
+export interface RefundAgentConfirmation {
+  decision: 'confirmed' | 'disputed';
+  byUserId: string;
+  agentId: string | null;
+  at: string;
+  note: string | null;
+}
+
+export interface AgentRefundConfirmationDto {
+  decision: AgentRefundDecision;
+  note?: string;
 }
 
 export interface RefundEvidenceEntry {
@@ -160,6 +281,8 @@ export interface RefundRequest {
   decidedAt: string | null;
   createdAt: string;
   evidenceRequests: RefundEvidenceEntry[];
+  eligibility: RefundEligibility | null;
+  agentConfirmation: RefundAgentConfirmation | null;
   creditedMessage: string | null;
   unlock: {
     id: string;
@@ -401,6 +524,7 @@ export type SaleSubtype = 'built_property' | 'land';
 
 export type SalePriceBasis = 'total' | 'per_plot' | 'per_square_metre' | 'other';
 
+/** Public document status: what the Agent was shown or could confirm, never the document itself (§6). */
 export interface SaleDocumentStatus {
   documentType: string;
   label: string;
@@ -409,11 +533,13 @@ export interface SaleDocumentStatus {
   legalSearchStatus: string;
   legalSearchLabel: string;
   checkedAt: string | null;
-  notes?: string | null;
-  discrepancyFound?: boolean;
 }
 
-export interface SaleListingPublic {
+/**
+ * Property for Sale card. Sale listings carry no unlock and no fee: the buyer view is free and the only route to
+ * the property is an enquiry to Veriq (Master Blueprint §6).
+ */
+export interface SaleListingCardData {
   id: string;
   targetType: 'sale_listing';
   category: 'for_sale';
@@ -428,12 +554,39 @@ export interface SaleListingPublic {
   negotiable: boolean | null;
   coverImageUrl: string | null;
   basics: Record<string, unknown>;
-  publicIntelligence: Record<string, unknown>;
-  documentAvailability: SaleDocumentStatus[];
+  documentStatuses: SaleDocumentStatus[];
   availabilityStatus: AvailabilityStatus;
-  unlockPrice: number;
-  isFreeUnlock: boolean;
-  accessLevel: 'public';
+  requiresUnlock: false;
+  contactRoute: 'veriq';
+}
+
+/** The full free buyer view: facts, intelligence, document statuses, media and Street Intelligence. */
+export interface SaleListingPublic extends SaleListingCardData {
+  facts: Record<string, unknown>;
+  intelligence: Record<string, unknown>;
+  location: { state: string; city: string; area: string };
+  documentDisclaimer: string;
+  media: ListingMediaView[];
+  buyerContact: { route: 'veriq'; agentId: string | null; agentName: string | null; note: string };
+  verifiedAt: string | null;
+  streetIntelligence: StreetIntelligencePresentation | null;
+}
+
+export type SaleEnquiryStatus = 'new' | 'contacted' | 'closed';
+
+export interface CreateSaleEnquiryDto {
+  saleListingId: string;
+  name: string;
+  phone: string;
+  email?: string;
+  message: string;
+}
+
+export interface SaleEnquiryReceipt {
+  id: string;
+  saleListingId: string;
+  status: SaleEnquiryStatus;
+  createdAt: string;
 }
 
 export interface SaleListQuery {
@@ -446,37 +599,6 @@ export interface SaleListQuery {
   priceBasis?: SalePriceBasis | '';
   page?: number;
   limit?: number;
-}
-
-export interface SaleUnlockedPackage {
-  access: ListingAccess;
-  listing: {
-    id: string;
-    propertyId: string;
-    title: string;
-    subtype: SaleSubtype;
-    askingPrice: number;
-    priceBasis: string;
-    negotiable: boolean | null;
-    availabilityStatus: AvailabilityStatus;
-    facts: Record<string, unknown>;
-    intelligence: Record<string, unknown>;
-    agentObservation: string | null;
-    verifiedAt: string | null;
-  };
-  location: {
-    state: string;
-    city: string;
-    area: string;
-    verifiedAddress: VerifiedAddress | null;
-    latitude: number | string | null;
-    longitude: number | string | null;
-  };
-  documentStatuses: SaleDocumentStatus[];
-  media: ListingMediaView[];
-  contactRoute: ContactRoute | null;
-  agentSupport: ContactRoute | null;
-  streetIntelligence: StreetIntelligencePresentation | null;
 }
 
 // ─── Free Unlock ──────────────────────────────────────────────────────────
@@ -542,4 +664,12 @@ export interface PublicAgentProfile {
   specializations: string[];
   memberSince: string;
   portfolio: PortfolioItem[];
+}
+
+// ─── Date-aware search and quoting (Blueprint §5) ─────────────────────────
+
+/** Selected stay passed to search, the unlock quote and checkout. Omitted entirely when no dates are chosen. */
+export interface StayRangeQuery {
+  checkIn?: string;
+  checkOut?: string;
 }

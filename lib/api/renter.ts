@@ -7,7 +7,11 @@
 import { api } from '@/lib/api';
 import type { ApiResponse, PaginatedResponse } from '@/types';
 import type {
+  AddUnitCalendarPeriodInput,
+  AgentRefundConfirmationDto,
+  AvailabilityWatch,
   CreateRefundRequestDto,
+  CreateSaleEnquiryDto,
   FormSchemaDefinition,
   FreeUnlockPublicStatus,
   InitiateUnlockDto,
@@ -19,13 +23,17 @@ import type {
   RefundEvidenceDto,
   RefundPolicy,
   RefundRequest,
+  SaleEnquiryReceipt,
+  SaleListingCardData,
   SaleListingPublic,
   SaleListQuery,
-  SaleUnlockedPackage,
   SharedListingPublic,
   SharedListQuery,
   SharedUnlockedPackage,
   SimilarPropertiesResult,
+  StayRangeQuery,
+  UnitCalendar,
+  UnitCalendarPeriod,
   UnlockedPropertyWithStreet,
   UnlockHistoryItem,
   UnlockQuote,
@@ -49,13 +57,18 @@ const segment = (value: string) => encodeURIComponent(value);
 // ── Unlock checkout ──────────────────────────────────────────────────────
 
 export const unlocksApi = {
-  /** Public quote; personalised with wallet credit and existing access when a session token is present. */
-  quote: (targetType: ListingTargetType, targetId: string) =>
-    api.get<ApiResponse<UnlockQuote>>(`/unlocks/quote${toQuery({ targetType, targetId })}`),
+  /**
+   * Public quote; personalised with wallet credit and existing access when a session token is present. A Short Let
+   * stay narrows availability to exactly those nights (Master Blueprint §5).
+   */
+  quote: (targetType: ListingTargetType, targetId: string, dates: StayRangeQuery = {}) =>
+    api.get<ApiResponse<UnlockQuote>>(`/unlocks/quote${toQuery({ targetType, targetId, ...dates })}`),
 
   /** Same quote without the bearer token, used when a stale session cannot be refreshed. */
-  quotePublic: (targetType: ListingTargetType, targetId: string) =>
-    api.get<ApiResponse<UnlockQuote>>(`/unlocks/quote${toQuery({ targetType, targetId })}`, { public: true }),
+  quotePublic: (targetType: ListingTargetType, targetId: string, dates: StayRangeQuery = {}) =>
+    api.get<ApiResponse<UnlockQuote>>(`/unlocks/quote${toQuery({ targetType, targetId, ...dates })}`, {
+      public: true,
+    }),
 
   initiate: (dto: InitiateUnlockDto) =>
     api.post<ApiResponse<InitiateUnlockResult>>('/unlocks', dto),
@@ -87,6 +100,46 @@ export const refundsApi = {
 
   addEvidence: (id: string, dto: RefundEvidenceDto) =>
     api.post<ApiResponse<RefundRequest>>(`/refunds/${segment(id)}/evidence`, dto),
+
+  /**
+   * The listing's Veriq Agent confirms or disputes that the unit became unavailable inside the access window
+   * (Master Blueprint §5). Agent and Admin only; the server re-checks that the unlock belongs to this Agent.
+   */
+  agentConfirmation: (id: string, dto: AgentRefundConfirmationDto) =>
+    api.post<ApiResponse<RefundRequest>>(`/refunds/${segment(id)}/agent-confirmation`, dto),
+};
+
+// ── Availability notifications ("Notify me when available") ──────────────
+
+export const availabilityNotificationsApi = {
+  mine: () => api.get<ApiResponse<AvailabilityWatch[]>>('/availability-notifications'),
+
+  watch: (targetType: ListingTargetType, targetId: string) =>
+    api.post<ApiResponse<AvailabilityWatch>>(
+      `/availability-notifications/${segment(targetType)}/${segment(targetId)}`,
+      {},
+    ),
+
+  cancel: (id: string) =>
+    api.delete<ApiResponse<AvailabilityWatch>>(`/availability-notifications/${segment(id)}`),
+};
+
+// ── Per-unit booked and blocked dates ────────────────────────────────────
+
+export const unitCalendarApi = {
+  /** Public for a published Unit: a renter has to see taken nights before paying (Master Blueprint §5). */
+  view: (unitId: string, options: { from?: string; to?: string; includeCancelled?: boolean } = {}) =>
+    api.get<ApiResponse<UnitCalendar>>(
+      `/availability/units/${segment(unitId)}/calendar${toQuery(options)}`,
+      { public: true },
+    ),
+
+  /** Operator of the property, its assigned Agent or Admin. A clashing range is refused with 409. */
+  addPeriod: (unitId: string, input: AddUnitCalendarPeriodInput) =>
+    api.post<ApiResponse<UnitCalendarPeriod>>(`/availability/units/${segment(unitId)}/calendar`, input),
+
+  cancelPeriod: (periodId: string) =>
+    api.delete<ApiResponse<UnitCalendarPeriod>>(`/availability/unit-calendar/${segment(periodId)}`),
 };
 
 // ── Veriq Wallet (read-only credit) ──────────────────────────────────────
@@ -128,15 +181,20 @@ export const sharedPropertiesApi = {
 
 // ── Property for Sale ────────────────────────────────────────────────────
 
+/**
+ * Property for Sale is free to view and has no unlock (Master Blueprint §6). The buyer's only route to the
+ * property is an enquiry, which reaches the assigned Veriq Agent rather than the owner.
+ */
 export const saleListingsApi = {
   list: (query: SaleListQuery = {}) =>
-    api.get<PaginatedResponse<SaleListingPublic>>(`/sale-listings${toQuery(query)}`, { public: true }),
+    api.get<PaginatedResponse<SaleListingCardData>>(`/sale-listings${toQuery(query)}`, { public: true }),
 
   get: (id: string) =>
     api.get<ApiResponse<SaleListingPublic>>(`/sale-listings/${segment(id)}`, { public: true }),
 
-  unlocked: (id: string) =>
-    api.get<ApiResponse<SaleUnlockedPackage>>(`/sale-listings/${segment(id)}/unlocked`),
+  /** Enquiring does not require an account, so this call is deliberately public. */
+  enquire: (dto: CreateSaleEnquiryDto) =>
+    api.post<ApiResponse<SaleEnquiryReceipt>>('/sale-enquiries', dto, { public: true }),
 };
 
 // ── Free Unlock indicator & form schemas ─────────────────────────────────

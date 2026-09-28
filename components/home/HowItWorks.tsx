@@ -40,7 +40,7 @@ export function HowItWorks({ content: _content }: { content?: SiteContent }) {
           </div>
         </div>
 
-        <div className="mt-14 grid min-w-0 overflow-hidden rounded-lg border border-emerald-400/20 bg-[#061016] lg:grid-cols-[0.9fr_1.1fr]">
+        <div className="mt-14 grid min-w-0 overflow-hidden rounded-lg border border-emerald-400/20 bg-navy-900 lg:grid-cols-[0.9fr_1.1fr]">
           <div className="min-w-0 p-5 sm:p-10">
             <span className="inline-flex rounded-full bg-emerald-400/10 px-3 py-1 text-xs font-bold text-emerald-300">Street Intelligence</span>
             <h2 className="mt-5 max-w-full font-display text-2xl font-black leading-tight text-white sm:text-4xl">Know the <span className="text-emerald-400">street</span> before<span className="block">you choose the house.</span></h2>

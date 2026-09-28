@@ -8,10 +8,11 @@ import {
 } from 'lucide-react';
 import { ApiError } from '@/lib/api';
 import { refundsApi } from '@/lib/api/renter';
-import type { RefundRequest, SimilarPropertiesResult } from '@/types/renter';
+import type { RefundPolicy, RefundRequest, SimilarPropertiesResult } from '@/types/renter';
 import { LoadingSpinner, PageLoader } from '@/components/ui/LoadingSpinner';
 import { useToast } from '@/components/ui/Toast';
 import { ApiErrorNotice } from '@/components/renter/ApiErrorNotice';
+import { RefundEligibilityBreakdown } from '@/components/renter/RefundEligibilityBreakdown';
 import { EvidenceUploader, MAX_EVIDENCE_FILES, type UploadedEvidence } from '@/components/renter/EvidenceUploader';
 import {
   CATEGORY_LABELS, REFUND_REASON_LABELS, REFUND_STATUS_META, TARGET_TYPE_LABELS, formatDateTime, formatNaira, listingHref, locationLine, mediaSrc,
@@ -45,6 +46,7 @@ export default function RefundDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { success } = useToast();
   const [refund, setRefund] = useState<RefundRequest | null>(null);
+  const [policy, setPolicy] = useState<RefundPolicy | null>(null);
   const [similar, setSimilar] = useState<SimilarPropertiesResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -75,6 +77,14 @@ export default function RefundDetailPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  // The launch rule is published policy text, so it is read from the API rather than restated in the UI.
+  useEffect(() => {
+    refundsApi
+      .policy()
+      .then((res) => setPolicy(res.data))
+      .catch(() => setPolicy(null));
+  }, []);
 
   const sendEvidence = async (event: FormEvent) => {
     event.preventDefault();
@@ -229,6 +239,12 @@ export default function RefundDetailPage() {
               )}
             </div>
           </section>
+
+          <RefundEligibilityBreakdown
+            eligibility={refund.eligibility}
+            agentConfirmation={refund.agentConfirmation}
+            launchRule={policy?.launchRule}
+          />
 
           {refund.evidenceRequests.length > 0 && (
             <section className="card p-5">

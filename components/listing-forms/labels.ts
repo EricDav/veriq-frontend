@@ -159,6 +159,9 @@ export const EVIDENCE_KIND_LABELS: Record<EvidenceKind, string> = {
   operating_authority: 'Authority to operate',
   occupancy: 'Proof of current occupancy',
   permission_declaration: 'Signed sharing permission',
+  selfie_with_id: 'Selfie holding your government ID',
+  authority_to_sell: 'Authority to sell',
+  sale_document: 'Sale document',
   landlord_confirmation: 'Landlord confirmation',
   other: 'Other supporting evidence',
 };

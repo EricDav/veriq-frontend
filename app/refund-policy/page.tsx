@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { CheckCircle2, Clock, Gift, ListChecks, ShieldCheck, Wallet, XCircle } from 'lucide-react';
+import { CheckCircle2, Clock, Gift, ListChecks, Scale, ShieldCheck, Wallet, XCircle } from 'lucide-react';
 import type { RefundPolicy } from '@/types/renter';
 
 export const metadata: Metadata = {
@@ -13,9 +13,12 @@ export const revalidate = 300;
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:3000/api/v1';
 
-/** Published policy text comes from the backend so the site always matches the rules Admin actually applies (§14). */
+/** Published policy text comes from the backend so the site always matches the rules Admin actually applies. */
 const FALLBACK_POLICY: RefundPolicy = {
+  launchRule:
+    'The launch refund rule: the unit was Available when you paid, it is confirmed Unavailable inside your access window, you did not take it, and you asked for the refund before your access expired. The Veriq Agent confirms the availability change, or Admin decides.',
   qualifying: [
+    'The unit was Available when you paid and was confirmed Unavailable inside your access window, you did not take it, and you asked before your access expired.',
     'The Property or Unit was shown as available at unlock but was already unavailable and the availability record was materially stale or incorrect.',
     'The Property Contact was materially invalid, wrong, or no longer legitimately associated with the property.',
     'The unlocked property materially differs from what Veriq verified or represented.',
@@ -52,6 +55,7 @@ async function loadPolicy(): Promise<{ policy: RefundPolicy; live: boolean }> {
     if (!data?.qualifying?.length || !data.nonQualifying?.length) return { policy: FALLBACK_POLICY, live: false };
     return {
       policy: {
+        launchRule: data.launchRule ?? FALLBACK_POLICY.launchRule,
         qualifying: data.qualifying,
         nonQualifying: data.nonQualifying,
         creditOnly: data.creditOnly ?? FALLBACK_POLICY.creditOnly,
@@ -78,7 +82,7 @@ export default async function RefundPolicyPage() {
 
   return (
     <>
-      <section className="bg-[#03131a] pb-14 pt-28 text-white sm:pt-32">
+      <section className="bg-navy-900 pb-14 pt-28 text-white sm:pt-32">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
           <p className="text-xs font-bold uppercase tracking-wider text-emerald-300">Refund Policy</p>
           <h1 className="mt-2 font-display text-3xl font-bold leading-tight sm:text-4xl">Refund protection for paid unlocks</h1>
@@ -86,9 +90,18 @@ export default async function RefundPolicyPage() {
             Veriq charges for time-limited access to verified property information. Refund rules apply only where money or wallet value was actually
             charged, and they cover problems with the accuracy, availability or delivery of what you unlocked — not the outcome of your search.
           </p>
-          <div className="mt-6 flex items-start gap-3 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 p-4">
-            <Wallet className="mt-0.5 h-5 w-5 flex-shrink-0 text-emerald-300" />
-            <p className="text-sm leading-6 text-emerald-100">{policy.creditOnly}</p>
+          <div className="mt-6 space-y-3">
+            <div className="flex items-start gap-3 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 p-4">
+              <Scale className="mt-0.5 h-5 w-5 flex-shrink-0 text-emerald-300" />
+              <div>
+                <p className="text-sm font-semibold text-white">The launch rule</p>
+                <p className="mt-1 text-sm leading-6 text-emerald-100">{policy.launchRule}</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 rounded-2xl border border-white/15 bg-white/5 p-4">
+              <Wallet className="mt-0.5 h-5 w-5 flex-shrink-0 text-emerald-300" />
+              <p className="text-sm leading-6 text-white/80">{policy.creditOnly}</p>
+            </div>
           </div>
         </div>
       </section>
@@ -137,15 +150,17 @@ export default async function RefundPolicyPage() {
           <article className="rounded-2xl border border-slate-200 p-5">
             <p className="flex items-center gap-2 font-display text-base font-bold text-navy-900"><Clock className="h-4 w-4 text-veriq-secondary" /> The refund window</p>
             <p className="mt-2 text-sm leading-6 text-veriq-muted">
-              A refund request must be submitted inside the refund window recorded on your unlock, which normally matches the access period. The exact
-              deadline for each unlock is shown in My Unlocks and on the refund form.
+              A paid unlock gives you 24 hours of access from confirmed payment, and the refund window is the same 24 hours. It never outlives your
+              access, so a request has to arrive before your access expires. The exact deadline for each unlock is shown in My Unlocks and on the
+              refund form.
             </p>
           </article>
           <article className="rounded-2xl border border-slate-200 p-5">
             <p className="flex items-center gap-2 font-display text-base font-bold text-navy-900"><ShieldCheck className="h-4 w-4 text-veriq-secondary" /> Who decides</p>
             <p className="mt-2 text-sm leading-6 text-veriq-muted">
-              Veriq Admin decides every refund. The Property Operator or Veriq Agent may be asked for evidence, but they never approve or reject a
-              request. Decisions and the evidence behind them are recorded.
+              The listing&apos;s Veriq Agent confirms or disputes that the unit became unavailable inside your access window, and Admin decides every
+              case that the launch rule does not settle outright. The Property Operator may be asked for evidence but never decides. Decisions and the
+              evidence behind them are recorded, and the related Agent earnings stay on hold until the 24-hour window and any dispute are resolved.
             </p>
           </article>
           <article className="rounded-2xl border border-slate-200 p-5">
