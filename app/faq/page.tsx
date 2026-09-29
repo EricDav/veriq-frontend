@@ -25,12 +25,12 @@ export default async function FAQPage() {
           </svg>
         </div>
         <div className="relative mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 text-center">
-          <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/20 px-4 py-1.5 text-xs font-semibold text-gold-300 mb-5">
+          <div className="inline-flex items-center gap-2 rounded-full bg-[#ffffff0f] border border-white/20 px-4 py-1.5 text-xs font-semibold text-primary mb-5">
             <Shield className="h-3.5 w-3.5" />
             {hero?.subtitle ?? 'Frequently Asked Questions'}
           </div>
-          <h1 className="font-display text-5xl font-bold text-white mb-4">{hero?.title ?? 'FAQ'}</h1>
-          <p className="text-white/70 text-lg">
+          <h1 className="font-display text-5xl font-bold text-foreground mb-4">{hero?.title ?? 'FAQ'}</h1>
+          <p className="text-muted-foreground text-lg">
             {hero?.body ?? 'Answers about Property Intelligence, Street Intelligence, agents, payments, refunds, and using Veriq Property.'}
           </p>
         </div>

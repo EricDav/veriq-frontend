@@ -74,10 +74,10 @@ export default function AvailabilityNotificationsPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-5">
       <header className="space-y-1">
-        <h1 className="flex items-center gap-2 font-display text-2xl font-bold text-navy-900">
+        <h1 className="flex items-center gap-2 font-display text-2xl font-bold text-foreground">
           <BellRing className="h-5 w-5 text-veriq-secondary" /> Availability alerts
         </h1>
-        <p className="text-sm leading-6 text-slate-500">
+        <p className="text-sm leading-6 text-muted-foreground">
           Veriq never takes payment for a property with no available unit. When a listing you want is unavailable, ask
           us to tell you when a unit is free again — {open.length === 0 ? 'you have no alerts waiting right now' : `${open.length} alert${open.length === 1 ? ' is' : 's are'} waiting`}.
         </p>
@@ -90,14 +90,14 @@ export default function AvailabilityNotificationsPage() {
       <ApiErrorNotice error={error} fallback="Your availability alerts could not be loaded." onRetry={() => void load()} />
 
       {loading ? (
-        <div className="flex items-center justify-center gap-2 py-16 text-sm text-slate-500">
+        <div className="flex items-center justify-center gap-2 py-16 text-sm text-muted-foreground">
           <LoadingSpinner size="lg" className="text-veriq-secondary" /> Loading your alerts…
         </div>
       ) : watches.length === 0 ? (
         <div className="card flex flex-col items-center gap-3 p-8 text-center">
           <BellRing className="h-10 w-10 text-slate-200" />
-          <p className="font-semibold text-navy-900">No availability alerts yet</p>
-          <p className="max-w-md text-sm text-slate-500">
+          <p className="font-semibold text-foreground">No availability alerts yet</p>
+          <p className="max-w-md text-sm text-muted-foreground">
             On any property with no available unit, choose &ldquo;Notify me when available&rdquo; and it will appear
             here. You can cancel an alert at any time.
           </p>
@@ -118,12 +118,12 @@ export default function AvailabilityNotificationsPage() {
                     </p>
                     <Link
                       href={listingHref(watch.targetType, watch.targetId)}
-                      className="block truncate font-semibold text-navy-900 hover:text-veriq-secondary"
+                      className="block truncate font-semibold text-foreground hover:text-veriq-secondary"
                     >
                       {watch.title ?? 'This listing is no longer published'}
                     </Link>
                     {locationLine(watch.area, watch.city) && (
-                      <p className="mt-0.5 flex items-center gap-1.5 text-xs text-slate-500">
+                      <p className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
                         <MapPin className="h-3.5 w-3.5 flex-shrink-0" /> {locationLine(watch.area, watch.city)}
                       </p>
                     )}
@@ -133,8 +133,8 @@ export default function AvailabilityNotificationsPage() {
                     {meta.label}
                   </span>
                 </div>
-                <p className="text-xs leading-5 text-slate-500">{meta.help}</p>
-                <p className="text-[11px] text-slate-400">
+                <p className="text-xs leading-5 text-muted-foreground">{meta.help}</p>
+                <p className="text-[11px] text-muted-foreground">
                   Asked {formatDateTime(watch.createdAt)}
                   {watch.notifiedAt && ` · notified ${formatDateTime(watch.notifiedAt)}`}
                 </p>

@@ -19,6 +19,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/components/ui/Toast';
 import { LoadingSpinner, PageLoader } from '@/components/ui/LoadingSpinner';
 import { AgentSummaryHeader } from '@/components/agent/AgentSummaryHeader';
+import { Badge, Button, PageHead, type BadgeTone } from '@/components/ui';
 
 // ─── Constants ────────────────────────────────────────────────────────────
 
@@ -48,11 +49,15 @@ const EXPERIENCE_OPTIONS = [
   { value: '8', label: '8+ years' },
 ];
 
-const TIER_STYLES: Record<AgentTrustTier, string> = {
-  bronze: 'bg-orange-100 text-orange-700',
-  silver: 'bg-slate-100 text-slate-700',
-  gold: 'bg-amber-100 text-amber-700',
-  platinum: 'bg-purple-100 text-purple-700',
+/**
+ * The palette has four badge tones and no bronze, silver or platinum of its own, so the tiers fold
+ * onto the ones that exist: gold is the only tier the design system can colour distinctly.
+ */
+const TIER_TONES: Record<AgentTrustTier, BadgeTone> = {
+  bronze: 'neutral',
+  silver: 'neutral',
+  gold: 'amber',
+  platinum: 'success',
 };
 
 // ─── Schemas ──────────────────────────────────────────────────────────────
@@ -150,7 +155,7 @@ function LocationTagInput({
   return (
     <div>
       <label className="label">Primary Locations of Operation</label>
-      <p className="text-[11px] text-slate-400 mb-2">Type an area name and press Enter or comma</p>
+      <p className="text-[11px] text-muted-foreground mb-2">Type an area name and press Enter or comma</p>
       <div
         className="input flex flex-wrap gap-1.5 min-h-[42px] cursor-text"
         onClick={() => inputRef.current?.focus()}
@@ -164,7 +169,7 @@ function LocationTagInput({
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onChange(locations.filter((l) => l !== loc)); }}
-              className="text-navy-500 hover:text-navy-900"
+              className="text-navy-500 hover:text-foreground"
             >
               <X className="h-2.5 w-2.5" />
             </button>
@@ -208,14 +213,14 @@ function SectionCard({
     <div className="card overflow-hidden">
       <div className="flex items-center gap-3 p-6 pb-0">
         <div className={`h-9 w-9 rounded-xl flex items-center justify-center flex-shrink-0 ${done ? 'bg-emerald-100' : 'bg-slate-100'}`}>
-          <Icon className={`h-4 w-4 ${done ? 'text-emerald-600' : 'text-slate-500'}`} />
+          <Icon className={`h-4 w-4 ${done ? 'text-emerald-600' : 'text-muted-foreground'}`} />
         </div>
         <div className="flex-1">
-          <p className="font-semibold text-navy-900 text-sm flex items-center gap-2">
+          <p className="font-semibold text-foreground text-sm flex items-center gap-2">
             {title}
             {done && <CheckCircle className="h-3.5 w-3.5 text-emerald-500" />}
           </p>
-          <p className="text-xs text-slate-500">{subtitle}</p>
+          <p className="text-xs text-muted-foreground">{subtitle}</p>
         </div>
       </div>
       <div className="p-6 pt-5">{children}</div>
@@ -258,7 +263,7 @@ function UploadField({
   return (
     <div>
       <label className="label">{label}</label>
-      {helper && <p className="text-[11px] text-slate-400 mb-2">{helper}</p>}
+      {helper && <p className="text-[11px] text-muted-foreground mb-2">{helper}</p>}
       <div className="flex flex-wrap items-center gap-3">
         <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-navy-700 hover:border-veriq-secondary">
           {isUploading ? <LoadingSpinner size="sm" /> : <Upload className="h-4 w-4" />}
@@ -456,32 +461,35 @@ export default function AgentProfilePage() {
 
   const verLevel = agent?.verificationLevel ?? AgentVerificationLevel.NONE;
   const tier = agent?.trustTier ?? AgentTrustTier.BRONZE;
-  const isVerifiedAgent = agent?.isGovIdVerified && agent?.isPlatformVerified;
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
 
-      {/* ── Header ── */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <h1 className="font-display text-2xl font-bold text-navy-900">Agent Profile</h1>
-          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-            <span className={`badge text-xs ${TIER_STYLES[tier]}`}>
-              {tier.charAt(0).toUpperCase() + tier.slice(1)} Tier
-            </span>
-            {agent?.isPlatformVerified && (
-              <span className="badge bg-emerald-100 text-emerald-700 text-xs gap-1">
-                <CheckCircle className="h-3 w-3" /> Verified Agent
-              </span>
-            )}
-            <span className="badge bg-slate-100 text-slate-600 text-xs">
-              Level {verLevel} Verification
-            </span>
-          </div>
-        </div>
-        <Link href="/dashboard/agent/verification" className="btn-primary !text-sm !py-2.5">
-          <ClipboardCheck className="h-4 w-4" /> Verification queue
-        </Link>
+      {/*
+        The Agent's workspace overview — the welcome, the three figures and what to do next — is the
+        sidebar's Overview at /dashboard. This screen is the profile and verification behind it, so it
+        opens with a page head of its own rather than a second "Welcome back."
+      */}
+      <PageHead
+        eyebrow="Agent workspace"
+        title="Profile & verification"
+        lead="Your account details, identity documents and payout information."
+        actions={
+          <Button asChild>
+            <Link href="/dashboard/agent/verification">
+              <ClipboardCheck aria-hidden="true" className="h-4 w-4" /> Verification queue
+            </Link>
+          </Button>
+        }
+      />
+      <div className="-mt-2 flex flex-wrap items-center gap-2">
+        <Badge tone={TIER_TONES[tier]}>{tier.charAt(0).toUpperCase() + tier.slice(1)} Tier</Badge>
+        {agent?.isPlatformVerified && (
+          <Badge tone="success">
+            <CheckCircle aria-hidden="true" className="h-3 w-3" /> Verified Agent
+          </Badge>
+        )}
+        <Badge tone="neutral">Level {verLevel} Verification</Badge>
       </div>
 
       {/* ── Work summary (§17.3) ── */}
@@ -491,11 +499,11 @@ export default function AgentProfilePage() {
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex gap-3">
             <span className={`grid h-10 w-10 place-items-center rounded-full ${agent?.isPhoneVerified ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}><Phone className="h-5 w-5" /></span>
-            <div><h2 className="font-display text-sm font-bold text-navy-900">Phone Verification</h2><p className="mt-1 text-xs text-slate-500">{agent?.isPhoneVerified ? 'Your agent phone number is verified.' : `Verify ${user?.phone || 'your phone number'} by SMS.`}</p></div>
+            <div><h2 className="font-display text-sm font-bold text-foreground">Phone Verification</h2><p className="mt-1 text-xs text-muted-foreground">{agent?.isPhoneVerified ? 'Your agent phone number is verified.' : `Verify ${user?.phone || 'your phone number'} by SMS.`}</p></div>
           </div>
           {agent?.isPhoneVerified ? <span className="badge bg-emerald-100 text-emerald-700"><CheckCircle className="h-3 w-3" />Verified</span> : !phoneCodeSent ? <button type="button" onClick={requestPhoneCode} disabled={phoneVerificationLoading || !user?.phone} className="btn-secondary !py-2 text-sm disabled:opacity-50">{phoneVerificationLoading ? 'Sending...' : 'Send verification code'}</button> : null}
         </div>
-        {!agent?.isPhoneVerified && phoneCodeSent && <div className="mt-4 flex flex-wrap items-end gap-3 border-t border-slate-100 pt-4"><label className="block"><span className="label">6-digit SMS code</span><input value={phoneCode} onChange={(event) => setPhoneCode(event.target.value.replace(/\D/g, '').slice(0, 6))} inputMode="numeric" autoComplete="one-time-code" className="input w-48" placeholder="000000" /></label><button type="button" onClick={verifyPhoneCode} disabled={phoneVerificationLoading || phoneCode.length !== 6} className="btn-primary !py-2.5 text-sm disabled:opacity-50">{phoneVerificationLoading ? 'Verifying...' : 'Verify phone'}</button><button type="button" onClick={requestPhoneCode} disabled={phoneVerificationLoading} className="px-2 py-2.5 text-xs font-medium text-slate-600">Resend code</button></div>}
+        {!agent?.isPhoneVerified && phoneCodeSent && <div className="mt-4 flex flex-wrap items-end gap-3 border-t border-slate-100 pt-4"><label className="block"><span className="label">6-digit SMS code</span><input value={phoneCode} onChange={(event) => setPhoneCode(event.target.value.replace(/\D/g, '').slice(0, 6))} inputMode="numeric" autoComplete="one-time-code" className="input w-48" placeholder="000000" /></label><button type="button" onClick={verifyPhoneCode} disabled={phoneVerificationLoading || phoneCode.length !== 6} className="btn-primary !py-2.5 text-sm disabled:opacity-50">{phoneVerificationLoading ? 'Verifying...' : 'Verify phone'}</button><button type="button" onClick={requestPhoneCode} disabled={phoneVerificationLoading} className="px-2 py-2.5 text-xs font-medium text-muted-foreground">Resend code</button></div>}
       </div>
 
       {/* ── Share public profile ── */}
@@ -503,9 +511,9 @@ export default function AgentProfilePage() {
         <div className="card p-5">
           <div className="flex items-center gap-2 mb-3">
             <Share2 className="h-4 w-4 text-veriq-secondary" />
-            <h2 className="font-display text-sm font-bold text-navy-900">Share Your Public Profile</h2>
+            <h2 className="font-display text-sm font-bold text-foreground">Share Your Public Profile</h2>
           </div>
-          <p className="text-xs text-slate-500 mb-3">
+          <p className="text-xs text-muted-foreground mb-3">
             Anyone with this link can view your verified profile and all of your active listings — no login required.
           </p>
           <div className="flex items-center gap-2 flex-wrap">
@@ -549,7 +557,7 @@ export default function AgentProfilePage() {
 
       {/* ── Verification progress bar ── */}
       <div className="card p-6">
-        <h2 className="font-display text-sm font-bold text-navy-900 mb-4">Verification Progress</h2>
+        <h2 className="font-display text-sm font-bold text-foreground mb-4">Verification Progress</h2>
         <div className="flex items-start gap-2">
           {[
             { label: 'Profile', sublabel: 'Basic info', done: profileExists },
@@ -564,8 +572,8 @@ export default function AgentProfilePage() {
                 }`}>
                   {done ? <CheckCircle className="h-4 w-4" /> : idx + 1}
                 </div>
-                <p className="text-[10px] text-center text-navy-800 font-semibold whitespace-nowrap">{label}</p>
-                <p className="text-[9px] text-center text-slate-400 whitespace-nowrap">{sublabel}</p>
+                <p className="text-[10px] text-center text-foreground font-semibold whitespace-nowrap">{label}</p>
+                <p className="text-[9px] text-center text-muted-foreground whitespace-nowrap">{sublabel}</p>
               </div>
               {idx < arr.length - 1 && (
                 <div className={`flex-1 h-0.5 mt-4 ${done ? 'bg-emerald-300' : 'bg-slate-200'}`} />
@@ -628,8 +636,8 @@ export default function AgentProfilePage() {
 
           {/* Name (from user account) + business name */}
           <div className="rounded-xl bg-veriq-surface px-4 py-3">
-            <p className="text-xs text-slate-500 mb-0.5">Full Name (from your account)</p>
-            <p className="text-sm font-semibold text-navy-900">
+            <p className="text-xs text-muted-foreground mb-0.5">Full Name (from your account)</p>
+            <p className="text-sm font-semibold text-foreground">
               {user?.firstName} {user?.lastName}
             </p>
           </div>
@@ -687,7 +695,7 @@ export default function AgentProfilePage() {
 
           {/* Bio */}
           <div>
-            <label className="label">Bio <span className="text-slate-400 font-normal">(max 500 chars)</span></label>
+            <label className="label">Bio <span className="text-muted-foreground font-normal">(max 500 chars)</span></label>
             <textarea
               {...regProfile('bio')}
               rows={3}
@@ -705,8 +713,8 @@ export default function AgentProfilePage() {
               className="mt-1 h-4 w-4 rounded border-slate-300 text-veriq-secondary focus:ring-veriq-secondary"
             />
             <span>
-              <span className="block text-sm font-semibold text-navy-900">Allow paid users to contact me</span>
-              <span className="block text-xs text-slate-500 mt-0.5">
+              <span className="block text-sm font-semibold text-foreground">Allow paid users to contact me</span>
+              <span className="block text-xs text-muted-foreground mt-0.5">
                 When enabled, users who unlock an intelligence report can call you and open chat from the listing.
               </span>
             </span>
@@ -850,8 +858,8 @@ export default function AgentProfilePage() {
           </div>
 
           <div className="flex items-start gap-2 rounded-xl bg-slate-50 border border-slate-200 px-4 py-3">
-            <Lock className="h-4 w-4 text-slate-400 flex-shrink-0 mt-0.5" />
-            <p className="text-xs text-slate-500">
+            <Lock className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+            <p className="text-xs text-muted-foreground">
               Your bank details are securely stored and never shown to users. They are only used for Veriq platform payouts.
             </p>
           </div>
@@ -890,7 +898,7 @@ export default function AgentProfilePage() {
         ) : (
           <form onSubmit={handleProfileSubmit(onProfileSubmit)} className="space-y-4">
             <div className="rounded-xl bg-veriq-surface border border-slate-200 p-4 space-y-2">
-              <p className="text-xs font-semibold text-navy-900 uppercase tracking-wider mb-3">By joining Veriq Property, you agree to:</p>
+              <p className="text-xs font-semibold text-foreground uppercase tracking-wider mb-3">By joining Veriq Property, you agree to:</p>
               {[
                 'Provide accurate and truthful property information at all times.',
                 'Update the availability of your listings promptly when properties are taken.',
@@ -900,7 +908,7 @@ export default function AgentProfilePage() {
               ].map((item, i) => (
                 <div key={i} className="flex items-start gap-2">
                   <CheckCircle className="h-3.5 w-3.5 text-veriq-secondary flex-shrink-0 mt-0.5" />
-                  <p className="text-xs text-slate-600">{item}</p>
+                  <p className="text-xs text-muted-foreground">{item}</p>
                 </div>
               ))}
             </div>
@@ -911,7 +919,7 @@ export default function AgentProfilePage() {
                 {...regProfile('agreementAccepted')}
                 className="mt-0.5 h-4 w-4 rounded border-slate-300 text-veriq-secondary accent-veriq-secondary"
               />
-              <span className="text-sm text-navy-800 group-hover:text-navy-900">
+              <span className="text-sm text-foreground group-hover:text-foreground">
                 I have read and agree to the Veriq Property Agent Agreement and commit to upholding platform standards.
               </span>
             </label>
@@ -971,7 +979,7 @@ export default function AgentProfilePage() {
           <form onSubmit={handleL2Submit(onLevel2Submit)} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="label">CAC Number <span className="text-slate-400 font-normal">(optional)</span></label>
+                <label className="label">CAC Number <span className="text-muted-foreground font-normal">(optional)</span></label>
                 <input {...regL2('cacNumber')} className="input" placeholder="RC 123456" />
               </div>
               <div>

@@ -2,7 +2,51 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Prototype design tokens.
+ *
+ * Read out of the interactive prototype's own stylesheet (see docs/prototype-design-system.md);
+ * the names match the prototype so a value can be traced back to it. Veriq is dark only — there
+ * is deliberately no light theme and no `prefers-color-scheme` branch.
+ *
+ * The tinted values carry their own alpha (`#ffffff16` is white at 8.6%). Tailwind v3 cannot put
+ * an opacity modifier on a hex-valued custom property, so `bg-card/50` will not work on these;
+ * a tint that is not a token is written as an exact 8-digit hex instead.
+ */
 :root {
+  --background: #070b14;
+  --foreground: #f8fafc;
+
+  --card: #111827;
+  --card-foreground: #f8fafc;
+  --popover: #111827;
+  --popover-foreground: #f8fafc;
+
+  --primary: #10b981;
+  --primary-foreground: #070b14;
+  --secondary: #182235;
+  --secondary-foreground: #f8fafc;
+  --accent: #18342e;
+  --accent-foreground: #f8fafc;
+  --muted: #111827;
+  --muted-foreground: #94a3b8;
+  --destructive: #fb7185;
+
+  --border: #ffffff16;
+  --input: #ffffff24;
+  --ring: #10b981;
+  --radius: 0.75rem;
+
+  --sidebar: #0b111d;
+  --sidebar-foreground: #94a3b8;
+  --sidebar-accent: #10b98115;
+  --sidebar-accent-foreground: #f8fafc;
+  --sidebar-primary: #10b981;
+  --sidebar-primary-foreground: #070b14;
+  --sidebar-border: #ffffff16;
+  --sidebar-ring: #10b981;
+
+  /* Pre-token aliases still referenced by screens awaiting migration. */
   --color-primary: #070B14;
   --color-secondary: #10B981;
   --color-accent: #10B981;
@@ -22,6 +66,13 @@ body {
   font-family: var(--font-inter);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /*
+   * The app is dark only, so the page itself owns the dark background rather than leaving it to
+   * whichever wrapper a screen happens to render. Without this, anything shorter than the viewport —
+   * and every overscroll — shows the browser's white default behind the content.
+   */
+  background-color: var(--background);
+  color: var(--foreground);
 }
 
 @layer base {
@@ -33,24 +84,29 @@ body {
 }
 
 @layer components {
+  /*
+   * Pre-token class aliases. Screens still lean on these while they are migrated to the
+   * primitives in components/ui, so they are kept — but restyled onto the tokens, because a
+   * white button on the prototype's near-black page is simply wrong.
+   */
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-veriq-secondary px-6 py-3 text-sm font-medium text-white transition-all duration-200 hover:bg-emerald-600 hover:shadow-lg active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center gap-[9px] rounded-btn bg-primary px-5 py-3 text-ui-md font-semibold text-primary-foreground transition-all duration-150 hover:bg-[#34d399] disabled:cursor-not-allowed disabled:opacity-60;
   }
 
   .btn-gold {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-gold-gradient px-6 py-3 text-sm font-medium text-white transition-all duration-200 hover:shadow-gold-glow hover:scale-105 active:scale-95;
+    @apply btn-primary;
   }
 
   .btn-outline {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-navy-300 bg-white px-6 py-3 text-sm font-medium text-navy-800 transition-all duration-200 hover:bg-navy-100 hover:border-navy-400 active:scale-95;
+    @apply inline-flex items-center justify-center gap-[9px] rounded-btn border border-input bg-[#ffffff06] px-5 py-3 text-ui-md font-semibold text-foreground transition-all duration-150 hover:bg-[#ffffff12] disabled:cursor-not-allowed disabled:opacity-60;
   }
 
   .btn-ghost {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-navy-700 transition-all duration-200 hover:bg-navy-100 active:scale-95;
+    @apply inline-flex items-center justify-center gap-[9px] rounded-btn p-2 text-ui-md font-semibold text-muted-foreground transition-all duration-150 hover:text-foreground;
   }
 
   .card {
-    @apply rounded-2xl bg-white shadow-card transition-all duration-300 hover:shadow-card-hover;
+    @apply rounded-panel border border-[#ffffff12] bg-card transition-colors duration-200;
   }
 
   .section-heading {
@@ -62,27 +118,21 @@ body {
   }
 
   .badge {
-    @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold;
+    @apply inline-flex items-center gap-1.5 rounded-md border border-[#10b98135] bg-[#10b98112] px-2.5 py-[5px] text-ui-xs font-medium leading-[1.4] text-[#6ee7b7];
   }
 
-  .badge-blue {
-    @apply badge bg-emerald-50 text-emerald-700;
-  }
-
-  .badge-gold {
-    @apply badge bg-emerald-50 text-emerald-600;
-  }
-
+  .badge-blue,
+  .badge-gold,
   .badge-green {
-    @apply badge bg-emerald-50 text-emerald-700;
+    @apply badge;
   }
 
   .input {
-    @apply w-full rounded-lg border border-navy-300 bg-white px-4 py-3 text-sm text-navy-900 placeholder:text-navy-400 transition-all duration-200 outline-none focus:border-veriq-secondary focus:ring-2 focus:ring-veriq-secondary/10;
+    @apply w-full rounded-unit border border-input bg-[#070b1444] px-4 py-3 text-sm text-foreground outline-none transition-colors duration-150 placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-[#10b98166];
   }
 
   .label {
-    @apply block text-sm font-medium text-navy-800 mb-1.5;
+    @apply mb-1.5 block text-sm font-medium text-foreground;
   }
 
   .cms-editor,

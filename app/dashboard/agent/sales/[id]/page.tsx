@@ -37,6 +37,7 @@ import { useToast } from '@/components/ui/Toast';
 import { LoadingSpinner, PageLoader } from '@/components/ui/LoadingSpinner';
 import { Modal } from '@/components/ui/Modal';
 import { Select } from '@/components/ui/Select';
+import type { BadgeTone } from '@/components/ui';
 import { AnswersEditor } from '@/components/agent/AnswersEditor';
 import { AnswersView } from '@/components/agent/AnswersView';
 import { SaleAvailabilityControl } from '@/components/agent/AvailabilityPanel';
@@ -48,7 +49,7 @@ import { MediaReviewPanel } from '@/components/agent/MediaReviewPanel';
 import { ReasonDialog } from '@/components/agent/ReasonDialog';
 import { StreetIntelligencePanel } from '@/components/agent/StreetIntelligencePanel';
 import {
-  PUBLICATION_STATUS_STYLES,
+  PUBLICATION_STATUS_TONES,
   describeError,
   errorMessage,
   formatDateTime,
@@ -68,17 +69,17 @@ import {
   smallPrimaryButton,
 } from '@/components/agent/ui';
 
-const PARTY_STATUS_STYLES: Record<string, string> = {
-  not_required: 'bg-slate-100 text-slate-600',
-  pending: 'bg-amber-50 text-amber-700',
-  verified: 'bg-emerald-50 text-emerald-700',
-  failed: 'bg-red-50 text-red-700',
+const PARTY_STATUS_TONES: Record<string, BadgeTone> = {
+  not_required: 'neutral',
+  pending: 'amber',
+  verified: 'success',
+  failed: 'red',
 };
 
-const ENQUIRY_STATUS_STYLES: Record<string, string> = {
-  new: 'bg-blue-50 text-blue-700',
-  contacted: 'bg-amber-50 text-amber-700',
-  closed: 'bg-slate-100 text-slate-600',
+const ENQUIRY_STATUS_TONES: Record<string, BadgeTone> = {
+  new: 'amber',
+  contacted: 'amber',
+  closed: 'neutral',
 };
 
 /** Only evidence kinds the Agent adds during review; the owner supplies ownership and authority documents. */
@@ -288,21 +289,21 @@ export default function SaleListingWorkspacePage() {
         subtitle={`${sale.subtype === 'land' ? 'Land' : 'Built Property'} · ${formatNaira(sale.askingPrice)} ${humanize(sale.priceBasis)} · ${property.area}, ${property.city}, ${property.state} · Property ${property.id}`}
         badges={
           <>
-            <StatusPill value={sale.publicationStatus} styles={PUBLICATION_STATUS_STYLES} />
+            <StatusPill value={sale.publicationStatus} tones={PUBLICATION_STATUS_TONES} />
             <span
-              className={`badge !px-2.5 !py-0.5 text-[11px] ${sale.availabilityStatus === 'available' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}
+              className={`badge !px-2.5 !py-0.5 text-[11px] ${sale.availabilityStatus === 'available' ? 'bg-[#10b98112] text-[#6ee7b7]' : 'bg-[#ffffff0f] text-muted-foreground'}`}
             >
               {sale.availabilityStatus === 'available'
                 ? 'Available'
                 : `Unavailable${sale.unavailableReason ? ` · ${humanize(sale.unavailableReason)}` : ''}`}
             </span>
             {sale.saleOutcome && (
-              <span className="badge bg-slate-100 !px-2.5 !py-0.5 text-[11px] text-slate-700">
+              <span className="badge bg-[#ffffff0f] !px-2.5 !py-0.5 text-[11px] text-foreground border-[#ffffff20]">
                 Sale {humanize(sale.saleOutcome)}
               </span>
             )}
             {sale.escalationOpen && (
-              <span className="badge bg-red-100 !px-2.5 !py-0.5 text-[11px] text-red-800">Escalated to Admin</span>
+              <span className="badge bg-[#fb718518] !px-2.5 !py-0.5 text-[11px] text-[#fda4af] border-[#fb718530]">Escalated to Admin</span>
             )}
           </>
         }
@@ -360,7 +361,7 @@ export default function SaleListingWorkspacePage() {
           <KeyValue label="Owner (Operator)" value={owner.legalName ?? owner.operatorId} />
           <KeyValue
             label="Account identity"
-            value={owner.identityStatus ? <StatusPill value={owner.identityStatus} styles={PARTY_STATUS_STYLES} /> : 'Not recorded'}
+            value={owner.identityStatus ? <StatusPill value={owner.identityStatus} tones={PARTY_STATUS_TONES} /> : 'Not recorded'}
           />
           <KeyValue label="Ownership declared" value={formatDateTime(owner.declaredAt)} />
           <KeyValue label="Submitted" value={formatDateTime(sale.submittedAt)} />
@@ -482,8 +483,8 @@ export default function SaleListingWorkspacePage() {
       >
         <div className="space-y-4">
           <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <KeyValue label="Owner identity" value={<StatusPill value={sale.ownerIdentityStatus} styles={PARTY_STATUS_STYLES} />} />
-            <KeyValue label="Authority to sell" value={<StatusPill value={sale.authorityToSellStatus} styles={PARTY_STATUS_STYLES} />} />
+            <KeyValue label="Owner identity" value={<StatusPill value={sale.ownerIdentityStatus} tones={PARTY_STATUS_TONES} />} />
+            <KeyValue label="Authority to sell" value={<StatusPill value={sale.authorityToSellStatus} tones={PARTY_STATUS_TONES} />} />
           </dl>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <Select
@@ -574,7 +575,7 @@ export default function SaleListingWorkspacePage() {
           )}
 
           {agreement?.status !== 'signed' && (
-            <div className="grid grid-cols-1 gap-3 rounded-xl border border-slate-100 p-3 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 rounded-xl border border-[#ffffff10] p-3 sm:grid-cols-3">
               <Field label="Owner commission %" hint="Leave blank for the configured sale commission rule.">
                 <input
                   className="input !py-2 text-sm"
@@ -626,7 +627,7 @@ export default function SaleListingWorkspacePage() {
           )}
 
           {isAdmin && agreement && agreement.status !== 'signed' && (
-            <div className="grid grid-cols-1 gap-3 rounded-xl border border-emerald-100 bg-emerald-50/50 p-3 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 rounded-xl border border-[#10b98135] bg-[#10b98112] p-3 sm:grid-cols-3">
               <Field label="Name the owner signed as">
                 <input className="input !py-2 text-sm" maxLength={200} value={signedByOwnerName} onChange={(event) => setSignedByOwnerName(event.target.value)} />
               </Field>
@@ -679,22 +680,22 @@ export default function SaleListingWorkspacePage() {
         subtitle="Viewing a sale listing is free, so the enquiry is the buyer's only route to this property — and it comes to you, not the owner."
       >
         {enquiries.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-slate-200 px-4 py-8 text-center text-sm text-slate-500">
+          <p className="rounded-xl border border-dashed border-[#ffffff18] px-4 py-8 text-center text-sm text-muted-foreground">
             No buyer enquiries yet. They appear here as soon as the listing is published and a buyer gets in touch.
           </p>
         ) : (
           <ul className="space-y-3">
             {enquiries.map((enquiry) => (
-              <li key={enquiry.id} className="space-y-2 rounded-xl border border-slate-200 p-3">
+              <li key={enquiry.id} className="space-y-2 rounded-xl border border-[#ffffff18] p-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-sm font-semibold text-navy-900">
-                    {enquiry.name} · <a href={`tel:${enquiry.phone}`} className="text-veriq-secondary hover:underline">{enquiry.phone}</a>
-                    {enquiry.email && <span className="font-normal text-slate-500"> · {enquiry.email}</span>}
+                  <p className="text-sm font-semibold text-foreground">
+                    {enquiry.name} · <a href={`tel:${enquiry.phone}`} className="text-primary hover:underline">{enquiry.phone}</a>
+                    {enquiry.email && <span className="font-normal text-muted-foreground"> · {enquiry.email}</span>}
                   </p>
-                  <StatusPill value={enquiry.status} styles={ENQUIRY_STATUS_STYLES} />
+                  <StatusPill value={enquiry.status} tones={ENQUIRY_STATUS_TONES} />
                 </div>
-                <p className="whitespace-pre-line text-sm leading-6 text-slate-700">{enquiry.message}</p>
-                <p className="text-[11px] text-slate-400">Received {formatDateTime(enquiry.createdAt)}</p>
+                <p className="whitespace-pre-line text-sm leading-6 text-muted-foreground">{enquiry.message}</p>
+                <p className="text-[11px] text-muted-foreground">Received {formatDateTime(enquiry.createdAt)}</p>
                 {enquiry.status !== 'closed' && (
                   <div className="flex flex-wrap gap-2">
                     {ENQUIRY_STATUSES.filter((option) => option.value !== enquiry.status).map((option) => (
@@ -741,7 +742,7 @@ export default function SaleListingWorkspacePage() {
               as you know which it is.
             </InlineNotice>
           ) : (
-            <div className="grid grid-cols-1 gap-3 rounded-xl border border-slate-100 p-3 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 rounded-xl border border-[#ffffff10] p-3 sm:grid-cols-3">
               <Select
                 id="sale-outcome"
                 label="Outcome"
@@ -803,7 +804,7 @@ export default function SaleListingWorkspacePage() {
       <PanelCard title="Private evidence" icon={FileText} subtitle="Identity, authority and document files stay private and are never published.">
         <div className="space-y-4">
           <EvidenceList items={view.evidence} />
-          <div className="grid grid-cols-1 gap-3 rounded-xl border border-slate-100 p-3 sm:grid-cols-[220px_1fr_auto] sm:items-end">
+          <div className="grid grid-cols-1 gap-3 rounded-xl border border-[#ffffff10] p-3 sm:grid-cols-[220px_1fr_auto] sm:items-end">
             <Select
               id="sale-evidence-kind"
               label="Evidence type"
@@ -818,7 +819,7 @@ export default function SaleListingWorkspacePage() {
               <input
                 type="file"
                 accept="application/pdf,image/jpeg,image/png,image/webp,image/heic,image/heif"
-                className="block w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-sm file:font-semibold"
+                className="block w-full text-sm text-muted-foreground file:mr-3 file:rounded-lg file:border-0 file:bg-[#ffffff0f] file:px-3 file:py-2 file:text-sm file:font-semibold"
                 onChange={(event) => setEvidenceFile(event.target.files?.[0] ?? null)}
               />
             </Field>
@@ -887,8 +888,8 @@ export default function SaleListingWorkspacePage() {
       <PanelCard title="Sale facts & intelligence" icon={Landmark} subtitle="The Built Property or Land record buyers read on the free listing page.">
         <div className="space-y-5">
           <AnswersView schemaId={sale.schemaId} answers={answers} groups={['facts', 'intelligence']} issues={sale.issues} />
-          <details className="rounded-xl border border-slate-100 p-3">
-            <summary className="cursor-pointer text-sm font-semibold text-navy-900">Edit facts &amp; intelligence</summary>
+          <details className="rounded-xl border border-[#ffffff10] p-3">
+            <summary className="cursor-pointer text-sm font-semibold text-foreground">Edit facts &amp; intelligence</summary>
             <div className="mt-4">
               <AnswersEditor
                 key={sale.updatedAt}
@@ -971,7 +972,7 @@ export default function SaleListingWorkspacePage() {
       />
       <Modal isOpen={dialog === 'publish'} onClose={() => busy === null && setDialog(null)} title="Publish sale listing" size="sm">
         <div className="space-y-4">
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-muted-foreground">
             Publishing makes the listing publicly discoverable and free to view while it is Available. Owner identity,
             authority to sell, your physical visit, the document checklist, the signed agreement, location, street link,
             record and media are all checked server-side.

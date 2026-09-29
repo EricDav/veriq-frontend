@@ -43,14 +43,14 @@ function TransactionRow({ tx }: { tx: WalletLedgerTransaction }) {
         {isCredit ? <ArrowDownCircle className="h-4 w-4" /> : <ArrowUpCircle className="h-4 w-4" />}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-navy-900">{tx.description || TYPE_LABELS[tx.type] || 'Wallet transaction'}</p>
-        <p className="truncate text-xs text-slate-400">
+        <p className="truncate text-sm font-semibold text-foreground">{tx.description || TYPE_LABELS[tx.type] || 'Wallet transaction'}</p>
+        <p className="truncate text-xs text-muted-foreground">
           {TYPE_LABELS[tx.type] ?? tx.type} · {formatDateTime(tx.createdAt)}
           {tx.paymentReference && <> · <span className="font-mono">{tx.paymentReference}</span></>}
         </p>
       </div>
       <div className="flex-shrink-0 text-right">
-        <p className={`text-sm font-bold ${isCredit ? 'text-emerald-600' : 'text-navy-900'}`}>{isCredit ? '+' : '−'}{formatNaira(tx.amount)}</p>
+        <p className={`text-sm font-bold ${isCredit ? 'text-emerald-600' : 'text-foreground'}`}>{isCredit ? '+' : '−'}{formatNaira(tx.amount)}</p>
         <span className={`mt-0.5 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize ${status.cls}`}>
           <StatusIcon className="h-3 w-3" /> {tx.status}
         </span>
@@ -117,7 +117,7 @@ export default function WalletPage() {
     <div className="mx-auto max-w-5xl space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="font-display text-2xl font-bold text-navy-900">Veriq Wallet</h1>
+          <h1 className="font-display text-2xl font-bold text-foreground">Veriq Wallet</h1>
           <p className="text-sm text-veriq-muted">Refund credit you can put toward future unlocks. It does not expire.</p>
         </div>
         <button type="button" onClick={() => void load()} className="btn-outline self-start !px-4 !py-2 !text-sm"><RefreshCw className="h-4 w-4" /> Refresh</button>
@@ -128,7 +128,7 @@ export default function WalletPage() {
           <div className="flex items-start gap-3">
             <Landmark className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-700" />
             <div>
-              <p className="text-sm font-bold text-navy-900">Looking for your Veriq Agent earnings?</p>
+              <p className="text-sm font-bold text-foreground">Looking for your Veriq Agent earnings?</p>
               <p className="text-xs leading-5 text-blue-900">Unlock earnings, clearance holds and withdrawals are managed in the Agent earnings ledger, separate from this wallet.</p>
             </div>
           </div>
@@ -140,24 +140,24 @@ export default function WalletPage() {
         <ApiErrorNotice error={walletError} fallback="Your wallet balance could not be loaded." onRetry={() => void load()} />
       ) : wallet ? (
         <div className="card border-none bg-navy-900 p-6">
-          <p className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400"><WalletIcon className="h-3.5 w-3.5" /> Available credit</p>
+          <p className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground"><WalletIcon className="h-3.5 w-3.5" /> Available credit</p>
           <p className="font-display text-4xl font-black text-white">{wallet.availableFormatted}</p>
           <div className="mt-5 grid gap-3 sm:grid-cols-3">
             <div className="rounded-xl bg-white/5 p-3">
-              <p className="text-[11px] text-slate-400">Balance</p>
+              <p className="text-[11px] text-muted-foreground">Balance</p>
               <p className="text-lg font-bold text-white">{wallet.balanceFormatted}</p>
             </div>
             <div className="rounded-xl bg-white/5 p-3">
-              <p className="text-[11px] text-slate-400">Held for a pending checkout</p>
+              <p className="text-[11px] text-muted-foreground">Held for a pending checkout</p>
               <p className="text-lg font-bold text-white">{formatNaira(wallet.heldForPendingCheckout)}</p>
             </div>
             <div className="rounded-xl bg-white/5 p-3">
-              <p className="text-[11px] text-slate-400">Expiry</p>
+              <p className="text-[11px] text-muted-foreground">Expiry</p>
               <p className="text-lg font-bold text-white">{wallet.expires ? 'Expires' : 'Never expires'}</p>
             </div>
           </div>
           {wallet.heldForPendingCheckout > 0 && (
-            <p className="mt-3 text-xs text-slate-400">Held credit is reserved for an unlock awaiting payment and is released automatically if that checkout is cancelled or expires.</p>
+            <p className="mt-3 text-xs text-muted-foreground">Held credit is reserved for an unlock awaiting payment and is released automatically if that checkout is cancelled or expires.</p>
           )}
         </div>
       ) : null}
@@ -165,18 +165,18 @@ export default function WalletPage() {
       <div className="grid gap-4 md:grid-cols-3">
         <div className="card p-5">
           <ShieldCheck className="mb-2 h-5 w-5 text-veriq-secondary" />
-          <p className="text-sm font-bold text-navy-900">Applied automatically</p>
-          <p className="mt-1 text-xs leading-5 text-slate-600">When you unlock a listing, available credit is used first. If it covers the fee, no payment page is needed; otherwise you pay only the difference.</p>
+          <p className="text-sm font-bold text-foreground">Applied automatically</p>
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">When you unlock a listing, available credit is used first. If it covers the fee, no payment page is needed; otherwise you pay only the difference.</p>
         </div>
         <div className="card p-5">
           <Undo2 className="mb-2 h-5 w-5 text-purple-600" />
-          <p className="text-sm font-bold text-navy-900">Where refunds go</p>
-          <p className="mt-1 text-xs leading-5 text-slate-600">Approved refunds for qualifying problems are credited here, never paid out as cash. Free Unlocks have no refundable value.</p>
+          <p className="text-sm font-bold text-foreground">Where refunds go</p>
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">Approved refunds for qualifying problems are credited here, never paid out as cash. Free Unlocks have no refundable value.</p>
         </div>
         <div className="card p-5">
-          <Info className="mb-2 h-5 w-5 text-slate-500" />
-          <p className="text-sm font-bold text-navy-900">No top-ups needed</p>
-          <p className="mt-1 text-xs leading-5 text-slate-600">You never need to fund this wallet before unlocking. Checkout collects any remaining amount directly and securely.</p>
+          <Info className="mb-2 h-5 w-5 text-muted-foreground" />
+          <p className="text-sm font-bold text-foreground">No top-ups needed</p>
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">You never need to fund this wallet before unlocking. Checkout collects any remaining amount directly and securely.</p>
         </div>
       </div>
 
@@ -187,7 +187,7 @@ export default function WalletPage() {
       </div>
 
       <div className="card p-6">
-        <h2 className="mb-2 flex items-center gap-2 font-display text-base font-bold text-navy-900"><Clock className="h-4 w-4 text-veriq-secondary" /> Transaction history</h2>
+        <h2 className="mb-2 flex items-center gap-2 font-display text-base font-bold text-foreground"><Clock className="h-4 w-4 text-veriq-secondary" /> Transaction history</h2>
         {txError ? <ApiErrorNotice error={txError} fallback="Wallet transactions could not be loaded." onRetry={() => void load()} /> : null}
         {!txError && transactions.length === 0 ? (
           <p className="py-6 text-center text-sm text-veriq-muted">No wallet activity yet. Refund credits and unlocks paid with credit will appear here with their references.</p>

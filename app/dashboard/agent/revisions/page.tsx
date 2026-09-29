@@ -87,7 +87,7 @@ export default function PendingRevisionsPage() {
             key={option.value}
             type="button"
             onClick={() => setTargetFilter(option.value)}
-            className={`rounded-full border px-3 py-1 text-xs font-semibold ${targetFilter === option.value ? 'border-navy-900 bg-navy-900 text-white' : 'border-slate-200 bg-white text-slate-600'}`}
+            className={`rounded-full border px-3 py-1 text-xs font-semibold ${targetFilter === option.value ? 'border-primary bg-primary text-primary-foreground' : 'border-[#ffffff18] bg-card text-muted-foreground'}`}
           >
             {option.label}
             {revisions ? ` (${option.value ? revisions.filter((item) => item.targetType === option.value).length : revisions.length})` : ''}
@@ -114,12 +114,12 @@ export default function PendingRevisionsPage() {
           {groups.map((group) => (
             <section key={group.key} className="space-y-3">
               <div className="flex flex-wrap items-center gap-2">
-                <FileDiff className="h-4 w-4 text-slate-400" />
-                <h2 className="font-display text-base font-bold text-navy-900">
+                <FileDiff className="h-4 w-4 text-muted-foreground" />
+                <h2 className="font-display text-base font-bold text-foreground">
                   {group.property?.title ?? (group.key.startsWith('shared:') ? 'Shared Property opportunity' : `Property ${group.key}`)}
                 </h2>
                 {group.property && (
-                  <span className="text-xs text-slate-500">
+                  <span className="text-xs text-muted-foreground">
                     {CATEGORY_LABELS[group.property.category] ?? group.property.category} · {group.property.area}, {group.property.city}
                   </span>
                 )}

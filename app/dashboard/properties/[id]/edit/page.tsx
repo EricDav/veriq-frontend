@@ -26,6 +26,7 @@ import {
 } from '@/types';
 import { LoadingSpinner, PageLoader } from '@/components/ui/LoadingSpinner';
 import { useToast } from '@/components/ui/Toast';
+import { buttonClass } from '@/components/ui';
 
 type EditForm = Partial<CreatePropertyDto>;
 
@@ -453,9 +454,9 @@ export default function EditListingPage() {
   if (!property) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center">
-        <h1 className="font-display text-2xl font-bold text-navy-900 mb-2">Listing Not Found</h1>
-        <p className="text-veriq-muted mb-6">This listing may have been removed or is unavailable.</p>
-        <Link href="/dashboard/properties" className="btn-primary">Back to Listings</Link>
+        <h1 className="font-display text-2xl font-bold text-foreground mb-2">Listing Not Found</h1>
+        <p className="text-muted-foreground mb-6">This listing may have been removed or is unavailable.</p>
+        <Link href="/dashboard/properties" className={buttonClass()}>Back to Listings</Link>
       </div>
     );
   }
@@ -473,7 +474,7 @@ export default function EditListingPage() {
     .map((field) => {
       if (field.type === 'multi') {
         const values = Array.isArray(listingDetails[field.key]) ? listingDetails[field.key] as string[] : [];
-        return <div key={field.key} className="sm:col-span-2"><label className="label">{field.label}{field.required ? ' *' : ''}</label><div className="flex flex-wrap gap-2">{field.options?.map((option) => <button key={option} type="button" onClick={() => updateListingDetail(field.key, values.includes(option) ? values.filter((value) => value !== option) : [...values, option])} className={`rounded-full border px-4 py-1.5 text-xs font-semibold ${values.includes(option) ? 'border-veriq-secondary bg-veriq-secondary text-white' : 'border-slate-200 bg-white text-navy-700'}`}>{option}</button>)}</div></div>;
+        return <div key={field.key} className="sm:col-span-2"><label className="label">{field.label}{field.required ? ' *' : ''}</label><div className="flex flex-wrap gap-2">{field.options?.map((option) => <button key={option} type="button" onClick={() => updateListingDetail(field.key, values.includes(option) ? values.filter((value) => value !== option) : [...values, option])} className={`rounded-full border px-4 py-1.5 text-xs font-semibold ${values.includes(option) ? 'border-primary bg-primary text-primary-foreground' : 'border-[#ffffff18] bg-card text-foreground'}`}>{option}</button>)}</div></div>;
       }
       if (field.options) return <div key={field.key}><label className="label">{field.label}{field.required ? ' *' : ''}</label><select className="input" required={field.required} value={String(listingDetails[field.key] ?? '')} onChange={(event) => updateListingDetail(field.key, event.target.value)}><option value="">Select...</option>{field.options.map((option) => <option key={option} value={option}>{option}</option>)}</select></div>;
       if (field.type === 'textarea') return <div key={field.key} className="sm:col-span-2"><label className="label">{field.label}{field.required ? ' *' : ''}</label><textarea className="input resize-none" rows={3} maxLength={field.maxLength} required={field.required} value={String(listingDetails[field.key] ?? '')} placeholder={field.key === 'houseRules' ? 'State check-in, guest, smoking, pet, party, and noise rules' : undefined} onChange={(event) => updateListingDetail(field.key, event.target.value)} /></div>;
@@ -483,17 +484,17 @@ export default function EditListingPage() {
   return (
     <div className="mx-auto max-w-3xl">
       <div className="mb-6">
-        <Link href="/dashboard/properties" className="mb-4 inline-flex items-center gap-2 text-sm text-veriq-muted transition-colors hover:text-navy-900">
+        <Link href="/dashboard/properties" className="mb-4 inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground">
           <ArrowLeft className="h-4 w-4" /> Back to Listings
         </Link>
-        <h1 className="font-display text-2xl font-bold text-navy-900">Edit Listing</h1>
-        <p className="text-sm text-veriq-muted">{property.title}</p>
+        <h1 className="font-display text-2xl font-bold text-foreground">Edit Listing</h1>
+        <p className="text-sm text-muted-foreground">{property.title}</p>
       </div>
 
       <form onSubmit={save} className="flex flex-col gap-6">
         <div className="card order-1 space-y-4 p-6">
-          <h2 className="font-display flex items-center gap-2 text-base font-bold text-navy-900">
-            <Home className="h-4 w-4 text-veriq-secondary" /> Basic Information
+          <h2 className="font-display flex items-center gap-2 text-base font-bold text-foreground">
+            <Home className="h-4 w-4 text-primary" /> Basic Information
           </h2>
           <input ref={coverImageInputRef} type="hidden" name="coverImageUrl" defaultValue={coverImageUrl} />
 
@@ -511,7 +512,7 @@ export default function EditListingPage() {
           <div>
             <label className="label">Cover Image</label>
             <div className="flex flex-wrap items-center gap-3">
-              <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-navy-700 hover:border-veriq-secondary">
+              <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-[#ffffff18] bg-card px-4 py-2.5 text-sm font-semibold text-foreground hover:border-primary">
                 {isCoverUploading ? <LoadingSpinner size="sm" /> : <Upload className="h-4 w-4" />}
                 {isCoverUploading ? 'Uploading...' : coverImageUrl ? 'Replace cover' : 'Upload cover'}
                 <input
@@ -526,7 +527,7 @@ export default function EditListingPage() {
                 />
               </label>
               {coverImageUrl && (
-                <a href={normalizeAssetUrl(coverImageUrl)} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-veriq-secondary hover:underline">
+                <a href={normalizeAssetUrl(coverImageUrl)} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-primary hover:underline">
                   View current cover
                 </a>
               )}
@@ -542,7 +543,7 @@ export default function EditListingPage() {
                 ))}
               </select>
             </div>
-            {hasRoomCounts && <div><label className="label">Bedrooms *</label><input type="number" min={propertyType === PropertyType.SHORT_STAY ? 0 : 1} value={form.bedrooms ?? ''} onChange={(e) => update('bedrooms', e.target.value === '' ? undefined : Number(e.target.value))} className="input" required disabled={propertyType === PropertyType.SHORT_STAY && listingDetails.shortLetType === 'Studio Apartment'} />{propertyType === PropertyType.SHORT_STAY && listingDetails.shortLetType === 'Studio Apartment' && <p className="mt-1 text-xs text-slate-500">Studio Apartments use 0 bedrooms.</p>}</div>}
+            {hasRoomCounts && <div><label className="label">Bedrooms *</label><input type="number" min={propertyType === PropertyType.SHORT_STAY ? 0 : 1} value={form.bedrooms ?? ''} onChange={(e) => update('bedrooms', e.target.value === '' ? undefined : Number(e.target.value))} className="input" required disabled={propertyType === PropertyType.SHORT_STAY && listingDetails.shortLetType === 'Studio Apartment'} />{propertyType === PropertyType.SHORT_STAY && listingDetails.shortLetType === 'Studio Apartment' && <p className="mt-1 text-xs text-muted-foreground">Studio Apartments use 0 bedrooms.</p>}</div>}
             {hasRoomCounts && <div><label className="label">Bathrooms *</label><input type="number" min={1} value={form.bathrooms ?? ''} onChange={(e) => update('bathrooms', e.target.value ? Number(e.target.value) : undefined)} className="input" required /></div>}
           </div>
 
@@ -550,19 +551,19 @@ export default function EditListingPage() {
           {propertyType === PropertyType.SHORT_STAY && <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">{renderListingFields(SHORT_LET_FIELD_GROUPS.basic)}</div>}
         </div>
 
-        {propertyType === PropertyType.SHORT_STAY && <div className="card order-2 space-y-4 p-6"><h2 className="font-display text-base font-bold text-navy-900">Pricing &amp; Stay Details</h2><div className="grid grid-cols-1 gap-4 sm:grid-cols-2">{renderListingFields(SHORT_LET_FIELD_GROUPS.pricing)}</div></div>}
-        {propertyType === PropertyType.SHORT_STAY && <div className="card order-3 space-y-4 p-6"><h2 className="font-display text-base font-bold text-navy-900">Amenities &amp; Rules</h2><div className="grid grid-cols-1 gap-4 sm:grid-cols-2">{renderListingFields(SHORT_LET_FIELD_GROUPS.amenities)}</div></div>}
-        {propertyType === PropertyType.SHORT_STAY && <div className="card order-4 space-y-4 p-6"><h2 className="font-display text-base font-bold text-navy-900">Short Let Intelligence</h2><div className="grid grid-cols-1 gap-4 sm:grid-cols-2">{renderListingFields(SHORT_LET_FIELD_GROUPS.intelligence)}</div></div>}
-        {propertyType === PropertyType.SHORT_STAY && <div className="card order-5 space-y-4 p-6"><h2 className="font-display text-base font-bold text-navy-900">Additional Fees</h2><div className="grid grid-cols-1 gap-4 sm:grid-cols-2">{renderListingFields(SHORT_LET_FIELD_GROUPS.fees)}</div></div>}
+        {propertyType === PropertyType.SHORT_STAY && <div className="card order-2 space-y-4 p-6"><h2 className="font-display text-base font-bold text-foreground">Pricing &amp; Stay Details</h2><div className="grid grid-cols-1 gap-4 sm:grid-cols-2">{renderListingFields(SHORT_LET_FIELD_GROUPS.pricing)}</div></div>}
+        {propertyType === PropertyType.SHORT_STAY && <div className="card order-3 space-y-4 p-6"><h2 className="font-display text-base font-bold text-foreground">Amenities &amp; Rules</h2><div className="grid grid-cols-1 gap-4 sm:grid-cols-2">{renderListingFields(SHORT_LET_FIELD_GROUPS.amenities)}</div></div>}
+        {propertyType === PropertyType.SHORT_STAY && <div className="card order-4 space-y-4 p-6"><h2 className="font-display text-base font-bold text-foreground">Short Let Intelligence</h2><div className="grid grid-cols-1 gap-4 sm:grid-cols-2">{renderListingFields(SHORT_LET_FIELD_GROUPS.intelligence)}</div></div>}
+        {propertyType === PropertyType.SHORT_STAY && <div className="card order-5 space-y-4 p-6"><h2 className="font-display text-base font-bold text-foreground">Additional Fees</h2><div className="grid grid-cols-1 gap-4 sm:grid-cols-2">{renderListingFields(SHORT_LET_FIELD_GROUPS.fees)}</div></div>}
 
         <div className="card order-6 space-y-4 p-6">
           <div>
-            <h2 className="font-display text-base font-bold text-navy-900">Location Directory</h2>
-            <p className="mt-1 text-xs text-veriq-muted">Select the approved location and street that link this property to Street Intelligence.</p>
+            <h2 className="font-display text-base font-bold text-foreground">Location Directory</h2>
+            <p className="mt-1 text-xs text-muted-foreground">Select the approved location and street that link this property to Street Intelligence.</p>
           </div>
-          <div className="flex rounded-xl bg-slate-100 p-1">
-            <button type="button" onClick={() => { setStreetNotListed(false); setMissingStreetName(''); setMissingStreetLandmark(''); }} className={`flex-1 rounded-lg px-3 py-2 text-xs font-bold ${!streetNotListed ? 'bg-white text-navy-900 shadow-sm' : 'text-slate-500'}`}>Select street</button>
-            <button type="button" onClick={() => { setStreetNotListed(true); setForm((current) => ({ ...current, streetId: undefined, area: '' })); setStreetQuery(''); }} className={`flex-1 rounded-lg px-3 py-2 text-xs font-bold ${streetNotListed ? 'bg-white text-navy-900 shadow-sm' : 'text-slate-500'}`}>I can&apos;t see my street</button>
+          <div className="flex rounded-xl bg-[#ffffff0f] p-1">
+            <button type="button" onClick={() => { setStreetNotListed(false); setMissingStreetName(''); setMissingStreetLandmark(''); }} className={`flex-1 rounded-lg px-3 py-2 text-xs font-bold ${!streetNotListed ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'}`}>Select street</button>
+            <button type="button" onClick={() => { setStreetNotListed(true); setForm((current) => ({ ...current, streetId: undefined, area: '' })); setStreetQuery(''); }} className={`flex-1 rounded-lg px-3 py-2 text-xs font-bold ${streetNotListed ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'}`}>I can&apos;t see my street</button>
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
@@ -590,17 +591,17 @@ export default function EditListingPage() {
             <div className="relative">
               <label className="label">Search street, estate or road *</label>
               <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <input aria-label="Street name" value={streetQuery} onChange={(event) => { setStreetQuery(event.target.value); setForm((current) => ({ ...current, streetId: undefined, area: '' })); }} className="input pl-9" placeholder="Start typing a street name" autoComplete="off" disabled={!form.city} />
               </div>
               {form.city && streetQuery.trim().length >= 2 && !form.streetId && (
-                <div className="absolute z-20 mt-1 max-h-64 w-full overflow-y-auto rounded-lg border border-slate-200 bg-white p-1 shadow-lg">
-                  {masterStreets.map((street) => <button key={street.id} type="button" onClick={() => { setForm((current) => ({ ...current, streetId: street.id, area: street.area })); setStreetQuery(street.streetName); }} className="block w-full rounded-md px-3 py-2 text-left hover:bg-slate-50"><span className="block text-sm font-bold text-navy-900">{street.streetName}</span><span className="block text-xs text-veriq-muted">{street.area}</span></button>)}
-                  {!isSearchingStreets && masterStreets.length === 0 && <p className="px-3 py-3 text-xs text-slate-500">No approved street matches this name.</p>}
+                <div className="absolute z-20 mt-1 max-h-64 w-full overflow-y-auto rounded-lg border border-[#ffffff18] bg-card p-1 shadow-lg">
+                  {masterStreets.map((street) => <button key={street.id} type="button" onClick={() => { setForm((current) => ({ ...current, streetId: street.id, area: street.area })); setStreetQuery(street.streetName); }} className="block w-full rounded-md px-3 py-2 text-left hover:bg-[#070b1444]"><span className="block text-sm font-bold text-foreground">{street.streetName}</span><span className="block text-xs text-muted-foreground">{street.area}</span></button>)}
+                  {!isSearchingStreets && masterStreets.length === 0 && <p className="px-3 py-3 text-xs text-muted-foreground">No approved street matches this name.</p>}
                 </div>
               )}
-              {form.streetId && <p className="mt-1 text-xs font-semibold text-emerald-700">Approved street selected.</p>}
-              <button type="button" onClick={() => { setStreetNotListed(true); setMissingStreetName(streetQuery); setStreetQuery(''); setForm((current) => ({ ...current, streetId: undefined, area: '' })); }} disabled={!form.city} className="mt-2 text-left text-xs font-bold text-veriq-secondary hover:underline disabled:opacity-50">I can&apos;t see my street in this list</button>
+              {form.streetId && <p className="mt-1 text-xs font-semibold text-[#6ee7b7]">Approved street selected.</p>}
+              <button type="button" onClick={() => { setStreetNotListed(true); setMissingStreetName(streetQuery); setStreetQuery(''); setForm((current) => ({ ...current, streetId: undefined, area: '' })); }} disabled={!form.city} className="mt-2 text-left text-xs font-bold text-primary hover:underline disabled:opacity-50">I can&apos;t see my street in this list</button>
             </div>
           ) : (
             <div>
@@ -611,20 +612,20 @@ export default function EditListingPage() {
               </select>
               <label className="label mt-4">Street Name *</label>
               <input value={missingStreetName} onChange={(event) => setMissingStreetName(event.target.value)} className="input" placeholder="Enter the street name" />
-              <label className="label mt-4">Nearby Landmark <span className="font-normal text-slate-400">(optional)</span></label>
+              <label className="label mt-4">Nearby Landmark <span className="font-normal text-muted-foreground">(optional)</span></label>
               <input value={missingStreetLandmark} onChange={(event) => setMissingStreetLandmark(event.target.value)} className="input" placeholder="e.g. Opposite the health centre" />
-              <p className="mt-1 text-xs text-veriq-muted">The street will be sent for admin review. You can save the listing now.</p>
+              <p className="mt-1 text-xs text-muted-foreground">The street will be sent for admin review. You can save the listing now.</p>
             </div>
           )}
           <div>
-            <label className="label">Full Property Address <span className="text-slate-400">(optional - private until unlocked)</span></label>
+            <label className="label">Full Property Address <span className="text-muted-foreground">(optional - private until unlocked)</span></label>
             <input value={form.address ?? ''} onChange={(e) => update('address', e.target.value)} className="input" placeholder="House number, building or estate, and street" />
-            <p className="mt-1 text-xs text-veriq-muted">This is the address users see after they unlock the property.</p>
+            <p className="mt-1 text-xs text-muted-foreground">This is the address users see after they unlock the property.</p>
           </div>
         </div>
 
         {propertyType !== PropertyType.SHORT_STAY && <div className="card order-2 space-y-4 p-6">
-          <h2 className="font-display text-base font-bold text-navy-900">Details & Pricing</h2>
+          <h2 className="font-display text-base font-bold text-foreground">Details & Pricing</h2>
           {hasFloorLevel && <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
               <label className="label">Floor Level</label>
@@ -649,10 +650,10 @@ export default function EditListingPage() {
         </div>}
 
         {typeFields.length > 0 && propertyType !== PropertyType.SHORT_STAY && (
-          <div className="card order-2 space-y-4 border-2 border-veriq-secondary/20 p-6">
+          <div className="card order-2 space-y-4 border-2 border-[#10b98135] p-6">
             <div>
-              <h2 className="font-display text-base font-bold text-navy-900">{PROPERTY_TYPE_OPTIONS.find((item) => item.value === propertyType)?.label} Details</h2>
-              <p className="mt-1 text-xs text-veriq-muted">Complete the details required for this property type.</p>
+              <h2 className="font-display text-base font-bold text-foreground">{PROPERTY_TYPE_OPTIONS.find((item) => item.value === propertyType)?.label} Details</h2>
+              <p className="mt-1 text-xs text-muted-foreground">Complete the details required for this property type.</p>
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {typeFields.map((field) => {
@@ -663,9 +664,9 @@ export default function EditListingPage() {
                 }
                 if (field.type === 'multi') {
                   const values = Array.isArray(listingDetails[field.key]) ? listingDetails[field.key] as string[] : [];
-                  return <div key={field.key} className="sm:col-span-2"><label className="label">{field.label}{field.required ? ' *' : ''}</label><div className="flex flex-wrap gap-2">{field.options?.map((option) => <button key={option} type="button" onClick={() => updateListingDetail(field.key, values.includes(option) ? values.filter((value) => value !== option) : [...values, option])} className={`rounded-full border px-4 py-1.5 text-xs font-semibold ${values.includes(option) ? 'border-veriq-secondary bg-veriq-secondary text-white' : 'border-slate-200 bg-white text-navy-700'}`}>{option}</button>)}</div></div>;
+                  return <div key={field.key} className="sm:col-span-2"><label className="label">{field.label}{field.required ? ' *' : ''}</label><div className="flex flex-wrap gap-2">{field.options?.map((option) => <button key={option} type="button" onClick={() => updateListingDetail(field.key, values.includes(option) ? values.filter((value) => value !== option) : [...values, option])} className={`rounded-full border px-4 py-1.5 text-xs font-semibold ${values.includes(option) ? 'border-primary bg-primary text-primary-foreground' : 'border-[#ffffff18] bg-card text-foreground'}`}>{option}</button>)}</div></div>;
                 }
-                if (field.type === 'checkbox') return <label key={field.key} className="flex items-center gap-3 text-sm font-medium text-navy-700"><input type="checkbox" checked={Boolean(listingDetails[field.key])} onChange={(event) => updateListingDetail(field.key, event.target.checked)} className="h-4 w-4" />{field.label}</label>;
+                if (field.type === 'checkbox') return <label key={field.key} className="flex items-center gap-3 text-sm font-medium text-foreground"><input type="checkbox" checked={Boolean(listingDetails[field.key])} onChange={(event) => updateListingDetail(field.key, event.target.checked)} className="h-4 w-4" />{field.label}</label>;
                 if (field.options) return <div key={field.key}><label className="label">{field.label}{field.required ? ' *' : ''}</label><select className="input" required={field.required} value={String(listingDetails[field.key] ?? '')} onChange={(event) => updateListingDetail(field.key, event.target.value)}><option value="">Select...</option>{field.options.map((option) => <option key={option} value={option}>{option}</option>)}</select></div>;
                 if (field.type === 'textarea') return <div key={field.key} className="sm:col-span-2"><label className="label">{field.label}{field.required ? ' *' : ''}</label><textarea className="input resize-none" rows={3} maxLength={field.maxLength} required={field.required} value={String(listingDetails[field.key] ?? '')} onChange={(event) => updateListingDetail(field.key, event.target.value)} /></div>;
                 return <div key={field.key}><label className="label">{field.label}{field.required ? ' *' : ''}</label><input className="input" type={field.type ?? 'text'} min={field.type === 'number' ? 0 : undefined} required={field.required} value={String(listingDetails[field.key] ?? '')} onChange={(event) => updateListingDetail(field.key, field.type === 'number' ? (event.target.value === '' ? undefined : Number(event.target.value)) : event.target.value)} /></div>;
@@ -674,9 +675,9 @@ export default function EditListingPage() {
           </div>
         )}
 
-        <div className="card order-8 space-y-5 border-2 border-veriq-secondary/20 p-6">
-          <h2 className="font-display flex items-center gap-2 text-base font-bold text-navy-900">
-            <Zap className="h-4 w-4 text-veriq-secondary" /> Veriq Quick Intelligence
+        <div className="card order-8 space-y-5 border-2 border-[#10b98135] p-6">
+          <h2 className="font-display flex items-center gap-2 text-base font-bold text-foreground">
+            <Zap className="h-4 w-4 text-primary" /> Veriq Quick Intelligence
           </h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {[
@@ -716,7 +717,7 @@ export default function EditListingPage() {
               <label className="label">{label as string}</label>
               <div className="flex flex-wrap gap-2">
                 {(values as string[]).map((value) => (
-                  <button key={value} type="button" onClick={() => toggleArray(key as keyof CreatePropertyDto, value)} className={`rounded-full border px-4 py-1.5 text-xs font-semibold capitalize ${(form[key as keyof CreatePropertyDto] as string[] | undefined)?.includes(value) ? 'border-veriq-secondary bg-veriq-secondary text-white' : 'border-slate-200 bg-white text-navy-700'}`}>
+                  <button key={value} type="button" onClick={() => toggleArray(key as keyof CreatePropertyDto, value)} className={`rounded-full border px-4 py-1.5 text-xs font-semibold capitalize ${(form[key as keyof CreatePropertyDto] as string[] | undefined)?.includes(value) ? 'border-primary bg-primary text-primary-foreground' : 'border-[#ffffff18] bg-card text-foreground'}`}>
                     {value.replace(/_/g, ' ')}
                   </button>
                 ))}
@@ -739,8 +740,8 @@ export default function EditListingPage() {
         </div>
 
         <div className="card order-7 space-y-5 p-6">
-          <h2 className="font-display flex items-center gap-2 text-base font-bold text-navy-900">
-            <Camera className="h-4 w-4 text-veriq-secondary" /> Property Images
+          <h2 className="font-display flex items-center gap-2 text-base font-bold text-foreground">
+            <Camera className="h-4 w-4 text-primary" /> Property Images
           </h2>
           {isMediaLoading ? (
             <div className="flex justify-center py-8"><LoadingSpinner size="md" /></div>
@@ -754,20 +755,20 @@ export default function EditListingPage() {
                   <div key={section}>
                     <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                       <div className="min-w-0">
-                        <p className="text-sm font-semibold text-navy-800">{label}</p>
-                        <p className="text-xs text-slate-400">{hint}</p>
+                        <p className="text-sm font-semibold text-foreground">{label}</p>
+                        <p className="text-xs text-muted-foreground">{hint}</p>
                       </div>
                       <div className="flex flex-wrap items-center gap-1.5 sm:justify-end">
                         <span className={`rounded-full px-2 py-1 text-[11px] font-bold ${
-                          items.length < minimum ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700'
+                          items.length < minimum ? 'bg-[#fbbf2410] text-[#fcd34d]' : 'bg-[#10b98112] text-[#6ee7b7]'
                         }`}>
                           {items.length}/{MAX_IMAGES} uploaded
                         </span>
-                        <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-600">
+                        <span className="rounded-full bg-[#ffffff0f] px-2 py-1 text-[11px] font-bold text-muted-foreground">
                           min {minimum}
                         </span>
                         {canAdd && (
-                          <button type="button" onClick={() => fileInputRefs.current[section]?.click()} className="rounded-full bg-veriq-secondary/10 px-2 py-1 text-[11px] font-bold text-veriq-secondary hover:bg-veriq-secondary/15">
+                          <button type="button" onClick={() => fileInputRefs.current[section]?.click()} className="rounded-full bg-[#10b98118] px-2 py-1 text-[11px] font-bold text-primary hover:bg-[#10b98126]">
                             Add image
                           </button>
                         )}
@@ -775,18 +776,18 @@ export default function EditListingPage() {
                     </div>
                     <div className="flex flex-wrap gap-3">
                       {items.map((item) => (
-                        <div key={item.id} className="group relative h-24 w-24 overflow-hidden rounded-xl border border-slate-200">
+                        <div key={item.id} className="group relative h-24 w-24 overflow-hidden rounded-xl border border-[#ffffff18]">
                           <a href={normalizeAssetUrl(item.url)} target="_blank" rel="noopener noreferrer">
                             <img src={normalizeAssetUrl(item.url)} alt={item.caption ?? label} className="h-full w-full object-cover" />
                           </a>
-                          <button type="button" onClick={() => deleteMedia(item)} className="absolute right-1 top-1 rounded-full bg-black/70 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100">
+                          <button type="button" onClick={() => deleteMedia(item)} className="absolute right-1 top-1 rounded-full bg-[#070b14d9] p-1 text-foreground opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
                             <X className="h-3 w-3" />
                           </button>
                         </div>
                       ))}
-                      {items.length === 0 && <p className="text-xs text-slate-400">No images in this category yet.</p>}
+                      {items.length === 0 && <p className="text-xs text-muted-foreground">No images in this category yet.</p>}
                     </div>
-                    {err && <p className="mt-1 text-xs text-red-500">{err}</p>}
+                    {err && <p className="mt-1 text-xs text-destructive">{err}</p>}
                     <input
                       ref={(el) => { fileInputRefs.current[section] = el; }}
                       type="file"
@@ -803,11 +804,11 @@ export default function EditListingPage() {
           )}
         </div>
 
-        {propertyType === PropertyType.SHORT_STAY && <div className="card order-9 space-y-2 p-6"><h2 className="font-display text-base font-bold text-navy-900">Booking Link</h2><label className="label">Accommodation booking page</label><input type="url" value={form.bookingLink ?? ''} onChange={(event) => update('bookingLink', event.target.value || undefined)} placeholder="https://operator.example/accommodations/unit-name" className="input" /><p className="text-xs text-veriq-muted">Optional. Use a unit-specific HTTPS page where available. Visible only after unlock.</p></div>}
+        {propertyType === PropertyType.SHORT_STAY && <div className="card order-9 space-y-2 p-6"><h2 className="font-display text-base font-bold text-foreground">Booking Link</h2><label className="label">Accommodation booking page</label><input type="url" value={form.bookingLink ?? ''} onChange={(event) => update('bookingLink', event.target.value || undefined)} placeholder="https://operator.example/accommodations/unit-name" className="input" /><p className="text-xs text-muted-foreground">Optional. Use a unit-specific HTTPS page where available. Visible only after unlock.</p></div>}
 
         <div className="order-10 flex justify-end gap-3 pb-8">
-          <Link href="/dashboard/properties" className="btn-outline !py-2.5 !text-sm">Cancel</Link>
-          <button type="submit" disabled={isSaving} className="btn-primary !py-2.5 !text-sm flex items-center gap-2">
+          <Link href="/dashboard/properties" className={buttonClass('secondary')}>Cancel</Link>
+          <button type="submit" disabled={isSaving} className={buttonClass()}>
             {isSaving && <LoadingSpinner size="sm" />}
             Save Changes
           </button>

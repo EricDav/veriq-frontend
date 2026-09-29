@@ -8,7 +8,58 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      // The prototype's 760px cut-over, expressed mobile-first: base styles are the narrow
+      // ones and `wide:` restores the desktop value. Tailwind's own sm/md/lg are untouched.
+      screens: {
+        wide: "760px",
+      },
       colors: {
+        // ── Prototype semantic tokens (see :root in app/globals.css) ──────────
+        // Each token already carries its own alpha, so opacity modifiers
+        // (`bg-card/50`) do not apply to them — use an exact hex instead.
+        background: "var(--background)",
+        foreground: "var(--foreground)",
+        card: {
+          DEFAULT: "var(--card)",
+          foreground: "var(--card-foreground)",
+        },
+        popover: {
+          DEFAULT: "var(--popover)",
+          foreground: "var(--popover-foreground)",
+        },
+        primary: {
+          DEFAULT: "var(--primary)",
+          foreground: "var(--primary-foreground)",
+        },
+        secondary: {
+          DEFAULT: "var(--secondary)",
+          foreground: "var(--secondary-foreground)",
+        },
+        accent: {
+          DEFAULT: "var(--accent)",
+          foreground: "var(--accent-foreground)",
+        },
+        muted: {
+          DEFAULT: "var(--muted)",
+          foreground: "var(--muted-foreground)",
+        },
+        destructive: "var(--destructive)",
+        border: "var(--border)",
+        input: "var(--input)",
+        ring: "var(--ring)",
+        sidebar: {
+          DEFAULT: "var(--sidebar)",
+          foreground: "var(--sidebar-foreground)",
+          accent: "var(--sidebar-accent)",
+          "accent-foreground": "var(--sidebar-accent-foreground)",
+          primary: "var(--sidebar-primary)",
+          "primary-foreground": "var(--sidebar-primary-foreground)",
+          border: "var(--sidebar-border)",
+          ring: "var(--sidebar-ring)",
+        },
+
+        // ── Pre-token scales. Screens still reference these and will be
+        // migrated onto the semantic tokens above, so they stay as they are.
         navy: {
           50:  "#F8FAFC",
           100: "#F1F5F9",
@@ -47,6 +98,20 @@ const config: Config = {
       fontFamily: {
         sans:    ["var(--font-inter)", "system-ui", "sans-serif"],
         display: ["var(--font-sora)", "system-ui", "sans-serif"],
+      },
+      // The prototype's radii are deliberately not uniform.
+      borderRadius: {
+        btn:       "9px",
+        unit:      "10px",
+        review:    "12px",
+        searchbar: "14px",
+        panel:     "16px",
+      },
+      // The prototype's UI type ramp, which lands between Tailwind's own steps.
+      fontSize: {
+        "ui-xs": "0.78rem",   // badge
+        "ui-sm": "0.85rem",   // small button, audit row, step bar
+        "ui-md": "0.9rem",    // button, notice, check line
       },
       backgroundImage: {
         "hero-pattern":  "linear-gradient(135deg, #070B14 0%, #111827 60%, #0D3D2E 100%)",

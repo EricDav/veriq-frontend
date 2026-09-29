@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ShieldAlert } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
+import { Button, ChipIcon, Panel } from '@/components/ui';
 import { UserRole } from '@/types';
 
 /** Operator pages render only for Property Operator accounts; the API enforces the same rule server-side. */
@@ -14,14 +15,18 @@ export function OperatorGuard({ children }: { children: ReactNode }) {
   if (!user || user.role !== UserRole.PROPERTY_OPERATOR) {
     return (
       <div className="mx-auto max-w-lg">
-        <div className="card flex flex-col items-center gap-3 p-8 text-center hover:shadow-card">
-          <ShieldAlert className="h-10 w-10 text-amber-500" />
-          <h1 className="font-display text-xl font-bold text-navy-900">Property Operator account required</h1>
-          <p className="text-sm text-slate-500">
+        <Panel className="flex flex-col items-center gap-3 text-center">
+          <ChipIcon>
+            <ShieldAlert aria-hidden="true" className="h-5 w-5" />
+          </ChipIcon>
+          <h1 className="font-display text-xl font-semibold text-foreground">Property Operator account required</h1>
+          <p className="text-ui-md text-muted-foreground">
             These pages are for Property Operators managing their own properties and Shared Property opportunities.
           </p>
-          <Link href="/dashboard" className="btn-primary !py-2.5">Go to your dashboard</Link>
-        </div>
+          <Button asChild className="mt-1">
+            <Link href="/dashboard">Go to your dashboard</Link>
+          </Button>
+        </Panel>
       </div>
     );
   }

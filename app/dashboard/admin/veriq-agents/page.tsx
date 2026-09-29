@@ -279,7 +279,7 @@ export default function AdminVeriqAgentsPage() {
 
       <div className="card flex flex-col gap-3 p-4 hover:shadow-card sm:flex-row sm:items-center">
         <div className="relative flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input aria-label="Search Veriq Agents" className="input !pl-9" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search by name, email or referral code" />
         </div>
         <select aria-label="Status" className="input sm:!w-48" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}>
@@ -300,7 +300,7 @@ export default function AdminVeriqAgentsPage() {
           <>
             <TableScroll>
               <table className="w-full min-w-[1080px]">
-                <thead className="bg-slate-50">
+                <thead className="bg-[#ffffff08]">
                   <tr>
                     <th className={th}>Agent</th>
                     <th className={th}>Referral code</th>
@@ -312,66 +312,66 @@ export default function AdminVeriqAgentsPage() {
                     <th className={th}><span className="sr-only">Actions</span></th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-[#ffffff12]">
                   {agents.map((agent) => (
-                    <tr key={agent.id} className="hover:bg-slate-50/60">
+                    <tr key={agent.id} className="hover:bg-[#ffffff08]">
                       <td className={td}>
                         <p className="font-semibold">{agent.name || 'Unnamed Agent'}</p>
-                        <p className="text-xs text-slate-500">{agent.email ?? '—'}</p>
-                        <p className="text-xs text-slate-500">{agent.phone ?? ''}{agent.username ? ` · @${agent.username}` : ''}</p>
-                        <p className="text-[11px] text-slate-400">Created {dateOnly(agent.createdAt)}</p>
+                        <p className="text-xs text-muted-foreground">{agent.email ?? '—'}</p>
+                        <p className="text-xs text-muted-foreground">{agent.phone ?? ''}{agent.username ? ` · @${agent.username}` : ''}</p>
+                        <p className="text-[11px] text-muted-foreground">Created {dateOnly(agent.createdAt)}</p>
                       </td>
                       <td className={td}>
                         {agent.referralCode ? (
-                          <button type="button" onClick={() => void copyCode(agent.referralCode!)} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 font-mono text-xs font-bold text-navy-900 hover:bg-white" title="Copy referral code">
-                            {agent.referralCode} <Copy className="h-3 w-3 text-slate-400" />
+                          <button type="button" onClick={() => void copyCode(agent.referralCode!)} className="inline-flex items-center gap-1.5 rounded-lg border border-[#ffffff12] bg-[#ffffff08] px-2 py-1 font-mono text-xs font-bold text-foreground hover:bg-card" title="Copy referral code">
+                            {agent.referralCode} <Copy className="h-3 w-3 text-muted-foreground" />
                           </button>
                         ) : (
-                          <span className="text-xs text-slate-400">Pending</span>
+                          <span className="text-xs text-muted-foreground">Pending</span>
                         )}
                       </td>
                       <td className={td}>
                         <StatusBadge status={agent.isActive ? 'active' : 'suspended'} />
-                        {agent.suspendedAt && <p className="mt-1 whitespace-nowrap text-[11px] text-slate-500">Since {dateOnly(agent.suspendedAt)}</p>}
+                        {agent.suspendedAt && <p className="mt-1 whitespace-nowrap text-[11px] text-muted-foreground">Since {dateOnly(agent.suspendedAt)}</p>}
                       </td>
                       <td className={td}>
                         <StatusBadge status={agent.publishingPermission ? 'active' : 'disabled'} label={agent.publishingPermission ? 'Allowed' : 'Revoked'} />
-                        {agent.publishingPermissionChangedAt && <p className="mt-1 whitespace-nowrap text-[11px] text-slate-500">Changed {dateOnly(agent.publishingPermissionChangedAt)}</p>}
+                        {agent.publishingPermissionChangedAt && <p className="mt-1 whitespace-nowrap text-[11px] text-muted-foreground">Changed {dateOnly(agent.publishingPermissionChangedAt)}</p>}
                       </td>
                       <td className={td}>
                         <p className="whitespace-nowrap text-xs">{agent.operators} Operator{agent.operators === 1 ? '' : 's'}</p>
-                        <p className="whitespace-nowrap text-[11px] text-slate-500">{agent.properties.total} properties · {agent.properties.published} published</p>
+                        <p className="whitespace-nowrap text-[11px] text-muted-foreground">{agent.properties.total} properties · {agent.properties.published} published</p>
                       </td>
                       <td className={td}>
                         <p className="text-xs">{agent.stateOfOperation ?? '—'}</p>
-                        {agent.operatingLocations.length > 0 && <p className="max-w-[160px] text-[11px] text-slate-500">{agent.operatingLocations.join(', ')}</p>}
+                        {agent.operatingLocations.length > 0 && <p className="max-w-[160px] text-[11px] text-muted-foreground">{agent.operatingLocations.join(', ')}</p>}
                       </td>
                       <td className={td}>
                         <StatusBadge status={agent.bankDetailsComplete ? 'verified' : 'pending'} label={agent.bankDetailsComplete ? 'Complete' : 'Missing'} />
                       </td>
                       <td className={`${td} text-right`}>
                         <div className="flex flex-wrap justify-end gap-1.5">
-                          <button type="button" onClick={() => openCommission(agent)} className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-bold text-navy-700 hover:bg-slate-50">
+                          <button type="button" onClick={() => openCommission(agent)} className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg border border-[#ffffff12] px-2.5 py-1.5 text-xs font-bold text-foreground hover:bg-[#ffffff08]">
                             <Percent className="h-3.5 w-3.5" /> Commission
                           </button>
-                          <Link href={`/dashboard/admin/quality?agentId=${encodeURIComponent(agent.id)}`} className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-bold text-navy-700 hover:bg-slate-50">
+                          <Link href={`/dashboard/admin/quality?agentId=${encodeURIComponent(agent.id)}`} className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg border border-[#ffffff12] px-2.5 py-1.5 text-xs font-bold text-foreground hover:bg-[#ffffff08]">
                             <TrendingUp className="h-3.5 w-3.5" /> Quality
                           </Link>
                           {agent.publishingPermission ? (
-                            <button type="button" onClick={() => setAction({ kind: 'publishing', agent, allowed: false })} className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg border border-amber-200 px-2.5 py-1.5 text-xs font-bold text-amber-700 hover:bg-amber-50">
+                            <button type="button" onClick={() => setAction({ kind: 'publishing', agent, allowed: false })} className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg border border-[#fbbf2430] px-2.5 py-1.5 text-xs font-bold text-[#fcd34d] hover:bg-[#fbbf2410]">
                               <ShieldOff className="h-3.5 w-3.5" /> Revoke publishing
                             </button>
                           ) : (
-                            <button type="button" disabled={!agent.isActive} title={agent.isActive ? undefined : 'Restore the account first'} onClick={() => setAction({ kind: 'publishing', agent, allowed: true })} className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg border border-emerald-200 px-2.5 py-1.5 text-xs font-bold text-emerald-700 hover:bg-emerald-50 disabled:opacity-40">
+                            <button type="button" disabled={!agent.isActive} title={agent.isActive ? undefined : 'Restore the account first'} onClick={() => setAction({ kind: 'publishing', agent, allowed: true })} className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg border border-[#10b98135] px-2.5 py-1.5 text-xs font-bold text-primary hover:bg-[#10b98112] disabled:opacity-40">
                               <BadgeCheck className="h-3.5 w-3.5" /> Grant publishing
                             </button>
                           )}
                           {agent.isActive ? (
-                            <button type="button" onClick={() => setAction({ kind: 'suspend', agent })} className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg border border-red-200 px-2.5 py-1.5 text-xs font-bold text-red-600 hover:bg-red-50">
+                            <button type="button" onClick={() => setAction({ kind: 'suspend', agent })} className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg border border-[#fb718530] px-2.5 py-1.5 text-xs font-bold text-destructive hover:bg-[#fb718510]">
                               <Ban className="h-3.5 w-3.5" /> Suspend
                             </button>
                           ) : (
-                            <button type="button" onClick={() => setAction({ kind: 'restore', agent })} className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg border border-emerald-200 px-2.5 py-1.5 text-xs font-bold text-emerald-700 hover:bg-emerald-50">
+                            <button type="button" onClick={() => setAction({ kind: 'restore', agent })} className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg border border-[#10b98135] px-2.5 py-1.5 text-xs font-bold text-primary hover:bg-[#10b98112]">
                               <RotateCcw className="h-3.5 w-3.5" /> Restore
                             </button>
                           )}
@@ -391,7 +391,7 @@ export default function AdminVeriqAgentsPage() {
       <Modal isOpen={createOpen} onClose={() => !creating && setCreateOpen(false)} title="Create Veriq Agent account" size="lg" className="max-h-[92vh] overflow-y-auto">
         {createdAgent ? (
           <div className="space-y-4">
-            <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4 text-sm text-emerald-900">
+            <div className="rounded-xl border border-[#10b98135] bg-[#10b98112] p-4 text-sm text-primary">
               <p className="font-semibold">{createdAgent.name || 'The Agent'} can now sign in with the email and initial password you set.</p>
               {createdAgent.referralCode && (
                 <p className="mt-2">
@@ -401,7 +401,7 @@ export default function AdminVeriqAgentsPage() {
               <p className="mt-2 text-xs">Share the initial password privately; the Agent should change it after first sign-in.</p>
             </div>
             <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-              <button type="button" onClick={() => setCreateOpen(false)} className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-medium text-navy-700 hover:bg-slate-50">Close</button>
+              <button type="button" onClick={() => setCreateOpen(false)} className="rounded-xl border border-[#ffffff12] px-5 py-2.5 text-sm font-medium text-foreground hover:bg-[#ffffff08]">Close</button>
               <button type="button" onClick={() => setCreatedAgent(null)} className="btn-primary !py-2.5"><Plus className="h-4 w-4" /> Create another</button>
             </div>
           </div>
@@ -435,20 +435,20 @@ export default function AdminVeriqAgentsPage() {
                 </select>
               </div>
               <div>
-                <label className="label text-xs" htmlFor="agent-area">General operating area <span className="font-normal text-slate-400">(optional)</span></label>
+                <label className="label text-xs" htmlFor="agent-area">General operating area <span className="font-normal text-muted-foreground">(optional)</span></label>
                 <input id="agent-area" className="input" maxLength={200} value={form.generalOperatingArea ?? ''} onChange={(e) => setForm((f) => ({ ...f, generalOperatingArea: e.target.value }))} />
               </div>
               <div className="sm:col-span-2">
                 <label className="label text-xs" htmlFor="agent-password">Initial password</label>
                 <input id="agent-password" type="password" autoComplete="new-password" className="input" maxLength={72} value={form.password} onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))} required />
-                <p className="mt-1 text-[11px] text-slate-400">8–72 characters with upper and lower case letters, a number and a symbol.</p>
+                <p className="mt-1 text-[11px] text-muted-foreground">8–72 characters with upper and lower case letters, a number and a symbol.</p>
               </div>
             </div>
-            <p className="rounded-lg bg-slate-50 p-3 text-xs text-slate-600">
+            <p className="rounded-lg bg-[#ffffff08] p-3 text-xs text-muted-foreground">
               A unique referral code is issued automatically. The account starts active with publishing permission and the default commission share.
             </p>
             <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-              <button type="button" onClick={() => setCreateOpen(false)} disabled={creating} className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-medium text-navy-700 hover:bg-slate-50 disabled:opacity-50">Cancel</button>
+              <button type="button" onClick={() => setCreateOpen(false)} disabled={creating} className="rounded-xl border border-[#ffffff12] px-5 py-2.5 text-sm font-medium text-foreground hover:bg-[#ffffff08] disabled:opacity-50">Cancel</button>
               <button type="submit" disabled={creating} className="btn-primary !py-2.5">
                 {creating ? <LoadingSpinner size="sm" /> : <UserPlus className="h-4 w-4" />} Create account
               </button>
@@ -478,7 +478,7 @@ export default function AdminVeriqAgentsPage() {
         message={
           action ? (
             <div className="space-y-2">
-              <p><strong className="text-navy-900">{action.agent.name || action.agent.email}</strong></p>
+              <p><strong className="text-foreground">{action.agent.name || action.agent.email}</strong></p>
               {action.kind === 'suspend' && (
                 <p>Suspension blocks Agent work, new assignments and publishing. Earnings already recorded remain valid under the withdrawal rules. The Agent’s {action.agent.operators} Operator{action.agent.operators === 1 ? '' : 's'} will appear in the assignment queue for reassignment.</p>
               )}
@@ -494,7 +494,7 @@ export default function AdminVeriqAgentsPage() {
       <Modal isOpen={!!commissionAgent} onClose={() => setCommissionAgent(null)} title="Per-Agent commission share" size="lg" className="max-h-[92vh] overflow-y-auto">
         {commissionAgent && (
           <div className="space-y-4">
-            <p className="text-sm font-semibold text-navy-900">{commissionAgent.name || commissionAgent.email}</p>
+            <p className="text-sm font-semibold text-foreground">{commissionAgent.name || commissionAgent.email}</p>
             {commissionError ? (
               <ErrorPanel error={commissionError} onRetry={() => void loadCommission(commissionAgent.id)} />
             ) : commissionLoading && !commission ? (
@@ -502,24 +502,24 @@ export default function AdminVeriqAgentsPage() {
             ) : commission ? (
               <>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                  <div className="rounded-xl bg-emerald-50 p-3">
-                    <p className="text-[11px] font-semibold uppercase text-emerald-700">Share in force now</p>
-                    <p className="font-display text-2xl font-black text-navy-900">{commission.currentSharePercent}%</p>
-                    <p className="text-xs text-slate-600">{commission.source === 'agent_override' ? 'Per-Agent override' : 'Default Agent share (Business Rules)'}</p>
+                  <div className="rounded-xl bg-[#10b98112] p-3">
+                    <p className="text-[11px] font-semibold uppercase text-primary">Share in force now</p>
+                    <p className="font-display text-2xl font-black text-foreground">{commission.currentSharePercent}%</p>
+                    <p className="text-xs text-muted-foreground">{commission.source === 'agent_override' ? 'Per-Agent override' : 'Default Agent share (Business Rules)'}</p>
                   </div>
-                  <div className="rounded-xl bg-slate-50 p-3 text-xs text-slate-600">
+                  <div className="rounded-xl bg-[#ffffff08] p-3 text-xs text-muted-foreground">
                     Share of the gross configured unlock price. Changes apply only to unlocks at or after the effective time; recorded earnings are never recalculated.
                   </div>
                 </div>
 
-                <div className="space-y-3 rounded-xl border border-slate-200 p-4">
+                <div className="space-y-3 rounded-xl border border-[#ffffff12] p-4">
                   <div className="flex flex-wrap gap-2">
                     <label className="flex items-center gap-2 text-sm">
-                      <input type="radio" name="commission-mode" checked={commissionMode === 'override'} onChange={() => setCommissionMode('override')} className="accent-emerald-600" />
+                      <input type="radio" name="commission-mode" checked={commissionMode === 'override'} onChange={() => setCommissionMode('override')} className="accent-[#10b981]" />
                       Set an override
                     </label>
                     <label className="flex items-center gap-2 text-sm">
-                      <input type="radio" name="commission-mode" checked={commissionMode === 'default'} onChange={() => setCommissionMode('default')} className="accent-emerald-600" />
+                      <input type="radio" name="commission-mode" checked={commissionMode === 'default'} onChange={() => setCommissionMode('default')} className="accent-[#10b981]" />
                       Return to default share
                     </label>
                   </div>
@@ -528,13 +528,13 @@ export default function AdminVeriqAgentsPage() {
                       <div>
                         <label className="label text-xs" htmlFor="share-percent">Agent share (%)</label>
                         <input id="share-percent" type="number" min={0} max={100} step="0.01" className="input" value={sharePercent} onChange={(e) => setSharePercent(e.target.value)} />
-                        {!shareValid && sharePercent !== '' && <p className="mt-1 text-[11px] text-red-600">Enter 0–100 with at most two decimals.</p>}
+                        {!shareValid && sharePercent !== '' && <p className="mt-1 text-[11px] text-destructive">Enter 0–100 with at most two decimals.</p>}
                       </div>
                     )}
                     <div>
-                      <label className="label text-xs" htmlFor="share-effective">Effective from <span className="font-normal text-slate-400">(blank = now)</span></label>
+                      <label className="label text-xs" htmlFor="share-effective">Effective from <span className="font-normal text-muted-foreground">(blank = now)</span></label>
                       <input id="share-effective" type="datetime-local" className="input" value={effectiveFrom} onChange={(e) => setEffectiveFrom(e.target.value)} />
-                      {!effectiveValid && <p className="mt-1 text-[11px] text-red-600">The effective time cannot be in the past.</p>}
+                      {!effectiveValid && <p className="mt-1 text-[11px] text-destructive">The effective time cannot be in the past.</p>}
                     </div>
                   </div>
                   <button type="button" disabled={!shareValid || !effectiveValid || (commissionMode === 'override' && sharePercent === '')} onClick={() => setCommissionConfirmOpen(true)} className="btn-primary !py-2.5 !text-sm">
@@ -543,20 +543,20 @@ export default function AdminVeriqAgentsPage() {
                 </div>
 
                 <div>
-                  <h3 className="mb-2 text-sm font-bold text-navy-900">Override history</h3>
+                  <h3 className="mb-2 text-sm font-bold text-foreground">Override history</h3>
                   {commission.history.length === 0 ? (
                     <EmptyState title="No per-Agent overrides" description="This Agent has always used the default share." />
                   ) : (
                     <TableScroll>
                       <table className="w-full min-w-[520px]">
-                        <thead className="bg-slate-50">
+                        <thead className="bg-[#ffffff08]">
                           <tr>
                             <th className={th}>Share</th>
                             <th className={th}>Effective from</th>
                             <th className={th}>Reason</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="divide-y divide-[#ffffff12]">
                           {commission.history.map((row) => (
                             <tr key={row.id}>
                               <td className={td}>{row.sharePercent === null ? 'Default share' : `${row.sharePercent}%`}</td>
@@ -564,7 +564,7 @@ export default function AdminVeriqAgentsPage() {
                                 <p className="whitespace-nowrap text-xs">{dateTime(row.effectiveFrom)}</p>
                                 {new Date(row.effectiveFrom).getTime() > Date.now() && <StatusBadge status="scheduled" />}
                               </td>
-                              <td className={td}><p className="text-xs text-slate-600">{row.reason || '—'}</p></td>
+                              <td className={td}><p className="text-xs text-muted-foreground">{row.reason || '—'}</p></td>
                             </tr>
                           ))}
                         </tbody>
@@ -588,7 +588,7 @@ export default function AdminVeriqAgentsPage() {
         message={
           <p>
             {commissionAgent?.name || 'This Agent'} will earn{' '}
-            <strong className="text-navy-900">{commissionMode === 'default' ? 'the default Agent share' : `${shareValue}%`}</strong>{' '}
+            <strong className="text-foreground">{commissionMode === 'default' ? 'the default Agent share' : `${shareValue}%`}</strong>{' '}
             of the gross configured unlock price from {effectiveFrom ? dateTime(new Date(effectiveFrom)) : 'now'}.
           </p>
         }

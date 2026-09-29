@@ -1,5 +1,6 @@
 import { CheckCircle2, Scale, UserCheck, XCircle } from 'lucide-react';
 import type { RefundAgentConfirmation, RefundEligibility } from '@/types/renter';
+import { Eyebrow, Notice, Panel } from '@/components/ui';
 import { formatDateTime } from './format';
 
 /** Each part of the launch refund rule, in the renter's own terms (Master Blueprint §5). */
@@ -45,64 +46,67 @@ export function RefundEligibilityBreakdown({
 }) {
   if (!eligibility) return null;
   return (
-    <section className="card space-y-4 p-5" aria-labelledby="refund-eligibility-heading">
-      <div className="flex items-start gap-2.5">
-        <Scale className="mt-0.5 h-4 w-4 flex-shrink-0 text-veriq-secondary" />
+    <Panel as="section" className="space-y-5" aria-labelledby="refund-eligibility-heading">
+      <div className="flex items-start gap-3">
+        <Scale aria-hidden="true" className="mt-1 h-4 w-4 flex-shrink-0 text-primary" />
         <div className="min-w-0">
-          <h2 id="refund-eligibility-heading" className="font-display text-sm font-bold text-navy-900">
+          <Eyebrow>Launch refund rule</Eyebrow>
+          <h2 id="refund-eligibility-heading" className="font-display text-base font-semibold text-foreground">
             How your request measures against the launch refund rule
           </h2>
-          {launchRule && <p className="mt-1 text-xs leading-5 text-slate-500">{launchRule}</p>}
+          {launchRule && <p className="mt-1 text-ui-sm leading-6 text-muted-foreground">{launchRule}</p>}
         </div>
       </div>
 
-      <ul className="space-y-2">
+      <ul className="space-y-3">
         {TESTS.map((test) => {
           const passed = eligibility[test.key] === true;
           return (
-            <li key={test.key} className="flex items-start gap-2.5 rounded-xl border border-slate-200 p-3">
+            <li key={test.key} className="flex items-start gap-3 rounded-unit border border-[#ffffff18] bg-[#070b1444] p-[17px]">
               {passed ? (
-                <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-600" />
+                <CheckCircle2 aria-hidden="true" className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" />
               ) : (
-                <XCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-slate-400" />
+                <XCircle aria-hidden="true" className="mt-0.5 h-4 w-4 flex-shrink-0 text-muted-foreground" />
               )}
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-navy-900">{test.label}</p>
-                <p className="text-xs leading-5 text-slate-500">{passed ? test.met : test.notMet}</p>
+                <p className="text-ui-md font-semibold text-foreground">
+                  {test.label}
+                  <span className="sr-only">{passed ? ' — met' : ' — not met'}</span>
+                </p>
+                <p className="text-ui-sm leading-6 text-muted-foreground">{passed ? test.met : test.notMet}</p>
               </div>
             </li>
           );
         })}
       </ul>
 
-      <div
-        className={`rounded-xl border p-3 text-sm leading-6 ${
-          eligibility.meetsLaunchRule
-            ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
-            : 'border-amber-200 bg-amber-50 text-amber-900'
-        }`}
+      <Notice
+        tone={eligibility.meetsLaunchRule ? 'neutral' : 'amber'}
+        title={eligibility.meetsLaunchRule ? 'Every part of the rule is met' : 'Admin will decide this one on its merits'}
       >
         {eligibility.meetsLaunchRule
-          ? 'Your request meets every part of the launch rule. The Veriq Agent confirms the availability change, or Admin decides in your favour.'
+          ? 'The Veriq Agent confirms the availability change, or Admin decides in your favour.'
           : 'Your request does not meet every part of the launch rule, so Admin will look at it on its own merits. Other qualifying problems can still justify a refund.'}
-      </div>
+      </Notice>
 
       {agentConfirmation && (
-        <div className="flex items-start gap-2.5 rounded-xl border border-slate-200 p-3">
-          <UserCheck className="mt-0.5 h-4 w-4 flex-shrink-0 text-veriq-secondary" />
+        <div className="flex items-start gap-3 rounded-unit border border-[#ffffff18] bg-[#070b1444] p-[17px]">
+          <UserCheck aria-hidden="true" className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" />
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-navy-900">
+            <p className="text-ui-md font-semibold text-foreground">
               {agentConfirmation.decision === 'confirmed'
                 ? 'The Veriq Agent confirmed the availability change'
                 : 'The Veriq Agent disputed the availability claim — Admin will decide'}
             </p>
-            {agentConfirmation.note && <p className="mt-0.5 text-xs leading-5 text-slate-600">{agentConfirmation.note}</p>}
-            <p className="mt-1 text-[11px] text-slate-400">{formatDateTime(agentConfirmation.at)}</p>
+            {agentConfirmation.note && (
+              <p className="mt-0.5 text-ui-sm leading-6 text-muted-foreground">{agentConfirmation.note}</p>
+            )}
+            <p className="mt-1 text-xs text-muted-foreground">{formatDateTime(agentConfirmation.at)}</p>
           </div>
         </div>
       )}
 
-      <p className="text-[11px] text-slate-400">Checked {formatDateTime(eligibility.checkedAt)}</p>
-    </section>
+      <p className="text-xs text-muted-foreground">Checked {formatDateTime(eligibility.checkedAt)}</p>
+    </Panel>
   );
 }

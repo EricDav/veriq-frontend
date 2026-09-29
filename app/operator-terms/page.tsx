@@ -69,92 +69,92 @@ const ACCOUNT_REQUIREMENTS = [
 export default function OperatorTermsPage() {
   return (
     <>
-      <section className="bg-navy-900 pb-14 pt-28 text-white sm:pt-32">
+      <section className="bg-background pb-14 pt-28 text-foreground sm:pt-32">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-          <p className="text-xs font-bold uppercase tracking-wider text-emerald-300">Property Operator Terms</p>
+          <p className="text-xs font-bold uppercase tracking-wider text-[#6ee7b7]">Property Operator Terms</p>
           <h1 className="mt-2 font-display text-3xl font-bold leading-tight sm:text-4xl">Listing on Veriq: what is expected of you</h1>
-          <p className="mt-5 text-sm leading-7 text-white/70 sm:text-base">
+          <p className="mt-5 text-sm leading-7 text-muted-foreground sm:text-base">
             Property Operator is the supply-side account: landlords, Short Let and Hostel operators, and residents offering Shared Property. Listing is
             free at launch. Operators receive no share of unlock revenue, and Veriq never collects rent, deposits or purchase money on your behalf.
           </p>
         </div>
       </section>
 
-      <section className="bg-white py-14 sm:py-16">
+      <section className="bg-card py-14 sm:py-16">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-          <h2 className="font-display text-2xl font-black text-navy-900">Who holds the account</h2>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-veriq-muted">
+          <h2 className="font-display text-2xl font-black text-foreground">Who holds the account</h2>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
             One verified identity can operate in more than one context — a landlord who also runs a Short Let does not need a second account — but each
             property context keeps its own authority and verification requirements.
           </p>
           <div className="mt-8 grid gap-5 md:grid-cols-2">
             {CONTEXTS.map(({ icon: Icon, title, holder, body }) => (
-              <article key={title} className="rounded-2xl border border-slate-200 p-5">
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-navy-50 text-navy-700"><Icon className="h-5 w-5" /></span>
-                <h3 className="mt-4 font-display text-base font-bold text-navy-900">{title}</h3>
-                <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-veriq-secondary">{holder}</p>
-                <p className="mt-2 text-sm leading-6 text-veriq-muted">{body}</p>
+              <article key={title} className="rounded-2xl border border-[#ffffff12] p-5">
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#ffffff08] text-foreground"><Icon className="h-5 w-5" /></span>
+                <h3 className="mt-4 font-display text-base font-bold text-foreground">{title}</h3>
+                <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-primary">{holder}</p>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">{body}</p>
               </article>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="bg-veriq-surface py-14 sm:py-16">
+      <section className="bg-background py-14 sm:py-16">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-          <h2 className="flex items-center gap-2 font-display text-2xl font-black text-navy-900"><ClipboardList className="h-6 w-6 text-veriq-secondary" /> Account requirements</h2>
+          <h2 className="flex items-center gap-2 font-display text-2xl font-black text-foreground"><ClipboardList className="h-6 w-6 text-primary" /> Account requirements</h2>
           <ul className="mt-6 grid gap-3 sm:grid-cols-2">
             {ACCOUNT_REQUIREMENTS.map((item) => (
-              <li key={item} className="flex items-start gap-2 rounded-xl border border-slate-200 bg-white p-4 text-sm leading-6 text-slate-700">
-                <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-500" /> {item}
+              <li key={item} className="flex items-start gap-2 rounded-xl border border-[#ffffff12] bg-card p-4 text-sm leading-6 text-muted-foreground">
+                <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" /> {item}
               </li>
             ))}
           </ul>
-          <p className="mt-4 text-xs leading-6 text-slate-500">
+          <p className="mt-4 text-xs leading-6 text-muted-foreground">
             Identity documents, proof of occupancy and authority evidence are private verification evidence. They are never shown publicly, never shown to
             renters, and never published as listing media.
           </p>
         </div>
       </section>
 
-      <section className="bg-white py-14 sm:py-16">
+      <section className="bg-card py-14 sm:py-16">
         <div className="mx-auto grid max-w-5xl gap-6 px-4 sm:px-6 lg:grid-cols-2 lg:px-8">
-          <article className="rounded-2xl border border-slate-200 p-6">
-            <h2 className="flex items-center gap-2 font-display text-xl font-bold text-navy-900"><CheckCircle2 className="h-5 w-5 text-emerald-500" /> What you control</h2>
+          <article className="rounded-2xl border border-[#ffffff12] p-6">
+            <h2 className="flex items-center gap-2 font-display text-xl font-bold text-foreground"><CheckCircle2 className="h-5 w-5 text-primary" /> What you control</h2>
             <ul className="mt-4 space-y-3">
-              {CAN.map((item) => <li key={item} className="flex items-start gap-2 text-sm leading-6 text-slate-700"><CheckCircle2 className="mt-1 h-3.5 w-3.5 flex-shrink-0 text-emerald-500" /> {item}</li>)}
+              {CAN.map((item) => <li key={item} className="flex items-start gap-2 text-sm leading-6 text-muted-foreground"><CheckCircle2 className="mt-1 h-3.5 w-3.5 flex-shrink-0 text-primary" /> {item}</li>)}
             </ul>
           </article>
-          <article className="rounded-2xl border border-slate-200 p-6">
-            <h2 className="flex items-center gap-2 font-display text-xl font-bold text-navy-900"><XCircle className="h-5 w-5 text-red-400" /> What only Veriq can do</h2>
+          <article className="rounded-2xl border border-[#ffffff12] p-6">
+            <h2 className="flex items-center gap-2 font-display text-xl font-bold text-foreground"><XCircle className="h-5 w-5 text-[#fda4af]" /> What only Veriq can do</h2>
             <ul className="mt-4 space-y-3">
-              {CANNOT.map((item) => <li key={item} className="flex items-start gap-2 text-sm leading-6 text-slate-700"><XCircle className="mt-1 h-3.5 w-3.5 flex-shrink-0 text-red-400" /> {item}</li>)}
+              {CANNOT.map((item) => <li key={item} className="flex items-start gap-2 text-sm leading-6 text-muted-foreground"><XCircle className="mt-1 h-3.5 w-3.5 flex-shrink-0 text-[#fda4af]" /> {item}</li>)}
             </ul>
           </article>
         </div>
       </section>
 
-      <section className="bg-veriq-surface py-14 sm:py-16">
+      <section className="bg-background py-14 sm:py-16">
         <div className="mx-auto max-w-4xl space-y-5 px-4 sm:px-6 lg:px-8">
-          <article className="rounded-2xl border border-slate-200 bg-white p-6">
-            <p className="flex items-center gap-2 font-display text-base font-bold text-navy-900"><KeyRound className="h-4 w-4 text-veriq-secondary" /> Availability is your responsibility</p>
-            <p className="mt-2 text-sm leading-6 text-veriq-muted">
+          <article className="rounded-2xl border border-[#ffffff12] bg-card p-6">
+            <p className="flex items-center gap-2 font-display text-base font-bold text-foreground"><KeyRound className="h-4 w-4 text-primary" /> Availability is your responsibility</p>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
               Mark a Unit or opportunity unavailable as soon as it is taken. Changes apply immediately and are recorded with the time and the person who made
               them. Veriq asks you to reconfirm availability regularly; a Unit that is not reconfirmed within the configured freshness period moves to
               Unavailable rather than staying publicly available while stale. Availability history is the evidence Veriq uses when a renter requests a refund.
             </p>
           </article>
-          <article className="rounded-2xl border border-slate-200 bg-white p-6">
-            <p className="flex items-center gap-2 font-display text-base font-bold text-navy-900"><FileCheck2 className="h-4 w-4 text-veriq-secondary" /> Accuracy and occupant privacy</p>
-            <p className="mt-2 text-sm leading-6 text-veriq-muted">
+          <article className="rounded-2xl border border-[#ffffff12] bg-card p-6">
+            <p className="flex items-center gap-2 font-display text-base font-bold text-foreground"><FileCheck2 className="h-4 w-4 text-primary" /> Accuracy and occupant privacy</p>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
               Everything you submit must be true and current. You are not required to intrude on occupied Units for photographs; document those Units later,
               lawfully and without infringing your current occupants&apos; privacy. Material inaccuracy that causes a renter refund is investigated, and
               repeated problems can lead to suspension of a listing or account.
             </p>
           </article>
-          <article className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-6">
-            <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600" />
-            <p className="text-sm leading-6 text-amber-900">
+          <article className="flex items-start gap-3 rounded-2xl border border-[#fbbf2430] bg-[#fbbf2410] p-6">
+            <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#fcd34d]" />
+            <p className="text-sm leading-6 text-[#fcd34d]">
               Veriq may suspend or unpublish a listing immediately where authority is disputed, a duplicate or fraudulent record is suspected, or a
               verification requirement fails. Records are retained and remain auditable; they are not deleted to hide a change.
             </p>
@@ -162,12 +162,12 @@ export default function OperatorTermsPage() {
         </div>
       </section>
 
-      <section className="bg-white pb-16">
-        <div className="mx-auto max-w-4xl px-4 text-sm leading-6 text-veriq-muted sm:px-6 lg:px-8">
-          These Operator terms sit alongside the Veriq <Link href="/terms" className="font-semibold text-veriq-secondary hover:underline">Terms &amp; Conditions</Link> and{' '}
-          <Link href="/privacy" className="font-semibold text-veriq-secondary hover:underline">Privacy Policy</Link>. See the{' '}
-          <Link href="/verification-rules" className="font-semibold text-veriq-secondary hover:underline">verification rules</Link> for what a Veriq Agent
-          checks before a listing is published, or <Link href="/contact" className="font-semibold text-veriq-secondary hover:underline">contact Veriq</Link>{' '}
+      <section className="bg-card pb-16">
+        <div className="mx-auto max-w-4xl px-4 text-sm leading-6 text-muted-foreground sm:px-6 lg:px-8">
+          These Operator terms sit alongside the Veriq <Link href="/terms" className="font-semibold text-primary hover:underline">Terms &amp; Conditions</Link> and{' '}
+          <Link href="/privacy" className="font-semibold text-primary hover:underline">Privacy Policy</Link>. See the{' '}
+          <Link href="/verification-rules" className="font-semibold text-primary hover:underline">verification rules</Link> for what a Veriq Agent
+          checks before a listing is published, or <Link href="/contact" className="font-semibold text-primary hover:underline">contact Veriq</Link>{' '}
           if you are unsure which context applies to you.
         </div>
       </section>

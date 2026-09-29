@@ -5,8 +5,8 @@ import Link from 'next/link';
 import { Building2, ClipboardCheck, ExternalLink, Landmark, RefreshCw, Search } from 'lucide-react';
 import type { AgentPortfolio, PortfolioProperty, SaleManagedItem, VerificationQueueItem } from '@/types/agent';
 import { agentPortfolioApi, saleListingsApi, verificationApi } from '@/lib/api/agent';
-import { CATEGORY_LABELS, PUBLICATION_STATUS_STYLES, errorMessage, formatDateTime, formatNaira, humanize } from './format';
-import { EmptyBlock, ErrorBlock, InlineNotice, LoadingBlock, PageHeader, StatusPill, smallButton } from './ui';
+import { CATEGORY_LABELS, PUBLICATION_STATUS_TONES, errorMessage, formatDateTime, formatNaira, humanize } from './format';
+import { EmptyBlock, ErrorBlock, InlineNotice, LoadingBlock, PageHeader, StatusPill, smallButton, smallPrimaryButton } from './ui';
 
 const STATUS_ORDER = ['needs_correction', 'submitted', 'verification_in_progress', 'ready_to_publish', 'published', 'suspended', 'draft', 'archived'];
 
@@ -82,7 +82,7 @@ export function AgentAssignedProperties() {
             <button type="button" className={smallButton} onClick={load} disabled={loading}>
               <RefreshCw className="h-3.5 w-3.5" /> Refresh
             </button>
-            <Link href="/dashboard/agent/verification" className="btn-primary !px-4 !py-2 text-sm">
+            <Link href="/dashboard/agent/verification" className={smallPrimaryButton}>
               <ClipboardCheck className="h-4 w-4" /> Verification queue
             </Link>
           </>
@@ -110,17 +110,17 @@ export function AgentAssignedProperties() {
               { label: 'In verification', value: counts.awaiting },
               { label: 'Published', value: counts.published },
             ].map((stat) => (
-              <div key={stat.label} className="card !shadow-sm p-4 text-center">
-                <p className="text-2xl font-black text-navy-900">{stat.value}</p>
-                <p className="text-xs text-slate-500">{stat.label}</p>
+              <div key={stat.label} className="card p-4 text-center">
+                <p className="text-2xl font-black text-foreground">{stat.value}</p>
+                <p className="text-xs text-muted-foreground">{stat.label}</p>
               </div>
             ))}
           </div>
 
-          <div className="card !shadow-sm grid grid-cols-1 gap-3 p-4 sm:grid-cols-3">
+          <div className="card grid grid-cols-1 gap-3 p-4 sm:grid-cols-3">
             <label className="relative block sm:col-span-2">
               <span className="sr-only">Search</span>
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <input className="input !py-2 !pl-9 text-sm" placeholder="Search title, area or city" value={query} onChange={(event) => setQuery(event.target.value)} />
             </label>
             <select className="input !py-2 text-sm" value={status} onChange={(event) => setStatus(event.target.value)} aria-label="Publication status">
@@ -143,20 +143,20 @@ export function AgentAssignedProperties() {
               {properties.map((property) => {
                 const item = caseByProperty.get(property.id);
                 return (
-                  <li key={property.id} className="card !shadow-sm flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <li key={property.id} className="card flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="min-w-0 space-y-1">
-                      <p className="flex items-center gap-2 truncate font-semibold text-navy-900">
-                        <Building2 className="h-4 w-4 flex-shrink-0 text-slate-400" /> {property.title}
+                      <p className="flex items-center gap-2 truncate font-semibold text-foreground">
+                        <Building2 className="h-4 w-4 flex-shrink-0 text-muted-foreground" /> {property.title}
                       </p>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-muted-foreground">
                         {CATEGORY_LABELS[property.category] ?? property.category} · {property.area}, {property.city} · updated {formatDateTime(property.updatedAt)}
                       </p>
                       <div className="flex flex-wrap gap-1.5">
-                        <StatusPill value={property.publicationStatus} styles={PUBLICATION_STATUS_STYLES} />
-                        <span className="badge bg-slate-50 !px-2 !py-0.5 text-[11px] text-slate-600">Verification: {humanize(property.verificationStatus)}</span>
-                        {item?.escalated && <span className="badge bg-red-100 !px-2 !py-0.5 text-[11px] text-red-800">Escalated</span>}
+                        <StatusPill value={property.publicationStatus} tones={PUBLICATION_STATUS_TONES} />
+                        <span className="badge bg-[#070b1444] !px-2 !py-0.5 text-[11px] text-muted-foreground border-[#ffffff20]">Verification: {humanize(property.verificationStatus)}</span>
+                        {item?.escalated && <span className="badge bg-[#fb718518] !px-2 !py-0.5 text-[11px] text-[#fda4af] border-[#fb718530]">Escalated</span>}
                         {item && item.duplicateCandidates > 0 && !item.duplicateResolved && (
-                          <span className="badge bg-red-50 !px-2 !py-0.5 text-[11px] text-red-700">Duplicates unresolved</span>
+                          <span className="badge bg-[#fb718510] !px-2 !py-0.5 text-[11px] text-[#fda4af] border-[#fb718530]">Duplicates unresolved</span>
                         )}
                       </div>
                     </div>
@@ -180,20 +180,20 @@ export function AgentAssignedProperties() {
 
           {sales.length > 0 && (
             <section className="space-y-3">
-              <h2 className="flex items-center gap-2 font-display text-base font-bold text-navy-900">
-                <Landmark className="h-4 w-4 text-slate-400" /> Property for Sale listings ({sales.length})
+              <h2 className="flex items-center gap-2 font-display text-base font-bold text-foreground">
+                <Landmark className="h-4 w-4 text-muted-foreground" /> Property for Sale listings ({sales.length})
               </h2>
               <ul className="space-y-2">
                 {sales.map((sale) => (
-                  <li key={sale.id} className="card !shadow-sm flex flex-wrap items-center justify-between gap-2 p-3">
+                  <li key={sale.id} className="card flex flex-wrap items-center justify-between gap-2 p-3">
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-navy-900">{sale.title}</p>
-                      <p className="text-[11px] text-slate-500">
+                      <p className="truncate text-sm font-semibold text-foreground">{sale.title}</p>
+                      <p className="text-[11px] text-muted-foreground">
                         {sale.subtype === 'land' ? 'Land' : 'Built Property'} · {formatNaira(sale.askingPrice)}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <StatusPill value={sale.publicationStatus} styles={PUBLICATION_STATUS_STYLES} />
+                      <StatusPill value={sale.publicationStatus} tones={PUBLICATION_STATUS_TONES} />
                       <Link href={`/dashboard/agent/sales/${sale.id}`} className={smallButton}>
                         Open
                       </Link>

@@ -1,8 +1,9 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { AlertCircle, AlertTriangle, CheckCircle2, Info } from 'lucide-react';
+import { AlertCircle, AlertTriangle, CheckCircle2, Inbox, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ChipIcon, Notice as ProtoNotice, Panel } from '@/components/ui';
 import type { ReadinessBlocker, SchemaIssue } from '@/types/operator';
 import { TONE_CLASSES, type Tone } from './labels';
 
@@ -10,6 +11,11 @@ export function StatusBadge({ tone, children, className }: { tone: Tone; childre
   return <span className={cn('badge whitespace-nowrap', TONE_CLASSES[tone], className)}>{children}</span>;
 }
 
+/**
+ * A standing explanation on a form. The prototype has two notice skins — emerald and amber — so
+ * `info`/`success` take the emerald one and `warning`/`error` the amber one, with the icon and the
+ * `alert` role carrying the difference in severity.
+ */
 export function Notice({
   tone = 'info',
   title,
@@ -21,21 +27,16 @@ export function Notice({
   children?: ReactNode;
   className?: string;
 }) {
-  const styles = {
-    info: 'border-sky-200 bg-sky-50 text-sky-900',
-    warning: 'border-amber-200 bg-amber-50 text-amber-900',
-    error: 'border-red-200 bg-red-50 text-red-900',
-    success: 'border-emerald-200 bg-emerald-50 text-emerald-900',
-  }[tone];
   const Icon = { info: Info, warning: AlertTriangle, error: AlertCircle, success: CheckCircle2 }[tone];
   return (
-    <div className={cn('flex gap-3 rounded-xl border px-4 py-3 text-sm', styles, className)} role={tone === 'error' ? 'alert' : undefined}>
-      <Icon className="mt-0.5 h-4 w-4 flex-shrink-0" />
-      <div className="min-w-0 space-y-1">
-        {title && <p className="font-semibold">{title}</p>}
-        {children && <div className="leading-relaxed">{children}</div>}
-      </div>
-    </div>
+    <ProtoNotice
+      tone={tone === 'warning' || tone === 'error' ? 'amber' : 'neutral'}
+      icon={<Icon className="h-4 w-4" />}
+      title={title}
+      className={cn(tone === 'error' && 'border-[#fb718530] bg-[#fb718510]', className)}
+    >
+      {children}
+    </ProtoNotice>
   );
 }
 
@@ -60,17 +61,19 @@ export function IssueList({
   ];
   const unique = lines.filter((line, index) => lines.findIndex((other) => other.key === line.key) === index);
   return (
-    <Notice tone="error" title={unique.length ? title : undefined} className={className}>
-      {message && (!unique.length || unique[0].text !== message) && <p>{message}</p>}
-      {unique.length > 0 && (
-        <ul className="ml-4 list-disc space-y-0.5">
-          {unique.slice(0, 40).map((line) => (
-            <li key={line.key}>{line.text}</li>
-          ))}
-          {unique.length > 40 && <li>…and {unique.length - 40} more</li>}
-        </ul>
-      )}
-    </Notice>
+    <div role="alert" aria-live="polite" className={className}>
+      <Notice tone="error" title={unique.length ? title : undefined}>
+        {message && (!unique.length || unique[0].text !== message) && <p>{message}</p>}
+        {unique.length > 0 && (
+          <ul className="ml-4 list-disc space-y-0.5">
+            {unique.slice(0, 40).map((line) => (
+              <li key={line.key}>{line.text}</li>
+            ))}
+            {unique.length > 40 && <li>…and {unique.length - 40} more</li>}
+          </ul>
+        )}
+      </Notice>
+    </div>
   );
 }
 
@@ -90,25 +93,25 @@ export function SectionCard({
   id?: string;
 }) {
   return (
-    <section id={id} className={cn('card space-y-4 p-4 hover:shadow-card sm:p-6', className)}>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <Panel as="section" id={id} className={cn('space-y-5', className)}>
+      <div className="flex flex-col gap-3 wide:flex-row wide:items-start wide:justify-between">
         <div className="min-w-0">
-          <h2 className="font-display text-base font-semibold text-navy-900">{title}</h2>
-          {description && <div className="mt-1 text-sm text-slate-500">{description}</div>}
+          <h2 className="font-display text-base font-semibold text-foreground">{title}</h2>
+          {description && <div className="mt-1 text-ui-md text-muted-foreground">{description}</div>}
         </div>
         {actions && <div className="flex flex-shrink-0 flex-wrap gap-2">{actions}</div>}
       </div>
       {children}
-    </section>
+    </Panel>
   );
 }
 
 export function EmptyState({ icon, title, children }: { icon?: ReactNode; title: string; children?: ReactNode }) {
   return (
-    <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-slate-200 px-6 py-10 text-center">
-      {icon && <div className="text-slate-300">{icon}</div>}
-      <p className="font-semibold text-navy-900">{title}</p>
-      {children && <div className="max-w-md text-sm text-slate-500">{children}</div>}
+    <div className="flex flex-col items-center gap-3 rounded-searchbar border border-dashed border-[#ffffff25] bg-gradient-to-br from-card to-[#0b141d] px-6 py-12 text-center">
+      <ChipIcon>{icon ?? <Inbox className="h-5 w-5" />}</ChipIcon>
+      <p className="font-display font-semibold text-foreground">{title}</p>
+      {children && <div className="max-w-md text-ui-md text-muted-foreground">{children}</div>}
     </div>
   );
 }

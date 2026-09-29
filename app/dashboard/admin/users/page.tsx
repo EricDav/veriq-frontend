@@ -15,13 +15,13 @@ import { useToast } from '@/components/ui/Toast';
 import { useRouter } from 'next/navigation';
 
 const ROLE_BADGE: Record<UserRole, string> = {
-  renter: 'bg-slate-100 text-slate-600',
-  user: 'bg-slate-100 text-slate-600',
-  property_operator: 'bg-emerald-100 text-emerald-700',
-  agent: 'bg-gold-100 text-gold-700',
-  admin: 'bg-red-100 text-red-600',
-  super_admin: 'bg-purple-100 text-purple-700',
-  short_let_operator: 'bg-emerald-50 text-emerald-700',
+  renter: 'bg-[#ffffff08] text-muted-foreground',
+  user: 'bg-[#ffffff08] text-muted-foreground',
+  property_operator: 'bg-[#10b98112] text-primary',
+  agent: 'bg-[#10b98112] text-primary',
+  admin: 'bg-[#fb718510] text-destructive',
+  super_admin: 'bg-[#ffffff08] text-muted-foreground',
+  short_let_operator: 'bg-[#10b98112] text-primary',
 };
 
 type ActionType = 'deactivate' | 'activate';
@@ -118,8 +118,8 @@ export default function AdminUsersPage() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="font-display text-2xl font-bold text-navy-900">User Management</h1>
-          <p className="text-sm text-veriq-muted">{total} registered users</p>
+          <h1 className="font-display text-2xl font-bold text-foreground">User Management</h1>
+          <p className="text-sm text-muted-foreground">{total} registered users</p>
         </div>
         <button onClick={load} className="btn-primary !text-sm !py-2.5 flex items-center gap-2">
           <RefreshCw className="h-4 w-4" /> Refresh
@@ -129,26 +129,26 @@ export default function AdminUsersPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
         {[
-          { label: 'Total Users', value: counts.total, cls: 'text-blue-600' },
-          { label: 'Active', value: counts.active, cls: 'text-emerald-600' },
-          { label: 'Admins', value: counts.admins, cls: 'text-red-600' },
+          { label: 'Total Users', value: counts.total, cls: 'text-muted-foreground' },
+          { label: 'Active', value: counts.active, cls: 'text-primary' },
+          { label: 'Admins', value: counts.admins, cls: 'text-destructive' },
         ].map((s) => (
           <div key={s.label} className="card p-4">
             <p className={`text-2xl font-black ${s.cls}`}>{s.value}</p>
-            <p className="text-xs text-slate-500 mt-0.5">{s.label}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{s.label}</p>
           </div>
         ))}
       </div>
 
       {/* Search */}
-      <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 max-w-md">
-        <Search className="h-4 w-4 text-slate-400 flex-shrink-0" />
+      <div className="flex items-center gap-2 rounded-xl border border-[#ffffff12] bg-card px-4 py-2.5 max-w-md">
+        <Search className="h-4 w-4 text-muted-foreground flex-shrink-0" />
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search by name or email…"
-          className="flex-1 text-sm text-navy-900 placeholder:text-slate-400 outline-none bg-transparent"
+          className="flex-1 text-sm text-foreground placeholder:text-muted-foreground outline-none bg-transparent"
         />
       </div>
 
@@ -156,18 +156,18 @@ export default function AdminUsersPage() {
       <div className="card overflow-hidden">
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
-            <LoadingSpinner size="lg" className="text-veriq-secondary" />
+            <LoadingSpinner size="lg" className="text-primary" />
           </div>
         ) : filteredUsers.length === 0 ? (
           <div className="flex flex-col items-center py-16 text-center">
-            <Users className="h-10 w-10 text-slate-300 mb-3" />
-            <p className="text-sm font-medium text-navy-900">No users found</p>
+            <Users className="h-10 w-10 text-muted-foreground mb-3" />
+            <p className="text-sm font-medium text-foreground">No users found</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-veriq-surface">
-                <tr className="text-left text-xs text-slate-400 border-b border-slate-100">
+              <thead className="bg-background">
+                <tr className="text-left text-xs text-muted-foreground border-b border-[#ffffff12]">
                   <th className="px-6 py-4 font-medium">User</th>
                   <th className="px-4 py-4 font-medium">Role</th>
                   <th className="px-4 py-4 font-medium">Phone</th>
@@ -177,7 +177,7 @@ export default function AdminUsersPage() {
                   <th className="px-4 py-4 font-medium text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-50">
+              <tbody className="divide-y divide-[#ffffff12]">
                 {filteredUsers.map((u) => {
                   const initial = `${u.firstName[0] ?? ''}`.toUpperCase();
                   const joined = new Date(u.createdAt).toLocaleDateString('en-NG', {
@@ -186,18 +186,18 @@ export default function AdminUsersPage() {
                   const isSelf = u.id === user?.id;
 
                   return (
-                    <tr key={u.id} className="hover:bg-slate-50 transition-colors">
+                    <tr key={u.id} className="hover:bg-[#ffffff08] transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="h-8 w-8 rounded-full bg-veriq-secondary flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                          <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-foreground text-xs font-bold flex-shrink-0">
                             {initial}
                           </div>
                           <div className="min-w-0">
-                            <p className="font-semibold text-navy-900 text-xs truncate">
+                            <p className="font-semibold text-foreground text-xs truncate">
                               {u.firstName} {u.lastName}
-                              {isSelf && <span className="ml-1 text-[10px] text-veriq-secondary">(you)</span>}
+                              {isSelf && <span className="ml-1 text-[10px] text-primary">(you)</span>}
                             </p>
-                            <p className="text-[10px] text-slate-400 truncate">{u.email}</p>
+                            <p className="text-[10px] text-muted-foreground truncate">{u.email}</p>
                           </div>
                         </div>
                       </td>
@@ -208,37 +208,37 @@ export default function AdminUsersPage() {
                         </span>
                       </td>
                       <td className="px-4 py-4">
-                        <p className="text-xs text-slate-600">{u.phone}</p>
+                        <p className="text-xs text-muted-foreground">{u.phone}</p>
                       </td>
                       <td className="px-4 py-4">
                         <div className="flex gap-2">
                           {u.isEmailVerified ? (
-                            <span className="badge bg-emerald-50 text-emerald-600 text-[10px]">Email</span>
+                            <span className="badge bg-[#10b98112] text-primary text-[10px]">Email</span>
                           ) : (
-                            <span className="badge bg-slate-100 text-slate-400 text-[10px]">Email ✗</span>
+                            <span className="badge bg-[#ffffff08] text-muted-foreground text-[10px]">Email ✗</span>
                           )}
                           {u.isPhoneVerified && (
-                            <span className="badge bg-emerald-50 text-emerald-600 text-[10px]">Phone</span>
+                            <span className="badge bg-[#10b98112] text-primary text-[10px]">Phone</span>
                           )}
                         </div>
                       </td>
                       <td className="px-4 py-4">
-                        <p className="text-[10px] text-slate-500">{joined}</p>
+                        <p className="text-[10px] text-muted-foreground">{joined}</p>
                       </td>
                       <td className="px-4 py-4">
                         {u.isActive ? (
-                          <span className="badge bg-emerald-100 text-emerald-700 text-[10px]">
+                          <span className="badge bg-[#10b98112] text-primary text-[10px]">
                             <CheckCircle className="h-2.5 w-2.5" /> Active
                           </span>
                         ) : (
-                          <span className="badge bg-red-100 text-red-600 text-[10px]">
+                          <span className="badge bg-[#fb718510] text-destructive text-[10px]">
                             <XCircle className="h-2.5 w-2.5" /> Inactive
                           </span>
                         )}
                       </td>
                       <td className="px-4 py-4">
                         <div className="flex justify-end gap-2">
-                          {!isSelf && <button onClick={() => router.push(`/dashboard/admin/communications?directUserId=${u.id}&recipient=${encodeURIComponent(`${u.firstName} ${u.lastName}`)}`)} className="rounded-lg border border-slate-200 p-1.5 text-slate-600" title="Send email"><Mail className="h-3.5 w-3.5" /></button>}
+                          {!isSelf && <button onClick={() => router.push(`/dashboard/admin/communications?directUserId=${u.id}&recipient=${encodeURIComponent(`${u.firstName} ${u.lastName}`)}`)} className="rounded-lg border border-[#ffffff12] p-1.5 text-muted-foreground" title="Send email"><Mail className="h-3.5 w-3.5" /></button>}
                           {!isSelf && (
                             u.isActive ? (
                               <button
@@ -249,7 +249,7 @@ export default function AdminUsersPage() {
                                     name: `${u.firstName} ${u.lastName}`,
                                   })
                                 }
-                                className="rounded-lg border border-red-200 text-red-600 px-3 py-1.5 text-[10px] font-bold hover:bg-red-50 transition-colors"
+                                className="rounded-lg border border-[#fb718530] text-destructive px-3 py-1.5 text-[10px] font-bold hover:bg-[#fb718510] transition-colors"
                               >
                                 Deactivate
                               </button>
@@ -262,7 +262,7 @@ export default function AdminUsersPage() {
                                     name: `${u.firstName} ${u.lastName}`,
                                   })
                                 }
-                                className="rounded-lg border border-emerald-200 text-emerald-600 px-3 py-1.5 text-[10px] font-bold hover:bg-emerald-50 transition-colors"
+                                className="rounded-lg border border-[#10b98135] text-primary px-3 py-1.5 text-[10px] font-bold hover:bg-[#10b98112] transition-colors"
                               >
                                 Activate
                               </button>
@@ -282,11 +282,11 @@ export default function AdminUsersPage() {
       {/* Pagination */}
       {!isLoading && totalPages > 1 && (
         <div className="flex items-center justify-center gap-2">
-          <button disabled={page === 1} onClick={() => setPage((p) => p - 1)} className="h-9 w-9 flex items-center justify-center rounded-lg border border-slate-200 disabled:opacity-40">
+          <button disabled={page === 1} onClick={() => setPage((p) => p - 1)} className="h-9 w-9 flex items-center justify-center rounded-lg border border-[#ffffff12] disabled:opacity-40">
             <ChevronLeft className="h-4 w-4" />
           </button>
-          <span className="text-sm text-slate-600">Page {page} of {totalPages}</span>
-          <button disabled={page === totalPages} onClick={() => setPage((p) => p + 1)} className="h-9 w-9 flex items-center justify-center rounded-lg border border-slate-200 disabled:opacity-40">
+          <span className="text-sm text-muted-foreground">Page {page} of {totalPages}</span>
+          <button disabled={page === totalPages} onClick={() => setPage((p) => p + 1)} className="h-9 w-9 flex items-center justify-center rounded-lg border border-[#ffffff12] disabled:opacity-40">
             <ChevronRight className="h-4 w-4" />
           </button>
         </div>

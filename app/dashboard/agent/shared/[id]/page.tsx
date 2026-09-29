@@ -45,8 +45,8 @@ import { ReasonDialog } from '@/components/agent/ReasonDialog';
 import { RevisionReviewCard } from '@/components/agent/RevisionReviewCard';
 import { StreetIntelligencePanel } from '@/components/agent/StreetIntelligencePanel';
 import {
-  CASE_STATUS_STYLES,
-  PUBLICATION_STATUS_STYLES,
+  CASE_STATUS_TONES,
+  PUBLICATION_STATUS_TONES,
   describeError,
   errorMessage,
   formatDateTime,
@@ -187,12 +187,12 @@ export default function SharedPropertyWorkspacePage() {
         subtitle={`${TYPE_LABELS[opportunity.opportunityType] ?? humanize(opportunity.opportunityType)} · ${opportunity.area}, ${opportunity.city}, ${opportunity.state} · ID ${opportunity.id}`}
         badges={
           <>
-            {verification && <StatusPill value={verification.status} styles={CASE_STATUS_STYLES} label={`Case: ${humanize(verification.status)}`} />}
-            <StatusPill value={opportunity.publicationStatus} styles={PUBLICATION_STATUS_STYLES} />
-            <span className={`badge !px-2.5 !py-0.5 text-[11px] ${opportunity.availabilityStatus === 'available' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
+            {verification && <StatusPill value={verification.status} tones={CASE_STATUS_TONES} label={`Case: ${humanize(verification.status)}`} />}
+            <StatusPill value={opportunity.publicationStatus} tones={PUBLICATION_STATUS_TONES} />
+            <span className={`badge !px-2.5 !py-0.5 text-[11px] ${opportunity.availabilityStatus === 'available' ? 'bg-[#10b98112] text-[#6ee7b7]' : 'bg-[#ffffff0f] text-muted-foreground'}`}>
               {humanize(opportunity.availabilityStatus)}
             </span>
-            {opportunity.reverificationRequired && <span className="badge bg-purple-50 !px-2.5 !py-0.5 text-[11px] text-purple-700">Re-verification required</span>}
+            {opportunity.reverificationRequired && <span className="badge bg-[#ffffff06] !px-2.5 !py-0.5 text-[11px] text-muted-foreground border-[#ffffff20]">Re-verification required</span>}
           </>
         }
         actions={
@@ -249,7 +249,7 @@ export default function SharedPropertyWorkspacePage() {
             <KeyValue
               label="Phone"
               value={
-                <a className="inline-flex items-center gap-1 text-veriq-secondary hover:underline" href={`tel:${opportunity.contactPhone}`}>
+                <a className="inline-flex items-center gap-1 text-primary hover:underline" href={`tel:${opportunity.contactPhone}`}>
                   <Phone className="h-3 w-3" /> {opportunity.contactPhone}
                 </a>
               }
@@ -284,12 +284,12 @@ export default function SharedPropertyWorkspacePage() {
             }
           />
         ) : (
-          <p className="text-sm text-slate-500">This opportunity has no open verification case. It must be submitted or reactivated by the resident first.</p>
+          <p className="text-sm text-muted-foreground">This opportunity has no open verification case. It must be submitted or reactivated by the resident first.</p>
         )}
       </PanelCard>
 
       <PanelCard title="Occupancy & identity evidence" icon={FileText} subtitle="Proof of current occupancy is required; a utility bill alone is not automatically sufficient (§6.4).">
-        {evidenceError ? <ErrorBlock message={evidenceError} onRetry={loadEvidence} /> : evidence ? <EvidenceList items={evidence} /> : <p className="text-sm text-slate-500">Loading evidence…</p>}
+        {evidenceError ? <ErrorBlock message={evidenceError} onRetry={loadEvidence} /> : evidence ? <EvidenceList items={evidence} /> : <p className="text-sm text-muted-foreground">Loading evidence…</p>}
       </PanelCard>
 
       <PanelCard title="Private location" icon={MapPin} subtitle="A verified private location reference is required even when no canonical Property exists yet.">
@@ -354,8 +354,8 @@ export default function SharedPropertyWorkspacePage() {
             </button>
           </div>
           <AnswersView schemaId={opportunity.schemaId} answers={answers} issues={opportunity.issues} />
-          <details className="rounded-xl border border-slate-100 p-3">
-            <summary className="cursor-pointer text-sm font-semibold text-navy-900">Correct facts, terms &amp; intelligence</summary>
+          <details className="rounded-xl border border-[#ffffff10] p-3">
+            <summary className="cursor-pointer text-sm font-semibold text-foreground">Correct facts, terms &amp; intelligence</summary>
             <div className="mt-4">
               <AnswersEditor
                 key={opportunity.updatedAt}
@@ -387,7 +387,7 @@ export default function SharedPropertyWorkspacePage() {
         <div className="space-y-5">
           <MediaReviewPanel ownerType="shared_opportunity" ownerId={opportunity.id} onChanged={load} />
           <div>
-            <p className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-400">Resident Not Applicable requests</p>
+            <p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">Resident Not Applicable requests</p>
             <NotApplicableRequests listingTitle={opportunity.displayLabel} onChanged={load} />
           </div>
         </div>
@@ -405,7 +405,7 @@ export default function SharedPropertyWorkspacePage() {
 
       <PanelCard title={`Pending resident revisions (${view.pendingRevisions.length})`} icon={FileClock}>
         {view.pendingRevisions.length === 0 ? (
-          <p className="text-sm text-slate-500">No pending changes from the resident.</p>
+          <p className="text-sm text-muted-foreground">No pending changes from the resident.</p>
         ) : (
           <ul className="space-y-3">
             {view.pendingRevisions.map((revision) => (
@@ -437,7 +437,7 @@ export default function SharedPropertyWorkspacePage() {
       />
       <Modal isOpen={dialog === 'publish'} onClose={() => busy === null && setDialog(null)} title={opportunity.reverificationRequired ? 'Re-verify and publish' : 'Publish Shared Property'} size="sm">
         <div className="space-y-4">
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-muted-foreground">
             Publishing makes the opportunity public and Available. Every gate — identity, occupancy evidence, permission declaration, location,
             street link, record and media — is checked server-side.
           </p>

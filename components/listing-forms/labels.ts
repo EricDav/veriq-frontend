@@ -12,15 +12,19 @@ import type {
   VerificationStatus,
 } from '@/types/operator';
 
+/**
+ * The prototype's palette carries four badge tones; `blue` and `violet` are kept as names because 40
+ * call sites use them for "in progress" and "decided by Veriq", and both land on a real tone below.
+ */
 export type Tone = 'slate' | 'amber' | 'emerald' | 'red' | 'blue' | 'violet';
 
 export const TONE_CLASSES: Record<Tone, string> = {
-  slate: 'bg-slate-100 text-slate-700',
-  amber: 'bg-amber-50 text-amber-700',
-  emerald: 'bg-emerald-50 text-emerald-700',
-  red: 'bg-red-50 text-red-700',
-  blue: 'bg-sky-50 text-sky-700',
-  violet: 'bg-violet-50 text-violet-700',
+  slate: 'border-[#ffffff20] bg-[#ffffff08] text-muted-foreground',
+  amber: 'border-[#fbbf2430] bg-[#fbbf2410] text-[#fcd34d]',
+  emerald: 'border-[#10b98135] bg-[#10b98112] text-[#6ee7b7]',
+  red: 'border-[#fb718530] bg-[#fb718510] text-[#fda4af]',
+  blue: 'border-[#fbbf2430] bg-[#fbbf2410] text-[#fcd34d]',
+  violet: 'border-[#10b98135] bg-[#10b98112] text-[#6ee7b7]',
 };
 
 interface Meta {

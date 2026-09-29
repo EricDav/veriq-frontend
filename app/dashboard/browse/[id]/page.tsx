@@ -119,7 +119,7 @@ function MediaGallery({ media }: { media: MediaItem[] }) {
   if (media.length === 0) return (
     <div className="flex flex-col items-center justify-center h-48 text-center">
       <Eye className="h-10 w-10 text-slate-300 mb-3" />
-      <p className="text-sm text-slate-400">No media uploaded yet</p>
+      <p className="text-sm text-muted-foreground">No media uploaded yet</p>
     </div>
   );
 
@@ -240,11 +240,11 @@ function QIRow({ label, value, icon: Icon }: { label: string; value: unknown; ic
   if (!display) return null;
   return (
     <div className="flex items-center justify-between py-2.5 border-b border-slate-100 last:border-0">
-      <div className="flex items-center gap-2 text-xs text-slate-500">
-        {Icon && <Icon className="h-3.5 w-3.5 text-slate-400" />}
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        {Icon && <Icon className="h-3.5 w-3.5 text-muted-foreground" />}
         {label}
       </div>
-      <span className="text-xs font-semibold text-navy-800 capitalize">{display}</span>
+      <span className="text-xs font-semibold text-foreground capitalize">{display}</span>
     </div>
   );
 }
@@ -253,7 +253,7 @@ function QIChips({ label, values }: { label: string; values: string[] | null | u
   if (!values?.length) return null;
   return (
     <div className="py-2.5 border-b border-slate-100 last:border-0">
-      <p className="text-xs text-slate-500 mb-1.5">{label}</p>
+      <p className="text-xs text-muted-foreground mb-1.5">{label}</p>
       <div className="flex flex-wrap gap-1.5">
         {values.map((v) => (
           <span key={v} className="rounded-full bg-navy-50 px-2.5 py-0.5 text-[11px] font-medium text-navy-700 capitalize">
@@ -274,7 +274,7 @@ function QuickIntelligencePanel({ property }: { property: Property }) {
 
   return (
     <div className="card p-6">
-      <h2 className="font-display text-base font-bold text-navy-900 mb-4 flex items-center gap-2">
+      <h2 className="font-display text-base font-bold text-foreground mb-4 flex items-center gap-2">
         <Shield className="h-4 w-4 text-veriq-secondary" /> Veriq Quick Intelligence
       </h2>
       <div className="space-y-0">
@@ -297,8 +297,8 @@ function QuickIntelligencePanel({ property }: { property: Property }) {
       </div>
       {property.agentObservation && (
         <div className="mt-4 rounded-xl bg-veriq-surface p-3.5">
-          <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Agent Observation</p>
-          <p className="text-sm text-navy-800 italic">&ldquo;{property.agentObservation}&rdquo;</p>
+          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Agent Observation</p>
+          <p className="text-sm text-foreground italic">&ldquo;{property.agentObservation}&rdquo;</p>
         </div>
       )}
     </div>
@@ -318,7 +318,7 @@ function ShortStayPanel({ property }: { property: Property }) {
 
   return (
     <div className="card p-6">
-      <h2 className="font-display text-base font-bold text-navy-900 mb-4 flex items-center gap-2">
+      <h2 className="font-display text-base font-bold text-foreground mb-4 flex items-center gap-2">
         <Sun className="h-4 w-4 text-amber-500" /> Short Let Intelligence
       </h2>
       <div className="space-y-0">
@@ -340,7 +340,7 @@ function ShortStayPanel({ property }: { property: Property }) {
       {property.shortStayAgentNote && (
         <div className="mt-4 rounded-xl bg-amber-50 p-3.5">
           <p className="text-[10px] font-semibold text-amber-600 uppercase tracking-wider mb-1">Agent Note</p>
-          <p className="text-sm text-navy-800 italic">&ldquo;{property.shortStayAgentNote}&rdquo;</p>
+          <p className="text-sm text-foreground italic">&ldquo;{property.shortStayAgentNote}&rdquo;</p>
         </div>
       )}
     </div>
@@ -356,7 +356,7 @@ function HostelPanel({ property }: { property: Property }) {
 
   return (
     <div className="card p-6">
-      <h2 className="font-display text-base font-bold text-navy-900 mb-4 flex items-center gap-2">
+      <h2 className="font-display text-base font-bold text-foreground mb-4 flex items-center gap-2">
         <Users className="h-4 w-4 text-veriq-secondary" /> Hostel Intelligence
       </h2>
       <div className="space-y-0">
@@ -389,7 +389,7 @@ function AccessTimer({ expiresAt }: { expiresAt: string }) {
         <p className={`text-xs font-semibold ${isExpired ? 'text-red-700' : 'text-emerald-700'}`}>
           {isExpired ? 'Access Expired' : 'Access expires in'}
         </p>
-        {!isExpired && <p className="break-words text-sm font-bold text-navy-900">{timeLeft}</p>}
+        {!isExpired && <p className="break-words text-sm font-bold text-foreground">{timeLeft}</p>}
       </div>
     </div>
   );
@@ -461,7 +461,7 @@ export default function DashboardPropertyDetailPage() {
   if (notFound || !property) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center">
-        <h1 className="font-display text-2xl font-bold text-navy-900 mb-2">Property Not Found</h1>
+        <h1 className="font-display text-2xl font-bold text-foreground mb-2">Property Not Found</h1>
         <p className="text-veriq-muted mb-6">This listing may have been removed or is no longer available.</p>
         <Link href="/dashboard/browse" className="btn-primary">Back to Browse</Link>
       </div>
@@ -497,7 +497,7 @@ export default function DashboardPropertyDetailPage() {
       {/* Back */}
       <Link
         href="/dashboard/browse"
-        className="inline-flex items-center gap-2 text-sm text-veriq-muted hover:text-navy-900 mb-6 transition-colors"
+        className="inline-flex items-center gap-2 text-sm text-veriq-muted hover:text-foreground mb-6 transition-colors"
       >
         <ArrowLeft className="h-4 w-4" /> Back to Browse
       </Link>
@@ -506,7 +506,7 @@ export default function DashboardPropertyDetailPage() {
         <div className="mb-6 rounded-2xl border border-blue-100 bg-blue-50 p-4">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm font-bold text-navy-900">You are viewing your own listing</p>
+              <p className="text-sm font-bold text-foreground">You are viewing your own listing</p>
               <p className="mt-0.5 text-xs text-blue-800">
                 Owner view shows all private details by default. Switch to user preview to see the locked renter experience.
               </p>
@@ -623,27 +623,27 @@ export default function DashboardPropertyDetailPage() {
           <div className="card p-6">
             <div className="flex items-start justify-between mb-4 gap-4">
               <div>
-                <h1 className="font-display text-2xl font-bold text-navy-900 mb-1">{property.title}</h1>
+                <h1 className="font-display text-2xl font-bold text-foreground mb-1">{property.title}</h1>
                 <div className="flex items-center gap-1.5 text-veriq-muted text-sm">
                   <MapPin className="h-4 w-4" /> {location}
                 </div>
               </div>
               <div className="text-right flex-shrink-0">
-                <p className="text-2xl font-black text-navy-900">{formatNaira(property.rentAmount)}</p>
-                <p className="text-xs text-slate-400">per year</p>
+                <p className="text-2xl font-black text-foreground">{formatNaira(property.rentAmount)}</p>
+                <p className="text-xs text-muted-foreground">per year</p>
               </div>
             </div>
 
             {/* Specs */}
             <div className="flex flex-wrap gap-6 py-4 border-y border-slate-100 mb-4">
               <div className="flex items-center gap-2 text-sm text-navy-700">
-                <Bed className="h-4 w-4 text-slate-400" /> {property.bedrooms} Bedrooms
+                <Bed className="h-4 w-4 text-muted-foreground" /> {property.bedrooms} Bedrooms
               </div>
               <div className="flex items-center gap-2 text-sm text-navy-700">
-                <Bath className="h-4 w-4 text-slate-400" /> {property.bathrooms} Bathrooms
+                <Bath className="h-4 w-4 text-muted-foreground" /> {property.bathrooms} Bathrooms
               </div>
               <div className="flex items-center gap-2 text-sm text-navy-700">
-                <Home className="h-4 w-4 text-slate-400" />
+                <Home className="h-4 w-4 text-muted-foreground" />
                 <span className="capitalize">{property.propertyType.replace(/_/g, ' ')}</span>
               </div>
               {property.isFurnished && (
@@ -656,7 +656,7 @@ export default function DashboardPropertyDetailPage() {
 
             {property.description && (
               <>
-                <h3 className="font-semibold text-navy-900 mb-2">Description</h3>
+                <h3 className="font-semibold text-foreground mb-2">Description</h3>
                 <p className="text-sm text-veriq-muted leading-relaxed">{property.description}</p>
               </>
             )}
@@ -666,37 +666,37 @@ export default function DashboardPropertyDetailPage() {
             {/* Short Stay-specific details */}
             {isShortStay && (property.shortStayDailyRate || property.shortStayWeeklyRate) && (
               <div className="mt-4 rounded-xl bg-amber-50 border border-amber-100 p-4">
-                <h3 className="font-semibold text-navy-900 mb-3 flex items-center gap-2">
+                <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
                   <Sun className="h-4 w-4 text-amber-500" /> Short Let Rates
                 </h3>
                 <div className="grid grid-cols-2 gap-4 text-xs">
                   {property.shortStayDailyRate && (
                     <div>
-                      <p className="text-slate-500">Per night</p>
-                      <p className="font-bold text-navy-900">{formatNaira(property.shortStayDailyRate)}</p>
+                      <p className="text-muted-foreground">Per night</p>
+                      <p className="font-bold text-foreground">{formatNaira(property.shortStayDailyRate)}</p>
                     </div>
                   )}
                   {property.shortStayWeeklyRate && (
                     <div>
-                      <p className="text-slate-500">Per week</p>
-                      <p className="font-bold text-navy-900">{formatNaira(property.shortStayWeeklyRate)}</p>
+                      <p className="text-muted-foreground">Per week</p>
+                      <p className="font-bold text-foreground">{formatNaira(property.shortStayWeeklyRate)}</p>
                     </div>
                   )}
                   {property.shortStayMinNights && (
                     <div>
-                      <p className="text-slate-500">Min nights</p>
-                      <p className="font-bold text-navy-900">{property.shortStayMinNights}</p>
+                      <p className="text-muted-foreground">Min nights</p>
+                      <p className="font-bold text-foreground">{property.shortStayMinNights}</p>
                     </div>
                   )}
                   {property.shortStayCheckInTime && (
                     <div>
-                      <p className="text-slate-500">Check-in</p>
-                      <p className="font-bold text-navy-900">{property.shortStayCheckInTime}</p>
+                      <p className="text-muted-foreground">Check-in</p>
+                      <p className="font-bold text-foreground">{property.shortStayCheckInTime}</p>
                     </div>
                   )}
                 </div>
                 {property.shortStayHouseRules && (
-                  <p className="mt-3 text-xs text-slate-600 border-t border-amber-200 pt-3">
+                  <p className="mt-3 text-xs text-muted-foreground border-t border-amber-200 pt-3">
                     <span className="font-semibold">House rules: </span>{property.shortStayHouseRules}
                   </p>
                 )}
@@ -725,7 +725,7 @@ export default function DashboardPropertyDetailPage() {
                   <Lock className="h-6 w-6 text-amber-600" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-display text-base font-bold text-navy-900 mb-1">
+                  <h3 className="font-display text-base font-bold text-foreground mb-1">
                     Full Intelligence Report Locked
                   </h3>
                   <p className="text-sm text-veriq-muted mb-4">
@@ -753,7 +753,7 @@ export default function DashboardPropertyDetailPage() {
                   </div>
                   {isShortStay && (
                     <div className="mb-5 rounded-xl border border-slate-200 bg-white p-4">
-                      <p className="mb-2 text-sm font-semibold text-navy-900">Your dates</p>
+                      <p className="mb-2 text-sm font-semibold text-foreground">Your dates</p>
                       <DateRangeFields
                         idPrefix="short-let-stay"
                         value={stay}
@@ -768,14 +768,14 @@ export default function DashboardPropertyDetailPage() {
                   <div className="flex flex-wrap items-center gap-4">
                     <div className="flex items-center gap-1.5">
                       {isFreeUnlock ? <Gift className="h-4 w-4 text-emerald-500" /> : <Wallet className="h-4 w-4 text-amber-500" />}
-                      <span className="text-base font-black text-navy-900">{isFreeUnlock ? 'Free · ₦0' : formatNaira(property.consultationFee)}</span>
-                      {!isFreeUnlock && <span className="text-xs text-slate-400">one-time</span>}
+                      <span className="text-base font-black text-foreground">{isFreeUnlock ? 'Free · ₦0' : formatNaira(property.consultationFee)}</span>
+                      {!isFreeUnlock && <span className="text-xs text-muted-foreground">one-time</span>}
                     </div>
                     <button type="button" onClick={() => setIsCheckoutOpen(true)} disabled={isOwnListing || !!dateError} className="btn-gold flex items-center gap-2">
                       {isFreeUnlock ? <Gift className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
                       {isOwnListing ? 'Own listing cannot be unlocked' : isFreeUnlock ? 'Unlock free' : 'Unlock Intelligence Report'}
                     </button>
-                    <p className="w-full text-xs text-slate-500">
+                    <p className="w-full text-xs text-muted-foreground">
                       Wallet credit is applied automatically at checkout, and you pay only any remaining amount.
                     </p>
                   </div>
@@ -812,7 +812,7 @@ export default function DashboardPropertyDetailPage() {
               {/* Agent contact */}
               {canContactAgent && (
                 <div className="card p-5">
-                  <h3 className="font-display text-sm font-bold text-navy-900 mb-3 flex items-center gap-2">
+                  <h3 className="font-display text-sm font-bold text-foreground mb-3 flex items-center gap-2">
                     <Phone className="h-4 w-4 text-veriq-secondary" /> Agent Contact
                   </h3>
                   <div className="flex items-center gap-3">
@@ -820,7 +820,7 @@ export default function DashboardPropertyDetailPage() {
                       {agentInitial}
                     </div>
                     <div>
-                      <p className="font-semibold text-navy-900">{agentName}</p>
+                      <p className="font-semibold text-foreground">{agentName}</p>
                       <p className="text-veriq-secondary font-semibold text-sm">{agentContact!.phone}</p>
                     </div>
                   </div>
@@ -835,15 +835,15 @@ export default function DashboardPropertyDetailPage() {
                   <div className="mt-2">
                     <AgentRatingButton propertyId={id} propertyTitle={property.title} className="btn-outline !py-2.5 !text-sm flex w-full items-center justify-center gap-2" />
                   </div>
-                  <p className="mt-3 text-xs text-slate-400">
+                  <p className="mt-3 text-xs text-muted-foreground">
                     Always physically inspect the property before making any payments or commitments.
                   </p>
                 </div>
               )}
               {hasAccess && !isOwnListing && !canContactAgent && (
                 <div className="card p-5">
-                  <h3 className="font-display text-sm font-bold text-navy-900 mb-2 flex items-center gap-2">
-                    <MessageCircle className="h-4 w-4 text-slate-400" /> Agent Contact
+                  <h3 className="font-display text-sm font-bold text-foreground mb-2 flex items-center gap-2">
+                    <MessageCircle className="h-4 w-4 text-muted-foreground" /> Agent Contact
                   </h3>
                   <p className="text-sm text-veriq-muted">
                     This agent has not enabled direct contact for unlocked reports. Use the property intelligence details to decide your next step.
@@ -859,7 +859,7 @@ export default function DashboardPropertyDetailPage() {
 
               {/* Media gallery */}
               <div className="card p-6">
-                <h2 className="font-display text-base font-bold text-navy-900 mb-4 flex items-center gap-2">
+                <h2 className="font-display text-base font-bold text-foreground mb-4 flex items-center gap-2">
                   <Eye className="h-4 w-4 text-veriq-secondary" /> Property Photos
                 </h2>
                 <MediaGallery media={unlocked?.media ?? []} />
@@ -893,15 +893,15 @@ export default function DashboardPropertyDetailPage() {
         <div className="space-y-5">
           {/* Agent card */}
           <div className="card p-6">
-            <h3 className="font-display text-sm font-bold text-navy-900 mb-4">Listing Agent</h3>
+            <h3 className="font-display text-sm font-bold text-foreground mb-4">Listing Agent</h3>
             <div className="flex items-center gap-3 mb-4">
               <div className="h-12 w-12 rounded-full bg-veriq-secondary flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
                 {agentInitial}
               </div>
               <div className="min-w-0">
-                <p className="font-semibold text-navy-900 truncate">{agentName}</p>
+                <p className="font-semibold text-foreground truncate">{agentName}</p>
                 {agent?.businessName && (
-                  <p className="text-xs text-slate-500 truncate">{agent.businessName}</p>
+                  <p className="text-xs text-muted-foreground truncate">{agent.businessName}</p>
                 )}
                 <span className={`inline-block mt-1 badge text-[10px] ${tierBadge.cls}`}>
                   {tierBadge.label} Tier
@@ -919,12 +919,12 @@ export default function DashboardPropertyDetailPage() {
               <p className="text-xs text-veriq-muted italic mb-4 leading-relaxed">&ldquo;{agent.bio}&rdquo;</p>
             )}
             {!hasFullAccess && (
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[11px] text-muted-foreground">
                 Phone number revealed after unlocking the report.
               </p>
             )}
             {hasAccess && !isOwnListing && !agentContact && (
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[11px] text-muted-foreground">
                 This agent has disabled direct contact after payment.
               </p>
             )}
@@ -934,7 +934,7 @@ export default function DashboardPropertyDetailPage() {
           <div className="card p-5">
             <div className="flex items-center gap-2 mb-3">
               <Clock className="h-4 w-4 text-emerald-500" />
-              <span className="text-sm font-semibold text-navy-900">Listing Freshness</span>
+              <span className="text-sm font-semibold text-foreground">Listing Freshness</span>
             </div>
             <div className="h-2 rounded-full bg-slate-100 mb-2 overflow-hidden">
               <div className={`h-2 rounded-full transition-all ${freshness.cls} ${freshness.width}`} />
@@ -943,12 +943,12 @@ export default function DashboardPropertyDetailPage() {
               property.freshnessScore === 'freshly_verified' ? 'text-emerald-600' :
               property.freshnessScore === 'recently_verified' ? 'text-blue-600' :
               property.freshnessScore === 'verification_expiring' ? 'text-amber-600' :
-              'text-slate-500'
+              'text-muted-foreground'
             }`}>
               {freshness.label}
             </p>
             {property.lastVerifiedAt && (
-              <p className="text-[11px] text-slate-400 mt-1">
+              <p className="text-[11px] text-muted-foreground mt-1">
                 Last verified: {new Date(property.lastVerifiedAt).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' })}
               </p>
             )}
@@ -957,8 +957,8 @@ export default function DashboardPropertyDetailPage() {
           {/* Access fee / timer */}
           {!hasFullAccess ? (
             <div className="card p-5 bg-gradient-to-br from-navy-50 to-blue-50 border-blue-100">
-              <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Intelligence Access Fee</p>
-              <p className="text-2xl font-black text-navy-900 mb-0.5">
+              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Intelligence Access Fee</p>
+              <p className="text-2xl font-black text-foreground mb-0.5">
                 {formatNaira(property.consultationFee)}
               </p>
               <p className="text-xs text-veriq-muted">One-time fee — 24 hours of access from confirmed payment</p>
@@ -973,7 +973,7 @@ export default function DashboardPropertyDetailPage() {
               <Shield className="h-5 w-5 text-amber-400 flex-shrink-0 mt-0.5" />
               <div>
                 <p className="text-white text-sm font-semibold mb-1">Refund Protection</p>
-                <p className="text-slate-400 text-xs leading-relaxed">
+                <p className="text-muted-foreground text-xs leading-relaxed">
                   If a qualifying problem affected your unlock — stale availability, an invalid contact or a materially inaccurate verified fact —
                   request a refund inside the refund window. Approved refunds are credited to your Veriq Wallet.
                 </p>

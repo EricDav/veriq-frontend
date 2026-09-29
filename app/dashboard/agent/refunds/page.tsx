@@ -23,6 +23,7 @@ import {
   locationLine,
 } from '@/components/renter/format';
 import { EmptyBlock, ErrorBlock, InlineNotice, PageHeader, smallButton } from '@/components/agent/ui';
+import { Badge } from '@/components/ui';
 
 /**
  * The Veriq Agent's refund confirmations (Master Blueprint §5): for each open unlock-purchase case on one of their
@@ -123,50 +124,50 @@ export default function AgentRefundConfirmationsPage() {
           <section className="card space-y-3 p-5">
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div className="min-w-0">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-veriq-secondary">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-primary">
                   {refund.listing ? TARGET_TYPE_LABELS[refund.listing.targetType] : 'Unlock'}
                 </p>
                 {refund.listing ? (
                   <Link
                     href={listingHref(refund.listing.targetType, refund.listing.targetId)}
-                    className="block truncate font-semibold text-navy-900 hover:text-veriq-secondary"
+                    className="block truncate font-semibold text-foreground hover:text-primary"
                   >
                     {refund.listing.title}
                   </Link>
                 ) : (
-                  <p className="font-semibold text-navy-900">This listing is no longer published</p>
+                  <p className="font-semibold text-foreground">This listing is no longer published</p>
                 )}
                 {refund.listing && (
-                  <p className="text-xs text-slate-500">{locationLine(refund.listing.area, refund.listing.city)}</p>
+                  <p className="text-xs text-muted-foreground">{locationLine(refund.listing.area, refund.listing.city)}</p>
                 )}
               </div>
-              <span className={`badge flex-shrink-0 ${REFUND_STATUS_META[refund.status].cls}`}>
+              <Badge className="flex-shrink-0" tone={REFUND_STATUS_META[refund.status].tone}>
                 {REFUND_STATUS_META[refund.status].label}
-              </span>
+              </Badge>
             </div>
 
             <dl className="grid gap-3 sm:grid-cols-3">
               <div>
-                <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Charged</dt>
-                <dd className="mt-0.5 text-sm text-navy-900">{formatNaira(refund.chargedAmount)}</dd>
+                <dt className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Charged</dt>
+                <dd className="mt-0.5 text-sm text-foreground">{formatNaira(refund.chargedAmount)}</dd>
               </div>
               <div>
-                <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Unlocked</dt>
-                <dd className="mt-0.5 text-sm text-navy-900">{formatDateTime(refund.unlock?.unlockedAt)}</dd>
+                <dt className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Unlocked</dt>
+                <dd className="mt-0.5 text-sm text-foreground">{formatDateTime(refund.unlock?.unlockedAt)}</dd>
               </div>
               <div>
-                <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Access ended</dt>
-                <dd className="mt-0.5 text-sm text-navy-900">{formatDateTime(refund.unlock?.accessExpiresAt)}</dd>
+                <dt className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Access ended</dt>
+                <dd className="mt-0.5 text-sm text-foreground">{formatDateTime(refund.unlock?.accessExpiresAt)}</dd>
               </div>
             </dl>
 
             <div>
-              <p className="text-xs text-slate-500">What the renter reported</p>
-              <p className="text-sm font-semibold text-navy-900">
+              <p className="text-xs text-muted-foreground">What the renter reported</p>
+              <p className="text-sm font-semibold text-foreground">
                 {REFUND_REASON_LABELS[refund.reason] ?? refund.reason}
               </p>
               {refund.explanation && (
-                <p className="mt-1 whitespace-pre-line text-sm leading-6 text-navy-800">{refund.explanation}</p>
+                <p className="mt-1 whitespace-pre-line text-sm leading-6 text-foreground">{refund.explanation}</p>
               )}
             </div>
           </section>

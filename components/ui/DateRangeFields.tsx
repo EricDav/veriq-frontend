@@ -126,10 +126,10 @@ export function DateRangeFields({
           />
         </FieldShell>
       </div>
-      <p className="flex items-start gap-1.5 text-xs text-slate-500" aria-live="polite">
+      <p className="flex items-start gap-1.5 text-xs text-muted-foreground" aria-live="polite">
         <CalendarDays className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
         {error ? (
-          <span className="font-medium text-red-600">{error}</span>
+          <span className="font-medium text-destructive">{error}</span>
         ) : nights ? (
           <span>
             {formatStay(value)}. You check out on {value.checkOut}, so that night stays free for the next guest.

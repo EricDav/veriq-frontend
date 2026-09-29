@@ -64,14 +64,14 @@ export function NotApplicableRequests({ listingTitle, onChanged }: { listingTitl
 
   if (loadError) return <ErrorBlock message={loadError} onRetry={load} />;
   if (!items) return <LoadingBlock label="Checking Not Applicable requests…" />;
-  if (items.length === 0) return <p className="text-xs text-slate-500">No open Not Applicable requests from the Operator for this listing.</p>;
+  if (items.length === 0) return <p className="text-xs text-muted-foreground">No open Not Applicable requests from the Operator for this listing.</p>;
 
   return (
     <ul className="space-y-2">
       {items.map((item) => (
-        <li key={item.id} className="rounded-xl border border-amber-100 bg-amber-50/50 p-3">
-          <p className="text-sm text-navy-900">{item.message}</p>
-          <p className="text-[11px] text-slate-500">Requested {formatDateTime(item.createdAt)}</p>
+        <li key={item.id} className="rounded-xl border border-[#fbbf2425] bg-[#fbbf2409] p-3">
+          <p className="text-sm text-foreground">{item.message}</p>
+          <p className="text-[11px] text-muted-foreground">Requested {formatDateTime(item.createdAt)}</p>
           <input
             className="input mt-2 !py-2 text-xs"
             placeholder="Decision note (required to reject)"

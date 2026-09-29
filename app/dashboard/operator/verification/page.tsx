@@ -18,6 +18,7 @@ import {
   formatDateTime,
   usePostingReadiness,
 } from '@/components/listing-forms';
+import { buttonClass } from '@/components/ui';
 
 const EVIDENCE_KINDS = [
   { value: 'government_id', label: 'Valid government ID' },
@@ -135,10 +136,10 @@ function OperatorVerificationChecklist() {
   return (
     <div className="mx-auto max-w-3xl space-y-5">
       <header className="space-y-2">
-        <h1 className="flex items-center gap-2 font-display text-2xl font-bold text-navy-900">
-          <ShieldCheck className="h-5 w-5 text-veriq-secondary" /> My Operator verification
+        <h1 className="flex items-center gap-2 font-display text-2xl font-bold text-foreground">
+          <ShieldCheck className="h-5 w-5 text-primary" /> My Operator verification
         </h1>
-        <p className="text-sm leading-6 text-slate-500">
+        <p className="text-sm leading-6 text-muted-foreground">
           Veriq verifies who you are before you post a listing. This confirms the person, not automatic ownership of
           every property — each listing is still verified on its own.
         </p>
@@ -254,7 +255,7 @@ function OperatorVerificationChecklist() {
               id="evidence-file"
               type="file"
               accept={kind === 'selfie_with_id' ? PHOTO_ACCEPT : DOCUMENT_ACCEPT}
-              className="block w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-sm file:font-semibold"
+              className="block w-full text-sm text-muted-foreground file:mr-3 file:rounded-lg file:border-0 file:bg-[#ffffff0f] file:px-3 file:py-2 file:text-sm file:font-semibold"
               onChange={(event) => setFile(event.target.files?.[0] ?? null)}
             />
           </FieldShell>
@@ -272,7 +273,7 @@ function OperatorVerificationChecklist() {
           {formError && <Notice tone="error">{formError}</Notice>}
 
           <div className="flex justify-end">
-            <button type="button" onClick={() => void upload()} disabled={uploading} className="btn-primary !py-2.5">
+            <button type="button" onClick={() => void upload()} disabled={uploading} className={buttonClass()}>
               {uploading ? <LoadingSpinner size="sm" /> : <Upload className="h-4 w-4" />} Send to Veriq
             </button>
           </div>
@@ -288,21 +289,21 @@ function OperatorVerificationChecklist() {
             </button>
           </Notice>
         ) : evidence.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-slate-200 px-4 py-6 text-center text-sm text-slate-500">
+          <p className="rounded-xl border border-dashed border-[#ffffff18] px-4 py-6 text-center text-sm text-muted-foreground">
             Nothing uploaded yet.
           </p>
         ) : (
           <ul className="space-y-2">
             {evidence.map((item) => (
-              <li key={item.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 p-3">
+              <li key={item.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#ffffff18] p-3">
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold text-navy-900">
+                  <p className="text-sm font-semibold text-foreground">
                     {item.kind === 'selfie_with_id' ? 'Selfie holding your government ID' : 'Government ID'}
                   </p>
-                  <p className="truncate text-xs text-slate-500">{item.fileName ?? 'File on record'}</p>
-                  {item.notes && <p className="truncate text-xs text-slate-500">{item.notes}</p>}
+                  <p className="truncate text-xs text-muted-foreground">{item.fileName ?? 'File on record'}</p>
+                  {item.notes && <p className="truncate text-xs text-muted-foreground">{item.notes}</p>}
                 </div>
-                <p className="flex-shrink-0 text-[11px] text-slate-400">{formatDateTime(item.createdAt)}</p>
+                <p className="flex-shrink-0 text-[11px] text-muted-foreground">{formatDateTime(item.createdAt)}</p>
               </li>
             ))}
           </ul>

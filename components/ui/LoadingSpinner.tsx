@@ -29,8 +29,8 @@ export function PageLoader() {
   return (
     <div className="flex min-h-[60vh] items-center justify-center">
       <div className="flex flex-col items-center gap-3">
-        <LoadingSpinner size="lg" className="text-veriq-secondary" />
-        <p className="text-sm text-veriq-muted">Loading…</p>
+        <LoadingSpinner size="lg" className="text-primary" />
+        <p className="text-sm text-muted-foreground">Loading…</p>
       </div>
     </div>
   );

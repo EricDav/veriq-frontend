@@ -17,12 +17,13 @@ import { savePendingCheckout } from '@/components/renter/pendingCheckout';
 import {
   CATEGORY_LABELS, TARGET_TYPE_LABELS, UNLOCK_STATUS_META, apiErrorMessage, formatDateTime, formatNaira, listingHref, locationLine,
 } from '@/components/renter/format';
+import { Badge } from '@/components/ui';
 
 const PAGE_SIZE = 20;
 
 function StatusBadge({ item }: { item: UnlockHistoryItem }) {
   const meta = item.status === 'unlocked' && !item.isActive ? UNLOCK_STATUS_META.expired : UNLOCK_STATUS_META[item.status];
-  return <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ${meta?.cls ?? 'bg-slate-100 text-slate-600'}`}>{meta?.label ?? item.status}</span>;
+  return <Badge tone={meta?.tone ?? 'neutral'}>{meta?.label ?? item.status}</Badge>;
 }
 
 function PaymentBreakdown({ item }: { item: UnlockHistoryItem }) {
@@ -30,8 +31,8 @@ function PaymentBreakdown({ item }: { item: UnlockHistoryItem }) {
     return <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700"><Gift className="h-3.5 w-3.5" /> Free Unlock · ₦0</span>;
   }
   return (
-    <span className="text-xs text-slate-500">
-      <span className="font-semibold text-navy-900">{formatNaira(item.feeAmount)}</span>
+    <span className="text-xs text-muted-foreground">
+      <span className="font-semibold text-foreground">{formatNaira(item.feeAmount)}</span>
       {item.walletAmount > 0 && <> · {formatNaira(item.walletAmount)} wallet credit</>}
       {item.externalAmount > 0 && <> · {formatNaira(item.externalAmount)} paid</>}
     </span>
@@ -42,9 +43,9 @@ function ListingHeading({ item }: { item: UnlockHistoryItem }) {
   const category = item.listing ? CATEGORY_LABELS[item.listing.category] ?? TARGET_TYPE_LABELS[item.targetType] : TARGET_TYPE_LABELS[item.targetType];
   return (
     <div className="min-w-0">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">{category}</p>
-      <p className="truncate font-semibold text-navy-900">{item.listing?.title ?? 'Listing no longer available'}</p>
-      {item.listing && <p className="truncate text-xs text-slate-500">{locationLine(item.listing.area, item.listing.city)}</p>}
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{category}</p>
+      <p className="truncate font-semibold text-foreground">{item.listing?.title ?? 'Listing no longer available'}</p>
+      {item.listing && <p className="truncate text-xs text-muted-foreground">{locationLine(item.listing.area, item.listing.city)}</p>}
     </div>
   );
 }
@@ -158,7 +159,7 @@ function UnlocksInner() {
     <div className="mx-auto max-w-5xl space-y-8">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="font-display text-2xl font-bold text-navy-900">My Unlocks</h1>
+          <h1 className="font-display text-2xl font-bold text-foreground">My Unlocks</h1>
           <p className="text-sm text-veriq-muted">Active access, unlock history, refund requests and what happened after your unlocks.</p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -172,7 +173,7 @@ function UnlocksInner() {
 
       {(outcomes.length > 0 || !!outcomeError) && (
         <section ref={outcomesRef} className="scroll-mt-24">
-          <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-bold text-navy-900"><HelpCircle className="h-5 w-5 text-blue-600" /> Tell us what happened</h2>
+          <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-bold text-foreground"><HelpCircle className="h-5 w-5 text-blue-600" /> Tell us what happened</h2>
           {outcomeError ? (
             <ApiErrorNotice error={outcomeError} fallback="Outcome questions could not be loaded." />
           ) : (
@@ -187,7 +188,7 @@ function UnlocksInner() {
 
       {pendingCheckouts.length > 0 && (
         <section>
-          <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-bold text-navy-900"><CreditCard className="h-5 w-5 text-amber-600" /> Checkouts awaiting payment</h2>
+          <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-bold text-foreground"><CreditCard className="h-5 w-5 text-amber-600" /> Checkouts awaiting payment</h2>
           <div className="space-y-3">
             {pendingCheckouts.map((item) => (
               <div key={item.id} className="card p-5">
@@ -195,7 +196,7 @@ function UnlocksInner() {
                   <ListingHeading item={item} />
                   <StatusBadge item={item} />
                 </div>
-                <p className="mt-2 text-xs text-slate-500">
+                <p className="mt-2 text-xs text-muted-foreground">
                   Started {formatDateTime(item.createdAt)} · Reference <span className="font-mono">{item.paymentReference}</span> · <PaymentBreakdown item={item} />
                 </p>
                 <p className="mt-2 text-xs text-amber-700">No access is granted until payment is confirmed. Wallet credit held for this checkout is released if it is cancelled or expires.</p>
@@ -222,14 +223,14 @@ function UnlocksInner() {
       )}
 
       <section>
-        <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-bold text-navy-900"><KeyRound className="h-5 w-5 text-emerald-600" /> Active access</h2>
+        <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-bold text-foreground"><KeyRound className="h-5 w-5 text-emerald-600" /> Active access</h2>
         {active.length === 0 ? (
           <div className="flex flex-col items-center rounded-2xl border border-slate-200 bg-white p-8 text-center">
             <Search className="mb-3 h-10 w-10 text-slate-300" />
-            <p className="font-semibold text-navy-900">No active unlocks</p>
+            <p className="font-semibold text-foreground">No active unlocks</p>
             <p className="mt-1 max-w-sm text-sm text-veriq-muted">Unlock a listing to see its exact location, verified intelligence and contacts for the access period.</p>
             <div className="mt-4 flex flex-wrap justify-center gap-2">
-              <Link href="/dashboard/browse" className="btn-primary !py-2.5">Browse properties</Link>
+              <Link href="/properties" className="btn-primary !py-2.5">Browse properties</Link>
               <Link href="/shared" className="btn-outline !py-2.5">Shared Property</Link>
               <Link href="/for-sale" className="btn-outline !py-2.5">Property for Sale</Link>
             </div>
@@ -243,7 +244,7 @@ function UnlocksInner() {
                   <StatusBadge item={item} />
                 </div>
                 <div className="mt-4"><AccessCountdown expiresAt={item.accessExpiresAt} withSeconds /></div>
-                <p className="mt-3 text-xs text-slate-500">Unlocked {formatDateTime(item.unlockedAt)} · <PaymentBreakdown item={item} /></p>
+                <p className="mt-3 text-xs text-muted-foreground">Unlocked {formatDateTime(item.unlockedAt)} · <PaymentBreakdown item={item} /></p>
                 {item.refundWindowOpen && <p className="mt-1 text-xs text-purple-700">Refund requests close {formatDateTime(item.refundDeadlineAt)}</p>}
                 <div className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-4">
                   <Link href={listingHref(item.targetType, item.targetId, true)} className="btn-primary !px-4 !py-2 !text-sm">Open details <ArrowRight className="h-4 w-4" /></Link>
@@ -256,7 +257,7 @@ function UnlocksInner() {
       </section>
 
       <section>
-        <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-bold text-navy-900"><History className="h-5 w-5 text-slate-500" /> Unlock history</h2>
+        <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-bold text-foreground"><History className="h-5 w-5 text-muted-foreground" /> Unlock history</h2>
         {history.length === 0 ? (
           <p className="rounded-2xl border border-slate-200 bg-white p-6 text-center text-sm text-veriq-muted">Past unlocks, ended access and closed checkouts will appear here.</p>
         ) : (
@@ -265,12 +266,12 @@ function UnlocksInner() {
               <div key={item.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0 flex-1">
                   <ListingHeading item={item} />
-                  <p className="mt-1 text-xs text-slate-500">
+                  <p className="mt-1 text-xs text-muted-foreground">
                     <Clock className="mr-1 inline h-3 w-3" />
                     {item.unlockedAt ? `Unlocked ${formatDateTime(item.unlockedAt)}` : `Started ${formatDateTime(item.createdAt)}`}
                     {item.accessExpiresAt && ` · access ended ${formatDateTime(item.accessExpiresAt)}`} · <PaymentBreakdown item={item} />
                   </p>
-                  {item.failureReason && <p className="mt-1 text-xs text-slate-500">{item.failureReason}</p>}
+                  {item.failureReason && <p className="mt-1 text-xs text-muted-foreground">{item.failureReason}</p>}
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <StatusBadge item={item} />

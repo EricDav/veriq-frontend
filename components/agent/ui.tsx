@@ -2,19 +2,45 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { AlertCircle, ArrowLeft, Inbox, RefreshCw } from 'lucide-react';
+import { AlertCircle, Inbox, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import {
+  Badge,
+  BackLink,
+  Button,
+  ChipIcon,
+  Eyebrow,
+  Notice,
+  Panel,
+  buttonClass,
+  type BadgeTone,
+} from '@/components/ui';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { humanize } from './format';
 
-export function StatusPill({ value, styles, label }: { value: string; styles: Record<string, string>; label?: string }) {
+/**
+ * A status from one of the tone maps in `./format`, rendered as the prototype's `.badge`. The tone
+ * comes from the map rather than the call site so the same status always reads the same colour.
+ */
+export function StatusPill({
+  value,
+  tones,
+  label,
+  className,
+}: {
+  value: string;
+  tones: Record<string, BadgeTone>;
+  label?: string;
+  className?: string;
+}) {
   return (
-    <span className={cn('badge whitespace-nowrap !px-2.5 !py-0.5 text-[11px]', styles[value] ?? 'bg-slate-100 text-slate-600')}>
+    <Badge tone={tones[value] ?? 'neutral'} className={className}>
       {label ?? humanize(value)}
-    </span>
+    </Badge>
   );
 }
 
+/** One block of an Agent screen: the prototype's `.panel` with a title row and optional chip icon. */
 export function PanelCard({
   title,
   subtitle,
@@ -33,62 +59,70 @@ export function PanelCard({
   id?: string;
 }) {
   return (
-    <section id={id} className={cn('card !shadow-sm hover:!shadow-sm p-4 sm:p-5', className)}>
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+    <Panel as="section" id={id} className={className}>
+      <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">
           {Icon && (
-            <span className="grid h-9 w-9 flex-shrink-0 place-items-center rounded-xl bg-slate-100 text-navy-700">
-              <Icon className="h-4 w-4" />
-            </span>
+            <ChipIcon>
+              <Icon className="h-5 w-5" />
+            </ChipIcon>
           )}
           <div className="min-w-0">
-            <h2 className="font-display text-base font-bold text-navy-900">{title}</h2>
-            {subtitle && <div className="mt-0.5 text-xs text-slate-500">{subtitle}</div>}
+            <h2 className="font-display text-base font-semibold text-foreground">{title}</h2>
+            {subtitle && <div className="mt-1 text-sm text-muted-foreground">{subtitle}</div>}
           </div>
         </div>
         {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
       </div>
       {children}
-    </section>
+    </Panel>
   );
 }
 
 export function LoadingBlock({ label = 'Loading…' }: { label?: string }) {
   return (
-    <div className="flex items-center justify-center gap-3 py-10 text-sm text-slate-500">
-      <LoadingSpinner size="md" className="text-veriq-secondary" /> {label}
+    <div role="status" aria-live="polite" className="flex items-center justify-center gap-3 py-10 text-ui-md text-muted-foreground">
+      <LoadingSpinner size="md" className="text-primary" /> {label}
     </div>
   );
 }
 
 export function ErrorBlock({ message, onRetry }: { message: string; onRetry?: () => void }) {
   return (
-    <div className="flex flex-col items-start gap-3 rounded-xl border border-red-100 bg-red-50 p-4 sm:flex-row sm:items-center sm:justify-between">
-      <p className="flex items-start gap-2 text-sm text-red-700">
-        <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" /> {message}
+    <div
+      role="alert"
+      className="flex flex-col items-start gap-3 rounded-review border border-[#fb718530] bg-[#fb718510] p-5 wide:flex-row wide:items-center wide:justify-between"
+    >
+      <p className="flex items-start gap-2 text-ui-md text-[#fda4af]">
+        <AlertCircle aria-hidden="true" className="mt-0.5 h-4 w-4 flex-shrink-0" /> {message}
       </p>
       {onRetry && (
-        <button type="button" onClick={onRetry} className="btn-ghost !py-1.5 text-xs text-red-700 hover:!bg-red-100">
-          <RefreshCw className="h-3.5 w-3.5" /> Retry
-        </button>
+        <Button variant="secondary" size="small" onClick={onRetry}>
+          <RefreshCw aria-hidden="true" className="h-3.5 w-3.5" /> Retry
+        </Button>
       )}
     </div>
   );
 }
 
+/** The prototype's `.locked` treatment reused for "nothing here yet": dashed border on the card gradient. */
 export function EmptyBlock({ title, message, action }: { title: string; message?: string; action?: React.ReactNode }) {
   return (
-    <div className="flex flex-col items-center rounded-xl border border-dashed border-slate-200 bg-white px-6 py-10 text-center">
-      <span className="mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-slate-100 text-slate-400">
-        <Inbox className="h-6 w-6" />
-      </span>
-      <p className="font-display text-sm font-bold text-navy-900">{title}</p>
-      {message && <p className="mt-1 max-w-md text-xs text-slate-500">{message}</p>}
-      {action && <div className="mt-4">{action}</div>}
+    <div className="flex flex-col items-center rounded-searchbar border border-dashed border-[#ffffff25] bg-gradient-to-br from-card to-[#0b141d] px-6 py-12 text-center">
+      <ChipIcon className="mb-4">
+        <Inbox aria-hidden="true" className="h-5 w-5" />
+      </ChipIcon>
+      <p className="font-display text-base font-semibold text-foreground">{title}</p>
+      {message && <p className="mt-2 max-w-md text-ui-md text-muted-foreground">{message}</p>}
+      {action && <div className="mt-5">{action}</div>}
     </div>
   );
 }
 
+/**
+ * A section header inside a screen the shell has already given a `PageHead` — a sub-screen such as one
+ * verification case. `backHref` renders the prototype's `.back` link above it.
+ */
 export function PageHeader({
   title,
   subtitle,
@@ -96,6 +130,7 @@ export function PageHeader({
   backLabel,
   actions,
   badges,
+  eyebrow,
 }: {
   title: string;
   subtitle?: React.ReactNode;
@@ -103,66 +138,103 @@ export function PageHeader({
   backLabel?: string;
   actions?: React.ReactNode;
   badges?: React.ReactNode;
+  eyebrow?: React.ReactNode;
 }) {
   return (
-    <div className="space-y-2">
-      {backHref && (
-        <Link href={backHref} className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-navy-900">
-          <ArrowLeft className="h-3.5 w-3.5" /> {backLabel ?? 'Back'}
-        </Link>
-      )}
-      <div className="flex flex-wrap items-start justify-between gap-3">
+    <div>
+      {backHref && <BackLink href={backHref}>{backLabel ?? 'Back'}</BackLink>}
+      <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="min-w-0">
-          <h1 className="break-words font-display text-xl font-bold text-navy-900 sm:text-2xl">{title}</h1>
-          {subtitle && <div className="mt-1 text-sm text-veriq-muted">{subtitle}</div>}
-          {badges && <div className="mt-2 flex flex-wrap items-center gap-2">{badges}</div>}
+          {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
+          <h1 className="my-2 break-words font-display text-[1.7rem] font-semibold leading-tight tracking-[-0.035em] text-foreground wide:text-[2rem]">
+            {title}
+          </h1>
+          {subtitle && <div className="text-muted-foreground">{subtitle}</div>}
+          {badges && <div className="mt-3 flex flex-wrap items-center gap-2">{badges}</div>}
         </div>
-        {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+        {actions && <div className="flex flex-wrap items-center gap-3">{actions}</div>}
       </div>
     </div>
   );
 }
 
+/**
+ * A short standing explanation. The palette has no info or success notice, so `info` and `success`
+ * both land on the prototype's emerald notice and `warning`/`danger` on its amber one.
+ */
 export function InlineNotice({
   tone = 'info',
+  title,
   children,
   className,
 }: {
   tone?: 'info' | 'warning' | 'danger' | 'success';
+  title?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
 }) {
-  const styles = {
-    info: 'border-blue-100 bg-blue-50 text-blue-800',
-    warning: 'border-amber-100 bg-amber-50 text-amber-800',
-    danger: 'border-red-100 bg-red-50 text-red-800',
-    success: 'border-emerald-100 bg-emerald-50 text-emerald-800',
-  }[tone];
-  return <div className={cn('rounded-xl border px-4 py-3 text-xs leading-relaxed', styles, className)}>{children}</div>;
+  return (
+    <Notice tone={tone === 'warning' || tone === 'danger' ? 'amber' : 'neutral'} title={title} className={className}>
+      {children}
+    </Notice>
+  );
 }
 
-export function Field({ label, hint, children, className }: { label: string; hint?: string; children: React.ReactNode; className?: string }) {
+/** Label plus control. Pass `htmlFor`/`id` so the label is tied to the input it names. */
+export function Field({
+  label,
+  hint,
+  htmlFor,
+  children,
+  className,
+}: {
+  label: string;
+  hint?: string;
+  htmlFor?: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
-    <label className={cn('block', className)}>
-      <span className="label !mb-1 !text-xs">{label}</span>
+    <div className={cn('min-w-0', className)}>
+      <label htmlFor={htmlFor} className="label">
+        {label}
+      </label>
       {children}
-      {hint && <span className="mt-1 block text-[11px] text-slate-400">{hint}</span>}
-    </label>
+      {hint && (
+        <p id={htmlFor ? `${htmlFor}-hint` : undefined} className="mt-1 text-xs text-muted-foreground">
+          {hint}
+        </p>
+      )}
+    </div>
   );
 }
 
 export function KeyValue({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="min-w-0">
-      <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">{label}</dt>
-      <dd className="mt-0.5 break-words text-sm text-navy-900">{value}</dd>
+      <dt className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{label}</dt>
+      <dd className="mt-1 break-words text-ui-md text-foreground">{value}</dd>
     </div>
   );
 }
 
-export const smallButton =
-  'inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-navy-800 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50';
-export const smallPrimaryButton =
-  'inline-flex items-center justify-center gap-1.5 rounded-lg bg-veriq-secondary px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-50';
-export const smallDangerButton =
-  'inline-flex items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50';
+/**
+ * A link styled as the prototype's secondary button. `Button asChild` covers most cases; this exists
+ * for the `<a>`/`<Link>` call sites that already pass a class string.
+ */
+export function SmallLink({ href, children, className }: { href: string; children: React.ReactNode; className?: string }) {
+  return (
+    <Link href={href} className={buttonClass('secondary', 'small', className)}>
+      {children}
+    </Link>
+  );
+}
+
+export const smallButton = buttonClass('secondary', 'small');
+export const smallPrimaryButton = buttonClass('primary', 'small');
+/** The palette has no destructive button, so a reject action is a secondary button tinted red. */
+export const smallDangerButton = buttonClass(
+  'secondary',
+  'small',
+  'border-[#fb718540] bg-[#fb718510] text-[#fda4af] hover:bg-[#fb718520]',
+);

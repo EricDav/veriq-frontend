@@ -31,11 +31,11 @@ export const LEGAL_SEARCH_LABELS: Record<LegalSearchStatus, string> = {
 };
 
 const AVAILABILITY_STYLES: Record<SaleDocumentAvailability, string> = {
-  available: 'bg-emerald-50 text-emerald-700',
+  available: 'bg-[#10b98112] text-[#6ee7b7]',
   sighted: 'bg-teal-50 text-teal-700',
-  not_available: 'bg-slate-100 text-slate-600',
-  not_presented: 'bg-slate-100 text-slate-600',
-  requires_further_verification: 'bg-amber-50 text-amber-700',
+  not_available: 'bg-[#ffffff0f] text-muted-foreground',
+  not_presented: 'bg-[#ffffff0f] text-muted-foreground',
+  requires_further_verification: 'bg-[#fbbf2410] text-[#fcd34d]',
 };
 
 function DocumentForm({
@@ -128,9 +128,9 @@ function DocumentForm({
       <Field label="Agent notes" hint="Optional — kept internal">
         <textarea className="input resize-y !py-2 text-sm" rows={2} maxLength={2000} value={notes} onChange={(event) => setNotes(event.target.value)} />
       </Field>
-      <label className="flex items-start gap-2 rounded-xl border border-red-100 bg-red-50/40 px-3 py-2">
+      <label className="flex items-start gap-2 rounded-xl border border-[#fb718530] bg-[#fb718510] px-3 py-2">
         <input type="checkbox" className="mt-0.5 h-4 w-4" checked={discrepancyFound} onChange={(event) => setDiscrepancyFound(event.target.checked)} />
-        <span className="text-xs text-red-800">
+        <span className="text-xs text-[#fda4af]">
           <strong>Material discrepancy found</strong> between owner identity, property identity, survey or location information and the documents presented.
         </span>
       </label>
@@ -139,7 +139,7 @@ function DocumentForm({
           Saving escalates this sale listing to Admin. Publication is blocked until Admin clears the escalation.
         </InlineNotice>
       )}
-      {localError && <p className="text-xs text-red-600">{localError}</p>}
+      {localError && <p className="text-xs text-destructive">{localError}</p>}
       <div className="flex justify-end">
         <button type="button" className={smallPrimaryButton} onClick={submit} disabled={saving}>
           {saving ? <LoadingSpinner size="sm" /> : <Save className="h-3.5 w-3.5" />} Record document status
@@ -201,30 +201,30 @@ export function DocumentChecklist({
       </InlineNotice>
       <ul className="space-y-2">
         {rows.map(({ id, type, record }) => (
-          <li key={id} className={cn('rounded-xl border p-3', record?.discrepancyFound ? 'border-red-200' : 'border-slate-100')}>
+          <li key={id} className={cn('rounded-xl border p-3', record?.discrepancyFound ? 'border-[#fb718530]' : 'border-[#ffffff10]')}>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-navy-900">{record && record.documentType === 'other' ? `Other: ${record.label}` : type.label}</p>
+                <p className="text-sm font-semibold text-foreground">{record && record.documentType === 'other' ? `Other: ${record.label}` : type.label}</p>
                 {record ? (
                   <div className="mt-1 space-y-1">
                     <div className="flex flex-wrap gap-1.5">
                       <span className={cn('badge !px-2 !py-0.5 text-[11px]', AVAILABILITY_STYLES[record.availability])}>
                         {availabilityLabels[record.availability] ?? record.availability}
                       </span>
-                      <span className="badge bg-slate-50 !px-2 !py-0.5 text-[11px] text-slate-600">{legalLabels[record.legalSearchStatus] ?? record.legalSearchStatus}</span>
+                      <span className="badge bg-[#070b1444] !px-2 !py-0.5 text-[11px] text-muted-foreground border-[#ffffff20]">{legalLabels[record.legalSearchStatus] ?? record.legalSearchStatus}</span>
                       {record.discrepancyFound && (
-                        <span className="badge bg-red-50 !px-2 !py-0.5 text-[11px] text-red-700">
+                        <span className="badge bg-[#fb718510] !px-2 !py-0.5 text-[11px] text-[#fda4af] border-[#fb718530]">
                           <AlertTriangle className="h-3 w-3" /> Discrepancy
                         </span>
                       )}
                     </div>
-                    {record.legalSearchReference && <p className="text-[11px] text-slate-500">Legal search ref: {record.legalSearchReference}</p>}
-                    {record.source && <p className="text-[11px] text-slate-500">Source: {record.source}</p>}
-                    {record.notes && <p className="text-xs text-slate-600">{record.notes}</p>}
-                    <p className="text-[11px] text-slate-400">Last checked {formatDateTime(record.checkedAt)}</p>
+                    {record.legalSearchReference && <p className="text-[11px] text-muted-foreground">Legal search ref: {record.legalSearchReference}</p>}
+                    {record.source && <p className="text-[11px] text-muted-foreground">Source: {record.source}</p>}
+                    {record.notes && <p className="text-xs text-muted-foreground">{record.notes}</p>}
+                    <p className="text-[11px] text-muted-foreground">Last checked {formatDateTime(record.checkedAt)}</p>
                   </div>
                 ) : (
-                  <p className="text-[11px] text-slate-400">Not yet recorded</p>
+                  <p className="text-[11px] text-muted-foreground">Not yet recorded</p>
                 )}
               </div>
               {!readOnly && (
@@ -234,7 +234,7 @@ export function DocumentChecklist({
               )}
             </div>
             {open === id && (
-              <div className="mt-3 border-t border-slate-100 pt-3">
+              <div className="mt-3 border-t border-[#ffffff10] pt-3">
                 <DocumentForm
                   type={type}
                   existing={record}
@@ -249,7 +249,7 @@ export function DocumentChecklist({
         ))}
       </ul>
       {otherType && !readOnly && (
-        <div className="rounded-xl border border-dashed border-slate-200 p-3">
+        <div className="rounded-xl border border-dashed border-[#ffffff18] p-3">
           {addingOther ? (
             <DocumentForm type={otherType} existing={null} otherLabelEditable onSave={saveAndClose} availabilityLabels={availabilityLabels} legalLabels={legalLabels} />
           ) : (

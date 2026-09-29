@@ -261,7 +261,7 @@ export default function AdminVerificationPage() {
 
       <div className="card grid grid-cols-1 gap-3 p-4 hover:shadow-card sm:grid-cols-2 lg:grid-cols-4">
         <div className="relative lg:col-span-2">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input aria-label="Search verification cases" className="input !pl-9" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Property title, Property ID, case ID or Operator ID" />
         </div>
         <select aria-label="Case status" className="input" value={status} onChange={(event) => setStatus(event.target.value as VerificationCaseStatus | '')}>
@@ -272,8 +272,8 @@ export default function AdminVerificationPage() {
           <option value="">All categories</option>
           {PROPERTY_CATEGORIES.map((value) => <option key={value} value={value}>{categoryLabel(value)}</option>)}
         </select>
-        <label className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-navy-800 sm:col-span-2 lg:col-span-1">
-          <input type="checkbox" checked={escalatedOnly} onChange={(event) => setEscalatedOnly(event.target.checked)} className="h-4 w-4 accent-red-600" />
+        <label className="flex items-center gap-2 rounded-lg border border-[#ffffff12] px-3 py-2 text-sm font-medium text-foreground sm:col-span-2 lg:col-span-1">
+          <input type="checkbox" checked={escalatedOnly} onChange={(event) => setEscalatedOnly(event.target.checked)} className="h-4 w-4 accent-[#fb7185]" />
           Escalated only
         </label>
       </div>
@@ -288,7 +288,7 @@ export default function AdminVerificationPage() {
         ) : (
           <TableScroll>
             <table className="w-full min-w-[900px]">
-              <thead className="bg-slate-50">
+              <thead className="bg-[#ffffff08]">
                 <tr>
                   <th className={th}>Property</th>
                   <th className={th}>Case status</th>
@@ -298,13 +298,13 @@ export default function AdminVerificationPage() {
                   <th className={th}><span className="sr-only">Review</span></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#ffffff12]">
                 {visible.map((item) => (
-                  <tr key={item.id} className={item.escalated ? 'bg-red-50/40' : 'hover:bg-slate-50/60'}>
+                  <tr key={item.id} className={item.escalated ? 'bg-[#fb718510]' : 'hover:bg-[#ffffff08]'}>
                     <td className={td}>
                       <p className="max-w-[260px] truncate font-semibold">{item.property?.title ?? 'Property unavailable'}</p>
-                      <p className="text-[11px] text-slate-500">{item.property ? `${categoryLabel(item.property.category)} · ${[item.property.area, item.property.city].filter(Boolean).join(', ') || 'No area'}` : ''}</p>
-                      <p className="break-all font-mono text-[11px] text-slate-400">{item.property?.id ?? item.id}</p>
+                      <p className="text-[11px] text-muted-foreground">{item.property ? `${categoryLabel(item.property.category)} · ${[item.property.area, item.property.city].filter(Boolean).join(', ') || 'No area'}` : ''}</p>
+                      <p className="break-all font-mono text-[11px] text-muted-foreground">{item.property?.id ?? item.id}</p>
                     </td>
                     <td className={td}><StatusBadge status={item.status} /></td>
                     <td className={td}>{item.property ? <StatusBadge status={item.property.publicationStatus} /> : '—'}</td>
@@ -317,7 +317,7 @@ export default function AdminVerificationPage() {
                     </td>
                     <td className={td}><span className="whitespace-nowrap text-xs">{dateTime(item.createdAt)}</span></td>
                     <td className={`${td} text-right`}>
-                      <button type="button" onClick={() => setCaseId(item.id)} className="whitespace-nowrap rounded-lg bg-navy-900 px-3 py-1.5 text-xs font-bold text-white hover:bg-navy-700">Review</button>
+                      <button type="button" onClick={() => setCaseId(item.id)} className="whitespace-nowrap rounded-lg bg-background px-3 py-1.5 text-xs font-bold text-foreground hover:bg-[#ffffff0d]">Review</button>
                     </td>
                   </tr>
                 ))}
@@ -335,8 +335,8 @@ export default function AdminVerificationPage() {
         ) : workspace ? (
           <div className="space-y-5">
             <div>
-              <h3 className="font-display text-base font-bold text-navy-900">{workspace.property.title}</h3>
-              <p className="text-xs text-slate-500">{categoryLabel(workspace.property.category)} · <span className="font-mono">{workspace.property.id}</span></p>
+              <h3 className="font-display text-base font-bold text-foreground">{workspace.property.title}</h3>
+              <p className="text-xs text-muted-foreground">{categoryLabel(workspace.property.category)} · <span className="font-mono">{workspace.property.id}</span></p>
               <div className="mt-2 flex flex-wrap gap-2">
                 <StatusBadge status={workspace.case.status} />
                 <StatusBadge status={workspace.property.publicationStatus} />
@@ -346,13 +346,13 @@ export default function AdminVerificationPage() {
             </div>
 
             {workspace.case.escalated && (
-              <div className="rounded-xl border border-red-100 bg-red-50 p-4 text-sm text-red-800">
+              <div className="rounded-xl border border-[#fb718530] bg-[#fb718510] p-4 text-sm text-destructive">
                 <p className="font-semibold">Escalation open</p>
                 <p className="mt-1 text-xs">{workspace.case.escalationReason || 'No reason recorded.'}</p>
               </div>
             )}
             {workspace.property.suspensionReason && (
-              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-900">
+              <div className="rounded-xl border border-[#fbbf2430] bg-[#fbbf2410] p-4 text-xs text-[#fcd34d]">
                 <p className="font-semibold">Suspension / archive reason</p>
                 <p className="mt-1">{workspace.property.suspensionReason}</p>
               </div>
@@ -368,15 +368,15 @@ export default function AdminVerificationPage() {
             </div>
 
             <section>
-              <h4 className="mb-2 text-sm font-bold text-navy-900">Verification checklist</h4>
+              <h4 className="mb-2 text-sm font-bold text-foreground">Verification checklist</h4>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {Object.entries(CHECKLIST_LABELS).map(([key, label]) => {
                   const item = workspace.case.checklist?.[key];
                   return (
-                    <div key={key} className="flex items-start justify-between gap-2 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2">
+                    <div key={key} className="flex items-start justify-between gap-2 rounded-lg border border-[#ffffff12] bg-[#ffffff08] px-3 py-2">
                       <div className="min-w-0">
-                        <p className="text-xs font-semibold text-navy-900">{label}</p>
-                        {item?.note && <p className="text-[11px] text-slate-600">{item.note}</p>}
+                        <p className="text-xs font-semibold text-foreground">{label}</p>
+                        {item?.note && <p className="text-[11px] text-muted-foreground">{item.note}</p>}
                       </div>
                       <StatusBadge status={item?.status ?? 'pending'} />
                     </div>
@@ -386,11 +386,11 @@ export default function AdminVerificationPage() {
             </section>
 
             <section>
-              <h4 className="mb-2 text-sm font-bold text-navy-900">Publication readiness</h4>
+              <h4 className="mb-2 text-sm font-bold text-foreground">Publication readiness</h4>
               {workspace.readiness.ready ? (
-                <p className="rounded-lg bg-emerald-50 p-3 text-xs text-emerald-800">All publication requirements are met.</p>
+                <p className="rounded-lg bg-[#10b98112] p-3 text-xs text-primary">All publication requirements are met.</p>
               ) : (
-                <ul className="list-disc space-y-1 rounded-lg bg-amber-50 p-3 pl-7 text-xs text-amber-900">
+                <ul className="list-disc space-y-1 rounded-lg bg-[#fbbf2410] p-3 pl-7 text-xs text-[#fcd34d]">
                   {workspace.readiness.blockers.map((blocker) => (
                     <li key={blocker.code}>{blocker.message}</li>
                   ))}
@@ -400,17 +400,17 @@ export default function AdminVerificationPage() {
 
             {workspace.units.length > 0 && (
               <section>
-                <h4 className="mb-2 text-sm font-bold text-navy-900">Units</h4>
+                <h4 className="mb-2 text-sm font-bold text-foreground">Units</h4>
                 <TableScroll>
                   <table className="w-full min-w-[420px]">
-                    <thead className="bg-slate-50">
+                    <thead className="bg-[#ffffff08]">
                       <tr>
                         <th className={th}>Unit</th>
                         <th className={th}>Verification</th>
                         <th className={th}>Availability</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-[#ffffff12]">
                       {workspace.units.map((unit) => (
                         <tr key={unit.id}>
                           <td className={td}><span className="text-xs font-semibold">{unit.displayLabel ?? unit.id}</span></td>
@@ -426,40 +426,40 @@ export default function AdminVerificationPage() {
 
             {evidence.length > 0 && (
               <section>
-                <h4 className="mb-2 text-sm font-bold text-navy-900">Private verification evidence</h4>
+                <h4 className="mb-2 text-sm font-bold text-foreground">Private verification evidence</h4>
                 <ul className="space-y-1">
                   {evidence.map((item) => (
                     <li key={item.id} className="text-xs">
-                      <a href={item.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-semibold text-emerald-700 underline">
+                      <a href={item.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-semibold text-primary underline">
                         {humanize(item.kind)}{item.fileName ? ` · ${item.fileName}` : ''} <ExternalLink className="h-3 w-3" />
                       </a>
-                      <span className="ml-2 text-slate-400">{dateTime(item.createdAt)}</span>
+                      <span className="ml-2 text-muted-foreground">{dateTime(item.createdAt)}</span>
                     </li>
                   ))}
                 </ul>
               </section>
             )}
 
-            <div className="flex flex-wrap gap-2 border-t border-slate-100 pt-4">
+            <div className="flex flex-wrap gap-2 border-t border-[#ffffff12] pt-4">
               {workspace.case.escalated && (
-                <button type="button" onClick={() => setDialog('clear')} className="rounded-lg border border-emerald-200 px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50">Clear escalation</button>
+                <button type="button" onClick={() => setDialog('clear')} className="rounded-lg border border-[#10b98135] px-3 py-2 text-xs font-bold text-primary hover:bg-[#10b98112]">Clear escalation</button>
               )}
               {workspace.property.publicationStatus === 'suspended' ? (
-                <button type="button" onClick={() => setDialog('restore')} className="inline-flex items-center gap-1 rounded-lg border border-emerald-200 px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50"><RotateCcw className="h-3.5 w-3.5" /> Restore property</button>
+                <button type="button" onClick={() => setDialog('restore')} className="inline-flex items-center gap-1 rounded-lg border border-[#10b98135] px-3 py-2 text-xs font-bold text-primary hover:bg-[#10b98112]"><RotateCcw className="h-3.5 w-3.5" /> Restore property</button>
               ) : (
                 workspace.property.publicationStatus !== 'archived' && (
-                  <button type="button" onClick={() => setDialog('suspend')} className="rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50">Suspend property</button>
+                  <button type="button" onClick={() => setDialog('suspend')} className="rounded-lg border border-[#fb718530] px-3 py-2 text-xs font-bold text-destructive hover:bg-[#fb718510]">Suspend property</button>
                 )
               )}
               {workspace.property.publicationStatus !== 'archived' && (
-                <button type="button" onClick={() => setDialog('archive')} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-navy-700 hover:bg-slate-50"><Archive className="h-3.5 w-3.5" /> Archive</button>
+                <button type="button" onClick={() => setDialog('archive')} className="inline-flex items-center gap-1 rounded-lg border border-[#ffffff12] px-3 py-2 text-xs font-bold text-foreground hover:bg-[#ffffff08]"><Archive className="h-3.5 w-3.5" /> Archive</button>
               )}
-              <button type="button" onClick={() => setDialog('freeze')} className="inline-flex items-center gap-1 rounded-lg border border-blue-200 px-3 py-2 text-xs font-bold text-blue-700 hover:bg-blue-50">
+              <button type="button" onClick={() => setDialog('freeze')} className="inline-flex items-center gap-1 rounded-lg border border-[#ffffff12] px-3 py-2 text-xs font-bold text-muted-foreground hover:bg-[#ffffff08]">
                 <Snowflake className="h-3.5 w-3.5" /> {workspace.property.sensitiveChangesFrozen ? 'Unfreeze sensitive changes' : 'Freeze sensitive changes'}
               </button>
-              <button type="button" onClick={() => { setTransferOperator(null); setOperatorQuery(''); setDialog('transfer'); }} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-navy-700 hover:bg-slate-50">Transfer Operator</button>
+              <button type="button" onClick={() => { setTransferOperator(null); setOperatorQuery(''); setDialog('transfer'); }} className="rounded-lg border border-[#ffffff12] px-3 py-2 text-xs font-bold text-foreground hover:bg-[#ffffff08]">Transfer Operator</button>
               {workspace.operator && (
-                <button type="button" onClick={() => { setIdentityStatus(workspace.operator!.identityStatus); setDialog('identity'); }} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-navy-700 hover:bg-slate-50"><UserCog className="h-3.5 w-3.5" /> Operator identity</button>
+                <button type="button" onClick={() => { setIdentityStatus(workspace.operator!.identityStatus); setDialog('identity'); }} className="inline-flex items-center gap-1 rounded-lg border border-[#ffffff12] px-3 py-2 text-xs font-bold text-foreground hover:bg-[#ffffff08]"><UserCog className="h-3.5 w-3.5" /> Operator identity</button>
               )}
             </div>
           </div>
@@ -540,26 +540,26 @@ export default function AdminVerificationPage() {
         <div className="space-y-2">
           <label className="label text-xs" htmlFor="transfer-operator">New Property Operator</label>
           <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input id="transfer-operator" className="input !pl-9" value={operatorQuery} onChange={(event) => setOperatorQuery(event.target.value)} placeholder="Search by name, email, phone or ID" />
           </div>
           {transferOperator ? (
-            <div className="flex items-center justify-between gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs">
-              <span className="font-semibold text-navy-900">{transferOperator.name || transferOperator.id}</span>
-              <button type="button" onClick={() => setTransferOperator(null)} className="font-bold text-slate-500 hover:text-navy-900">Change</button>
+            <div className="flex items-center justify-between gap-2 rounded-lg border border-[#10b98135] bg-[#10b98112] px-3 py-2 text-xs">
+              <span className="font-semibold text-foreground">{transferOperator.name || transferOperator.id}</span>
+              <button type="button" onClick={() => setTransferOperator(null)} className="font-bold text-muted-foreground hover:text-foreground">Change</button>
             </div>
           ) : (
-            <ul className="max-h-48 divide-y divide-slate-100 overflow-y-auto rounded-lg border border-slate-100">
-              {operatorSearching && <li className="px-3 py-2 text-xs text-slate-500">Searching…</li>}
-              {operatorSearchError && <li className="px-3 py-2 text-xs text-red-600">{operatorSearchError}</li>}
-              {!operatorSearching && !operatorSearchError && operatorResults.length === 0 && <li className="px-3 py-2 text-xs text-slate-500">No Operators found.</li>}
+            <ul className="max-h-48 divide-y divide-[#ffffff12] overflow-y-auto rounded-lg border border-[#ffffff12]">
+              {operatorSearching && <li className="px-3 py-2 text-xs text-muted-foreground">Searching…</li>}
+              {operatorSearchError && <li className="px-3 py-2 text-xs text-destructive">{operatorSearchError}</li>}
+              {!operatorSearching && !operatorSearchError && operatorResults.length === 0 && <li className="px-3 py-2 text-xs text-muted-foreground">No Operators found.</li>}
               {operatorResults
                 .filter((item) => item.id !== workspace?.operator?.id)
                 .map((item) => (
                   <li key={item.id}>
-                    <button type="button" onClick={() => setTransferOperator(item)} className="w-full px-3 py-2 text-left hover:bg-slate-50">
-                      <span className="block truncate text-xs font-semibold text-navy-900">{item.name || item.id}</span>
-                      <span className="block truncate text-[11px] text-slate-500">{[item.email, item.phone].filter(Boolean).join(' · ') || item.id}</span>
+                    <button type="button" onClick={() => setTransferOperator(item)} className="w-full px-3 py-2 text-left hover:bg-[#ffffff08]">
+                      <span className="block truncate text-xs font-semibold text-foreground">{item.name || item.id}</span>
+                      <span className="block truncate text-[11px] text-muted-foreground">{[item.email, item.phone].filter(Boolean).join(' · ') || item.id}</span>
                     </button>
                   </li>
                 ))}
@@ -580,7 +580,7 @@ export default function AdminVerificationPage() {
         message={
           workspace?.operator ? (
             <p>
-              <strong className="text-navy-900">{workspace.operator.name}</strong> · currently {humanize(workspace.operator.identityStatus)}. Identity verification is separate from property verification.
+              <strong className="text-foreground">{workspace.operator.name}</strong> · currently {humanize(workspace.operator.identityStatus)}. Identity verification is separate from property verification.
             </p>
           ) : null
         }

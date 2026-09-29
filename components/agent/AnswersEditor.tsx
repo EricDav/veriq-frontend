@@ -5,6 +5,7 @@ import { Save } from 'lucide-react';
 import type { FieldDef, FieldGroup, FormSchema, SchemaAnswers, SchemaIssue } from '@/types/agent';
 import { cn } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { Button } from '@/components/ui';
 import { useFormSchema } from './AnswersView';
 import { ErrorBlock, LoadingBlock } from './ui';
 import { GROUP_LABELS, groupLayout, isRequired, isVisible, readValue, writeValue } from './schema-utils';
@@ -23,7 +24,7 @@ function FieldInput({
   id: string;
 }) {
   if (field.fixed !== undefined) {
-    return <p className="rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600">Fixed at {String(field.fixed)} for this subtype</p>;
+    return <p className="rounded-lg bg-[#070b1444] px-3 py-2 text-sm text-muted-foreground">Fixed at {String(field.fixed)} for this subtype</p>;
   }
   switch (field.type) {
     case 'select':
@@ -70,7 +71,7 @@ function FieldInput({
                 onClick={() => toggle(option.value)}
                 className={cn(
                   'rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors disabled:opacity-60',
-                  active ? 'border-navy-900 bg-navy-900 text-white' : 'border-slate-200 bg-white text-slate-600 hover:border-navy-400',
+                  active ? 'border-primary bg-primary text-primary-foreground' : 'border-[#ffffff18] bg-card text-muted-foreground hover:border-[#10b98170] hover:text-foreground',
                 )}
               >
                 {option.label}
@@ -170,7 +171,7 @@ export function AnswersFields({
       <div key={path} className={cn(wide && 'sm:col-span-2')}>
         <label htmlFor={id} className="label !mb-1 !text-xs">
           {field.label}
-          {isRequired(field, value, componentKey) && field.fixed === undefined && <span className="text-red-500"> *</span>}
+          {isRequired(field, value, componentKey) && field.fixed === undefined && <span className="text-destructive"> *</span>}
         </label>
         <FieldInput
           id={id}
@@ -179,8 +180,8 @@ export function AnswersFields({
           value={readValue(value, field, componentKey)}
           onChange={(next) => onChange(writeValue(value, field, componentKey, next))}
         />
-        {field.help && <p className="mt-1 text-[11px] text-slate-400">{field.help}</p>}
-        {issue && <p className="mt-1 text-[11px] text-red-600">{issue}</p>}
+        {field.help && <p className="mt-1 text-[11px] text-muted-foreground">{field.help}</p>}
+        {issue && <p className="mt-1 text-[11px] text-destructive">{issue}</p>}
       </div>
     );
   };
@@ -193,11 +194,11 @@ export function AnswersFields({
         if (visible.length === 0 && perComponent.length === 0) return null;
         return (
           <fieldset key={groupName} className="space-y-3">
-            <legend className="mb-2 text-[11px] font-bold uppercase tracking-wide text-slate-400">{GROUP_LABELS[groupName]}</legend>
+            <legend className="mb-2 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">{GROUP_LABELS[groupName]}</legend>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">{visible.map((field) => renderField(field, null, groupName))}</div>
             {perComponent.map(({ instance, fields }) => (
-              <div key={`${groupName}-${instance.key}`} className="rounded-xl border border-slate-100 p-3">
-                <p className="mb-2 text-xs font-semibold text-navy-800">{instance.label}</p>
+              <div key={`${groupName}-${instance.key}`} className="rounded-xl border border-[#ffffff10] p-3">
+                <p className="mb-2 text-xs font-semibold text-foreground">{instance.label}</p>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">{fields.map((field) => renderField(field, instance.key, groupName))}</div>
               </div>
             ))}
@@ -256,13 +257,13 @@ export function AnswersEditor({
       {!disabled && (
         <div className="flex flex-wrap items-center justify-end gap-2">
           {dirty && (
-            <button type="button" className="btn-ghost !py-2 text-xs" onClick={() => { setValue(initial); setIssues([]); }} disabled={saving}>
+            <Button variant="ghost" size="small" onClick={() => { setValue(initial); setIssues([]); }} disabled={saving}>
               Discard changes
-            </button>
+            </Button>
           )}
-          <button type="button" onClick={save} disabled={saving || !dirty} className="btn-primary !px-4 !py-2 text-sm">
-            {saving ? <LoadingSpinner size="sm" /> : <Save className="h-4 w-4" />} {saveLabel}
-          </button>
+          <Button size="small" onClick={save} disabled={saving || !dirty}>
+            {saving ? <LoadingSpinner size="sm" /> : <Save aria-hidden="true" className="h-4 w-4" />} {saveLabel}
+          </Button>
         </div>
       )}
     </div>

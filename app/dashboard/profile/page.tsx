@@ -171,7 +171,7 @@ export default function ProfilePage() {
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <div>
-        <h1 className="font-display text-2xl font-bold text-navy-900">Profile Settings</h1>
+        <h1 className="font-display text-2xl font-bold text-foreground">Profile Settings</h1>
         <p className="text-sm text-veriq-muted">Manage your account information and security</p>
       </div>
 
@@ -197,12 +197,12 @@ export default function ProfilePage() {
           </label>
         </div>
         <div>
-          <h2 className="font-display text-lg font-bold text-navy-900">
+          <h2 className="font-display text-lg font-bold text-foreground">
             {user?.firstName} {user?.lastName}
           </h2>
           <p className="text-sm text-veriq-muted">{user?.email}</p>
           <div className="flex items-center gap-4 mt-2">
-            <span className={`flex items-center gap-1.5 text-xs font-medium ${user?.isEmailVerified ? 'text-emerald-600' : 'text-slate-400'}`}>
+            <span className={`flex items-center gap-1.5 text-xs font-medium ${user?.isEmailVerified ? 'text-emerald-600' : 'text-muted-foreground'}`}>
               {user?.isEmailVerified ? <CheckCircle className="h-3.5 w-3.5" /> : <span className="h-3.5 w-3.5 rounded-full border border-current" />}
               Email {user?.isEmailVerified ? 'verified' : 'unverified'}
             </span>
@@ -226,7 +226,7 @@ export default function ProfilePage() {
                 )}
               </div>
               <div>
-                <h2 className="font-display text-base font-bold text-navy-900">Agent Public Photo</h2>
+                <h2 className="font-display text-base font-bold text-foreground">Agent Public Photo</h2>
                 <p className="mt-1 max-w-md text-xs leading-relaxed text-veriq-muted">
                   This photo appears on your public agent profile, property cards, and unlocked report details.
                 </p>
@@ -259,7 +259,7 @@ export default function ProfilePage() {
       {/* Share public profile (agents only) */}
       {user?.role === UserRole.AGENT && agent?.username && (
         <div className="card p-6">
-          <h2 className="font-display text-base font-bold text-navy-900 mb-3 flex items-center gap-2">
+          <h2 className="font-display text-base font-bold text-foreground mb-3 flex items-center gap-2">
             <Share2 className="h-4 w-4 text-veriq-secondary" /> Your Public Profile
           </h2>
           <p className="text-xs text-veriq-muted mb-3">
@@ -290,7 +290,7 @@ export default function ProfilePage() {
 
       {/* Personal info form */}
       <div className="card p-6">
-        <h2 className="font-display text-base font-bold text-navy-900 mb-5 flex items-center gap-2">
+        <h2 className="font-display text-base font-bold text-foreground mb-5 flex items-center gap-2">
           <User className="h-4 w-4 text-veriq-secondary" /> Personal Information
         </h2>
         <form onSubmit={handleProfileSubmit(onProfileSave)} className="space-y-4">
@@ -313,7 +313,7 @@ export default function ProfilePage() {
                 readOnly
                 className="input bg-slate-50 text-slate-400 cursor-not-allowed"
               />
-              <p className="text-[10px] text-slate-400 mt-1">Email cannot be changed</p>
+              <p className="text-[10px] text-muted-foreground mt-1">Email cannot be changed</p>
             </div>
             <div>
               <label className="label">Phone Number</label>
@@ -332,7 +332,7 @@ export default function ProfilePage() {
 
       {/* Password form */}
       <div className="card p-6">
-        <h2 className="font-display text-base font-bold text-navy-900 mb-5 flex items-center gap-2">
+        <h2 className="font-display text-base font-bold text-foreground mb-5 flex items-center gap-2">
           <Lock className="h-4 w-4 text-veriq-secondary" /> Change Password
         </h2>
         <form onSubmit={handlePasswordSubmit(onPasswordChange)} className="space-y-4">
@@ -346,7 +346,7 @@ export default function ProfilePage() {
                 className="input pr-11"
                 placeholder="Enter current password"
               />
-              <button type="button" onClick={() => setShowCurrent((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+              <button type="button" onClick={() => setShowCurrent((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground">
                 {showCurrent ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
@@ -363,7 +363,7 @@ export default function ProfilePage() {
                 className="input pr-11"
                 placeholder="Enter new password"
               />
-              <button type="button" onClick={() => setShowNew((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+              <button type="button" onClick={() => setShowNew((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground">
                 {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
@@ -380,7 +380,7 @@ export default function ProfilePage() {
                 className="input pr-11"
                 placeholder="Confirm new password"
               />
-              <button type="button" onClick={() => setShowConfirm((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+              <button type="button" onClick={() => setShowConfirm((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground">
                 {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
@@ -398,13 +398,13 @@ export default function ProfilePage() {
 
       {/* Account management */}
       <div className="card p-6">
-        <h2 className="font-display text-base font-bold text-navy-900 mb-5 flex items-center gap-2">
+        <h2 className="font-display text-base font-bold text-foreground mb-5 flex items-center gap-2">
           <Shield className="h-4 w-4 text-veriq-secondary" /> Account Management
         </h2>
         <div className="space-y-3">
           <button className="w-full text-left rounded-xl border border-slate-200 px-4 py-3 text-sm text-navy-700 hover:bg-slate-50 transition-colors flex items-center justify-between">
             <span>Download my data</span>
-            <span className="text-xs text-slate-400">GDPR Request</span>
+            <span className="text-xs text-muted-foreground">GDPR Request</span>
           </button>
           <button className="w-full text-left rounded-xl border border-red-100 px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center justify-between">
             <span>Delete Account</span>

@@ -8,7 +8,7 @@ import { UserRole } from '@/types';
 import { saleListingsApi } from '@/lib/api/agent';
 import { useAuth } from '@/context/AuthContext';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
-import { PUBLICATION_STATUS_STYLES, errorMessage, formatDateTime, formatNaira, humanize } from '@/components/agent/format';
+import { PUBLICATION_STATUS_TONES, errorMessage, formatDateTime, formatNaira, humanize } from '@/components/agent/format';
 import { EmptyBlock, ErrorBlock, InlineNotice, LoadingBlock, PageHeader, StatusPill, smallButton } from '@/components/agent/ui';
 import { Select } from '@/components/ui/Select';
 
@@ -79,10 +79,10 @@ export default function SaleListingsPage() {
         published sale listing is free for buyers and every enquiry comes to you.
       </InlineNotice>
 
-      <div className="card !shadow-sm grid grid-cols-1 gap-3 p-4 sm:grid-cols-4">
+      <div className="card grid grid-cols-1 gap-3 p-4 sm:grid-cols-4">
         <label className="relative block sm:col-span-2">
           <span className="sr-only">Search</span>
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input className="input !py-2 !pl-9 text-sm" placeholder="Search by title" value={query} onChange={(event) => setQuery(event.target.value)} />
         </label>
         <Select
@@ -120,23 +120,23 @@ export default function SaleListingsPage() {
         <ul className="space-y-3">
           {filtered.map((item) => (
             <li key={item.id}>
-              <Link href={`/dashboard/agent/sales/${item.id}`} className="card !shadow-sm flex flex-col gap-3 p-4 hover:!shadow-card-hover sm:flex-row sm:items-center sm:justify-between">
+              <Link href={`/dashboard/agent/sales/${item.id}`} className="card flex flex-col gap-3 p-4 transition-colors hover:border-[#10b98170] sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0 space-y-1">
-                  <p className="truncate font-semibold text-navy-900">{item.title}</p>
-                  <p className="text-xs text-slate-500">
+                  <p className="truncate font-semibold text-foreground">{item.title}</p>
+                  <p className="text-xs text-muted-foreground">
                     <Landmark className="mr-1 inline h-3 w-3" />
                     {item.subtype === 'land' ? 'Land' : 'Built Property'} · {formatNaira(item.askingPrice)} · updated {formatDateTime(item.updatedAt)}
                   </p>
                   <div className="flex flex-wrap gap-1.5">
-                    <StatusPill value={item.publicationStatus} styles={PUBLICATION_STATUS_STYLES} />
-                    <span className={`badge !px-2 !py-0.5 text-[11px] ${item.availabilityStatus === 'available' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
+                    <StatusPill value={item.publicationStatus} tones={PUBLICATION_STATUS_TONES} />
+                    <span className={`badge !px-2 !py-0.5 text-[11px] ${item.availabilityStatus === 'available' ? 'bg-[#10b98112] text-[#6ee7b7]' : 'bg-[#ffffff0f] text-muted-foreground'}`}>
                       {humanize(item.availabilityStatus)}
                     </span>
-                    {item.saleOutcome && <span className="badge bg-slate-100 !px-2 !py-0.5 text-[11px] text-slate-700">Sale {humanize(item.saleOutcome)}</span>}
-                    {item.correctionNote && <span className="badge bg-amber-50 !px-2 !py-0.5 text-[11px] text-amber-800">Correction requested</span>}
+                    {item.saleOutcome && <span className="badge bg-[#ffffff0f] !px-2 !py-0.5 text-[11px] text-foreground border-[#ffffff20]">Sale {humanize(item.saleOutcome)}</span>}
+                    {item.correctionNote && <span className="badge bg-[#fbbf2410] !px-2 !py-0.5 text-[11px] text-[#fcd34d] border-[#fbbf2430]">Correction requested</span>}
                   </div>
                 </div>
-                <ChevronRight className="h-4 w-4 flex-shrink-0 text-slate-400" />
+                <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
               </Link>
             </li>
           ))}

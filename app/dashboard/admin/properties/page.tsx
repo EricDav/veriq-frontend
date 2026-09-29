@@ -27,14 +27,14 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 const STATUS_STYLES: Record<ListingStatus, string> = {
-  active: 'bg-emerald-100 text-emerald-700',
-  pending: 'bg-amber-100 text-amber-700',
-  occupied: 'bg-blue-100 text-blue-700',
-  hidden: 'bg-slate-100 text-slate-500',
-  taken: 'bg-purple-100 text-purple-700',
-  expired: 'bg-red-100 text-red-600',
-  unavailable: 'bg-slate-100 text-slate-700',
-  archived: 'bg-slate-200 text-slate-700',
+  active: 'bg-[#10b98112] text-primary',
+  pending: 'bg-[#fbbf2410] text-[#fcd34d]',
+  occupied: 'bg-[#ffffff08] text-muted-foreground',
+  hidden: 'bg-[#ffffff08] text-muted-foreground',
+  taken: 'bg-[#ffffff08] text-muted-foreground',
+  expired: 'bg-[#fb718510] text-destructive',
+  unavailable: 'bg-[#ffffff08] text-muted-foreground',
+  archived: 'bg-[#ffffff08] text-muted-foreground',
 };
 
 const PROPERTY_TYPES = [
@@ -136,9 +136,9 @@ function mediaUrl(url: string) {
 
 function DetailItem({ label, value }: { label: string; value: unknown }) {
   return (
-    <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
-      <p className="text-[10px] font-semibold uppercase text-slate-400">{label}</p>
-      <p className="mt-1 break-words text-xs font-medium capitalize text-navy-900">{pretty(value)}</p>
+    <div className="rounded-xl border border-[#ffffff12] bg-[#ffffff08] px-3 py-2">
+      <p className="text-[10px] font-semibold uppercase text-muted-foreground">{label}</p>
+      <p className="mt-1 break-words text-xs font-medium capitalize text-foreground">{pretty(value)}</p>
     </div>
   );
 }
@@ -146,7 +146,7 @@ function DetailItem({ label, value }: { label: string; value: unknown }) {
 function DetailSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="space-y-3">
-      <h3 className="text-sm font-bold text-navy-900">{title}</h3>
+      <h3 className="text-sm font-bold text-foreground">{title}</h3>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">{children}</div>
     </section>
   );
@@ -359,8 +359,8 @@ function AdminPropertiesPageInner() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="font-display text-2xl font-bold text-navy-900">Property Management</h1>
-          <p className="text-sm text-veriq-muted">
+          <h1 className="font-display text-2xl font-bold text-foreground">Property Management</h1>
+          <p className="text-sm text-muted-foreground">
             {agentId
               ? `${total} listing${total !== 1 ? 's' : ''}${agentName ? ` by ${agentName}` : ''}`
               : `${total} listings in the platform`}
@@ -378,14 +378,14 @@ function AdminPropertiesPageInner() {
 
       {/* Agent filter banner */}
       {agentId && (
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-veriq-secondary/30 bg-veriq-secondary/5 px-4 py-3">
-          <div className="flex items-center gap-2 text-sm text-navy-800">
-            <User className="h-4 w-4 text-veriq-secondary flex-shrink-0" />
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-[#10b98135] bg-[#10b98112] px-4 py-3">
+          <div className="flex items-center gap-2 text-sm text-foreground">
+            <User className="h-4 w-4 text-primary flex-shrink-0" />
             Showing listings for <span className="font-semibold">{agentName || 'this agent'}</span>
           </div>
           <Link
             href="/dashboard/admin/properties"
-            className="flex items-center gap-1 text-xs font-medium text-veriq-secondary hover:underline"
+            className="flex items-center gap-1 text-xs font-medium text-primary hover:underline"
           >
             <X className="h-3 w-3" /> Clear filter
           </Link>
@@ -395,34 +395,34 @@ function AdminPropertiesPageInner() {
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
         {[
-          { label: 'Total', value: total, cls: 'text-navy-900' },
-          { label: 'Active', value: statusSummary.active ?? 0, cls: 'text-emerald-600' },
-          { label: 'Pending', value: statusSummary.pending ?? 0, cls: 'text-amber-600' },
-          { label: 'Occupied', value: statusSummary.occupied ?? 0, cls: 'text-blue-600' },
-          { label: 'Hidden', value: statusSummary.hidden ?? 0, cls: 'text-slate-500' },
-          { label: 'Expired/Taken', value: (statusSummary.expired ?? 0) + (statusSummary.taken ?? 0), cls: 'text-red-500' },
+          { label: 'Total', value: total, cls: 'text-foreground' },
+          { label: 'Active', value: statusSummary.active ?? 0, cls: 'text-primary' },
+          { label: 'Pending', value: statusSummary.pending ?? 0, cls: 'text-[#fcd34d]' },
+          { label: 'Occupied', value: statusSummary.occupied ?? 0, cls: 'text-muted-foreground' },
+          { label: 'Hidden', value: statusSummary.hidden ?? 0, cls: 'text-muted-foreground' },
+          { label: 'Expired/Taken', value: (statusSummary.expired ?? 0) + (statusSummary.taken ?? 0), cls: 'text-destructive' },
         ].map((s) => (
           <div key={s.label} className="card p-4">
             <p className={`text-2xl font-black ${s.cls}`}>{s.value}</p>
-            <p className="text-xs text-slate-500 mt-0.5">{s.label}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{s.label}</p>
           </div>
         ))}
       </div>
 
       {/* Search and filters */}
       <div className="flex flex-wrap items-center gap-3">
-        <form onSubmit={handleSearchSubmit} className="flex min-w-64 flex-1 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5">
-          <Search className="h-4 w-4 flex-shrink-0 text-slate-400" />
+        <form onSubmit={handleSearchSubmit} className="flex min-w-64 flex-1 items-center gap-2 rounded-xl border border-[#ffffff12] bg-card px-4 py-2.5">
+          <Search className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by title, area, city, state, or agent…"
-            className="flex-1 bg-transparent text-sm text-navy-900 outline-none placeholder:text-slate-400"
+            className="flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
           />
           {search && (
             <button type="button" onClick={handleClearFilters}>
-              <X className="h-3.5 w-3.5 text-slate-400 hover:text-slate-600" />
+              <X className="h-3.5 w-3.5 text-muted-foreground hover:text-muted-foreground" />
             </button>
           )}
         </form>
@@ -431,14 +431,14 @@ function AdminPropertiesPageInner() {
           onClick={() => setShowFilters((value) => !value)}
           className={`flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition-colors ${
             showFilters || activeFilterCount > 0
-              ? 'border-veriq-secondary bg-veriq-secondary/5 text-veriq-secondary'
-              : 'border-slate-200 bg-white text-navy-700 hover:border-slate-300'
+              ? 'border-primary bg-[#10b98112] text-primary'
+              : 'border-[#ffffff12] bg-card text-foreground hover:border-[#ffffff12]'
           }`}
         >
           <SlidersHorizontal className="h-4 w-4" />
           Filters
           {activeFilterCount > 0 && (
-            <span className="ml-1 flex h-4 w-4 items-center justify-center rounded-full bg-veriq-secondary text-[10px] font-bold text-white">
+            <span className="ml-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-foreground">
               {activeFilterCount}
             </span>
           )}
@@ -572,8 +572,8 @@ function AdminPropertiesPageInner() {
                       onClick={() => setPendingFilters((current) => ({ ...current, minBedrooms: value }))}
                       className={`flex-1 rounded-lg py-1.5 text-xs font-medium transition-all ${
                         isActive
-                          ? 'bg-veriq-secondary text-white'
-                          : 'border border-slate-200 bg-white text-navy-700 hover:border-veriq-secondary'
+                          ? 'bg-primary text-foreground'
+                          : 'border border-[#ffffff12] bg-card text-foreground hover:border-primary'
                       }`}
                     >
                       {label}
@@ -585,8 +585,8 @@ function AdminPropertiesPageInner() {
           )}
 
           {isShortStayFilter && (
-            <div className="space-y-4 rounded-xl border border-veriq-secondary/20 bg-veriq-secondary/5 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-veriq-secondary">Short Let Filters</p>
+            <div className="space-y-4 rounded-xl border border-[#10b98135] bg-[#10b98112] p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-primary">Short Let Filters</p>
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
                 <div>
                   <label className="label text-xs">Pricing Model</label>
@@ -627,8 +627,8 @@ function AdminPropertiesPageInner() {
           )}
 
           {isHostelFilter && (
-            <div className="space-y-4 rounded-xl border border-veriq-secondary/20 bg-veriq-secondary/5 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-veriq-secondary">Hostel Filters</p>
+            <div className="space-y-4 rounded-xl border border-[#10b98135] bg-[#10b98112] p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-primary">Hostel Filters</p>
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
                 <div>
                   <label className="label text-xs">Suitable For</label>
@@ -688,7 +688,7 @@ function AdminPropertiesPageInner() {
             <button
               type="button"
               onClick={handleClearFilters}
-              className="rounded-xl border border-slate-200 px-4 py-2 text-xs text-slate-500 transition-colors hover:bg-slate-50"
+              className="rounded-xl border border-[#ffffff12] px-4 py-2 text-xs text-muted-foreground transition-colors hover:bg-[#ffffff08]"
             >
               Clear All
             </button>
@@ -700,18 +700,18 @@ function AdminPropertiesPageInner() {
       <div className="card overflow-hidden">
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
-            <LoadingSpinner size="lg" className="text-veriq-secondary" />
+            <LoadingSpinner size="lg" className="text-primary" />
           </div>
         ) : properties.length === 0 ? (
           <div className="flex flex-col items-center py-16 text-center">
-            <Home className="h-10 w-10 text-slate-300 mb-3" />
-            <p className="text-sm font-medium text-navy-900">No properties found</p>
+            <Home className="h-10 w-10 text-muted-foreground mb-3" />
+            <p className="text-sm font-medium text-foreground">No properties found</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-veriq-surface">
-                <tr className="text-left text-xs text-slate-400 border-b border-slate-100">
+              <thead className="bg-background">
+                <tr className="text-left text-xs text-muted-foreground border-b border-[#ffffff12]">
                   <th className="px-6 py-4 font-medium">Property</th>
                   <th className="px-4 py-4 font-medium">Agent</th>
                   <th className="px-4 py-4 font-medium">Location</th>
@@ -721,7 +721,7 @@ function AdminPropertiesPageInner() {
                   <th className="px-4 py-4 font-medium text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-50">
+              <tbody className="divide-y divide-[#ffffff12]">
                 {properties.map((prop) => {
                   const agentName = prop.agent?.user
                     ? `${prop.agent.user.firstName} ${prop.agent.user.lastName}`
@@ -729,24 +729,24 @@ function AdminPropertiesPageInner() {
                   const isHidden = prop.status === ListingStatus.HIDDEN;
 
                   return (
-                    <tr key={prop.id} className={`hover:bg-slate-50 transition-colors ${isHidden ? 'opacity-60' : ''}`}>
+                    <tr key={prop.id} className={`hover:bg-[#ffffff08] transition-colors ${isHidden ? 'opacity-60' : ''}`}>
                       <td className="px-6 py-4">
-                        <p className="font-semibold text-navy-900 text-xs max-w-[180px] truncate">{prop.title}</p>
-                        <p className="text-[10px] text-slate-400 capitalize mt-0.5">
+                        <p className="font-semibold text-foreground text-xs max-w-[180px] truncate">{prop.title}</p>
+                        <p className="text-[10px] text-muted-foreground capitalize mt-0.5">
                           {prop.propertyType.replace(/_/g, ' ')} · {prop.bedrooms}bd {prop.bathrooms}ba
                         </p>
                       </td>
                       <td className="px-4 py-4">
-                        <p className="text-xs text-navy-700 truncate max-w-[100px]">{agentName}</p>
+                        <p className="text-xs text-foreground truncate max-w-[100px]">{agentName}</p>
                       </td>
                       <td className="px-4 py-4">
-                        <div className="flex items-center gap-1 text-xs text-slate-600">
-                          <MapPin className="h-3 w-3 text-slate-400 flex-shrink-0" />
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <MapPin className="h-3 w-3 text-muted-foreground flex-shrink-0" />
                           <span className="truncate max-w-[90px]">{prop.area}, {prop.state}</span>
                         </div>
                       </td>
                       <td className="px-4 py-4">
-                        <p className="text-xs font-semibold text-navy-900">
+                        <p className="text-xs font-semibold text-foreground">
                           ₦{Number(prop.rentAmount).toLocaleString()}
                         </p>
                       </td>
@@ -757,9 +757,9 @@ function AdminPropertiesPageInner() {
                       </td>
                       <td className="px-4 py-4">
                         <span className={`badge text-[10px] capitalize ${
-                          prop.freshnessScore === 'freshly_verified' ? 'bg-emerald-50 text-emerald-600' :
-                          prop.freshnessScore === 'recently_verified' ? 'bg-blue-50 text-blue-600' :
-                          'bg-amber-50 text-amber-600'
+                          prop.freshnessScore === 'freshly_verified' ? 'bg-[#10b98112] text-primary' :
+                          prop.freshnessScore === 'recently_verified' ? 'bg-[#ffffff08] text-muted-foreground' :
+                          'bg-[#fbbf2410] text-[#fcd34d]'
                         }`}>
                           {prop.freshnessScore.replace(/_/g, ' ')}
                         </span>
@@ -769,28 +769,28 @@ function AdminPropertiesPageInner() {
                           <Link
                             href={`/properties/${prop.id}`}
                             target="_blank"
-                            className="rounded-lg p-1.5 text-blue-600 hover:bg-blue-50 transition-colors"
+                            className="rounded-lg p-1.5 text-muted-foreground hover:bg-[#ffffff08] transition-colors"
                             title="View public listing"
                           >
                             <Eye className="h-3.5 w-3.5" />
                           </Link>
                           <button
                             onClick={() => setViewingProperty(prop)}
-                            className="rounded-lg p-1.5 text-navy-700 hover:bg-slate-100 transition-colors"
+                            className="rounded-lg p-1.5 text-foreground hover:bg-[#ffffff08] transition-colors"
                             title="View all admin data"
                           >
                             <Search className="h-3.5 w-3.5" />
                           </button>
                           <Link
                             href={`/dashboard/admin/refunds?q=${encodeURIComponent(prop.id)}`}
-                            className="rounded-lg p-1.5 text-purple-600 hover:bg-purple-50 transition-colors"
+                            className="rounded-lg p-1.5 text-muted-foreground hover:bg-[#ffffff08] transition-colors"
                             title="Refund cases (Refund queue)"
                           >
                             <ReceiptText className="h-3.5 w-3.5" />
                           </Link>
                           <Link
                             href={`/dashboard/admin/pricing?tab=free-unlock&propertyId=${encodeURIComponent(prop.id)}`}
-                            className="flex items-center gap-1.5 rounded-lg border border-amber-200 px-3 py-1.5 text-[10px] font-bold text-amber-700 hover:bg-amber-50"
+                            className="flex items-center gap-1.5 rounded-lg border border-[#fbbf2430] px-3 py-1.5 text-[10px] font-bold text-[#fcd34d] hover:bg-[#fbbf2410]"
                             title="Make this property free to unlock"
                           >
                             <Gift className="h-3 w-3" /> Make Free
@@ -798,14 +798,14 @@ function AdminPropertiesPageInner() {
                           {isHidden ? (
                             <button
                               onClick={() => setPendingAction({ propertyId: prop.id, type: 'unhide', title: prop.title })}
-                              className="flex items-center gap-1.5 rounded-lg border border-emerald-200 text-emerald-600 px-3 py-1.5 text-[10px] font-bold hover:bg-emerald-50"
+                              className="flex items-center gap-1.5 rounded-lg border border-[#10b98135] text-primary px-3 py-1.5 text-[10px] font-bold hover:bg-[#10b98112]"
                             >
                               <CheckCircle className="h-3 w-3" /> Restore
                             </button>
                           ) : (
                             <button
                               onClick={() => setPendingAction({ propertyId: prop.id, type: 'hide', title: prop.title })}
-                              className="flex items-center gap-1.5 rounded-lg border border-red-200 text-red-600 px-3 py-1.5 text-[10px] font-bold hover:bg-red-50"
+                              className="flex items-center gap-1.5 rounded-lg border border-[#fb718530] text-destructive px-3 py-1.5 text-[10px] font-bold hover:bg-[#fb718510]"
                             >
                               <EyeOff className="h-3 w-3" /> Hide
                             </button>
@@ -824,11 +824,11 @@ function AdminPropertiesPageInner() {
       {/* Pagination */}
       {!isLoading && totalPages > 1 && (
         <div className="flex items-center justify-center gap-2">
-          <button disabled={page === 1} onClick={() => setPage((p) => p - 1)} className="h-9 w-9 flex items-center justify-center rounded-lg border border-slate-200 disabled:opacity-40">
+          <button disabled={page === 1} onClick={() => setPage((p) => p - 1)} className="h-9 w-9 flex items-center justify-center rounded-lg border border-[#ffffff12] disabled:opacity-40">
             <ChevronLeft className="h-4 w-4" />
           </button>
-          <span className="text-sm text-slate-600">Page {page} of {totalPages}</span>
-          <button disabled={page === totalPages} onClick={() => setPage((p) => p + 1)} className="h-9 w-9 flex items-center justify-center rounded-lg border border-slate-200 disabled:opacity-40">
+          <span className="text-sm text-muted-foreground">Page {page} of {totalPages}</span>
+          <button disabled={page === totalPages} onClick={() => setPage((p) => p + 1)} className="h-9 w-9 flex items-center justify-center rounded-lg border border-[#ffffff12] disabled:opacity-40">
             <ChevronRight className="h-4 w-4" />
           </button>
         </div>
@@ -852,24 +852,24 @@ function AdminPropertiesPageInner() {
 
       {viewingProperty && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-3 py-6 sm:px-4">
-          <div className="max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-2xl bg-white shadow-card-hover">
-            <div className="sticky top-0 z-10 flex items-start justify-between gap-3 border-b border-slate-100 bg-white px-5 py-4">
+          <div className="max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-2xl bg-card shadow-card-hover">
+            <div className="sticky top-0 z-10 flex items-start justify-between gap-3 border-b border-[#ffffff12] bg-card px-5 py-4">
               <div>
-                <h2 className="font-display text-lg font-bold text-navy-900">Property Data</h2>
-                <p className="text-xs text-veriq-muted">{viewingProperty.title}</p>
+                <h2 className="font-display text-lg font-bold text-foreground">Property Data</h2>
+                <p className="text-xs text-muted-foreground">{viewingProperty.title}</p>
               </div>
-              <button type="button" onClick={() => setViewingProperty(null)} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100">
+              <button type="button" onClick={() => setViewingProperty(null)} className="rounded-lg p-2 text-muted-foreground hover:bg-[#ffffff08]">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             <div className="space-y-6 p-5">
               {viewingProperty.coverImageUrl && (
-                <div className="overflow-hidden rounded-xl border border-slate-100">
+                <div className="overflow-hidden rounded-xl border border-[#ffffff12]">
                   <button
                     type="button"
                     onClick={() => setPreviewImage({ src: mediaUrl(viewingProperty.coverImageUrl!), alt: viewingProperty.title })}
-                    className="block w-full bg-slate-100"
+                    className="block w-full bg-[#ffffff08]"
                   >
                     <img src={mediaUrl(viewingProperty.coverImageUrl)} alt={viewingProperty.title} className="h-56 w-full object-contain sm:h-72" />
                   </button>
@@ -979,13 +979,13 @@ function AdminPropertiesPageInner() {
               )}
 
               <section className="space-y-3">
-                <h3 className="text-sm font-bold text-navy-900">Uploaded Media</h3>
+                <h3 className="text-sm font-bold text-foreground">Uploaded Media</h3>
                 {isLoadingMedia ? (
-                  <div className="flex justify-center rounded-xl border border-slate-100 bg-slate-50 py-8">
-                    <LoadingSpinner size="md" className="text-veriq-secondary" />
+                  <div className="flex justify-center rounded-xl border border-[#ffffff12] bg-[#ffffff08] py-8">
+                    <LoadingSpinner size="md" className="text-primary" />
                   </div>
                 ) : propertyMedia.length === 0 ? (
-                  <div className="rounded-xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-500">
+                  <div className="rounded-xl border border-[#ffffff12] bg-[#ffffff08] p-4 text-sm text-muted-foreground">
                     No media uploaded for this listing.
                   </div>
                 ) : (
@@ -996,8 +996,8 @@ function AdminPropertiesPageInner() {
                       const isVideo = item.mimeType?.startsWith('video/') || item.mediaType === 'video';
 
                       return (
-                        <div key={item.id} className="overflow-hidden rounded-xl border border-slate-100 bg-white">
-                          <div className="relative aspect-[4/3] bg-slate-100">
+                        <div key={item.id} className="overflow-hidden rounded-xl border border-[#ffffff12] bg-card">
+                          <div className="relative aspect-[4/3] bg-[#ffffff08]">
                             {isImage ? (
                               <button
                                 type="button"
@@ -1009,15 +1009,15 @@ function AdminPropertiesPageInner() {
                             ) : isVideo ? (
                               <video src={src} controls className="h-full w-full object-cover" />
                             ) : (
-                              <div className="flex h-full items-center justify-center p-4 text-center text-xs text-slate-500">
+                              <div className="flex h-full items-center justify-center p-4 text-center text-xs text-muted-foreground">
                                 Preview unavailable
                               </div>
                             )}
                           </div>
                           <div className="space-y-1 p-3">
-                            <p className="text-xs font-bold capitalize text-navy-900">{pretty(item.section)}</p>
-                            <p className="truncate text-xs text-slate-500">{item.caption || item.originalName || item.filename}</p>
-                            <a href={src} target="_blank" rel="noopener noreferrer" className="inline-flex text-xs font-semibold text-veriq-secondary hover:underline">
+                            <p className="text-xs font-bold capitalize text-foreground">{pretty(item.section)}</p>
+                            <p className="truncate text-xs text-muted-foreground">{item.caption || item.originalName || item.filename}</p>
+                            <a href={src} target="_blank" rel="noopener noreferrer" className="inline-flex text-xs font-semibold text-primary hover:underline">
                               Open media
                             </a>
                           </div>
@@ -1038,7 +1038,7 @@ function AdminPropertiesPageInner() {
             <button
               type="button"
               onClick={() => setPreviewImage(null)}
-              className="absolute right-2 top-2 z-10 rounded-full bg-black/60 p-2 text-white transition-colors hover:bg-black/80"
+              className="absolute right-2 top-2 z-10 rounded-full bg-black/60 p-2 text-foreground transition-colors hover:bg-black/80"
             >
               <X className="h-5 w-5" />
             </button>

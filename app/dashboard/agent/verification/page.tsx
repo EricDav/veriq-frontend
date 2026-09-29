@@ -9,9 +9,9 @@ import { agentPortfolioApi, verificationApi } from '@/lib/api/agent';
 import { useAuth } from '@/context/AuthContext';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
 import {
-  CASE_STATUS_STYLES,
+  CASE_STATUS_TONES,
   CATEGORY_LABELS,
-  PUBLICATION_STATUS_STYLES,
+  PUBLICATION_STATUS_TONES,
   ageInDays,
   errorMessage,
   relativeAge,
@@ -150,19 +150,19 @@ export default function VerificationQueuePage() {
           { label: 'Escalated', value: counts.escalated, icon: AlertTriangle },
           { label: 'Re-verification', value: counts.reverification, icon: RotateCcw },
         ].map((stat) => (
-          <div key={stat.label} className="card !shadow-sm p-4">
-            <stat.icon className="h-4 w-4 text-slate-400" />
-            <p className="mt-2 text-2xl font-black text-navy-900">{stat.value}</p>
-            <p className="text-xs text-slate-500">{stat.label}</p>
+          <div key={stat.label} className="card p-4">
+            <stat.icon className="h-4 w-4 text-muted-foreground" />
+            <p className="mt-2 text-2xl font-black text-foreground">{stat.value}</p>
+            <p className="text-xs text-muted-foreground">{stat.label}</p>
           </div>
         ))}
       </div>
 
-      <div className="card !shadow-sm space-y-3 p-4">
+      <div className="card space-y-3 p-4">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <label className="relative block sm:col-span-2">
             <span className="sr-only">Search</span>
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input className="input !py-2 !pl-9 text-sm" placeholder="Search title, area or city" value={query} onChange={(event) => setQuery(event.target.value)} />
           </label>
           <select className="input !py-2 text-sm" value={status} onChange={(event) => setStatus(event.target.value as '' | VerificationCaseStatus)} aria-label="Case status">
@@ -207,10 +207,10 @@ export default function VerificationQueuePage() {
           </select>
         </div>
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <label className="flex items-center gap-2 text-xs text-slate-600">
+          <label className="flex items-center gap-2 text-xs text-muted-foreground">
             <input type="checkbox" checked={escalatedOnly} onChange={(event) => setEscalatedOnly(event.target.checked)} /> Escalated only
           </label>
-          <button type="button" className="text-xs font-semibold text-slate-500 hover:text-navy-900" onClick={resetFilters}>
+          <button type="button" className="text-xs font-semibold text-muted-foreground hover:text-foreground" onClick={resetFilters}>
             Reset filters
           </button>
         </div>
@@ -229,29 +229,29 @@ export default function VerificationQueuePage() {
         <ul className="space-y-3">
           {filtered.map((item) => (
             <li key={item.id}>
-              <Link href={`/dashboard/agent/verification/${item.id}`} className="card !shadow-sm flex flex-col gap-3 p-4 hover:!shadow-card-hover sm:flex-row sm:items-center sm:justify-between">
+              <Link href={`/dashboard/agent/verification/${item.id}`} className="card flex flex-col gap-3 p-4 transition-colors hover:border-[#10b98170] sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0 space-y-1">
-                  <p className="truncate font-semibold text-navy-900">{item.property?.title ?? 'Property record unavailable'}</p>
-                  <p className="text-xs text-slate-500">
+                  <p className="truncate font-semibold text-foreground">{item.property?.title ?? 'Property record unavailable'}</p>
+                  <p className="text-xs text-muted-foreground">
                     {item.property ? `${CATEGORY_LABELS[item.property.category] ?? item.property.category} · ${item.property.area}, ${item.property.city}` : '—'}
                     {' · '}
                     {operatorName(item.property?.operatorId ?? null)}
                   </p>
                   <div className="flex flex-wrap items-center gap-1.5">
-                    <StatusPill value={item.status} styles={CASE_STATUS_STYLES} />
-                    {item.property && <StatusPill value={item.property.publicationStatus} styles={PUBLICATION_STATUS_STYLES} />}
-                    {item.isReverification && <span className="badge bg-purple-50 !px-2 !py-0.5 text-[11px] text-purple-700">Re-verification</span>}
+                    <StatusPill value={item.status} tones={CASE_STATUS_TONES} />
+                    {item.property && <StatusPill value={item.property.publicationStatus} tones={PUBLICATION_STATUS_TONES} />}
+                    {item.isReverification && <span className="badge bg-[#ffffff06] !px-2 !py-0.5 text-[11px] text-muted-foreground border-[#ffffff20]">Re-verification</span>}
                     {item.duplicateCandidates > 0 && !item.duplicateResolved && (
-                      <span className="badge bg-red-50 !px-2 !py-0.5 text-[11px] text-red-700">
+                      <span className="badge bg-[#fb718510] !px-2 !py-0.5 text-[11px] text-[#fda4af] border-[#fb718530]">
                         {item.duplicateCandidates} possible duplicate{item.duplicateCandidates === 1 ? '' : 's'}
                       </span>
                     )}
-                    {item.escalated && <span className="badge bg-red-100 !px-2 !py-0.5 text-[11px] text-red-800">Escalated to Admin</span>}
+                    {item.escalated && <span className="badge bg-[#fb718518] !px-2 !py-0.5 text-[11px] text-[#fda4af] border-[#fb718530]">Escalated to Admin</span>}
                   </div>
                 </div>
                 <div className="flex items-center justify-between gap-3 sm:justify-end">
-                  <span className="text-xs text-slate-500">Opened {relativeAge(item.createdAt)}</span>
-                  <ChevronRight className="h-4 w-4 text-slate-400" />
+                  <span className="text-xs text-muted-foreground">Opened {relativeAge(item.createdAt)}</span>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
                 </div>
               </Link>
             </li>

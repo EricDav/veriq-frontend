@@ -12,12 +12,12 @@ import { errorMessage, formatDateTime, humanize } from './format';
 import { ErrorBlock, Field, InlineNotice, LoadingBlock, smallButton, smallDangerButton, smallPrimaryButton } from './ui';
 
 const SECTION_STATE_STYLES: Record<string, string> = {
-  satisfied: 'bg-emerald-50 text-emerald-700',
-  at_limit: 'bg-emerald-50 text-emerald-700',
-  not_applicable: 'bg-slate-100 text-slate-600',
-  pending_review: 'bg-amber-50 text-amber-700',
-  missing: 'bg-red-50 text-red-700',
-  optional: 'bg-slate-50 text-slate-500',
+  satisfied: 'bg-[#10b98112] text-[#6ee7b7]',
+  at_limit: 'bg-[#10b98112] text-[#6ee7b7]',
+  not_applicable: 'bg-[#ffffff0f] text-muted-foreground',
+  pending_review: 'bg-[#fbbf2410] text-[#fcd34d]',
+  missing: 'bg-[#fb718510] text-[#fda4af]',
+  optional: 'bg-[#070b1444] text-muted-foreground',
 };
 
 const ACCEPTED_IMAGES = 'image/jpeg,image/png,image/webp,image/heic,image/heif';
@@ -112,15 +112,15 @@ export function MediaReviewPanel({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2 text-xs">
-        <span className={cn('badge !px-2.5 !py-0.5', checklist.complete ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700')}>
+        <span className={cn('badge !px-2.5 !py-0.5', checklist.complete ? 'bg-[#10b98112] text-[#6ee7b7]' : 'bg-[#fbbf2410] text-[#fcd34d]')}>
           {checklist.complete ? 'Media complete' : 'Media incomplete'}
         </span>
         {checklist.coverRequired && (
-          <span className={cn('badge !px-2.5 !py-0.5', checklist.coverMediaId ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700')}>
+          <span className={cn('badge !px-2.5 !py-0.5', checklist.coverMediaId ? 'bg-[#10b98112] text-[#6ee7b7]' : 'bg-[#fb718510] text-[#fda4af]')}>
             {checklist.coverMediaId ? 'Public cover set' : 'Public cover required'}
           </span>
         )}
-        <span className="text-slate-400">Schema v{checklist.schemaVersion}</span>
+        <span className="text-muted-foreground">Schema v{checklist.schemaVersion}</span>
       </div>
 
       {checklist.coverRequired && !checklist.coverMediaId && (
@@ -130,7 +130,7 @@ export function MediaReviewPanel({
         </InlineNotice>
       )}
 
-      {grouped.length === 0 && <p className="text-sm text-slate-500">This schema has no media sections.</p>}
+      {grouped.length === 0 && <p className="text-sm text-muted-foreground">This schema has no media sections.</p>}
 
       <div className="space-y-3">
         {grouped.map(({ section, items }) => {
@@ -138,14 +138,14 @@ export function MediaReviewPanel({
           const canUpload = !readOnly && section.approved < section.max && activeCount < section.max;
           const canMarkNotApplicable = !readOnly && section.required && !['satisfied', 'at_limit', 'not_applicable'].includes(section.state);
           return (
-            <div key={sectionId(section)} className="rounded-xl border border-slate-100 p-3">
+            <div key={sectionId(section)} className="rounded-xl border border-[#ffffff10] p-3">
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold text-navy-900">
+                  <p className="text-sm font-semibold text-foreground">
                     {section.label}
-                    {section.coverEligible && <span className="ml-2 text-[10px] font-bold uppercase text-veriq-secondary">Cover eligible</span>}
+                    {section.coverEligible && <span className="ml-2 text-[10px] font-bold uppercase text-primary">Cover eligible</span>}
                   </p>
-                  <p className="text-[11px] text-slate-500">
+                  <p className="text-[11px] text-muted-foreground">
                     {section.required ? `Required · min ${section.min}` : 'Optional'} · max {section.max} · {section.approved} approved
                     {section.pending ? ` · ${section.pending} pending` : ''}
                   </p>
@@ -171,13 +171,13 @@ export function MediaReviewPanel({
                     const src = item.variants?.thumbnail ?? item.variants?.card ?? item.url;
                     const busy = busyId === item.id;
                     return (
-                      <li key={item.id} className={cn('overflow-hidden rounded-xl border', item.isCover ? 'border-veriq-secondary' : 'border-slate-100')}>
-                        <a href={item.variants?.detail ?? item.url} target="_blank" rel="noopener noreferrer" className="block aspect-[4/3] bg-slate-100">
+                      <li key={item.id} className={cn('overflow-hidden rounded-xl border', item.isCover ? 'border-primary' : 'border-[#ffffff10]')}>
+                        <a href={item.variants?.detail ?? item.url} target="_blank" rel="noopener noreferrer" className="block aspect-[4/3] bg-[#ffffff0f]">
                           {src ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={src} alt={item.caption ?? section.label} className="h-full w-full object-cover" loading="lazy" />
                           ) : (
-                            <span className="grid h-full place-items-center text-slate-400">
+                            <span className="grid h-full place-items-center text-muted-foreground">
                               <ImageOff className="h-6 w-6" />
                             </span>
                           )}
@@ -188,23 +188,23 @@ export function MediaReviewPanel({
                               className={cn(
                                 'badge !px-2 !py-0.5 text-[10px]',
                                 item.reviewStatus === 'approved'
-                                  ? 'bg-emerald-50 text-emerald-700'
+                                  ? 'bg-[#10b98112] text-[#6ee7b7]'
                                   : item.reviewStatus === 'pending_review'
-                                    ? 'bg-amber-50 text-amber-700'
-                                    : 'bg-red-50 text-red-700',
+                                    ? 'bg-[#fbbf2410] text-[#fcd34d]'
+                                    : 'bg-[#fb718510] text-[#fda4af]',
                               )}
                             >
                               {humanize(item.reviewStatus)}
                             </span>
-                            {item.isCover && <span className="badge bg-veriq-secondary !px-2 !py-0.5 text-[10px] text-white">Public cover</span>}
-                            {item.lowResolution && <span className="badge bg-amber-50 !px-2 !py-0.5 text-[10px] text-amber-700">Low resolution</span>}
-                            {item.replacesMediaId && <span className="badge bg-blue-50 !px-2 !py-0.5 text-[10px] text-blue-700">Replacement</span>}
+                            {item.isCover && <span className="badge bg-primary px-2 py-0.5 text-[10px] text-primary-foreground border-primary">Public cover</span>}
+                            {item.lowResolution && <span className="badge bg-[#fbbf2410] !px-2 !py-0.5 text-[10px] text-[#fcd34d] border-[#fbbf2430]">Low resolution</span>}
+                            {item.replacesMediaId && <span className="badge bg-[#ffffff06] !px-2 !py-0.5 text-[10px] text-muted-foreground border-[#ffffff20]">Replacement</span>}
                           </div>
-                          <p className="text-[11px] text-slate-500">
+                          <p className="text-[11px] text-muted-foreground">
                             {humanize(item.source)} · {formatDateTime(item.createdAt)}
                           </p>
-                          {item.caption && <p className="text-xs text-slate-600">{item.caption}</p>}
-                          {item.rejectionReason && <p className="text-xs text-red-600">Rejected: {item.rejectionReason}</p>}
+                          {item.caption && <p className="text-xs text-muted-foreground">{item.caption}</p>}
+                          {item.rejectionReason && <p className="text-xs text-destructive">Rejected: {item.rejectionReason}</p>}
                           {!readOnly && (
                             <div className="flex flex-wrap gap-1.5">
                               {item.reviewStatus === 'pending_review' && (
@@ -286,7 +286,7 @@ export function MediaReviewPanel({
       <Modal isOpen={modal?.kind === 'remove'} onClose={() => busyId === null && setModal(null)} title="Remove image" size="sm">
         {modal?.kind === 'remove' && (
           <div className="space-y-4">
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-muted-foreground">
               The image is removed from this listing and capacity in the category is restored. If it is the public cover, set a new cover afterwards.
             </p>
             <div className="flex justify-end gap-2">
@@ -322,7 +322,7 @@ export function MediaReviewPanel({
               <input
                 type="file"
                 accept={ACCEPTED_IMAGES}
-                className="block w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-sm file:font-semibold"
+                className="block w-full text-sm text-muted-foreground file:mr-3 file:rounded-lg file:border-0 file:bg-[#ffffff0f] file:px-3 file:py-2 file:text-sm file:font-semibold"
                 onChange={(event) => setFile(event.target.files?.[0] ?? null)}
               />
             </Field>
@@ -363,7 +363,7 @@ export function MediaReviewPanel({
       <Modal isOpen={modal?.kind === 'not_applicable'} onClose={() => busyId === null && setModal(null)} title="Record Not Applicable" size="md">
         {modal?.kind === 'not_applicable' && (
           <div className="space-y-4">
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-muted-foreground">
               Record that <strong>{modal.section.label}</strong> does not apply to this listing. Your decision is verified immediately and audited.
             </p>
             <Field label="Why this section is not applicable">

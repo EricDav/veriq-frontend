@@ -104,7 +104,7 @@ test('the checklist walks through the missing steps and uploads identity evidenc
   await expect.poll(() => uploads).toBe(1);
   await expect(page.getByText('Verification complete')).toBeVisible();
   await expect(page.getByText('You can post', { exact: true })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Add a property', exact: true })).toHaveAttribute(
+  await expect(page.getByRole('main').getByRole('link', { name: 'Add a property', exact: true })).toHaveAttribute(
     'href',
     '/dashboard/operator/properties/new',
   );

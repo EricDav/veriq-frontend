@@ -6,6 +6,7 @@ import { AlertTriangle, ChevronLeft, ChevronRight, Inbox, RefreshCw } from 'luci
 import { useAuth } from '@/context/AuthContext';
 import { UserRole } from '@/types';
 import { cn } from '@/lib/utils';
+import { Badge, type BadgeTone, Button, ChipIcon, PageHead, panelClass } from '@/components/ui';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import type { DescribedError } from './format';
 
@@ -22,6 +23,11 @@ export function useAdminGuard(): { ready: boolean; loading: boolean } {
   return { ready: !isLoading && isAdmin, loading: isLoading };
 }
 
+/**
+ * Every Admin screen's `.page-head`. It is the shared {@link PageHead} with a Refresh action folded
+ * in, so an Admin screen never grows its own heading block and the workspace shell keeps supplying
+ * the rest of the chrome.
+ */
 export function AdminPageHeader({
   icon: Icon,
   eyebrow,
@@ -40,44 +46,44 @@ export function AdminPageHeader({
   actions?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-      <div className="min-w-0">
-        {eyebrow && (
-          <p className="mb-2 inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold uppercase tracking-wide text-veriq-secondary">
-            <Icon className="h-3.5 w-3.5" />
+    <PageHead
+      eyebrow={
+        eyebrow ? (
+          <span className="inline-flex items-center gap-2">
+            <Icon aria-hidden="true" className="h-3.5 w-3.5" />
             {eyebrow}
-          </p>
-        )}
-        <h1 className="font-display text-2xl font-bold text-navy-900">{title}</h1>
-        <p className="mt-1 max-w-3xl text-sm text-slate-500">{description}</p>
-      </div>
-      <div className="flex flex-wrap items-center gap-2">
-        {actions}
-        {onRefresh && (
-          <button
-            type="button"
-            onClick={onRefresh}
-            disabled={refreshing}
-            className="btn-outline !px-4 !py-2.5 !text-sm"
-          >
-            <RefreshCw className={cn('h-4 w-4', refreshing && 'animate-spin')} />
-            Refresh
-          </button>
-        )}
-      </div>
-    </div>
+          </span>
+        ) : undefined
+      }
+      title={title}
+      lead={description}
+      actions={
+        <>
+          {actions}
+          {onRefresh && (
+            <Button variant="secondary" onClick={onRefresh} disabled={refreshing}>
+              <RefreshCw aria-hidden="true" className={cn('h-4 w-4', refreshing && 'animate-spin')} />
+              Refresh
+            </Button>
+          )}
+        </>
+      }
+    />
   );
 }
 
 export function ErrorPanel({ error, onRetry }: { error: DescribedError; onRetry?: () => void }) {
   return (
-    <div role="alert" className="rounded-xl border border-red-100 bg-red-50 p-4 text-sm text-red-800">
-      <div className="flex items-start gap-3">
-        <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-500" />
+    <div
+      role="alert"
+      className="rounded-review border border-[#fb718530] bg-[#fb718510] px-5 py-[18px] text-ui-md text-[#fda4af]"
+    >
+      <div className="flex flex-col gap-3 wide:flex-row wide:items-start">
+        <AlertTriangle aria-hidden="true" className="mt-0.5 h-4 w-4 flex-shrink-0" />
         <div className="min-w-0 flex-1">
           <p className="font-semibold">{error.message}</p>
           {error.details.length > 0 && (
-            <ul className="mt-2 list-disc space-y-1 pl-4 text-xs">
+            <ul className="mt-2 list-disc space-y-1 pl-4 text-ui-sm">
               {error.details.map((line) => (
                 <li key={line}>{line}</li>
               ))}
@@ -85,13 +91,9 @@ export function ErrorPanel({ error, onRetry }: { error: DescribedError; onRetry?
           )}
         </div>
         {onRetry && (
-          <button
-            type="button"
-            onClick={onRetry}
-            className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-bold text-red-700 hover:bg-red-100"
-          >
+          <Button variant="secondary" size="small" onClick={onRetry} className="self-start border-[#fb718530] text-[#fda4af]">
             Retry
-          </button>
+          </Button>
         )}
       </div>
     </div>
@@ -100,9 +102,9 @@ export function ErrorPanel({ error, onRetry }: { error: DescribedError; onRetry?
 
 export function LoadingBlock({ label = 'Loading…' }: { label?: string }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-2 py-12 text-slate-400">
-      <LoadingSpinner size="md" className="text-veriq-secondary" />
-      <p className="text-xs">{label}</p>
+    <div aria-live="polite" className="flex flex-col items-center justify-center gap-2 py-12 text-muted-foreground">
+      <LoadingSpinner size="md" className="text-primary" />
+      <p className="text-ui-sm">{label}</p>
     </div>
   );
 }
@@ -118,22 +120,27 @@ export function EmptyState({
 }) {
   return (
     <div className="flex flex-col items-center justify-center px-4 py-10 text-center">
-      <Icon className="mb-2 h-7 w-7 text-slate-300" />
-      <p className="text-sm font-semibold text-navy-900">{title}</p>
-      {description && <p className="mt-1 max-w-md text-xs text-slate-500">{description}</p>}
+      <Icon aria-hidden="true" className="mb-3 h-7 w-7 text-muted-foreground" />
+      <p className="text-ui-md font-semibold text-foreground">{title}</p>
+      {description && <p className="mt-1 max-w-md text-ui-sm text-muted-foreground">{description}</p>}
     </div>
   );
 }
 
-type Tone = 'green' | 'amber' | 'red' | 'blue' | 'slate' | 'purple';
+/**
+ * The tone names the Admin screens already speak. The prototype's palette has exactly four badge
+ * tones, so the wider set folds onto them: there is no blue or purple anywhere in the design system,
+ * and inventing one would be the single loudest wrong colour on the page.
+ */
+export type Tone = 'green' | 'amber' | 'red' | 'blue' | 'slate' | 'purple';
 
-const TONES: Record<Tone, string> = {
-  green: 'bg-emerald-50 text-emerald-700',
-  amber: 'bg-amber-50 text-amber-700',
-  red: 'bg-red-50 text-red-700',
-  blue: 'bg-blue-50 text-blue-700',
-  slate: 'bg-slate-100 text-slate-600',
-  purple: 'bg-purple-50 text-purple-700',
+const BADGE_TONES: Record<Tone, BadgeTone> = {
+  green: 'success',
+  amber: 'amber',
+  red: 'red',
+  blue: 'neutral',
+  slate: 'neutral',
+  purple: 'amber',
 };
 
 const STATUS_TONES: Record<string, Tone> = {
@@ -187,40 +194,48 @@ export function StatusBadge({ status, label, tone }: { status: string; label?: s
   const resolved = tone ?? STATUS_TONES[status] ?? 'slate';
   const text = label ?? status.replace(/_/g, ' ');
   return (
-    <span
-      className={cn(
-        'inline-flex items-center whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold capitalize',
-        TONES[resolved],
-      )}
-    >
+    <Badge tone={BADGE_TONES[resolved]} className="whitespace-nowrap capitalize">
       {text}
-    </span>
+    </Badge>
   );
 }
+
+/** Tints the figure when the number itself carries a judgement — money owed, cases overdue. */
+export type StatTone = 'default' | 'green' | 'amber' | 'red' | 'blue' | 'purple' | 'slate';
+
+const STAT_TONES: Record<StatTone, string> = {
+  default: 'text-foreground',
+  green: 'text-[#34d399]',
+  amber: 'text-[#fcd34d]',
+  red: 'text-[#fda4af]',
+  blue: 'text-[#93c5fd]',
+  purple: 'text-[#c4b5fd]',
+  slate: 'text-muted-foreground',
+};
 
 export function StatCard({
   label,
   value,
   sub,
+  tone = 'default',
   icon: Icon,
-  tone = 'green',
 }: {
   label: string;
   value: React.ReactNode;
   sub?: string;
+  tone?: StatTone;
   icon?: React.ElementType;
-  tone?: Tone;
 }) {
   return (
-    <div className="card p-4">
+    <div className={panelClass}>
       {Icon && (
-        <div className={cn('mb-3 flex h-9 w-9 items-center justify-center rounded-xl', TONES[tone])}>
-          <Icon className="h-4 w-4" />
-        </div>
+        <ChipIcon className="mb-4">
+          <Icon aria-hidden="true" className="h-5 w-5" />
+        </ChipIcon>
       )}
-      <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">{label}</p>
-      <p className="mt-1 break-words font-display text-xl font-black text-navy-900">{value}</p>
-      {sub && <p className="mt-1 text-[11px] text-slate-500">{sub}</p>}
+      <small className="text-ui-sm text-muted-foreground">{label}</small>
+      <p className={`mb-[3px] mt-3 break-words font-display text-[2rem] leading-none ${STAT_TONES[tone]}`}>{value}</p>
+      {sub && <p className="text-ui-sm text-muted-foreground">{sub}</p>}
     </div>
   );
 }
@@ -237,34 +252,37 @@ export function Tabs<T extends string>({
   label: string;
 }) {
   return (
-    <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-      <div role="tablist" aria-label={label} className="inline-flex min-w-full gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1 sm:min-w-0">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            role="tab"
-            aria-selected={active === tab.id}
-            onClick={() => onChange(tab.id)}
-            className={cn(
-              'whitespace-nowrap rounded-lg px-3 py-2 text-xs font-bold transition-colors sm:px-4',
-              active === tab.id ? 'bg-navy-900 text-white shadow-sm' : 'text-slate-600 hover:bg-white',
-            )}
-          >
-            {tab.label}
-            {tab.count !== undefined && (
-              <span
-                className={cn(
-                  'ml-2 rounded-full px-1.5 py-0.5 text-[10px]',
-                  active === tab.id ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600',
-                )}
-              >
-                {tab.count}
-              </span>
-            )}
-          </button>
-        ))}
-      </div>
+    <div
+      role="tablist"
+      aria-label={label}
+      className="flex max-w-full flex-wrap gap-1.5 rounded-review border border-[#ffffff18] bg-card p-1.5"
+    >
+      {tabs.map((tab) => (
+        <button
+          key={tab.id}
+          type="button"
+          role="tab"
+          aria-selected={active === tab.id}
+          onClick={() => onChange(tab.id)}
+          className={cn(
+            'whitespace-nowrap rounded-btn px-4 py-2.5 text-ui-md font-semibold transition-colors',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card',
+            active === tab.id ? 'bg-[#10b9811a] text-[#6ee7b7]' : 'text-muted-foreground hover:text-foreground',
+          )}
+        >
+          {tab.label}
+          {tab.count !== undefined && (
+            <span
+              className={cn(
+                'ml-2 rounded-full px-1.5 py-0.5 text-ui-xs',
+                active === tab.id ? 'bg-[#10b98126] text-[#6ee7b7]' : 'bg-[#ffffff0f] text-muted-foreground',
+              )}
+            >
+              {tab.count}
+            </span>
+          )}
+        </button>
+      ))}
     </div>
   );
 }
@@ -284,41 +302,44 @@ export function Pagination({
 }) {
   if (pages <= 1) {
     return total > 0 ? (
-      <div className="border-t border-slate-100 px-4 py-3 text-xs text-slate-500">
+      <div className="border-t border-[#ffffff12] px-[21px] py-3.5 text-ui-sm text-muted-foreground wide:px-7">
         {total.toLocaleString('en-NG')} {noun}
       </div>
     ) : null;
   }
   return (
-    <div className="flex items-center justify-between gap-3 border-t border-slate-100 px-4 py-3">
-      <p className="text-xs text-slate-500">
+    <div className="flex items-center justify-between gap-3 border-t border-[#ffffff12] px-[21px] py-3.5 wide:px-7">
+      <p className="text-ui-sm text-muted-foreground">
         Page {page} of {pages} · {total.toLocaleString('en-NG')} {noun}
       </p>
       <div className="flex items-center gap-2">
-        <button
-          type="button"
+        <Button
+          variant="secondary"
+          size="small"
           aria-label="Previous page"
           onClick={() => onChange(Math.max(1, page - 1))}
           disabled={page <= 1}
-          className="rounded-lg border border-slate-200 p-1.5 text-slate-500 hover:border-slate-300 disabled:opacity-40"
         >
-          <ChevronLeft className="h-4 w-4" />
-        </button>
-        <button
-          type="button"
+          <ChevronLeft aria-hidden="true" className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="secondary"
+          size="small"
           aria-label="Next page"
           onClick={() => onChange(Math.min(pages, page + 1))}
           disabled={page >= pages}
-          className="rounded-lg border border-slate-200 p-1.5 text-slate-500 hover:border-slate-300 disabled:opacity-40"
         >
-          <ChevronRight className="h-4 w-4" />
-        </button>
+          <ChevronRight aria-hidden="true" className="h-4 w-4" />
+        </Button>
       </div>
     </div>
   );
 }
 
-/** Card with a titled header; body scrolls horizontally for wide tables on phones. */
+/**
+ * The prototype's `.panel` with a titled header. The body is left unpadded so a wide table can run to
+ * the panel's edge and scroll sideways inside it rather than widening the page.
+ */
 export function Panel({
   title,
   description,
@@ -333,11 +354,11 @@ export function Panel({
   className?: string;
 }) {
   return (
-    <section className={cn('card overflow-hidden hover:shadow-card', className)}>
-      <div className="flex flex-col gap-3 border-b border-slate-100 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+    <section className={cn('overflow-hidden rounded-panel border border-[#ffffff12] bg-card', className)}>
+      <div className="flex flex-col gap-3 border-b border-[#ffffff12] px-[21px] py-[18px] wide:flex-row wide:items-center wide:justify-between wide:px-7">
         <div className="min-w-0">
-          <h2 className="font-display text-base font-bold text-navy-900">{title}</h2>
-          {description && <p className="mt-1 text-xs text-slate-500">{description}</p>}
+          <h2 className="font-display text-[1.12rem] font-semibold tracking-[-0.035em] text-foreground">{title}</h2>
+          {description && <p className="mt-1 text-ui-sm text-muted-foreground">{description}</p>}
         </div>
         {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
       </div>
@@ -350,14 +371,15 @@ export function TableScroll({ children }: { children: React.ReactNode }) {
   return <div className="overflow-x-auto">{children}</div>;
 }
 
-export const th = 'px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400 whitespace-nowrap';
-export const td = 'px-4 py-3 align-top text-sm text-navy-900';
+export const th = 'px-3 py-[15px] text-left text-[0.8rem] font-medium text-muted-foreground whitespace-nowrap';
+export const td = 'px-3 py-[17px] align-top text-ui-md text-foreground border-t border-[#ffffff12]';
 
+/** The prototype's `.unit` tint, used here for one labelled fact in a grid of them. */
 export function KeyValue({ label, value, mono }: { label: string; value: React.ReactNode; mono?: boolean }) {
   return (
-    <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
-      <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">{label}</p>
-      <div className={cn('mt-1 break-words text-xs font-medium text-navy-900', mono && 'font-mono')}>{value}</div>
+    <div className="rounded-unit border border-[#ffffff18] bg-[#070b1444] px-3 py-2.5">
+      <p className="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
+      <div className={cn('mt-1 break-words text-ui-sm font-medium text-foreground', mono && 'font-mono')}>{value}</div>
     </div>
   );
 }

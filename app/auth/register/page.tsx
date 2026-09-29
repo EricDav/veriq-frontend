@@ -168,57 +168,57 @@ function RegisterPageInner() {
         {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2.5 mb-6">
-            <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-navy-950 p-2 ring-1 ring-white/10">
+            <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-background p-2 ring-1 ring-white/10">
               <Image src="/images/Logo.png" alt="Veriq Logo" width={40} height={40} className="rounded-lg" />
             </span>
             <div className="flex flex-col leading-none text-left">
-              <span className="font-display text-xl font-bold text-white">Veriq</span>
-              <span className="text-[10px] font-semibold tracking-widest uppercase text-gold-400">Property</span>
+              <span className="font-display text-xl font-bold text-foreground">Veriq</span>
+              <span className="text-[10px] font-semibold tracking-widest uppercase text-primary">Property</span>
             </div>
           </Link>
-          <h1 className="font-display text-2xl font-bold text-white mb-1">Create your account</h1>
-          <p className="text-white/60 text-sm">Join thousands making smarter property decisions</p>
+          <h1 className="font-display text-2xl font-bold text-foreground mb-1">Create your account</h1>
+          <p className="text-muted-foreground text-sm">Join thousands making smarter property decisions</p>
         </div>
 
         {/* Form card */}
-        <div className="rounded-2xl bg-white/10 border border-white/20 backdrop-blur-xl p-8 shadow-2xl">
+        <div className="rounded-2xl bg-[#ffffff0f] border border-white/20 backdrop-blur-xl p-8 shadow-2xl">
           {/* Server error */}
           {serverError && (
-            <div className="mb-5 flex items-start gap-2.5 rounded-xl bg-red-500/20 border border-red-400/30 px-4 py-3">
-              <AlertCircle className="h-4 w-4 text-red-300 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-red-200">{serverError}</p>
+            <div className="mb-5 flex items-start gap-2.5 rounded-xl bg-[#fb718510] border border-[#fb718530] px-4 py-3">
+              <AlertCircle className="h-4 w-4 text-[#fda4af] flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-[#fda4af]">{serverError}</p>
             </div>
           )}
 
           {/* Role selector */}
           <div className="mb-6">
-            <p className="text-sm font-medium text-white/80 mb-3">I am a:</p>
+            <p className="text-sm font-medium text-foreground mb-3">I am a:</p>
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
                 onClick={() => setSelectedRole(UserRole.RENTER)}
                 className={`flex flex-col items-center gap-2 rounded-xl border-2 py-4 text-center transition-all ${
                   selectedRole === UserRole.RENTER
-                    ? 'border-gold-400 bg-gold-400/10'
+                    ? 'border-primary bg-[#10b98112]'
                     : 'border-white/20 hover:border-white/40'
                 }`}
               >
-                <Home className={`h-6 w-6 ${selectedRole === UserRole.RENTER ? 'text-gold-400' : 'text-white/60'}`} />
-                <span className="text-sm font-semibold text-white">Renter</span>
-                <span className="text-[10px] text-white/50">Browse &amp; inspect</span>
+                <Home className={`h-6 w-6 ${selectedRole === UserRole.RENTER ? 'text-primary' : 'text-muted-foreground'}`} />
+                <span className="text-sm font-semibold text-foreground">Renter</span>
+                <span className="text-[10px] text-muted-foreground">Browse &amp; inspect</span>
               </button>
               <button
                 type="button"
                 onClick={() => setSelectedRole(UserRole.PROPERTY_OPERATOR)}
                 className={`flex flex-col items-center gap-2 rounded-xl border-2 py-4 text-center transition-all ${
                   selectedRole === UserRole.PROPERTY_OPERATOR
-                    ? 'border-gold-400 bg-gold-400/10'
+                    ? 'border-primary bg-[#10b98112]'
                     : 'border-white/20 hover:border-white/40'
                 }`}
               >
-                <Users className={`h-6 w-6 ${selectedRole === UserRole.PROPERTY_OPERATOR ? 'text-gold-400' : 'text-white/60'}`} />
-                <span className="text-sm font-semibold text-white">Property Operator</span>
-                <span className="text-[10px] text-white/50">Manage property records</span>
+                <Users className={`h-6 w-6 ${selectedRole === UserRole.PROPERTY_OPERATOR ? 'text-primary' : 'text-muted-foreground'}`} />
+                <span className="text-sm font-semibold text-foreground">Property Operator</span>
+                <span className="text-[10px] text-muted-foreground">Manage property records</span>
               </button>
             </div>
           </div>
@@ -227,102 +227,102 @@ function RegisterPageInner() {
             {/* Name row */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label htmlFor="register-first-name" className="block text-sm font-medium text-white/80 mb-1.5">First Name</label>
+                <label htmlFor="register-first-name" className="block text-sm font-medium text-foreground mb-1.5">First Name</label>
                 <input
                   id="register-first-name"
                   {...register('firstName')}
                   type="text"
                   autoComplete="given-name"
-                  className={`w-full rounded-lg border bg-white/10 px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none transition-all focus:ring-2 focus:ring-white/10 ${
-                    errors.firstName ? 'border-red-400/60' : 'border-white/20 focus:border-white/40'
+                  className={`w-full rounded-lg border bg-[#ffffff0f] px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none transition-all focus:ring-2 focus:ring-white/10 ${
+                    errors.firstName ? 'border-[#fb718530]' : 'border-white/20 focus:border-white/40'
                   }`}
                   placeholder="John"
                 />
                 {errors.firstName && (
-                  <p className="mt-1 text-xs text-red-300">{errors.firstName.message}</p>
+                  <p className="mt-1 text-xs text-[#fda4af]">{errors.firstName.message}</p>
                 )}
               </div>
               <div>
-                <label htmlFor="register-last-name" className="block text-sm font-medium text-white/80 mb-1.5">Last Name</label>
+                <label htmlFor="register-last-name" className="block text-sm font-medium text-foreground mb-1.5">Last Name</label>
                 <input
                   id="register-last-name"
                   {...register('lastName')}
                   type="text"
                   autoComplete="family-name"
-                  className={`w-full rounded-lg border bg-white/10 px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none transition-all focus:ring-2 focus:ring-white/10 ${
-                    errors.lastName ? 'border-red-400/60' : 'border-white/20 focus:border-white/40'
+                  className={`w-full rounded-lg border bg-[#ffffff0f] px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none transition-all focus:ring-2 focus:ring-white/10 ${
+                    errors.lastName ? 'border-[#fb718530]' : 'border-white/20 focus:border-white/40'
                   }`}
                   placeholder="Doe"
                 />
                 {errors.lastName && (
-                  <p className="mt-1 text-xs text-red-300">{errors.lastName.message}</p>
+                  <p className="mt-1 text-xs text-[#fda4af]">{errors.lastName.message}</p>
                 )}
               </div>
             </div>
 
             {/* Email */}
             <div>
-              <label htmlFor="register-email" className="block text-sm font-medium text-white/80 mb-1.5">Email Address</label>
+              <label htmlFor="register-email" className="block text-sm font-medium text-foreground mb-1.5">Email Address</label>
               <input
                 id="register-email"
                 {...register('email')}
                 type="email"
                 autoComplete="email"
-                className={`w-full rounded-lg border bg-white/10 px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none transition-all focus:ring-2 focus:ring-white/10 ${
-                  errors.email ? 'border-red-400/60' : 'border-white/20 focus:border-white/40'
+                className={`w-full rounded-lg border bg-[#ffffff0f] px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none transition-all focus:ring-2 focus:ring-white/10 ${
+                  errors.email ? 'border-[#fb718530]' : 'border-white/20 focus:border-white/40'
                 }`}
                 placeholder="john@example.com"
               />
-              {errors.email && <p className="mt-1 text-xs text-red-300">{errors.email.message}</p>}
+              {errors.email && <p className="mt-1 text-xs text-[#fda4af]">{errors.email.message}</p>}
             </div>
 
             {/* Phone */}
             <div>
-              <label htmlFor="register-phone" className="block text-sm font-medium text-white/80 mb-1.5">Phone Number {selectedRole === UserRole.RENTER && <span className="text-white/40">(optional)</span>}</label>
+              <label htmlFor="register-phone" className="block text-sm font-medium text-foreground mb-1.5">Phone Number {selectedRole === UserRole.RENTER && <span className="text-muted-foreground">(optional)</span>}</label>
               <input
                 id="register-phone"
                 {...register('phone')}
                 type="tel"
                 autoComplete="tel"
-                className={`w-full rounded-lg border bg-white/10 px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none transition-all focus:ring-2 focus:ring-white/10 ${
-                  errors.phone ? 'border-red-400/60' : 'border-white/20 focus:border-white/40'
+                className={`w-full rounded-lg border bg-[#ffffff0f] px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none transition-all focus:ring-2 focus:ring-white/10 ${
+                  errors.phone ? 'border-[#fb718530]' : 'border-white/20 focus:border-white/40'
                 }`}
                 placeholder="+234 800 000 0000"
               />
-              {errors.phone && <p className="mt-1 text-xs text-red-300">{errors.phone.message}</p>}
+              {errors.phone && <p className="mt-1 text-xs text-[#fda4af]">{errors.phone.message}</p>}
             </div>
 
             {/* State */}
             <div>
-              <label htmlFor="register-state" className="block text-sm font-medium text-white/80 mb-1.5">State</label>
+              <label htmlFor="register-state" className="block text-sm font-medium text-foreground mb-1.5">State</label>
               <select
                 id="register-state"
                 {...register('state')}
                 disabled={statesLoading}
-                className={`w-full rounded-lg border bg-white/10 px-4 py-3 text-sm text-white outline-none transition-all focus:ring-2 focus:ring-white/10 ${
-                  errors.state ? 'border-red-400/60' : 'border-white/20 focus:border-white/40'
+                className={`w-full rounded-lg border bg-[#ffffff0f] px-4 py-3 text-sm text-foreground outline-none transition-all focus:ring-2 focus:ring-white/10 ${
+                  errors.state ? 'border-[#fb718530]' : 'border-white/20 focus:border-white/40'
                 } disabled:opacity-60`}
               >
-                <option value="" className="text-navy-900">
+                <option value="" className="text-foreground">
                   {statesLoading ? 'Loading states...' : 'Select your state'}
                 </option>
                 {states.map((state) => (
-                  <option key={state.id} value={state.name} className="text-navy-900">
+                  <option key={state.id} value={state.name} className="text-foreground">
                     {state.name}
                   </option>
                 ))}
               </select>
-              {errors.state && <p className="mt-1 text-xs text-red-300">{errors.state.message}</p>}
+              {errors.state && <p className="mt-1 text-xs text-[#fda4af]">{errors.state.message}</p>}
               {!statesLoading && states.length === 0 && (
-                <p className="mt-1 text-xs text-amber-200">No states are currently active. Please contact support.</p>
+                <p className="mt-1 text-xs text-[#fcd34d]">No states are currently active. Please contact support.</p>
               )}
             </div>
 
             {/* Veriq Agent referral code (Property Operators only) */}
             {selectedRole === UserRole.PROPERTY_OPERATOR && (
               <div>
-                <label htmlFor="register-referral" className="block text-sm font-medium text-white/80 mb-1.5">
-                  Veriq Agent referral code <span className="text-white/40">(optional)</span>
+                <label htmlFor="register-referral" className="block text-sm font-medium text-foreground mb-1.5">
+                  Veriq Agent referral code <span className="text-muted-foreground">(optional)</span>
                 </label>
                 <input
                   id="register-referral"
@@ -331,46 +331,46 @@ function RegisterPageInner() {
                   maxLength={20}
                   value={referralCode}
                   onChange={(event) => setReferralCode(event.target.value.toUpperCase())}
-                  className={`w-full rounded-lg border bg-white/10 px-4 py-3 text-sm uppercase text-white placeholder:text-white/30 placeholder:normal-case outline-none transition-all focus:ring-2 focus:ring-white/10 ${
-                    referral.status === 'invalid' ? 'border-red-400/60' : 'border-white/20 focus:border-white/40'
+                  className={`w-full rounded-lg border bg-[#ffffff0f] px-4 py-3 text-sm uppercase text-foreground placeholder:text-muted-foreground placeholder:normal-case outline-none transition-all focus:ring-2 focus:ring-white/10 ${
+                    referral.status === 'invalid' ? 'border-[#fb718530]' : 'border-white/20 focus:border-white/40'
                   }`}
                   placeholder="If a Veriq Agent referred you"
                 />
                 {referral.status === 'checking' && (
-                  <p className="mt-1 flex items-center gap-1.5 text-xs text-white/60"><LoadingSpinner size="sm" /> Checking code…</p>
+                  <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground"><LoadingSpinner size="sm" /> Checking code…</p>
                 )}
                 {referral.status === 'valid' && (
-                  <p className="mt-1 flex items-center gap-1.5 text-xs text-emerald-300">
+                  <p className="mt-1 flex items-center gap-1.5 text-xs text-[#6ee7b7]">
                     <CheckCircle className="h-3 w-3" /> Referred by {referral.agentName || 'a Veriq Agent'} — they will be assigned to verify your properties.
                   </p>
                 )}
                 {referral.status === 'invalid' && (
-                  <p className="mt-1 text-xs text-red-300">{referral.message ?? 'Referral code is not valid'}</p>
+                  <p className="mt-1 text-xs text-[#fda4af]">{referral.message ?? 'Referral code is not valid'}</p>
                 )}
                 {referral.status === 'idle' && (
-                  <p className="mt-1 text-xs text-white/40">Leave blank and Veriq will assign an Agent after your first submission.</p>
+                  <p className="mt-1 text-xs text-muted-foreground">Leave blank and Veriq will assign an Agent after your first submission.</p>
                 )}
               </div>
             )}
 
             {/* Password */}
             <div>
-              <label htmlFor="register-password" className="block text-sm font-medium text-white/80 mb-1.5">Password</label>
+              <label htmlFor="register-password" className="block text-sm font-medium text-foreground mb-1.5">Password</label>
               <div className="relative">
                 <input
                   id="register-password"
                   {...register('password')}
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="new-password"
-                  className={`w-full rounded-lg border bg-white/10 px-4 py-3 pr-11 text-sm text-white placeholder:text-white/30 outline-none transition-all focus:ring-2 focus:ring-white/10 ${
-                    errors.password ? 'border-red-400/60' : 'border-white/20 focus:border-white/40'
+                  className={`w-full rounded-lg border bg-[#ffffff0f] px-4 py-3 pr-11 text-sm text-foreground placeholder:text-muted-foreground outline-none transition-all focus:ring-2 focus:ring-white/10 ${
+                    errors.password ? 'border-[#fb718530]' : 'border-white/20 focus:border-white/40'
                   }`}
                   placeholder="Create a strong password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70 transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground transition-colors"
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -382,7 +382,7 @@ function RegisterPageInner() {
                     <span
                       key={hint.label}
                       className={`text-[10px] flex items-center gap-1 ${
-                        hint.test(passwordValue) ? 'text-emerald-400' : 'text-white/30'
+                        hint.test(passwordValue) ? 'text-primary' : 'text-muted-foreground'
                       }`}
                     >
                       <CheckCircle className="h-2.5 w-2.5" />
@@ -392,7 +392,7 @@ function RegisterPageInner() {
                 </div>
               )}
               {errors.password && (
-                <p className="mt-1 text-xs text-red-300">{errors.password.message}</p>
+                <p className="mt-1 text-xs text-[#fda4af]">{errors.password.message}</p>
               )}
             </div>
 
@@ -402,39 +402,39 @@ function RegisterPageInner() {
                 {...register('terms')}
                 type="checkbox"
                 id="terms"
-                className="mt-0.5 rounded border-white/20 bg-white/10"
+                className="mt-0.5 rounded border-white/20 bg-[#ffffff0f]"
               />
-              <label htmlFor="terms" className="text-xs text-white/60 leading-relaxed">
+              <label htmlFor="terms" className="text-xs text-muted-foreground leading-relaxed">
                 I agree to the{' '}
-                <Link href="/terms" className="text-gold-400 hover:underline">Terms of Service</Link>{' '}
+                <Link href="/terms" className="text-primary hover:underline">Terms of Service</Link>{' '}
                 and{' '}
-                <Link href="/terms#privacy" className="text-gold-400 hover:underline">Privacy Policy</Link>. I confirm I am at least 18 years old.
+                <Link href="/terms#privacy" className="text-primary hover:underline">Privacy Policy</Link>. I confirm I am at least 18 years old.
               </label>
             </div>
-            {errors.terms && <p className="text-xs text-red-300 -mt-2">{errors.terms.message}</p>}
+            {errors.terms && <p className="text-xs text-[#fda4af] -mt-2">{errors.terms.message}</p>}
 
             {/* Submit */}
             <button
               type="submit"
               disabled={isSubmitting || statesLoading || states.length === 0}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-gold-gradient py-3.5 text-sm font-bold text-navy-900 shadow-gold-glow transition-all duration-200 hover:scale-[1.02] active:scale-95 disabled:opacity-60 disabled:scale-100"
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary py-3.5 text-sm font-bold text-foreground shadow-glow transition-all duration-200 hover:scale-[1.02] active:scale-95 disabled:opacity-60 disabled:scale-100"
             >
-              {isSubmitting && <LoadingSpinner size="sm" className="text-navy-900" />}
+              {isSubmitting && <LoadingSpinner size="sm" className="text-foreground" />}
               {isSubmitting ? 'Creating account…' : 'Create Account'}
             </button>
           </form>
 
           {selectedRole === UserRole.RENTER && (
             <div className="mt-5 space-y-4">
-              <div className="flex items-center gap-3 text-[11px] uppercase text-white/40"><span className="h-px flex-1 bg-white/15" />or<span className="h-px flex-1 bg-white/15" /></div>
+              <div className="flex items-center gap-3 text-[11px] uppercase text-muted-foreground"><span className="h-px flex-1 bg-[#ffffff14]" />or<span className="h-px flex-1 bg-[#ffffff14]" /></div>
               <GoogleSignInButton onCredential={async (credential) => { await loginWithGoogle(credential); router.replace('/dashboard'); }} />
             </div>
           )}
 
           <div className="mt-6 text-center">
-            <p className="text-sm text-white/60">
+            <p className="text-sm text-muted-foreground">
               Already have an account?{' '}
-              <Link href="/auth/login" className="text-gold-400 font-semibold hover:text-gold-300 transition-colors">
+              <Link href="/auth/login" className="text-primary font-semibold hover:text-primary transition-colors">
                 Sign in
               </Link>
             </p>

@@ -36,25 +36,25 @@ export default async function TermsPage() {
           </svg>
         </div>
         <div className="relative mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">
-          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-semibold text-gold-300">
+          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/20 bg-[#ffffff0f] px-4 py-1.5 text-xs font-semibold text-primary">
             <Shield className="h-3.5 w-3.5" />
             {hero?.subtitle ?? 'Legal'}
           </div>
-          <h1 className="mb-4 font-display text-5xl font-bold text-white">
+          <h1 className="mb-4 font-display text-5xl font-bold text-foreground">
             {hero?.title ?? 'Terms & Conditions'}
           </h1>
-          <p className="text-base text-white/70">
+          <p className="text-base text-muted-foreground">
             {hero?.body ?? 'Please read these Terms carefully before using Veriq Property.'}
           </p>
         </div>
       </section>
 
-      <section className="bg-white py-20">
+      <section className="bg-card py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
             <aside className="lg:col-span-1">
-              <div className="sticky top-24 bg-veriq-surface p-5">
-                <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
+              <div className="sticky top-24 bg-background p-5">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   {documents?.title ?? 'Terms sections'}
                 </p>
                 <nav className="space-y-1" aria-label="Terms sections">
@@ -62,40 +62,40 @@ export default async function TermsPage() {
                     <a
                       key={section.id}
                       href={`#${section.id}`}
-                      className="block rounded-lg px-3 py-2 text-sm text-navy-700 transition-colors hover:bg-white hover:text-veriq-secondary"
+                      className="block rounded-lg px-3 py-2 text-sm text-foreground transition-colors hover:bg-card hover:text-primary"
                     >
                       {section.title}
                     </a>
                   ))}
                 </nav>
-                <div className="mt-5 space-y-1 border-t border-slate-200 pt-5 text-xs text-slate-500">
+                <div className="mt-5 space-y-1 border-t border-[#ffffff12] pt-5 text-xs text-muted-foreground">
                   <p>Last Updated: {TERMS_LAST_UPDATED}</p>
                 </div>
               </div>
             </aside>
 
             <article className="space-y-12 lg:col-span-3">
-              <div className="border-l-4 border-veriq-secondary bg-emerald-50 px-5 py-4 text-sm font-medium text-navy-800">
+              <div className="border-l-4 border-primary bg-[#10b98112] px-5 py-4 text-sm font-medium text-foreground">
                 If you do not agree with these Terms, please do not use the platform.
               </div>
 
               {sections.map((section) => (
                 <section key={section.id} id={section.id} className="scroll-mt-24">
-                  <h2 className="mb-6 border-b border-slate-200 pb-4 font-display text-2xl font-bold text-navy-900">
+                  <h2 className="mb-6 border-b border-[#ffffff12] pb-4 font-display text-2xl font-bold text-foreground">
                     {section.title}
                   </h2>
                   <div className="space-y-8">
                     {section.items.map((item) => (
                       <div key={item.heading}>
-                        <h3 className="mb-3 font-semibold text-navy-800">{item.heading}</h3>
+                        <h3 className="mb-3 font-semibold text-foreground">{item.heading}</h3>
                         <div className="space-y-3">
                           {item.blocks.map((block, index) =>
                             block.type === 'bullets' ? (
-                              <ul key={index} className="list-disc space-y-1.5 pl-6 text-sm leading-relaxed text-veriq-muted">
+                              <ul key={index} className="list-disc space-y-1.5 pl-6 text-sm leading-relaxed text-muted-foreground">
                                 {block.items.map((entry) => <li key={entry}>{entry}</li>)}
                               </ul>
                             ) : (
-                              <p key={index} className="text-sm leading-relaxed text-veriq-muted">{block.text}</p>
+                              <p key={index} className="text-sm leading-relaxed text-muted-foreground">{block.text}</p>
                             ),
                           )}
                         </div>
@@ -105,15 +105,15 @@ export default async function TermsPage() {
                 </section>
               ))}
 
-              <div className="bg-veriq-surface p-6">
-                <h2 className="mb-2 font-display font-bold text-navy-900">
+              <div className="bg-background p-6">
+                <h2 className="mb-2 font-display font-bold text-foreground">
                   {contact?.title ?? 'Contact'}
                 </h2>
-                <p className="text-sm leading-relaxed text-veriq-muted">
+                <p className="text-sm leading-relaxed text-muted-foreground">
                   {contact?.body ?? "Questions concerning these Terms may be sent through Veriq Property's official contact channels."}{' '}
-                  <a href="/contact" className="text-veriq-secondary hover:underline">Contact page</a>.
+                  <a href="/contact" className="text-primary hover:underline">Contact page</a>.
                 </p>
-                <p className="mt-3 text-sm text-veriq-muted">
+                <p className="mt-3 text-sm text-muted-foreground">
                   Veriq Global Services Ltd. · Veriq Property · veriqproperty.com
                 </p>
               </div>

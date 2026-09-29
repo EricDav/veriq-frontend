@@ -133,7 +133,7 @@ export default function ChatPage() {
       <aside className={`${showMobileList ? 'flex' : 'hidden'} min-h-0 w-full flex-col border-b border-slate-200 lg:flex lg:w-80 lg:border-b-0 lg:border-r`}>
         <div className="flex items-center justify-between border-b border-slate-100 px-4 py-4">
           <div>
-            <h1 className="font-display text-lg font-bold text-navy-900">Chats</h1>
+            <h1 className="font-display text-lg font-bold text-foreground">Chats</h1>
             <p className="text-xs text-veriq-muted">Live property conversations</p>
           </div>
           <button type="button" onClick={() => loadConversations()} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100" aria-label="Refresh chats">
@@ -147,7 +147,7 @@ export default function ChatPage() {
           ) : conversations.length === 0 ? (
             <div className="flex h-56 flex-col items-center justify-center px-6 text-center">
               <Inbox className="mb-3 h-8 w-8 text-slate-300" />
-              <p className="text-sm font-semibold text-navy-900">No conversations yet</p>
+              <p className="text-sm font-semibold text-foreground">No conversations yet</p>
               <p className="mt-1 text-xs text-veriq-muted">Unlock a report and start an in-app chat with the agent.</p>
             </div>
           ) : (
@@ -166,7 +166,7 @@ export default function ChatPage() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2">
-                        <p className="truncate text-sm font-semibold text-navy-900">{conversation.otherParticipant?.name ?? 'Conversation'}</p>
+                        <p className="truncate text-sm font-semibold text-foreground">{conversation.otherParticipant?.name ?? 'Conversation'}</p>
                         {conversation.unread > 0 && (
                           <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-veriq-secondary px-1.5 text-[10px] font-bold text-white">
                             {conversation.unread}
@@ -174,7 +174,7 @@ export default function ChatPage() {
                         )}
                       </div>
                       <p className="mt-0.5 truncate text-xs text-veriq-muted">{conversation.property?.title ?? 'Property chat'}</p>
-                      <p className="mt-1 truncate text-xs text-slate-400">{conversation.lastMessagePreview ?? 'No messages yet'}</p>
+                      <p className="mt-1 truncate text-xs text-muted-foreground">{conversation.lastMessagePreview ?? 'No messages yet'}</p>
                     </div>
                   </div>
                 </button>
@@ -201,7 +201,7 @@ export default function ChatPage() {
                   {initials(activeConversation.otherParticipant?.name)}
                 </div>
                 <div className="min-w-0">
-                  <h2 className="truncate text-sm font-bold text-navy-900">{activeConversation.otherParticipant?.name}</h2>
+                  <h2 className="truncate text-sm font-bold text-foreground">{activeConversation.otherParticipant?.name}</h2>
                   <p className="flex items-center gap-1 truncate text-xs text-veriq-muted">
                     <Home className="h-3 w-3" /> {activeConversation.property?.title}
                   </p>
@@ -215,7 +215,7 @@ export default function ChatPage() {
               ) : messages.length === 0 ? (
                 <div className="flex h-full flex-col items-center justify-center text-center">
                   <MessageCircle className="mb-3 h-10 w-10 text-slate-300" />
-                  <p className="text-sm font-semibold text-navy-900">Start the conversation</p>
+                  <p className="text-sm font-semibold text-foreground">Start the conversation</p>
                   <p className="mt-1 text-xs text-veriq-muted">Ask about inspection times, availability, or next steps.</p>
                 </div>
               ) : (
@@ -226,7 +226,7 @@ export default function ChatPage() {
                       <div key={message.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
                         <div className={`max-w-[88%] rounded-2xl px-4 py-2.5 sm:max-w-[78%] ${mine ? 'bg-veriq-secondary text-white' : 'bg-white text-navy-900 shadow-sm'}`}>
                           <p className="whitespace-pre-wrap text-sm leading-relaxed">{message.body}</p>
-                          <p className={`mt-1 text-[10px] ${mine ? 'text-white/70' : 'text-slate-400'}`}>{formatTime(message.createdAt)}</p>
+                          <p className={`mt-1 text-[10px] ${mine ? 'text-white/70' : 'text-muted-foreground'}`}>{formatTime(message.createdAt)}</p>
                         </div>
                       </div>
                     );
@@ -255,7 +255,7 @@ export default function ChatPage() {
         ) : (
           <div className="flex h-full flex-col items-center justify-center px-6 text-center">
             <MessageCircle className="mb-4 h-12 w-12 text-slate-300" />
-            <h2 className="font-display text-lg font-bold text-navy-900">Select a chat</h2>
+            <h2 className="font-display text-lg font-bold text-foreground">Select a chat</h2>
             <p className="mt-1 max-w-sm text-sm text-veriq-muted">Your property conversations and real-time notifications will appear here.</p>
           </div>
         )}

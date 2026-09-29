@@ -5,6 +5,7 @@ import { MessageSquareWarning, ThumbsDown, ThumbsUp } from 'lucide-react';
 import { refundsApi } from '@/lib/api/renter';
 import type { AgentRefundDecision, RefundRequest } from '@/types/renter';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { Button } from '@/components/ui';
 import { FieldShell } from '@/components/ui/Select';
 import { ApiErrorNotice } from '@/components/renter/ApiErrorNotice';
 
@@ -51,12 +52,12 @@ export function RefundAgentConfirmation({
   return (
     <section className="card space-y-3 p-5" aria-labelledby="agent-confirmation-heading">
       <div className="flex items-start gap-2.5">
-        <MessageSquareWarning className="mt-0.5 h-4 w-4 flex-shrink-0 text-veriq-secondary" />
+        <MessageSquareWarning className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" />
         <div className="min-w-0">
-          <h2 id="agent-confirmation-heading" className="font-display text-sm font-bold text-navy-900">
+          <h2 id="agent-confirmation-heading" className="font-display text-sm font-bold text-foreground">
             Confirm or dispute the availability change
           </h2>
-          <p className="mt-1 text-xs leading-5 text-slate-500">
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">
             The renter says the unit was available when they paid and became unavailable inside their access window.
             Confirm only what you have actually checked. A dispute sends the case to Admin.
           </p>
@@ -64,7 +65,7 @@ export function RefundAgentConfirmation({
       </div>
 
       {alreadyDecided && (
-        <p className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+        <p className="rounded-xl border border-[#ffffff18] bg-[#070b1444] px-3 py-2 text-xs text-muted-foreground">
           Recorded as {refund.agentConfirmation?.decision === 'confirmed' ? 'confirmed' : 'disputed'}. Sending a new
           decision replaces it and is logged.
         </p>
@@ -85,26 +86,24 @@ export function RefundAgentConfirmation({
       <ApiErrorNotice error={error} fallback="Your decision could not be recorded." />
 
       <div className="flex flex-col gap-2 sm:flex-row">
-        <button
-          type="button"
-          onClick={() => void submit('confirm')}
-          disabled={saving}
-          className="btn-primary flex-1 !py-2.5"
-        >
-          {saving && decision === 'confirm' ? <LoadingSpinner size="sm" /> : <ThumbsUp className="h-4 w-4" />} Confirm it
-          became unavailable
-        </button>
-        <button
-          type="button"
-          onClick={() => void submit('dispute')}
-          disabled={saving}
-          className="btn-outline flex-1 !py-2.5"
-        >
-          {saving && decision === 'dispute' ? <LoadingSpinner size="sm" /> : <ThumbsDown className="h-4 w-4" />} Dispute
-          this claim
-        </button>
+        <Button onClick={() => void submit('confirm')} disabled={saving} className="flex-1">
+          {saving && decision === 'confirm' ? (
+            <LoadingSpinner size="sm" />
+          ) : (
+            <ThumbsUp aria-hidden="true" className="h-4 w-4" />
+          )}{' '}
+          Confirm it became unavailable
+        </Button>
+        <Button variant="secondary" onClick={() => void submit('dispute')} disabled={saving} className="flex-1">
+          {saving && decision === 'dispute' ? (
+            <LoadingSpinner size="sm" />
+          ) : (
+            <ThumbsDown aria-hidden="true" className="h-4 w-4" />
+          )}{' '}
+          Dispute this claim
+        </Button>
       </div>
-      <p className="text-[11px] text-slate-400">
+      <p className="text-[11px] text-muted-foreground">
         Your earnings for this unlock stay on hold until the refund window and any dispute are resolved.
       </p>
     </section>

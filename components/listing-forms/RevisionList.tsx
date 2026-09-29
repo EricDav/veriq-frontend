@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Undo2 } from 'lucide-react';
 import { propertySubmissionsApi } from '@/lib/api/operator';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { Button } from '@/components/ui';
 import { useToast } from '@/components/ui/Toast';
 import type { ListingRevisionRecord } from '@/types/operator';
 import { errorMessage } from './issues';
@@ -53,23 +54,23 @@ export function RevisionList({ revisions, currentUserId, targetLabels = {}, onWi
     }
   };
 
-  if (!revisions.length) return <p className="text-sm text-slate-500">{emptyText}</p>;
+  if (!revisions.length) return <p className="text-ui-md text-muted-foreground">{emptyText}</p>;
 
   return (
-    <ul className="divide-y divide-slate-100 rounded-xl border border-slate-200">
+    <ul className="divide-y divide-[#ffffff10] rounded-review border border-[#ffffff18]">
       {revisions.map((revision) => {
         const meta = REVISION_STATUS_META[revision.status];
         const target = targetLabels[revision.targetId] ?? (revision.targetType === 'property' ? 'Property' : humanize(revision.targetType));
         const canWithdraw = revision.status === 'pending' && (!currentUserId || revision.proposedByUserId === currentUserId);
         const summary = summarizeChanges(revision.proposedChanges ?? {});
         return (
-          <li key={revision.id} className="space-y-2 p-4 text-sm">
+          <li key={revision.id} className="space-y-2 p-4 text-ui-md">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
-                <p className="font-semibold text-navy-900">
-                  {REVISION_KIND_LABELS[revision.kind]} · <span className="font-normal text-slate-600">{target}</span>
+                <p className="font-semibold text-foreground">
+                  {REVISION_KIND_LABELS[revision.kind]} · <span className="font-normal text-muted-foreground">{target}</span>
                 </p>
-                <p className="text-xs text-slate-500">
+                <p className="text-ui-sm text-muted-foreground">
                   Sent {formatDateTime(revision.createdAt)}
                   {revision.reviewedAt ? ` · reviewed ${formatDateTime(revision.reviewedAt)}` : ''}
                 </p>
@@ -77,21 +78,36 @@ export function RevisionList({ revisions, currentUserId, targetLabels = {}, onWi
               <div className="flex items-center gap-2">
                 <StatusBadge tone={meta.tone}>{meta.label}</StatusBadge>
                 {canWithdraw && (
-                  <button
-                    type="button"
-                    className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                  <Button
+                    variant="secondary"
+                    size="small"
                     disabled={withdrawing === revision.id}
                     onClick={() => void withdraw(revision)}
                   >
-                    {withdrawing === revision.id ? <LoadingSpinner size="sm" /> : <Undo2 className="h-3 w-3" />} Withdraw
-                  </button>
+                    {withdrawing === revision.id ? (
+                      <LoadingSpinner size="sm" />
+                    ) : (
+                      <Undo2 aria-hidden="true" className="h-3 w-3" />
+                    )}{' '}
+                    Withdraw
+                  </Button>
                 )}
               </div>
             </div>
-            {summary && <p className="text-xs text-slate-600">Changes: {summary}</p>}
-            {revision.message && <p className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-700">Your note: {revision.message}</p>}
+            {summary && <p className="text-ui-sm text-muted-foreground">Changes: {summary}</p>}
+            {revision.message && (
+              <p className="rounded-unit border border-[#ffffff18] bg-[#070b1444] px-3 py-2 text-ui-sm text-muted-foreground">
+                Your note: {revision.message}
+              </p>
+            )}
             {revision.reviewNote && (
-              <p className={`rounded-lg px-3 py-2 text-xs ${revision.status === 'rejected' ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-800'}`}>
+              <p
+                className={`rounded-unit border px-3 py-2 text-ui-sm ${
+                  revision.status === 'rejected'
+                    ? 'border-[#fb718530] bg-[#fb718510] text-[#fda4af]'
+                    : 'border-[#10b98135] bg-[#10b98112] text-[#6ee7b7]'
+                }`}
+              >
                 Agent note: {revision.reviewNote}
               </p>
             )}

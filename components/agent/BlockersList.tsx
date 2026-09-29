@@ -62,22 +62,22 @@ export function BlockersList({
   const items = normalizeBlockers(blockers);
   if (items.length === 0) {
     return (
-      <p className="flex items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
+      <p className="flex items-center gap-2 rounded-xl border border-[#10b98135] bg-[#10b98112] px-4 py-3 text-sm font-medium text-[#6ee7b7]">
         <CheckCircle2 className="h-4 w-4 flex-shrink-0" /> {emptyLabel}
       </p>
     );
   }
   return (
-    <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-      {title && <p className="mb-2 text-xs font-bold uppercase tracking-wide text-amber-800">{title}</p>}
+    <div className="rounded-xl border border-[#fbbf2425] bg-[#fbbf2409] p-4">
+      {title && <p className="mb-2 text-xs font-bold uppercase tracking-wide text-[#fcd34d]">{title}</p>}
       <ul className="space-y-2">
         {items.map((item) => (
-          <li key={item.key} className="flex items-start gap-2 text-sm text-amber-900">
-            <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-500" />
+          <li key={item.key} className="flex items-start gap-2 text-sm text-[#fcd34d]">
+            <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#fcd34d]" />
             <div className="min-w-0">
               <p className="font-medium break-words">{item.title}</p>
               {!compact && item.lines.length > 0 && (
-                <ul className="mt-1 list-disc space-y-0.5 pl-4 text-xs text-amber-800">
+                <ul className="mt-1 list-disc space-y-0.5 pl-4 text-xs text-[#fcd34d]">
                   {item.lines.map((line, index) => (
                     <li key={`${item.key}-${index}`} className="break-words">{line}</li>
                   ))}

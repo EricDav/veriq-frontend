@@ -22,14 +22,14 @@ function renderSection(section: BlogSection, idx: number) {
   switch (section.type) {
     case 'paragraph':
       return (
-        <p key={idx} className="text-slate-700 leading-relaxed text-[15px]">
+        <p key={idx} className="text-muted-foreground leading-relaxed text-[15px]">
           {section.text}
         </p>
       );
 
     case 'heading':
       return (
-        <h2 key={idx} className="font-display text-lg font-bold text-navy-900 mt-2">
+        <h2 key={idx} className="font-display text-lg font-bold text-foreground mt-2">
           {section.text}
         </h2>
       );
@@ -39,8 +39,8 @@ function renderSection(section: BlogSection, idx: number) {
         <ul key={idx} className="space-y-2.5">
           {section.items?.map((item, i) => (
             <li key={i} className="flex items-start gap-3">
-              <CheckCircle className="h-4 w-4 text-veriq-secondary flex-shrink-0 mt-0.5" />
-              <span className="text-slate-700 text-[15px] leading-relaxed">{item}</span>
+              <CheckCircle className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+              <span className="text-muted-foreground text-[15px] leading-relaxed">{item}</span>
             </li>
           ))}
         </ul>
@@ -48,16 +48,16 @@ function renderSection(section: BlogSection, idx: number) {
 
     case 'callout':
       const variants = {
-        warning: { cls: 'bg-red-50 border-red-200', icon: AlertTriangle, iconCls: 'text-red-500' },
-        tip: { cls: 'bg-emerald-50 border-emerald-200', icon: Lightbulb, iconCls: 'text-emerald-600' },
-        info: { cls: 'bg-blue-50 border-blue-200', icon: BookOpen, iconCls: 'text-blue-500' },
+        warning: { cls: 'bg-[#fb718510] border-[#fb718530]', icon: AlertTriangle, iconCls: 'text-destructive' },
+        tip: { cls: 'bg-[#10b98112] border-[#10b98135]', icon: Lightbulb, iconCls: 'text-primary' },
+        info: { cls: 'bg-[#ffffff08] border-[#ffffff12]', icon: BookOpen, iconCls: 'text-muted-foreground' },
       };
       const v = variants[section.variant ?? 'info'];
       const Icon = v.icon;
       return (
         <div key={idx} className={`rounded-xl border ${v.cls} px-5 py-4 flex items-start gap-3`}>
           <Icon className={`h-4 w-4 flex-shrink-0 mt-0.5 ${v.iconCls}`} />
-          <p className="text-sm leading-relaxed text-slate-700">{section.text}</p>
+          <p className="text-sm leading-relaxed text-muted-foreground">{section.text}</p>
         </div>
       );
 
@@ -83,13 +83,13 @@ function renderSection(section: BlogSection, idx: number) {
 
 const COVER_GRADIENTS = [
   'from-blue-600 to-indigo-700',
-  'from-emerald-600 to-teal-700',
+  'from-primary to-teal-700',
   'from-amber-500 to-orange-600',
   'from-purple-600 to-pink-700',
   'from-red-600 to-rose-700',
-  'from-emerald-600 to-emerald-800',
+  'from-primary to-[#059669]',
   'from-slate-600 to-slate-800',
-  'from-teal-600 to-emerald-700',
+  'from-teal-600 to-[#059669]',
 ];
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -132,8 +132,8 @@ export default function BlogPostPage() {
     return (
       <div className="min-h-screen flex items-center justify-center px-4 pt-24">
         <div className="text-center">
-          <h1 className="font-display text-2xl font-bold text-navy-900 mb-2">Article Not Found</h1>
-          <p className="text-slate-500 mb-6">This article may have been moved or removed.</p>
+          <h1 className="font-display text-2xl font-bold text-foreground mb-2">Article Not Found</h1>
+          <p className="text-muted-foreground mb-6">This article may have been moved or removed.</p>
           <Link href="/blog" className="btn-primary">Back to Blog</Link>
         </div>
       </div>
@@ -157,7 +157,7 @@ export default function BlogPostPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-card">
       {/* ── Cover hero ── */}
       <div className={`relative h-64 sm:h-80 bg-gradient-to-br ${gradient} pt-16 overflow-hidden`}>
         {post.coverImage && (
@@ -170,9 +170,9 @@ export default function BlogPostPage() {
               href={`https://youtube.com/watch?v=${post.youtubeId}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="h-16 w-16 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center hover:bg-white/30 transition-all"
+              className="h-16 w-16 rounded-full bg-[#ffffff1a] backdrop-blur-sm border border-white/30 flex items-center justify-center hover:bg-[#ffffff26] transition-all"
             >
-              <Play className="h-7 w-7 text-white ml-1" />
+              <Play className="h-7 w-7 text-foreground ml-1" />
             </a>
           </div>
         )}
@@ -181,7 +181,7 @@ export default function BlogPostPage() {
             <span className={`inline-block mb-3 rounded-full px-3 py-1 text-xs font-semibold ${CATEGORY_COLORS[post.category]}`}>
               {post.category}
             </span>
-            <h1 className="font-display text-2xl sm:text-3xl font-bold text-white leading-tight">
+            <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground leading-tight">
               {post.title}
             </h1>
           </div>
@@ -198,18 +198,18 @@ export default function BlogPostPage() {
             <div className="flex items-center justify-between mb-8 flex-wrap gap-3">
               <Link
                 href="/blog"
-                className="inline-flex items-center gap-2 text-sm text-veriq-muted hover:text-navy-900 transition-colors"
+                className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 <ArrowLeft className="h-4 w-4" /> Back to Blog
               </Link>
-              <div className="flex items-center gap-4 text-xs text-slate-400">
+              <div className="flex items-center gap-4 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <Clock className="h-3 w-3" /> {post.readTime} min read
                 </span>
                 <span>{publishDate}</span>
                 <button
                   onClick={share}
-                  className="flex items-center gap-1 text-veriq-secondary hover:text-veriq-secondary/80 font-semibold transition-colors"
+                  className="flex items-center gap-1 text-primary hover:text-[#10b981cc] font-semibold transition-colors"
                 >
                   <Share2 className="h-3 w-3" /> Share
                 </button>
@@ -217,23 +217,23 @@ export default function BlogPostPage() {
             </div>
 
             {(post.authorName || post.authorAvatar) && (
-              <div className="mb-8 flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
+              <div className="mb-8 flex items-center gap-3 rounded-2xl border border-[#ffffff12] bg-[#ffffff08] px-4 py-3">
                 {post.authorAvatar ? (
                   <img src={post.authorAvatar} alt="" className="h-10 w-10 rounded-full object-cover" />
                 ) : (
-                  <div className="grid h-10 w-10 place-items-center rounded-full bg-white text-veriq-secondary">
+                  <div className="grid h-10 w-10 place-items-center rounded-full bg-card text-primary">
                     <UserRound className="h-5 w-5" />
                   </div>
                 )}
                 <div>
-                  <p className="text-xs text-slate-400">Written by</p>
-                  <p className="text-sm font-bold text-navy-900">{post.authorName ?? 'Veriq Editorial Team'}</p>
+                  <p className="text-xs text-muted-foreground">Written by</p>
+                  <p className="text-sm font-bold text-foreground">{post.authorName ?? 'Veriq Editorial Team'}</p>
                 </div>
               </div>
             )}
 
             {/* Excerpt */}
-            <p className="text-base text-slate-600 leading-relaxed border-l-4 border-veriq-secondary pl-4 mb-8 italic">
+            <p className="text-base text-muted-foreground leading-relaxed border-l-4 border-primary pl-4 mb-8 italic">
               {post.excerpt}
             </p>
 
@@ -260,14 +260,14 @@ export default function BlogPostPage() {
             )}
 
             {/* Tags */}
-            <div className="mt-10 pt-6 border-t border-slate-100">
+            <div className="mt-10 pt-6 border-t border-[#ffffff12]">
               <div className="flex items-center gap-2 flex-wrap">
-                <Tag className="h-3.5 w-3.5 text-slate-400" />
+                <Tag className="h-3.5 w-3.5 text-muted-foreground" />
                 {post.tags.map((tag) => (
                   <Link
                     key={tag}
                     href={`/blog?q=${encodeURIComponent(tag)}`}
-                    className="rounded-full bg-slate-100 px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-200 transition-colors capitalize"
+                    className="rounded-full bg-[#ffffff08] px-3 py-1.5 text-xs text-muted-foreground hover:bg-[#ffffff08] transition-colors capitalize"
                   >
                     {tag}
                   </Link>
@@ -276,9 +276,9 @@ export default function BlogPostPage() {
             </div>
 
             {/* Veriq CTA */}
-            <div className="mt-10 rounded-2xl bg-navy-900 p-6">
-              <p className="font-display text-base font-bold text-white mb-1">Know Before You Go</p>
-              <p className="text-slate-400 text-sm mb-4">
+            <div className="mt-10 rounded-2xl bg-background p-6">
+              <p className="font-display text-base font-bold text-foreground mb-1">Know Before You Go</p>
+              <p className="text-muted-foreground text-sm mb-4">
                 Browse verified property listings with detailed intelligence reports — electricity, flood risk, road access, and more.
               </p>
               <Link href="/properties" className="btn-gold !text-sm inline-flex">
@@ -291,26 +291,26 @@ export default function BlogPostPage() {
           <aside className="space-y-8">
             {/* About Veriq */}
             <div className="card p-5">
-              <h3 className="font-display text-sm font-bold text-navy-900 mb-3">About Veriq Property</h3>
-              <p className="text-xs text-slate-500 leading-relaxed">
+              <h3 className="font-display text-sm font-bold text-foreground mb-3">About Veriq Property</h3>
+              <p className="text-xs text-muted-foreground leading-relaxed">
                 Veriq Property is a trust-focused property intelligence platform. We verify listings, publish detailed environmental and condition reports, and connect users with accountable agents.
               </p>
-              <p className="text-xs font-bold text-veriq-secondary mt-3">Know Before You Go.</p>
+              <p className="text-xs font-bold text-primary mt-3">Know Before You Go.</p>
             </div>
 
             {/* Related articles */}
             {related.length > 0 && (
               <div>
-                <h3 className="font-display text-sm font-bold text-navy-900 uppercase tracking-wider mb-4">Related Articles</h3>
+                <h3 className="font-display text-sm font-bold text-foreground uppercase tracking-wider mb-4">Related Articles</h3>
                 <div className="space-y-4">
                   {related.map((rel, i) => (
                     <Link key={rel.slug} href={`/blog/${rel.slug}`} className="group flex items-start gap-3">
                       <div className={`h-12 w-12 rounded-xl bg-gradient-to-br ${COVER_GRADIENTS[i % COVER_GRADIENTS.length]} flex-shrink-0`} />
                       <div className="min-w-0">
-                        <p className="text-xs font-semibold text-navy-900 leading-snug line-clamp-2 group-hover:text-veriq-secondary transition-colors">
+                        <p className="text-xs font-semibold text-foreground leading-snug line-clamp-2 group-hover:text-primary transition-colors">
                           {rel.title}
                         </p>
-                        <p className="text-[11px] text-slate-400 mt-1 flex items-center gap-1">
+                        <p className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1">
                           <Clock className="h-2.5 w-2.5" /> {rel.readTime} min
                         </p>
                       </div>
@@ -321,10 +321,10 @@ export default function BlogPostPage() {
             )}
 
             {/* Newsletter teaser */}
-            <div className="rounded-2xl bg-veriq-surface border border-slate-200 p-5">
-              <BookOpen className="h-6 w-6 text-veriq-secondary mb-3" />
-              <h3 className="font-display text-sm font-bold text-navy-900 mb-2">More Property Intelligence</h3>
-              <p className="text-xs text-slate-500 mb-4 leading-relaxed">
+            <div className="rounded-2xl bg-background border border-[#ffffff12] p-5">
+              <BookOpen className="h-6 w-6 text-primary mb-3" />
+              <h3 className="font-display text-sm font-bold text-foreground mb-2">More Property Intelligence</h3>
+              <p className="text-xs text-muted-foreground mb-4 leading-relaxed">
                 Our blog publishes new guides every week — inspection tips, location reviews, and scam awareness.
               </p>
               <Link href="/blog" className="btn-primary !text-xs !py-2 w-full text-center">

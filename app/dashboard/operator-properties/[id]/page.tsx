@@ -10,6 +10,7 @@ import { MEDIA_REQUIREMENTS } from '@/lib/property-listing-spec';
 import { MediaItem, MediaSection, Property, PropertyType, UserRole } from '@/types';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
 import { useToast } from '@/components/ui/Toast';
+import { buttonClass } from '@/components/ui';
 
 const AMENITIES = ['Wi-Fi', 'Air Conditioning', 'Generator / Power Backup', 'Kitchen', 'Hot Water', 'Parking', 'Security / Gate', 'Laundry', 'Smart TV', 'Swimming Pool', 'Refrigerator', 'Microwave', 'Balcony', 'Gym'];
 const DETAIL_FIELDS = [
@@ -63,7 +64,7 @@ export default function OperatorPropertyPage() {
 
   if (authLoading || isPropertyOperator) return <PageLoader />;
 
-  if (!property) return <div className="p-8 text-center text-sm text-slate-500">Loading associated property...</div>;
+  if (!property) return <div className="p-8 text-center text-sm text-muted-foreground">Loading associated property...</div>;
 
   const setDetail = (key: string, value: unknown) => setProperty((current) => current ? ({ ...current, listingDetails: { ...(current.listingDetails || {}), [key]: value } }) : current);
   const toggleAmenity = (amenity: string) => {
@@ -124,7 +125,7 @@ export default function OperatorPropertyPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <button className="flex items-center gap-2 text-sm" onClick={() => router.back()}><ArrowLeft className="h-4 w-4" />Back</button>
-      <div><h1 className="font-display text-2xl font-bold">Manage Short Let</h1><p className="text-sm text-veriq-muted">Operational property details only. Veriq intelligence and operator association are protected.</p></div>
+      <div><h1 className="font-display text-2xl font-bold">Manage Short Let</h1><p className="text-sm text-muted-foreground">Operational property details only. Veriq intelligence and operator association are protected.</p></div>
 
       <section className="card space-y-4 p-6">
         <h2 className="font-display font-semibold">Basic Information</h2>
@@ -151,20 +152,20 @@ export default function OperatorPropertyPage() {
 
       <section className="card space-y-4 p-6">
         <h2 className="font-display font-semibold">Amenities &amp; Rules</h2>
-        <div className="flex flex-wrap gap-2">{AMENITIES.map((amenity) => { const active = (details.amenities as string[] | undefined)?.includes(amenity); return <button key={amenity} type="button" onClick={() => toggleAmenity(amenity)} className={`rounded-full border px-3 py-2 text-xs font-semibold ${active ? 'border-veriq-secondary bg-veriq-secondary text-white' : 'border-slate-200'}`}>{amenity}</button>; })}</div>
+        <div className="flex flex-wrap gap-2">{AMENITIES.map((amenity) => { const active = (details.amenities as string[] | undefined)?.includes(amenity); return <button key={amenity} type="button" onClick={() => toggleAmenity(amenity)} className={`rounded-full border px-3 py-2 text-xs font-semibold ${active ? 'border-primary bg-primary text-primary-foreground' : 'border-[#ffffff18]'}`}>{amenity}</button>; })}</div>
         <label><span className="label">House Rules</span><textarea className="input" rows={3} maxLength={500} value={String(details.houseRules ?? '')} onChange={(event) => setDetail('houseRules', event.target.value)} /></label>
       </section>
 
       <section className="card space-y-5 p-6">
-        <h2 className="font-display flex items-center gap-2 font-semibold"><Camera className="h-4 w-4 text-veriq-secondary" />Property Media</h2>
+        <h2 className="font-display flex items-center gap-2 font-semibold"><Camera className="h-4 w-4 text-primary" />Property Media</h2>
         {mediaCategories.map(({ section, label, minimum }) => {
           const sectionMedia = media.filter((item) => item.section === section);
-          return <div key={section} className="border-b border-slate-100 pb-5 last:border-0"><div className="mb-3 flex items-center justify-between"><div><p className="text-sm font-semibold">{label}</p><p className="text-xs text-slate-500">{sectionMedia.length}/5 uploaded · minimum {minimum}</p></div><label className="cursor-pointer rounded-md border px-3 py-2 text-xs font-semibold"><Upload className="mr-1 inline h-3.5 w-3.5" />{uploadingSection === section ? 'Uploading...' : 'Add images'}<input className="hidden" type="file" multiple accept={ACCEPTED_IMAGE_INPUT} disabled={uploadingSection === section || sectionMedia.length >= 5} onChange={(event) => addMedia(section, event.target.files)} /></label></div><div className="flex flex-wrap gap-3">{sectionMedia.map((item) => <div key={item.id} className="group relative h-24 w-24 overflow-hidden rounded-md border"><img src={item.url} alt={item.caption || label} className="h-full w-full object-cover" /><button type="button" title="Remove image" onClick={() => removeMedia(item)} className="absolute right-1 top-1 rounded bg-black/70 p-1 text-white"><Trash2 className="h-3.5 w-3.5" /></button></div>)}</div></div>;
+          return <div key={section} className="border-b border-[#ffffff10] pb-5 last:border-0"><div className="mb-3 flex items-center justify-between"><div><p className="text-sm font-semibold">{label}</p><p className="text-xs text-muted-foreground">{sectionMedia.length}/5 uploaded · minimum {minimum}</p></div><label className="cursor-pointer rounded-md border px-3 py-2 text-xs font-semibold"><Upload className="mr-1 inline h-3.5 w-3.5" />{uploadingSection === section ? 'Uploading...' : 'Add images'}<input className="hidden" type="file" multiple accept={ACCEPTED_IMAGE_INPUT} disabled={uploadingSection === section || sectionMedia.length >= 5} onChange={(event) => addMedia(section, event.target.files)} /></label></div><div className="flex flex-wrap gap-3">{sectionMedia.map((item) => <div key={item.id} className="group relative h-24 w-24 overflow-hidden rounded-md border"><img src={item.url} alt={item.caption || label} className="h-full w-full object-cover" /><button type="button" title="Remove image" onClick={() => removeMedia(item)} className="absolute right-1 top-1 rounded bg-[#070b14d9] p-1 text-foreground"><Trash2 className="h-3.5 w-3.5" /></button></div>)}</div></div>;
         })}
       </section>
 
-      <section className="card space-y-2 p-6"><h2 className="font-display font-semibold">Booking Link</h2><input className="input" type="url" placeholder="https://operator.example/accommodations/unit-name" value={property.bookingLink || ''} onChange={(event) => setProperty({ ...property, bookingLink: event.target.value })} /><p className="text-xs text-veriq-muted">Visible to customers only after unlock.</p></section>
-      <button disabled={saving} onClick={save} className="btn-primary w-full">{saving ? 'Saving...' : 'Save changes'}</button>
+      <section className="card space-y-2 p-6"><h2 className="font-display font-semibold">Booking Link</h2><input className="input" type="url" placeholder="https://operator.example/accommodations/unit-name" value={property.bookingLink || ''} onChange={(event) => setProperty({ ...property, bookingLink: event.target.value })} /><p className="text-xs text-muted-foreground">Visible to customers only after unlock.</p></section>
+      <button disabled={saving} onClick={save} className={buttonClass('primary', 'default', 'w-full')}>{saving ? 'Saving...' : 'Save changes'}</button>
     </div>
   );
 }

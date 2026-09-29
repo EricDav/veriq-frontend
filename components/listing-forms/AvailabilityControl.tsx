@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from 'react';
 import { CheckCircle2, Clock, History, XCircle } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { Button } from '@/components/ui';
 import { useToast } from '@/components/ui/Toast';
 import { cn } from '@/lib/utils';
 import type { AvailabilityEventRecord, UnitAvailabilityStatus } from '@/types/operator';
@@ -109,47 +110,52 @@ export function AvailabilityControl({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
           <StatusBadge tone={available ? 'emerald' : 'slate'}>
-            {available ? <CheckCircle2 className="h-3.5 w-3.5" /> : <XCircle className="h-3.5 w-3.5" />}
+            {available ? (
+              <CheckCircle2 aria-hidden="true" className="h-3.5 w-3.5" />
+            ) : (
+              <XCircle aria-hidden="true" className="h-3.5 w-3.5" />
+            )}
             {available ? labels.available : labels.unavailable}
           </StatusBadge>
-          <p className="text-xs text-slate-500">
+          <p className="text-ui-sm text-muted-foreground">
             Last confirmed {formatDateTime(confirmedAt)}
             {changedAt ? ` · changed ${formatDateTime(changedAt)}` : ''}
           </p>
           {available && freshnessExpiresAt && (
-            <p className={cn('flex items-center gap-1 text-xs', due ? 'font-semibold text-amber-700' : 'text-slate-500')}>
-              <Clock className="h-3 w-3" /> Reconfirm by {formatDateTime(freshnessExpiresAt)} or it becomes {labels.unavailable}
+            <p className={cn('flex items-center gap-1 text-ui-sm', due ? 'font-semibold text-[#fcd34d]' : 'text-muted-foreground')}>
+              <Clock aria-hidden="true" className="h-3 w-3" /> Reconfirm by {formatDateTime(freshnessExpiresAt)} or it becomes {labels.unavailable}
             </p>
           )}
         </div>
         <div className="flex flex-wrap gap-2">
           {available && onReconfirm && (
-            <button
-              type="button"
-              className={cn('btn-outline !px-3 !py-2 text-xs', due && '!border-amber-400 !bg-amber-50')}
+            <Button
+              variant="secondary"
+              size="small"
+              className={cn(due && 'border-[#fbbf2430] bg-[#fbbf2410] text-[#fcd34d] hover:bg-[#fbbf2420]')}
               disabled={disabled || saving !== null}
               onClick={() => void reconfirm()}
             >
               {saving === 'reconfirm' && <LoadingSpinner size="sm" />} Still {labels.available.toLowerCase()}
-            </button>
+            </Button>
           )}
-          <button
-            type="button"
-            className={available ? 'btn-outline !px-3 !py-2 text-xs' : 'btn-primary !px-3 !py-2 text-xs'}
+          <Button
+            variant={available ? 'secondary' : 'primary'}
+            size="small"
             disabled={disabled || saving !== null}
             onClick={() => { setPending(available ? 'unavailable' : 'available'); setReason(''); }}
           >
             Mark {available ? labels.unavailable : labels.available}
-          </button>
+          </Button>
         </div>
       </div>
 
-      {disabled && disabledReason && <p className="text-xs text-slate-500">{disabledReason}</p>}
+      {disabled && disabledReason && <p className="text-ui-sm text-muted-foreground">{disabledReason}</p>}
       {note}
 
       {pending && (
-        <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
-          <p className="text-sm font-medium text-navy-900">
+        <div className="space-y-2 rounded-unit border border-[#ffffff18] bg-[#070b1444] p-[17px]">
+          <p className="text-ui-md font-medium text-foreground">
             Mark as {pending === 'available' ? labels.available : labels.unavailable}? This takes effect immediately.
           </p>
           <input
@@ -161,32 +167,36 @@ export function AvailabilityControl({
             aria-label="Reason for availability change"
           />
           <div className="flex justify-end gap-2">
-            <button type="button" className="btn-ghost !py-1.5 text-xs" onClick={() => setPending(null)}>Cancel</button>
-            <button type="button" className="btn-primary !px-3 !py-1.5 text-xs" disabled={saving !== null} onClick={() => void confirmChange()}>
+            <Button variant="ghost" size="small" onClick={() => setPending(null)}>
+              Cancel
+            </Button>
+            <Button size="small" disabled={saving !== null} onClick={() => void confirmChange()}>
               {saving === 'change' && <LoadingSpinner size="sm" />} Confirm
-            </button>
+            </Button>
           </div>
         </div>
       )}
 
       {loadHistory && (
         <div>
-          <button type="button" className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-navy-900" onClick={toggleHistory}>
-            <History className="h-3.5 w-3.5" /> {historyOpen ? 'Hide history' : 'Availability history'}
-          </button>
+          <Button variant="ghost" size="small" aria-expanded={historyOpen} onClick={toggleHistory}>
+            <History aria-hidden="true" className="h-3.5 w-3.5" /> {historyOpen ? 'Hide history' : 'Availability history'}
+          </Button>
           {historyOpen && (
-            <div className="mt-2">
+            <div className="mt-2" aria-live="polite">
               {historyLoading ? (
-                <p className="flex items-center gap-2 text-xs text-slate-500"><LoadingSpinner size="sm" /> Loading history…</p>
+                <p className="flex items-center gap-2 text-ui-sm text-muted-foreground">
+                  <LoadingSpinner size="sm" className="text-primary" /> Loading history…
+                </p>
               ) : historyError ? (
                 <Notice tone="error">{historyError}</Notice>
               ) : !history?.length ? (
-                <p className="text-xs text-slate-500">No availability changes recorded yet.</p>
+                <p className="text-ui-sm text-muted-foreground">No availability changes recorded yet.</p>
               ) : (
-                <ol className="space-y-1.5 border-l border-slate-200 pl-3">
+                <ol className="space-y-1.5 border-l border-[#10b98150] pl-3">
                   {history.map((event) => (
-                    <li key={event.id} className="text-xs text-slate-600">
-                      <span className="font-semibold text-navy-900">
+                    <li key={event.id} className="text-ui-sm text-muted-foreground">
+                      <span className="font-semibold text-foreground">
                         {event.previousStatus && event.previousStatus !== event.newStatus
                           ? `${humanize(event.previousStatus)} → ${humanize(event.newStatus)}`
                           : event.previousStatus === event.newStatus
@@ -194,7 +204,7 @@ export function AvailabilityControl({
                             : humanize(event.newStatus)}
                       </span>{' '}
                       · {formatDateTime(event.createdAt)} · {humanize(event.source)}
-                      {event.reason && <span className="block text-slate-500">{event.reason}</span>}
+                      {event.reason && <span className="block text-muted-foreground">{event.reason}</span>}
                     </li>
                   ))}
                 </ol>

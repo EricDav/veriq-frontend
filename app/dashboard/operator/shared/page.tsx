@@ -16,6 +16,7 @@ import {
   formatDate,
 } from '@/components/listing-forms';
 import type { SharedOpportunitySummary } from '@/types/operator';
+import { buttonClass } from '@/components/ui';
 
 function SharedList() {
   const [items, setItems] = useState<SharedOpportunitySummary[]>([]);
@@ -44,12 +45,12 @@ function SharedList() {
     <div className="mx-auto max-w-5xl space-y-5">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="font-display text-2xl font-bold text-navy-900">Shared Property Opportunities</h1>
-          <p className="text-sm text-slate-500">
+          <h1 className="font-display text-2xl font-bold text-foreground">Shared Property Opportunities</h1>
+          <p className="text-sm text-muted-foreground">
             Rooms and bedspaces you offer in the home you currently live in. Each opportunity is verified separately and is hidden whenever it is unavailable.
           </p>
         </div>
-        <Link href="/dashboard/operator/shared/new" className="btn-primary !py-2.5"><Plus className="h-4 w-4" /> New opportunity</Link>
+        <Link href="/dashboard/operator/shared/new" className={buttonClass()}><Plus className="h-4 w-4" /> New opportunity</Link>
       </div>
 
       {loadError ? (
@@ -60,7 +61,7 @@ function SharedList() {
       ) : items.length === 0 ? (
         <EmptyState icon={<Users className="h-12 w-12" />} title="No opportunities yet">
           Share a private room or bedspace in your home. You will confirm your occupancy and that you are permitted to share before submitting.
-          <div className="mt-3"><Link href="/dashboard/operator/shared/new" className="btn-primary !py-2">Create opportunity</Link></div>
+          <div className="mt-3"><Link href="/dashboard/operator/shared/new" className={buttonClass()}>Create opportunity</Link></div>
         </EmptyState>
       ) : (
         <ul className="grid gap-3">
@@ -70,8 +71,8 @@ function SharedList() {
               <li key={item.id}>
                 <Link href={`/dashboard/operator/shared/${item.id}`} className="card flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
                   <div className="min-w-0 space-y-1">
-                    <p className="truncate font-semibold text-navy-900">{item.displayLabel}</p>
-                    <p className="text-xs text-slate-500">{SHARED_TYPE_LABELS[item.opportunityType]} · {item.area}, {item.city} · updated {formatDate(item.updatedAt)}</p>
+                    <p className="truncate font-semibold text-foreground">{item.displayLabel}</p>
+                    <p className="text-xs text-muted-foreground">{SHARED_TYPE_LABELS[item.opportunityType]} · {item.area}, {item.city} · updated {formatDate(item.updatedAt)}</p>
                     <div className="flex flex-wrap gap-1.5 pt-1">
                       <StatusBadge tone={meta.tone}>{meta.label}</StatusBadge>
                       <StatusBadge tone={item.availabilityStatus === 'available' ? 'emerald' : 'slate'}>
@@ -82,7 +83,7 @@ function SharedList() {
                       )}
                     </div>
                   </div>
-                  <span className="text-sm font-semibold text-veriq-secondary">Manage</span>
+                  <span className="text-sm font-semibold text-primary">Manage</span>
                 </Link>
               </li>
             );

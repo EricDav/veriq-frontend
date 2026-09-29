@@ -204,17 +204,17 @@ export function OperatorListingSelector({
   return (
     <div className="space-y-4">
       {/* Step 1: Operator */}
-      <div className="rounded-xl border border-slate-200 bg-white">
-        <div className="flex flex-col gap-3 border-b border-slate-100 p-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="rounded-xl border border-[#ffffff12] bg-card">
+        <div className="flex flex-col gap-3 border-b border-[#ffffff12] p-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-wide text-veriq-secondary">Step 1</p>
-            <h3 className="font-display text-sm font-bold text-navy-900">Select a Property Operator</h3>
+            <p className="text-[11px] font-bold uppercase tracking-wide text-primary">Step 1</p>
+            <h3 className="font-display text-sm font-bold text-foreground">Select a Property Operator</h3>
           </div>
           {operator && (
             <button
               type="button"
               onClick={() => chooseOperator(null)}
-              className="inline-flex items-center gap-1.5 self-start rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50"
+              className="inline-flex items-center gap-1.5 self-start rounded-lg border border-[#ffffff12] px-3 py-1.5 text-xs font-bold text-muted-foreground hover:bg-[#ffffff08]"
             >
               <X className="h-3.5 w-3.5" /> Change Operator
             </button>
@@ -222,15 +222,15 @@ export function OperatorListingSelector({
         </div>
         {operator ? (
           <div className="flex items-start gap-3 p-4">
-            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-[#10b98112] text-primary">
               <UserRound className="h-5 w-5" />
             </div>
             <div className="min-w-0">
-              <p className="font-semibold text-navy-900">{operator.name || operator.id}</p>
-              <p className="text-xs text-slate-500">
+              <p className="font-semibold text-foreground">{operator.name || operator.id}</p>
+              <p className="text-xs text-muted-foreground">
                 {[operator.email, operator.phone].filter(Boolean).join(' · ') || 'No contact on record'}
               </p>
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="mt-1 text-xs text-muted-foreground">
                 {operator.listingCount} listing{operator.listingCount === 1 ? '' : 's'}
                 {agentName && operator.assignedAgentId ? ` · Assigned Agent: ${agentName(operator.assignedAgentId)}` : ''}
               </p>
@@ -239,7 +239,7 @@ export function OperatorListingSelector({
         ) : (
           <div className="space-y-3 p-4">
             <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <input
                 aria-label="Search Property Operators"
                 className="input !pl-9"
@@ -255,21 +255,21 @@ export function OperatorListingSelector({
             ) : operators.length === 0 ? (
               <EmptyState title="No Property Operators match" description="Try another name, email, phone or ID." />
             ) : (
-              <ul className="max-h-80 divide-y divide-slate-100 overflow-y-auto rounded-lg border border-slate-100">
+              <ul className="max-h-80 divide-y divide-[#ffffff12] overflow-y-auto rounded-lg border border-[#ffffff12]">
                 {operators.map((item) => (
                   <li key={item.id}>
                     <button
                       type="button"
                       onClick={() => chooseOperator(item)}
-                      className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left hover:bg-emerald-50/60"
+                      className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left hover:bg-[#10b98112]"
                     >
                       <span className="min-w-0">
-                        <span className="block truncate text-sm font-semibold text-navy-900">{item.name || item.id}</span>
-                        <span className="block truncate text-xs text-slate-500">
+                        <span className="block truncate text-sm font-semibold text-foreground">{item.name || item.id}</span>
+                        <span className="block truncate text-xs text-muted-foreground">
                           {[item.email, item.phone].filter(Boolean).join(' · ') || item.id}
                         </span>
                       </span>
-                      <span className="flex-shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600">
+                      <span className="flex-shrink-0 rounded-full bg-[#ffffff08] px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
                         {item.listingCount} listing{item.listingCount === 1 ? '' : 's'}
                       </span>
                     </button>
@@ -283,15 +283,15 @@ export function OperatorListingSelector({
 
       {/* Step 2: Listing */}
       {operator && (
-        <div className="rounded-xl border border-slate-200 bg-white">
-          <div className="border-b border-slate-100 p-4">
-            <p className="text-[11px] font-bold uppercase tracking-wide text-veriq-secondary">Step 2</p>
-            <h3 className="font-display text-sm font-bold text-navy-900">{listingPrompt}</h3>
-            <p className="mt-1 text-xs text-slate-500">Only listings owned by {operator.name || 'this Operator'} are shown.</p>
+        <div className="rounded-xl border border-[#ffffff12] bg-card">
+          <div className="border-b border-[#ffffff12] p-4">
+            <p className="text-[11px] font-bold uppercase tracking-wide text-primary">Step 2</p>
+            <h3 className="font-display text-sm font-bold text-foreground">{listingPrompt}</h3>
+            <p className="mt-1 text-xs text-muted-foreground">Only listings owned by {operator.name || 'this Operator'} are shown.</p>
           </div>
-          <div className="grid grid-cols-1 gap-2 border-b border-slate-100 p-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-2 border-b border-[#ffffff12] p-4 sm:grid-cols-2 lg:grid-cols-4">
             <div className="relative sm:col-span-2">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <input
                 aria-label="Search listings by ID or name"
                 className="input !py-2.5 !pl-9"
@@ -338,7 +338,7 @@ export function OperatorListingSelector({
               </select>
             </div>
             {activeFilterCount > 0 && (
-              <button type="button" onClick={() => setFilters({})} className="justify-self-start text-xs font-bold text-slate-500 hover:text-navy-900">
+              <button type="button" onClick={() => setFilters({})} className="justify-self-start text-xs font-bold text-muted-foreground hover:text-foreground">
                 Clear filters ({activeFilterCount})
               </button>
             )}
@@ -357,7 +357,7 @@ export function OperatorListingSelector({
           ) : (
             <TableScroll>
               <table className="w-full min-w-[860px]">
-                <thead className="bg-slate-50">
+                <thead className="bg-[#ffffff08]">
                   <tr>
                     <th className={th}>Listing</th>
                     <th className={th}>Category</th>
@@ -369,23 +369,23 @@ export function OperatorListingSelector({
                     <th className={th}><span className="sr-only">Select</span></th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-[#ffffff12]">
                   {listings.map((row) => {
                     const selected = selectedTargetId === row.targetId;
                     return (
-                      <tr key={`${row.targetType}:${row.targetId}`} className={cn(selected ? 'bg-emerald-50/70' : 'hover:bg-slate-50/60')}>
+                      <tr key={`${row.targetType}:${row.targetId}`} className={cn(selected ? 'bg-[#10b98112]' : 'hover:bg-[#ffffff08]')}>
                         <td className={td}>
                           <p className="max-w-[220px] truncate font-semibold">{row.title}</p>
-                          <p className="font-mono text-[11px] text-slate-400">{row.targetId}</p>
-                          <p className="text-[11px] text-slate-500">{TARGET_LABELS[row.targetType]} · <span className="capitalize">{row.publicationStatus.replace(/_/g, ' ')}</span></p>
+                          <p className="font-mono text-[11px] text-muted-foreground">{row.targetId}</p>
+                          <p className="text-[11px] text-muted-foreground">{TARGET_LABELS[row.targetType]} · <span className="capitalize">{row.publicationStatus.replace(/_/g, ' ')}</span></p>
                         </td>
                         <td className={td}>
                           <p className="text-xs">{categoryLabel(row.category)}</p>
-                          {row.subtype && <p className="text-[11px] text-slate-500">{humanize(row.subtype)}</p>}
+                          {row.subtype && <p className="text-[11px] text-muted-foreground">{humanize(row.subtype)}</p>}
                         </td>
                         <td className={td}>
                           <p className="text-xs">{row.area ?? '—'}{row.city ? `, ${row.city}` : ''}</p>
-                          {row.streetName && <p className="text-[11px] text-slate-500">{row.streetName}</p>}
+                          {row.streetName && <p className="text-[11px] text-muted-foreground">{row.streetName}</p>}
                         </td>
                         <td className={td}><StatusBadge status={row.availability} /></td>
                         <td className={td}>
@@ -393,8 +393,8 @@ export function OperatorListingSelector({
                         </td>
                         <td className={cn(td, 'text-right')}>
                           <p className="whitespace-nowrap font-semibold">{naira(row.effectivePrice)}</p>
-                          {row.freeUnlock && <p className="whitespace-nowrap text-[11px] text-slate-500 line-through">{naira(row.standardPrice)}</p>}
-                          <p className="whitespace-nowrap text-[11px] text-slate-500">{PRICE_SOURCE_LABELS[row.priceSource] ?? humanize(row.priceSource)}</p>
+                          {row.freeUnlock && <p className="whitespace-nowrap text-[11px] text-muted-foreground line-through">{naira(row.standardPrice)}</p>}
+                          <p className="whitespace-nowrap text-[11px] text-muted-foreground">{PRICE_SOURCE_LABELS[row.priceSource] ?? humanize(row.priceSource)}</p>
                         </td>
                         <td className={td}>
                           {row.freeUnlock ? <StatusBadge status="active" label="Free" /> : <StatusBadge status="draft" label="Paid" />}
@@ -405,7 +405,7 @@ export function OperatorListingSelector({
                             onClick={() => onSelectListing(row)}
                             className={cn(
                               'inline-flex items-center gap-1 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-bold',
-                              selected ? 'bg-emerald-600 text-white' : 'border border-slate-200 text-navy-700 hover:bg-slate-50',
+                              selected ? 'bg-primary text-primary-foreground' : 'border border-[#ffffff12] text-foreground hover:bg-[#ffffff08]',
                             )}
                           >
                             {selected && <Check className="h-3.5 w-3.5" />}

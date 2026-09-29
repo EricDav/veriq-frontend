@@ -4,6 +4,7 @@ import { useCallback, useEffect, useId, useState } from 'react';
 import { FileText, Lock, Upload } from 'lucide-react';
 import { ownerSaleListingsApi, propertySubmissionsApi, sharedPropertiesApi } from '@/lib/api/operator';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { Button } from '@/components/ui';
 import { Select } from '@/components/ui/Select';
 import { useToast } from '@/components/ui/Toast';
 import type { EvidenceKind, EvidenceRecord } from '@/types/operator';
@@ -128,8 +129,8 @@ export function EvidenceUploader({
 
   return (
     <div className="space-y-4">
-      <p className="flex items-center gap-2 text-xs text-slate-500">
-        <Lock className="h-3.5 w-3.5" /> Evidence is private. It is never shown to renters and is only visible to you, your assigned Veriq Agent and Veriq Admin.
+      <p className="flex items-center gap-2 text-xs text-muted-foreground">
+        <Lock aria-hidden="true" className="h-3.5 w-3.5 flex-shrink-0" /> Evidence is private. It is never shown to renters and is only visible to you, your assigned Veriq Agent and Veriq Admin.
       </p>
 
       {missingRequired.length > 0 && !loading && (
@@ -139,7 +140,7 @@ export function EvidenceUploader({
       )}
 
       {!disabled && (
-        <div className="grid gap-3 rounded-xl border border-slate-200 p-4 sm:grid-cols-2">
+        <div className="grid gap-4 rounded-unit border border-[#ffffff18] bg-[#070b1444] p-[17px] sm:grid-cols-2">
           <Select
             id={`${inputId}-kind`}
             label="Evidence type"
@@ -153,52 +154,68 @@ export function EvidenceUploader({
             required
           />
           <div>
-            <span className="label">File (PDF or photo, max 10 MB) <span className="text-red-500">*</span></span>
+            <label htmlFor={inputId} className="label">
+              File (PDF or photo, max 10 MB) <span className="text-destructive">*</span>
+            </label>
             <label
               htmlFor={inputId}
-              className="flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-slate-300 px-4 py-3 text-sm text-slate-600 hover:bg-slate-50"
+              className="flex cursor-pointer items-center gap-2 rounded-unit border border-dashed border-[#ffffff25] px-4 py-3 text-ui-md text-muted-foreground transition-colors hover:border-[#10b98170] hover:text-foreground focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background"
             >
-              <Upload className="h-4 w-4 flex-shrink-0" />
+              <Upload aria-hidden="true" className="h-4 w-4 flex-shrink-0" />
               <span className="truncate">{file ? file.name : 'Choose file'}</span>
             </label>
             <input
               id={inputId}
               type="file"
+              required
               className="sr-only"
               accept=".pdf,.jpg,.jpeg,.png,.webp,.heic,.heif,application/pdf,image/jpeg,image/png,image/webp,image/heic,image/heif"
               onChange={(event) => setFile(event.target.files?.[0] ?? null)}
             />
           </div>
-          <label className="block sm:col-span-2">
-            <span className="label">Notes for your Veriq Agent <span className="text-xs font-normal text-slate-400">Optional</span></span>
-            <input className="input" maxLength={1000} value={notes} onChange={(event) => setNotes(event.target.value)} />
-          </label>
           <div className="sm:col-span-2">
-            <button type="button" className="btn-primary w-full !py-2.5 sm:w-auto" disabled={uploading || !file || !kind} onClick={() => void upload()}>
+            <label htmlFor={`${inputId}-notes`} className="label">
+              Notes for your Veriq Agent
+              <span className="ml-1.5 text-xs font-normal text-muted-foreground">Optional</span>
+            </label>
+            <input
+              id={`${inputId}-notes`}
+              className="input"
+              maxLength={1000}
+              value={notes}
+              onChange={(event) => setNotes(event.target.value)}
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <Button className="w-full sm:w-auto" disabled={uploading || !file || !kind} onClick={() => void upload()}>
               {uploading && <LoadingSpinner size="sm" />} Upload evidence
-            </button>
+            </Button>
           </div>
         </div>
       )}
 
       {loading ? (
-        <p className="flex items-center gap-2 text-sm text-slate-500"><LoadingSpinner size="sm" /> Loading evidence…</p>
+        <p role="status" aria-live="polite" className="flex items-center gap-2 text-ui-md text-muted-foreground">
+          <LoadingSpinner size="sm" className="text-primary" /> Loading evidence…
+        </p>
       ) : loadError ? (
         <Notice tone="error">
           {loadError}{' '}
-          <button type="button" className="font-semibold underline" onClick={() => { setLoading(true); void load(); }}>Retry</button>
+          <Button variant="secondary" size="small" className="mt-3" onClick={() => { setLoading(true); void load(); }}>
+            Retry
+          </Button>
         </Notice>
       ) : records.length === 0 ? (
-        <p className="text-sm text-slate-500">No evidence uploaded yet.</p>
+        <p className="text-ui-md text-muted-foreground">No evidence uploaded yet.</p>
       ) : (
-        <ul className="divide-y divide-slate-100 rounded-xl border border-slate-200">
+        <ul className="divide-y divide-[#ffffff10] rounded-review border border-[#ffffff18]">
           {records.map((record) => (
-            <li key={record.id} className="flex flex-col gap-1 p-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+            <li key={record.id} className="flex flex-col gap-1 p-3 text-ui-md sm:flex-row sm:items-center sm:justify-between">
               <div className="flex min-w-0 items-center gap-2">
-                <FileText className="h-4 w-4 flex-shrink-0 text-slate-400" />
+                <FileText aria-hidden="true" className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
                 <div className="min-w-0">
-                  <p className="truncate font-medium text-navy-900">{record.fileName ?? 'Evidence file'}</p>
-                  <p className="text-xs text-slate-500">
+                  <p className="truncate font-medium text-foreground">{record.fileName ?? 'Evidence file'}</p>
+                  <p className="text-xs text-muted-foreground">
                     {formatDateTime(record.createdAt)}
                     {record.notes ? ` · ${record.notes}` : ''}
                   </p>
@@ -207,9 +224,11 @@ export function EvidenceUploader({
               <div className="flex items-center gap-2">
                 <StatusBadge tone="blue">{EVIDENCE_KIND_LABELS[record.kind] ?? record.kind}</StatusBadge>
                 {record.url && (
-                  <a href={record.url} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-veriq-secondary">
-                    View
-                  </a>
+                  <Button asChild variant="ghost" size="small">
+                    <a href={record.url} target="_blank" rel="noopener noreferrer">
+                      View<span className="sr-only"> {record.fileName ?? 'evidence file'} (opens in a new tab)</span>
+                    </a>
+                  </Button>
                 )}
               </div>
             </li>

@@ -57,7 +57,7 @@ test('admin gets field guidance and edits an existing operator with PATCH', asyn
   await expect(page.getByText(/complete HTTPS URL/)).toBeVisible();
   await expect(website).toBeFocused();
   await expect(website).toHaveAttribute('aria-invalid', 'true');
-  await expect(website).toHaveClass(/border-red-500/);
+  await expect(website).toHaveClass(/border-destructive/);
   expect(updatePayload).toBeUndefined();
 
   await website.fill('https://pearlygates.example.com');

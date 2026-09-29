@@ -5,6 +5,10 @@ import { LayoutDashboard } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { UserRole } from '@/types';
 import { cn } from '@/lib/utils';
+import { buttonClass } from './Button';
+
+const FOCUS =
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background';
 
 /**
  * The dashboard home for a role. Operators land on their own dashboard rather than the renter overview, so the
@@ -37,10 +41,14 @@ export function BackToDashboard({
 }) {
   const { user } = useAuth();
   const href = dashboardHomeFor(user?.role);
+  // On the prototype's tokens: the surface behind this is always dark.
   const styles = {
-    link: 'inline-flex items-center gap-2 text-sm font-medium text-veriq-muted transition-colors hover:text-navy-900',
-    button: 'btn-outline !px-4 !py-2 !text-sm',
-    ghost: 'btn-ghost !px-3 !py-2 !text-sm',
+    link: cn(
+      'inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground',
+      FOCUS,
+    ),
+    button: buttonClass('secondary', 'small'),
+    ghost: buttonClass('ghost', 'small'),
   }[variant];
 
   return (

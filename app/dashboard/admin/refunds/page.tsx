@@ -199,7 +199,7 @@ function AdminRefundsInner() {
 
       <div className="card grid grid-cols-1 gap-3 p-4 hover:shadow-card sm:grid-cols-2 lg:grid-cols-[1fr_180px_180px_auto]">
         <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input aria-label="Filter this page" className="input !pl-9" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Filter this page: listing, reference, IDs" />
         </div>
         <select aria-label="Status" className="input" value={status} onChange={(event) => setStatus(event.target.value as RefundStatus | '')}>
@@ -210,8 +210,8 @@ function AdminRefundsInner() {
           <option value="">All case types</option>
           {REFUND_CASE_TYPES.map((value) => <option key={value} value={value}>{REFUND_CASE_TYPE_LABELS[value]}</option>)}
         </select>
-        <label className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-navy-800">
-          <input type="checkbox" checked={flagged} onChange={(event) => setFlagged(event.target.checked)} className="h-4 w-4 accent-red-600" />
+        <label className="flex items-center gap-2 rounded-lg border border-[#ffffff12] px-3 py-2 text-sm font-medium text-foreground">
+          <input type="checkbox" checked={flagged} onChange={(event) => setFlagged(event.target.checked)} className="h-4 w-4 accent-[#fb7185]" />
           Flagged for review
         </label>
       </div>
@@ -227,7 +227,7 @@ function AdminRefundsInner() {
           <>
             <TableScroll>
               <table className="w-full min-w-[980px]">
-                <thead className="bg-slate-50">
+                <thead className="bg-[#ffffff08]">
                   <tr>
                     <th className={th}>Requested</th>
                     <th className={th}>Listing</th>
@@ -239,13 +239,13 @@ function AdminRefundsInner() {
                     <th className={th}><span className="sr-only">Open</span></th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-[#ffffff12]">
                   {visible.map((refund) => (
-                    <tr key={refund.id} className={refund.flaggedForReview ? 'bg-red-50/40' : 'hover:bg-slate-50/60'}>
+                    <tr key={refund.id} className={refund.flaggedForReview ? 'bg-[#fb718510]' : 'hover:bg-[#ffffff08]'}>
                       <td className={td}><span className="whitespace-nowrap text-xs">{dateTime(refund.createdAt)}</span></td>
                       <td className={td}>
                         <p className="max-w-[220px] truncate font-semibold">{refund.listing?.title ?? 'Listing unavailable'}</p>
-                        <p className="text-[11px] text-slate-500">{refund.listing ? categoryLabel(refund.listing.category) : '—'} · {refund.unlock?.paymentReference ?? refund.unlockId}</p>
+                        <p className="text-[11px] text-muted-foreground">{refund.listing ? categoryLabel(refund.listing.category) : '—'} · {refund.unlock?.paymentReference ?? refund.unlockId}</p>
                       </td>
                       <td className={td}><StatusBadge status={refund.caseType} label={REFUND_CASE_TYPE_LABELS[refund.caseType]} tone={refund.caseType === 'excess_payment' ? 'purple' : 'blue'} /></td>
                       <td className={td}><p className="max-w-[200px] text-xs">{humanize(refund.reason)}</p></td>
@@ -258,10 +258,10 @@ function AdminRefundsInner() {
                           {refund.createdByAdminId && <StatusBadge status="draft" label="Admin-recorded" />}
                           {refund.evidenceRequests.length > 0 && <StatusBadge status="scheduled" label={`${refund.evidenceRequests.length} evidence request${refund.evidenceRequests.length === 1 ? '' : 's'}`} />}
                         </div>
-                        {refund.flagReason && <p className="mt-1 flex items-center gap-1 text-[11px] text-red-700"><Flag className="h-3 w-3" /> {refund.flagReason}</p>}
+                        {refund.flagReason && <p className="mt-1 flex items-center gap-1 text-[11px] text-destructive"><Flag className="h-3 w-3" /> {refund.flagReason}</p>}
                       </td>
                       <td className={`${td} text-right`}>
-                        <Link href={`/dashboard/admin/refunds/${encodeURIComponent(refund.id)}`} className="whitespace-nowrap rounded-lg bg-navy-900 px-3 py-1.5 text-xs font-bold text-white hover:bg-navy-700">
+                        <Link href={`/dashboard/admin/refunds/${encodeURIComponent(refund.id)}`} className="whitespace-nowrap rounded-lg bg-background px-3 py-1.5 text-xs font-bold text-foreground hover:bg-[#ffffff0d]">
                           {refund.status === 'requested' || refund.status === 'under_review' ? 'Review' : 'View'}
                         </Link>
                       </td>
@@ -278,17 +278,17 @@ function AdminRefundsInner() {
       <Modal isOpen={createOpen} onClose={() => !creating && setCreateOpen(false)} title="Record a refund case" size="lg" className="max-h-[92vh] overflow-y-auto">
         {createdId ? (
           <div className="space-y-4">
-            <p className="rounded-xl bg-emerald-50 p-4 text-sm text-emerald-900">The case is in the queue for decision. Recording a case does not credit the wallet; approve it to apply the refund.</p>
+            <p className="rounded-xl bg-[#10b98112] p-4 text-sm text-primary">The case is in the queue for decision. Recording a case does not credit the wallet; approve it to apply the refund.</p>
             <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-              <button type="button" onClick={() => setCreateOpen(false)} className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-medium text-navy-700 hover:bg-slate-50">Close</button>
+              <button type="button" onClick={() => setCreateOpen(false)} className="rounded-xl border border-[#ffffff12] px-5 py-2.5 text-sm font-medium text-foreground hover:bg-[#ffffff08]">Close</button>
               <Link href={`/dashboard/admin/refunds/${encodeURIComponent(createdId)}`} className="btn-primary !py-2.5">Open case</Link>
             </div>
           </div>
         ) : (
           <form onSubmit={submitCreate} className="space-y-4" noValidate>
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-muted-foreground">
               Use this for support escalations, including an excess-payment case for a duplicate charge. Find the charge’s unlock ID in{' '}
-              <Link href="/dashboard/admin/ledger?tab=transactions&status=duplicate_payment" className="font-semibold text-emerald-700 underline">Ledger → Unlock Transactions</Link>.
+              <Link href="/dashboard/admin/ledger?tab=transactions&status=duplicate_payment" className="font-semibold text-primary underline">Ledger → Unlock Transactions</Link>.
               Cases recorded after the refund window never freeze an Agent earning.
             </p>
             {createError && <ErrorPanel error={createError} />}
@@ -324,16 +324,16 @@ function AdminRefundsInner() {
                 </select>
               </div>
               <div className="sm:col-span-2">
-                <label className="label text-xs" htmlFor="refund-explanation">Explanation {form.reason !== 'other' && <span className="font-normal text-slate-400">(optional)</span>}</label>
+                <label className="label text-xs" htmlFor="refund-explanation">Explanation {form.reason !== 'other' && <span className="font-normal text-muted-foreground">(optional)</span>}</label>
                 <textarea id="refund-explanation" className="input min-h-24" maxLength={2000} value={form.explanation} onChange={(event) => setForm((f) => ({ ...f, explanation: event.target.value }))} />
               </div>
               <div className="sm:col-span-2">
-                <label className="label text-xs" htmlFor="refund-evidence">Evidence links <span className="font-normal text-slate-400">(optional, one per line, up to 10)</span></label>
+                <label className="label text-xs" htmlFor="refund-evidence">Evidence links <span className="font-normal text-muted-foreground">(optional, one per line, up to 10)</span></label>
                 <textarea id="refund-evidence" className="input min-h-20 font-mono text-xs" value={form.evidence} onChange={(event) => setForm((f) => ({ ...f, evidence: event.target.value }))} placeholder="https://…" />
               </div>
             </div>
             <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-              <button type="button" onClick={() => setCreateOpen(false)} disabled={creating} className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-medium text-navy-700 hover:bg-slate-50 disabled:opacity-50">Cancel</button>
+              <button type="button" onClick={() => setCreateOpen(false)} disabled={creating} className="rounded-xl border border-[#ffffff12] px-5 py-2.5 text-sm font-medium text-foreground hover:bg-[#ffffff08] disabled:opacity-50">Cancel</button>
               <button type="submit" disabled={creating} className="btn-primary !py-2.5">
                 {creating && <LoadingSpinner size="sm" />} Record case
               </button>

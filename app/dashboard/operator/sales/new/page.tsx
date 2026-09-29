@@ -27,6 +27,7 @@ import {
   type LocationValue,
 } from '@/components/listing-forms';
 import { formatNaira } from '@/components/renter/format';
+import { buttonClass } from '@/components/ui';
 
 const SUBTYPES = [
   { value: 'built_property', label: 'Built Property — a house, flat or other building' },
@@ -144,14 +145,14 @@ function OwnerSaleSubmissionForm() {
   return (
     <div className="mx-auto max-w-3xl space-y-5">
       <header className="space-y-1">
-        <h1 className="flex items-center gap-2 font-display text-2xl font-bold text-navy-900">
-          <Landmark className="h-5 w-5 text-veriq-secondary" /> Submit a property for sale
+        <h1 className="flex items-center gap-2 font-display text-2xl font-bold text-foreground">
+          <Landmark className="h-5 w-5 text-primary" /> Submit a property for sale
         </h1>
-        <p className="text-sm leading-6 text-slate-500">
+        <p className="text-sm leading-6 text-muted-foreground">
           Only the owner may ask Veriq to represent a sale. Your listing will be free for buyers to view, Veriq will be
           the buyer contact, and you pay a success commission only if a Veriq-generated sale completes.
         </p>
-        <Link href="/dashboard/operator/sales" className="text-sm font-medium text-veriq-secondary hover:underline">
+        <Link href="/dashboard/operator/sales" className="text-sm font-medium text-primary hover:underline">
           Back to my sale submissions
         </Link>
       </header>
@@ -239,7 +240,7 @@ function OwnerSaleSubmissionForm() {
       {subtype && (
         <SectionCard title="Property facts and intelligence" description="Answer what applies. Veriq confirms these on the physical visit.">
           {schemaLoading ? (
-            <p className="flex items-center gap-2 text-sm text-slate-500">
+            <p className="flex items-center gap-2 text-sm text-muted-foreground">
               <LoadingSpinner size="sm" /> Loading the form for this property type…
             </p>
           ) : schemaError || !schema ? (
@@ -266,12 +267,12 @@ function OwnerSaleSubmissionForm() {
         <div className="space-y-4">
           <label
             htmlFor="owner-declaration"
-            className="flex items-start gap-2.5 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-navy-900"
+            className="flex items-start gap-2.5 rounded-xl border border-[#ffffff18] bg-[#070b1444] p-4 text-sm text-foreground"
           >
             <input
               id="owner-declaration"
               type="checkbox"
-              className="mt-0.5 h-4 w-4 flex-shrink-0 accent-veriq-secondary"
+              className="mt-0.5 h-4 w-4 flex-shrink-0 accent-[#10b981]"
               checked={ownerDeclaration}
               onChange={(event) => setOwnerDeclaration(event.target.checked)}
             />
@@ -282,7 +283,7 @@ function OwnerSaleSubmissionForm() {
             </span>
           </label>
           {issueFor('ownerDeclaration') && (
-            <p role="alert" className="text-xs font-medium text-red-600">
+            <p role="alert" className="text-xs font-medium text-destructive">
               {issueFor('ownerDeclaration')}
             </p>
           )}
@@ -293,12 +294,12 @@ function OwnerSaleSubmissionForm() {
       {(formError || issues.length > 0) && <IssueList message={formError} issues={issues} />}
 
       <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-        <button type="button" className="btn-outline" disabled={busy !== null} onClick={() => void save(false)}>
+        <button type="button" className={buttonClass('secondary')} disabled={busy !== null} onClick={() => void save(false)}>
           {busy === 'draft' ? <LoadingSpinner size="sm" /> : <Save className="h-4 w-4" />} Save draft
         </button>
         <button
           type="button"
-          className="btn-primary"
+          className={buttonClass()}
           disabled={busy !== null || !declaration.canSubmit}
           onClick={() => void save(true)}
         >

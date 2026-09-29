@@ -51,8 +51,8 @@ function ValueBlock({ label, value }: { label: string; value: Record<string, unk
   if (!value) return null;
   return (
     <div className="min-w-0 flex-1">
-      <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">{label}</p>
-      <pre className="mt-1 max-h-48 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-slate-50 p-2 text-[11px] text-slate-600">{JSON.stringify(value, null, 2)}</pre>
+      <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
+      <pre className="mt-1 max-h-48 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-[#ffffff08] p-2 text-[11px] text-muted-foreground">{JSON.stringify(value, null, 2)}</pre>
     </div>
   );
 }
@@ -154,7 +154,7 @@ function AdminAuditInner() {
               key={preset.value}
               type="button"
               onClick={() => { setDraft((d) => ({ ...d, action: preset.value })); setPage(1); setFilters((current) => ({ ...current, action: preset.value })); }}
-              className={`rounded-full px-3 py-1 text-[11px] font-bold ${filters.action === preset.value ? 'bg-navy-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+              className={`rounded-full px-3 py-1 text-[11px] font-bold ${filters.action === preset.value ? 'bg-primary text-primary-foreground' : 'bg-[#ffffff08] text-muted-foreground hover:bg-[#ffffff08]'}`}
             >
               {preset.label}
             </button>
@@ -163,7 +163,7 @@ function AdminAuditInner() {
         <div className="flex flex-wrap items-center gap-2">
           <button type="submit" className="btn-primary !px-4 !py-2.5 !text-sm"><Filter className="h-4 w-4" /> Apply filters</button>
           {activeCount > 0 && (
-            <button type="button" onClick={clear} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50">
+            <button type="button" onClick={clear} className="inline-flex items-center gap-1.5 rounded-lg border border-[#ffffff12] px-3 py-2 text-xs font-bold text-muted-foreground hover:bg-[#ffffff08]">
               <X className="h-3.5 w-3.5" /> Clear {activeCount} filter{activeCount === 1 ? '' : 's'}
             </button>
           )}
@@ -181,7 +181,7 @@ function AdminAuditInner() {
           <>
             <TableScroll>
               <table className="w-full min-w-[900px]">
-                <thead className="bg-slate-50">
+                <thead className="bg-[#ffffff08]">
                   <tr>
                     <th className={th}>When</th>
                     <th className={th}>Action</th>
@@ -192,24 +192,24 @@ function AdminAuditInner() {
                     <th className={th}><span className="sr-only">Detail</span></th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-[#ffffff12]">
                   {events.map((event) => (
                     <React.Fragment key={event.id}>
-                      <tr className="hover:bg-slate-50/60">
+                      <tr className="hover:bg-[#ffffff08]">
                         <td className={td}><span className="whitespace-nowrap text-xs">{dateTime(event.createdAt)}</span></td>
                         <td className={td}><span className="text-xs font-semibold">{humanize(event.action)}</span></td>
                         <td className={td}>
                           <p className="text-xs">{humanize(event.targetType)}</p>
-                          <p className="break-all font-mono text-[11px] text-slate-400">{event.targetId}</p>
+                          <p className="break-all font-mono text-[11px] text-muted-foreground">{event.targetId}</p>
                         </td>
-                        <td className={td}><span className="break-all font-mono text-[11px] text-slate-500">{event.actorUserId}</span></td>
-                        <td className={td}><span className="text-[11px] text-slate-500">{humanize(event.source)}</span></td>
-                        <td className={td}><p className="max-w-[220px] text-xs text-slate-600">{event.reason || '—'}</p></td>
+                        <td className={td}><span className="break-all font-mono text-[11px] text-muted-foreground">{event.actorUserId}</span></td>
+                        <td className={td}><span className="text-[11px] text-muted-foreground">{humanize(event.source)}</span></td>
+                        <td className={td}><p className="max-w-[220px] text-xs text-muted-foreground">{event.reason || '—'}</p></td>
                         <td className={`${td} text-right`}>
                           <button
                             type="button"
                             onClick={() => setExpanded(expanded === event.id ? null : event.id)}
-                            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-bold text-navy-700 hover:bg-slate-50"
+                            className="inline-flex items-center gap-1 rounded-lg border border-[#ffffff12] px-2.5 py-1.5 text-xs font-bold text-foreground hover:bg-[#ffffff08]"
                             aria-expanded={expanded === event.id}
                           >
                             {expanded === event.id ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
@@ -218,7 +218,7 @@ function AdminAuditInner() {
                         </td>
                       </tr>
                       {expanded === event.id && (
-                        <tr className="bg-slate-50/60">
+                        <tr className="bg-[#ffffff08]">
                           <td className="px-4 py-3" colSpan={7}>
                             {event.previousValue || event.newValue ? (
                               <div className="flex flex-col gap-3 sm:flex-row">
@@ -226,7 +226,7 @@ function AdminAuditInner() {
                                 <ValueBlock label="New value" value={event.newValue} />
                               </div>
                             ) : (
-                              <p className="text-xs text-slate-500">No value snapshot was recorded for this event.</p>
+                              <p className="text-xs text-muted-foreground">No value snapshot was recorded for this event.</p>
                             )}
                           </td>
                         </tr>

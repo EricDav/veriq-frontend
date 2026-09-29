@@ -207,7 +207,7 @@ function AdminSalesInner() {
 
       <div className="card grid grid-cols-1 gap-3 p-4 hover:shadow-card sm:grid-cols-2 lg:grid-cols-4">
         <div className="relative lg:col-span-2">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input aria-label="Search sale listings" className="input !pl-9" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Title or listing ID" />
         </div>
         <select aria-label="Publication status" className="input" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
@@ -219,8 +219,8 @@ function AdminSalesInner() {
           <option value="available">Available</option>
           <option value="unavailable">Unavailable</option>
         </select>
-        <label className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-navy-800 sm:col-span-2 lg:col-span-1">
-          <input type="checkbox" checked={escalatedOnly} onChange={(event) => setEscalatedOnly(event.target.checked)} className="h-4 w-4 accent-red-600" />
+        <label className="flex items-center gap-2 rounded-lg border border-[#ffffff12] px-3 py-2 text-sm font-medium text-foreground sm:col-span-2 lg:col-span-1">
+          <input type="checkbox" checked={escalatedOnly} onChange={(event) => setEscalatedOnly(event.target.checked)} className="h-4 w-4 accent-[#fb7185]" />
           Escalated only
         </label>
       </div>
@@ -235,7 +235,7 @@ function AdminSalesInner() {
         ) : (
           <TableScroll>
             <table className="w-full min-w-[820px]">
-              <thead className="bg-slate-50">
+              <thead className="bg-[#ffffff08]">
                 <tr>
                   <th className={th}>Listing</th>
                   <th className={`${th} text-right`}>Asking price</th>
@@ -246,21 +246,21 @@ function AdminSalesInner() {
                   <th className={th}><span className="sr-only">Open</span></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#ffffff12]">
                 {visible.map((row) => (
-                  <tr key={row.id} className={row.escalationOpen ? 'bg-red-50/40' : 'hover:bg-slate-50/60'}>
+                  <tr key={row.id} className={row.escalationOpen ? 'bg-[#fb718510]' : 'hover:bg-[#ffffff08]'}>
                     <td className={td}>
                       <p className="max-w-[260px] truncate font-semibold">{row.title}</p>
-                      <p className="text-[11px] text-slate-500">{humanize(row.subtype)}</p>
-                      <p className="break-all font-mono text-[11px] text-slate-400">{row.id}</p>
+                      <p className="text-[11px] text-muted-foreground">{humanize(row.subtype)}</p>
+                      <p className="break-all font-mono text-[11px] text-muted-foreground">{row.id}</p>
                     </td>
                     <td className={`${td} whitespace-nowrap text-right font-semibold`}>{naira(row.askingPrice)}</td>
                     <td className={td}><StatusBadge status={row.publicationStatus} /></td>
                     <td className={td}><StatusBadge status={row.availabilityStatus} /></td>
-                    <td className={td}>{row.escalationOpen ? <StatusBadge status="failed" label="Open" /> : <span className="text-xs text-slate-400">None</span>}</td>
+                    <td className={td}>{row.escalationOpen ? <StatusBadge status="failed" label="Open" /> : <span className="text-xs text-muted-foreground">None</span>}</td>
                     <td className={td}><span className="whitespace-nowrap text-xs">{dateTime(row.updatedAt)}</span></td>
                     <td className={`${td} text-right`}>
-                      <button type="button" onClick={() => setDetailId(row.id)} className="whitespace-nowrap rounded-lg bg-navy-900 px-3 py-1.5 text-xs font-bold text-white hover:bg-navy-700">Review</button>
+                      <button type="button" onClick={() => setDetailId(row.id)} className="whitespace-nowrap rounded-lg bg-background px-3 py-1.5 text-xs font-bold text-foreground hover:bg-[#ffffff0d]">Review</button>
                     </td>
                   </tr>
                 ))}
@@ -278,8 +278,8 @@ function AdminSalesInner() {
         ) : detail ? (
           <div className="space-y-5">
             <div>
-              <h3 className="font-display text-base font-bold text-navy-900">{detail.sale.title}</h3>
-              <p className="text-xs text-slate-500">{humanize(detail.sale.subtype)} · <span className="font-mono">{detail.sale.id}</span></p>
+              <h3 className="font-display text-base font-bold text-foreground">{detail.sale.title}</h3>
+              <p className="text-xs text-muted-foreground">{humanize(detail.sale.subtype)} · <span className="font-mono">{detail.sale.id}</span></p>
               <div className="mt-2 flex flex-wrap gap-2">
                 <StatusBadge status={detail.sale.publicationStatus} />
                 <StatusBadge status={detail.sale.availabilityStatus} />
@@ -288,14 +288,14 @@ function AdminSalesInner() {
             </div>
 
             {detail.sale.escalationOpen && (
-              <div className="rounded-xl border border-red-100 bg-red-50 p-4 text-sm text-red-800">
+              <div className="rounded-xl border border-[#fb718530] bg-[#fb718510] p-4 text-sm text-destructive">
                 <p className="font-semibold">Escalation open</p>
                 <p className="mt-1 text-xs">{detail.sale.escalationReason || 'No reason recorded.'}</p>
               </div>
             )}
 
             {detail.sale.suspendedAt && (
-              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+              <div className="rounded-xl border border-[#fbbf2430] bg-[#fbbf2410] p-4 text-sm text-[#fcd34d]">
                 <p className="font-semibold">Suspended {dateTime(detail.sale.suspendedAt)}</p>
                 <p className="mt-1 text-xs">{detail.sale.suspensionReason || 'No reason recorded.'}</p>
               </div>
@@ -315,21 +315,21 @@ function AdminSalesInner() {
             </div>
 
             <section>
-              <h4 className="mb-2 text-sm font-bold text-navy-900">Seller verification</h4>
+              <h4 className="mb-2 text-sm font-bold text-foreground">Seller verification</h4>
               <div className="grid grid-cols-2 gap-2">
                 <KeyValue label="Seller" value={detail.sale.sellerName} />
                 <KeyValue label="Is beneficial owner" value={detail.sale.sellerIsOwner ? 'Yes' : 'No'} />
                 <KeyValue label="Identity status" value={<StatusBadge status={detail.sale.sellerIdentityStatus} tone={PARTY_TONES[detail.sale.sellerIdentityStatus] ?? 'slate'} />} />
                 <KeyValue label="Authority to sell" value={<StatusBadge status={detail.sale.authorityToSellStatus} tone={PARTY_TONES[detail.sale.authorityToSellStatus] ?? 'slate'} />} />
               </div>
-              <p className="mt-2 text-[11px] text-slate-500">Seller contact details and evidence stay private to Veriq; buyers only see statuses and permitted facts.</p>
+              <p className="mt-2 text-[11px] text-muted-foreground">Seller contact details and evidence stay private to Veriq; buyers only see statuses and permitted facts.</p>
             </section>
 
             <section>
-              <h4 className="mb-2 text-sm font-bold text-navy-900">Document statuses</h4>
+              <h4 className="mb-2 text-sm font-bold text-foreground">Document statuses</h4>
               <TableScroll>
                 <table className="w-full min-w-[640px]">
-                  <thead className="bg-slate-50">
+                  <thead className="bg-[#ffffff08]">
                     <tr>
                       <th className={th}>Document</th>
                       <th className={th}>Status</th>
@@ -338,19 +338,19 @@ function AdminSalesInner() {
                       <th className={th}>Notes</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-[#ffffff12]">
                     {detail.documentChecklist.map((item) => {
                       const record = detail.documents.find((doc) => doc.documentType === item.key);
                       return (
-                        <tr key={item.key} className={record?.discrepancyFound ? 'bg-red-50/40' : undefined}>
+                        <tr key={item.key} className={record?.discrepancyFound ? 'bg-[#fb718510]' : undefined}>
                           <td className={td}><p className="max-w-[240px] text-xs font-semibold">{item.label}</p></td>
                           <td className={td}>
-                            {record ? <StatusBadge status={record.availability} label={DOCUMENT_STATUS_LABELS[record.availability] ?? humanize(record.availability)} /> : <span className="text-xs text-slate-400">Not recorded</span>}
-                            {record?.discrepancyFound && <p className="mt-1 text-[11px] font-semibold text-red-700">Discrepancy found</p>}
+                            {record ? <StatusBadge status={record.availability} label={DOCUMENT_STATUS_LABELS[record.availability] ?? humanize(record.availability)} /> : <span className="text-xs text-muted-foreground">Not recorded</span>}
+                            {record?.discrepancyFound && <p className="mt-1 text-[11px] font-semibold text-destructive">Discrepancy found</p>}
                           </td>
-                          <td className={td}><span className="text-xs">{record ? LEGAL_SEARCH_LABELS[record.legalSearchStatus] ?? humanize(record.legalSearchStatus) : '—'}</span>{record?.legalSearchReference && <p className="text-[11px] text-slate-500">{record.legalSearchReference}</p>}</td>
-                          <td className={td}><span className="whitespace-nowrap text-[11px] text-slate-500">{record ? dateTime(record.checkedAt) : '—'}</span></td>
-                          <td className={td}><p className="max-w-[200px] text-[11px] text-slate-600">{record?.notes || '—'}</p></td>
+                          <td className={td}><span className="text-xs">{record ? LEGAL_SEARCH_LABELS[record.legalSearchStatus] ?? humanize(record.legalSearchStatus) : '—'}</span>{record?.legalSearchReference && <p className="text-[11px] text-muted-foreground">{record.legalSearchReference}</p>}</td>
+                          <td className={td}><span className="whitespace-nowrap text-[11px] text-muted-foreground">{record ? dateTime(record.checkedAt) : '—'}</span></td>
+                          <td className={td}><p className="max-w-[200px] text-[11px] text-muted-foreground">{record?.notes || '—'}</p></td>
                         </tr>
                       );
                     })}
@@ -360,11 +360,11 @@ function AdminSalesInner() {
             </section>
 
             <section>
-              <h4 className="mb-2 text-sm font-bold text-navy-900">Publication readiness</h4>
+              <h4 className="mb-2 text-sm font-bold text-foreground">Publication readiness</h4>
               {detail.readiness.ready ? (
-                <p className="rounded-lg bg-emerald-50 p-3 text-xs text-emerald-800">All publication requirements are met.</p>
+                <p className="rounded-lg bg-[#10b98112] p-3 text-xs text-primary">All publication requirements are met.</p>
               ) : (
-                <ul className="list-disc space-y-1 rounded-lg bg-amber-50 p-3 pl-7 text-xs text-amber-900">
+                <ul className="list-disc space-y-1 rounded-lg bg-[#fbbf2410] p-3 pl-7 text-xs text-[#fcd34d]">
                   {detail.readiness.blockers.map((blocker) => (
                     <li key={blocker.code}>{blocker.message}</li>
                   ))}
@@ -374,23 +374,23 @@ function AdminSalesInner() {
 
             {detail.evidence.length > 0 && (
               <section>
-                <h4 className="mb-2 text-sm font-bold text-navy-900">Private evidence</h4>
+                <h4 className="mb-2 text-sm font-bold text-foreground">Private evidence</h4>
                 <ul className="space-y-1">
                   {detail.evidence.map((item) => (
                     <li key={item.id} className="text-xs">
-                      <a href={item.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-semibold text-emerald-700 underline">
+                      <a href={item.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-semibold text-primary underline">
                         {humanize(item.kind)}{item.fileName ? ` · ${item.fileName}` : ''} <ExternalLink className="h-3 w-3" />
                       </a>
-                      <span className="ml-2 text-slate-400">{dateTime(item.createdAt)}</span>
+                      <span className="ml-2 text-muted-foreground">{dateTime(item.createdAt)}</span>
                     </li>
                   ))}
                 </ul>
               </section>
             )}
 
-            <div className="flex flex-wrap gap-2 border-t border-slate-100 pt-4">
+            <div className="flex flex-wrap gap-2 border-t border-[#ffffff12] pt-4">
               {detail.sale.escalationOpen && (
-                <button type="button" onClick={() => setDialog('clear')} className="rounded-lg border border-emerald-200 px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50">Clear escalation</button>
+                <button type="button" onClick={() => setDialog('clear')} className="rounded-lg border border-[#10b98135] px-3 py-2 text-xs font-bold text-primary hover:bg-[#10b98112]">Clear escalation</button>
               )}
               <button
                 type="button"
@@ -399,12 +399,12 @@ function AdminSalesInner() {
                   setUnavailableReason(detail.sale.unavailableReason ?? 'sold');
                   setDialog('availability');
                 }}
-                className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-navy-700 hover:bg-slate-50"
+                className="rounded-lg border border-[#ffffff12] px-3 py-2 text-xs font-bold text-foreground hover:bg-[#ffffff08]"
               >
                 Change availability
               </button>
               {detail.sale.publicationStatus !== 'suspended' && (
-                <button type="button" onClick={() => setDialog('suspend')} className="rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50">Suspend listing</button>
+                <button type="button" onClick={() => setDialog('suspend')} className="rounded-lg border border-[#fb718530] px-3 py-2 text-xs font-bold text-destructive hover:bg-[#fb718510]">Suspend listing</button>
               )}
             </div>
           </div>

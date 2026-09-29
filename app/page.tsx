@@ -2,6 +2,7 @@ import { Hero } from "@/components/home/Hero";
 import { Features } from "@/components/home/Features";
 import { HowItWorks } from "@/components/home/HowItWorks";
 import { TrustStats } from "@/components/home/TrustStats";
+import { StreetIntelligencePromo } from "@/components/home/StreetIntelligencePromo";
 import { CTA } from "@/components/home/CTA";
 import { Categories } from "@/components/home/Categories";
 import { getPublicPageContent } from "@/lib/site-content";
@@ -16,6 +17,7 @@ export default async function HomePage() {
       <Categories />
       <HowItWorks content={content.how_it_works} />
       <TrustStats content={content.trust_stats} />
+      <StreetIntelligencePromo />
       <CTA content={content.cta} />
     </>
   );

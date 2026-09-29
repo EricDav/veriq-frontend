@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { formSchemasApi } from '@/lib/api/renter';
 import type { FormSchemaDefinition, SchemaField } from '@/types/renter';
+import { Eyebrow } from '@/components/ui';
 import { formatNaira, humanise } from './format';
 
 const schemaCache = new Map<string, FormSchemaDefinition | null>();
@@ -75,13 +76,11 @@ export function SchemaAnswerGrid({
   title,
   answers,
   schema,
-  tone = 'light',
   exclude = [],
 }: {
   title?: string;
   answers: Record<string, unknown> | null | undefined;
   schema: FormSchemaDefinition | null;
-  tone?: 'light' | 'dark';
   exclude?: string[];
 }) {
   const rows = Object.entries(answers ?? {})
@@ -90,15 +89,18 @@ export function SchemaAnswerGrid({
     .filter((row): row is { key: string; label: string; value: string } => !!row.value);
   if (!rows.length) return null;
 
-  const dark = tone === 'dark';
   return (
     <div>
-      {title && <p className={`mb-2 text-[11px] font-semibold uppercase tracking-wide ${dark ? 'text-white/50' : 'text-slate-400'}`}>{title}</p>}
-      <dl className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+      {title && (
+        <p className="mb-2">
+          <Eyebrow>{title}</Eyebrow>
+        </p>
+      )}
+      <dl className="grid grid-cols-1 gap-2 wide:grid-cols-2">
         {rows.map((row) => (
-          <div key={row.key} className={`rounded-xl px-3 py-2.5 ${dark ? 'border border-white/10 bg-white/5' : 'border border-slate-100 bg-slate-50'}`}>
-            <dt className={`text-[11px] ${dark ? 'text-white/55' : 'text-slate-500'}`}>{row.label}</dt>
-            <dd className={`mt-0.5 break-words text-sm font-medium ${dark ? 'text-white' : 'text-navy-900'}`}>{row.value}</dd>
+          <div key={row.key} className="rounded-unit border border-[#ffffff18] bg-[#070b1444] px-[17px] py-2.5">
+            <dt className="text-ui-sm text-muted-foreground">{row.label}</dt>
+            <dd className="mt-0.5 break-words text-ui-md font-medium text-foreground">{row.value}</dd>
           </div>
         ))}
       </dl>

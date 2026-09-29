@@ -604,12 +604,12 @@ export default function AdminContentPage() {
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
           <div className="flex items-center gap-3 mb-1">
-            <div className="h-10 w-10 rounded-xl bg-veriq-secondary/10 flex items-center justify-center">
-              <FileText className="h-5 w-5 text-veriq-secondary" />
+            <div className="h-10 w-10 rounded-xl bg-[#10b98112] flex items-center justify-center">
+              <FileText className="h-5 w-5 text-primary" />
             </div>
-            <h1 className="font-display text-2xl font-bold text-navy-900">Site Content</h1>
+            <h1 className="font-display text-2xl font-bold text-foreground">Site Content</h1>
           </div>
-          <p className="text-sm text-veriq-muted">
+          <p className="text-sm text-muted-foreground">
             Update static Home, About, Contact, FAQ, Privacy, and Terms content without changing code.
           </p>
         </div>
@@ -620,7 +620,7 @@ export default function AdminContentPage() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[280px_1fr]">
         <div className="card p-4 h-fit">
-          <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Editable sections</p>
+          <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Editable sections</p>
           <div className="space-y-2">
             {PRESETS.map((preset) => {
               const active = form.page === preset.page && form.section === preset.section;
@@ -632,13 +632,13 @@ export default function AdminContentPage() {
                   onClick={() => selectPreset(preset.page, preset.section)}
                   className={`w-full rounded-lg border px-3 py-2.5 text-left transition-colors ${
                     active
-                      ? 'border-veriq-secondary bg-veriq-secondary/5 text-veriq-secondary'
-                      : 'border-slate-200 text-navy-700 hover:border-slate-300'
+                      ? 'border-primary bg-[#10b98112] text-primary'
+                      : 'border-[#ffffff12] text-foreground hover:border-[#ffffff12]'
                   }`}
                 >
                   <span className="block text-sm font-semibold">{preset.label}</span>
-                  <span className="mt-1 flex items-center gap-1 text-[10px] text-slate-400">
-                    {exists && <ShieldCheck className="h-3 w-3 text-emerald-500" />}
+                  <span className="mt-1 flex items-center gap-1 text-[10px] text-muted-foreground">
+                    {exists && <ShieldCheck className="h-3 w-3 text-primary" />}
                     {preset.page}/{preset.section}
                   </span>
                 </button>
@@ -650,7 +650,7 @@ export default function AdminContentPage() {
         <form onSubmit={save} className="card p-6 space-y-5">
           {isLoading ? (
             <div className="flex items-center justify-center py-24">
-              <LoadingSpinner size="lg" className="text-veriq-secondary" />
+              <LoadingSpinner size="lg" className="text-primary" />
             </div>
           ) : (
             <>
@@ -706,13 +706,13 @@ export default function AdminContentPage() {
               </div>
 
               {isTestimonials && (
-                <div className="space-y-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <div className="space-y-4 rounded-xl border border-[#ffffff12] bg-[#ffffff08] p-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                      <h2 className="flex items-center gap-2 font-display text-base font-bold text-navy-900">
-                        <MessageSquareQuote className="h-5 w-5 text-veriq-secondary" /> Testimonials
+                      <h2 className="flex items-center gap-2 font-display text-base font-bold text-foreground">
+                        <MessageSquareQuote className="h-5 w-5 text-primary" /> Testimonials
                       </h2>
-                      <p className="mt-1 text-xs text-slate-500">
+                      <p className="mt-1 text-xs text-muted-foreground">
                         Only testimonials saved here are displayed on the public homepage.
                       </p>
                     </div>
@@ -726,21 +726,21 @@ export default function AdminContentPage() {
                   </div>
 
                   {structuredData === null ? (
-                    <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                    <div className="rounded-lg border border-[#fbbf2430] bg-[#fbbf2410] px-3 py-2 text-xs text-[#fcd34d]">
                       Fix the metadata JSON below to use the testimonial editor again.
                     </div>
                   ) : (Array.isArray(structuredData.testimonials) && structuredData.testimonials.length > 0) ? (
                     <div className="space-y-3">
                       {(structuredData.testimonials as TestimonialItem[]).map((testimonial, index) => (
-                        <div key={index} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                        <div key={index} className="rounded-xl border border-[#ffffff12] bg-card p-4 shadow-sm">
                           <div className="mb-3 flex items-center justify-between gap-3">
-                            <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
+                            <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
                               Testimonial {index + 1}
                             </p>
                             <button
                               type="button"
                               onClick={() => removeTestimonial(index)}
-                              className="rounded-lg border border-red-100 p-2 text-red-500 transition-colors hover:bg-red-50"
+                              className="rounded-lg border border-[#fb718530] p-2 text-destructive transition-colors hover:bg-[#fb718510]"
                               aria-label={`Remove testimonial ${index + 1}`}
                             >
                               <Trash2 className="h-4 w-4" />
@@ -789,21 +789,21 @@ export default function AdminContentPage() {
                       ))}
                     </div>
                   ) : (
-                    <div className="rounded-xl border border-dashed border-slate-300 bg-white px-5 py-10 text-center">
-                      <MessageSquareQuote className="mx-auto h-8 w-8 text-slate-300" />
-                      <p className="mt-3 text-sm font-semibold text-navy-900">No testimonials added</p>
-                      <p className="mt-1 text-xs text-slate-500">The homepage testimonial section stays hidden until one is saved.</p>
+                    <div className="rounded-xl border border-dashed border-[#ffffff12] bg-card px-5 py-10 text-center">
+                      <MessageSquareQuote className="mx-auto h-8 w-8 text-muted-foreground" />
+                      <p className="mt-3 text-sm font-semibold text-foreground">No testimonials added</p>
+                      <p className="mt-1 text-xs text-muted-foreground">The homepage testimonial section stays hidden until one is saved.</p>
                     </div>
                   )}
                 </div>
               )}
 
               {isFAQQuestions && (
-                <div className="space-y-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <div className="space-y-5 rounded-xl border border-[#ffffff12] bg-[#ffffff08] p-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                      <h2 className="font-display text-base font-bold text-navy-900">FAQ Questions & Responses</h2>
-                      <p className="text-xs text-slate-500">Edit each question, answer, and category without touching JSON.</p>
+                      <h2 className="font-display text-base font-bold text-foreground">FAQ Questions & Responses</h2>
+                      <p className="text-xs text-muted-foreground">Edit each question, answer, and category without touching JSON.</p>
                     </div>
                     <button type="button" onClick={openFAQQuestionModal} className="btn-primary !py-2 !text-xs inline-flex items-center gap-2">
                       <Plus className="h-4 w-4" /> Add Question
@@ -811,20 +811,20 @@ export default function AdminContentPage() {
                   </div>
 
                   {structuredData === null ? (
-                    <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                    <div className="rounded-lg border border-[#fbbf2430] bg-[#fbbf2410] px-3 py-2 text-xs text-[#fcd34d]">
                       Fix the metadata JSON below to use the structured FAQ editor again.
                     </div>
                   ) : (
                     <>
                       <div className="space-y-3">
                         {(Array.isArray(structuredData.faqs) ? (structuredData.faqs as FAQItem[]) : []).map((faq, index) => (
-                          <div key={index} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                          <div key={index} className="rounded-xl border border-[#ffffff12] bg-card p-4 shadow-sm">
                             <div className="mb-3 flex items-center justify-between gap-3">
-                              <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Question {index + 1}</p>
+                              <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Question {index + 1}</p>
                               <button
                                 type="button"
                                 onClick={() => removeFAQItem(index)}
-                                className="rounded-lg border border-red-100 p-2 text-red-500 transition-colors hover:bg-red-50"
+                                className="rounded-lg border border-[#fb718530] p-2 text-destructive transition-colors hover:bg-[#fb718510]"
                                 aria-label={`Remove question ${index + 1}`}
                               >
                                 <Trash2 className="h-4 w-4" />
@@ -865,11 +865,11 @@ export default function AdminContentPage() {
                         ))}
                       </div>
 
-                      <div className="rounded-xl border border-slate-200 bg-white p-4">
+                      <div className="rounded-xl border border-[#ffffff12] bg-card p-4">
                         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                           <div>
-                            <h3 className="text-sm font-bold text-navy-900">FAQ Categories</h3>
-                            <p className="text-xs text-slate-500">These drive the category filter chips on the FAQ page.</p>
+                            <h3 className="text-sm font-bold text-foreground">FAQ Categories</h3>
+                            <p className="text-xs text-muted-foreground">These drive the category filter chips on the FAQ page.</p>
                           </div>
                           <button type="button" onClick={addFAQCategory} className="btn-outline !py-2 !text-xs inline-flex items-center gap-2">
                             <Plus className="h-4 w-4" /> Add Category
@@ -893,7 +893,7 @@ export default function AdminContentPage() {
                               <button
                                 type="button"
                                 onClick={() => removeFAQCategory(index)}
-                                className="rounded-lg border border-red-100 px-3 text-red-500 transition-colors hover:bg-red-50"
+                                className="rounded-lg border border-[#fb718530] px-3 text-destructive transition-colors hover:bg-[#fb718510]"
                                 aria-label={`Remove category ${index + 1}`}
                               >
                                 <Trash2 className="mx-auto h-4 w-4" />
@@ -907,8 +907,8 @@ export default function AdminContentPage() {
                 </div>
               )}
 
-              <details className="rounded-xl border border-slate-200 bg-white p-4" open={!isFAQQuestions && !isTestimonials}>
-                <summary className="cursor-pointer text-sm font-bold text-navy-900">Advanced Metadata JSON</summary>
+              <details className="rounded-xl border border-[#ffffff12] bg-card p-4" open={!isFAQQuestions && !isTestimonials}>
+                <summary className="cursor-pointer text-sm font-bold text-foreground">Advanced Metadata JSON</summary>
                 <div className="mt-3">
                   <label className="label">Metadata JSON</label>
                   <textarea
@@ -921,9 +921,9 @@ export default function AdminContentPage() {
               </details>
 
               {form.section === 'hero' && (
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <div className="rounded-xl border border-[#ffffff12] bg-[#ffffff08] p-4">
                   <label className="label flex items-center gap-2">
-                    <ImageIcon className="h-4 w-4 text-veriq-secondary" /> Hero Image
+                    <ImageIcon className="h-4 w-4 text-primary" /> Hero Image
                   </label>
                   <input
                     value={(() => {
@@ -957,7 +957,7 @@ export default function AdminContentPage() {
                         }}
                       />
                     </label>
-                    <p className="text-xs text-slate-500">Saved as metadata key <span className="font-mono">heroImageUrl</span>.</p>
+                    <p className="text-xs text-muted-foreground">Saved as metadata key <span className="font-mono">heroImageUrl</span>.</p>
                   </div>
                 </div>
               )}
@@ -1013,7 +1013,7 @@ export default function AdminContentPage() {
           <button
             type="button"
             onClick={() => setIsFAQQuestionModalOpen(false)}
-            className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-medium text-navy-700 transition-colors hover:bg-slate-50"
+            className="rounded-xl border border-[#ffffff12] px-5 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-[#ffffff08]"
           >
             Cancel
           </button>
@@ -1073,13 +1073,13 @@ export default function AdminContentPage() {
             maxLength={3}
             placeholder="DO"
           />
-          <p className="mt-1 text-xs text-slate-500">Generated from the customer name when left blank.</p>
+          <p className="mt-1 text-xs text-muted-foreground">Generated from the customer name when left blank.</p>
         </div>
         <div className="flex justify-end gap-3 pt-2">
           <button
             type="button"
             onClick={() => setIsTestimonialModalOpen(false)}
-            className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-medium text-navy-700 transition-colors hover:bg-slate-50"
+            className="rounded-xl border border-[#ffffff12] px-5 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-[#ffffff08]"
           >
             Cancel
           </button>

@@ -32,16 +32,16 @@ export function CommunityMembershipGate({ children }: { children: React.ReactNod
   if (isMember) return <>{children}</>;
 
   return (
-    <div className="min-h-screen bg-veriq-surface pt-24">
+    <div className="min-h-screen bg-background pt-24">
       <main className="mx-auto max-w-xl px-4 py-16 text-center sm:px-6">
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#10b98112] text-primary">
           <Users className="h-7 w-7" />
         </div>
-        <h1 className="mt-5 font-display text-2xl font-black text-navy-900">Join the Contributor Community</h1>
-        <p className="mt-3 text-sm leading-6 text-veriq-muted">
+        <h1 className="mt-5 font-display text-2xl font-black text-foreground">Join the Contributor Community</h1>
+        <p className="mt-3 text-sm leading-6 text-muted-foreground">
           Submit Street Intelligence for a street you know to become a member and access community reports and eligible Free Unlock properties.
         </p>
-        <p className="mt-4 inline-flex items-center gap-2 text-xs font-semibold text-emerald-700">
+        <p className="mt-4 inline-flex items-center gap-2 text-xs font-semibold text-primary">
           <ShieldCheck className="h-4 w-4" /> Membership is earned by contributing
         </p>
         <div className="mt-7 flex justify-center">

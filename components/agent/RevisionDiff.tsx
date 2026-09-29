@@ -76,26 +76,26 @@ export function RevisionDiff({ revision }: { revision: ListingRevision }) {
   return (
     <div className="space-y-2">
       {rows.length === 0 ? (
-        <p className="text-xs text-slate-500">No value differences against the approved snapshot.</p>
+        <p className="text-xs text-muted-foreground">No value differences against the approved snapshot.</p>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-slate-100">
+        <div className="overflow-x-auto rounded-xl border border-[#ffffff10]">
           <table className="w-full min-w-[480px] text-xs">
-            <thead className="bg-slate-50 text-left text-[11px] uppercase tracking-wide text-slate-400">
+            <thead className="bg-[#070b1444] text-left text-[11px] uppercase tracking-wide text-muted-foreground">
               <tr>
                 <th className="px-3 py-2 font-medium">Field</th>
                 <th className="px-3 py-2 font-medium">Approved (before)</th>
                 <th className="px-3 py-2 font-medium">Proposed (after)</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-[#ffffff10]">
               {rows.map((row) => (
                 <tr key={row.path} className="align-top">
-                  <td className="px-3 py-2 font-medium text-navy-900">{pathLabel(row.path)}</td>
-                  <td className="px-3 py-2 text-red-700">
-                    <span className="rounded bg-red-50 px-1.5 py-0.5 line-through decoration-red-300">{display(row.before)}</span>
+                  <td className="px-3 py-2 font-medium text-foreground">{pathLabel(row.path)}</td>
+                  <td className="px-3 py-2 text-[#fda4af]">
+                    <span className="rounded bg-[#fb718510] px-1.5 py-0.5 line-through decoration-[#fb718560]">{display(row.before)}</span>
                   </td>
-                  <td className="px-3 py-2 text-emerald-800">
-                    <span className="rounded bg-emerald-50 px-1.5 py-0.5">{display(row.after)}</span>
+                  <td className="px-3 py-2 text-[#6ee7b7]">
+                    <span className="rounded bg-[#10b98112] px-1.5 py-0.5">{display(row.after)}</span>
                   </td>
                 </tr>
               ))}
@@ -104,7 +104,7 @@ export function RevisionDiff({ revision }: { revision: ListingRevision }) {
         </div>
       )}
       {removed.length > 0 && (
-        <p className="rounded-lg bg-amber-50 px-3 py-2 text-[11px] text-amber-800">
+        <p className="rounded-lg bg-[#fbbf2410] px-3 py-2 text-[11px] text-[#fcd34d]">
           Answers that no longer apply to the proposed structure and will be removed (kept in audit history): {removed.map(pathLabel).join(', ')}
         </p>
       )}

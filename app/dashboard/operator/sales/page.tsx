@@ -17,6 +17,7 @@ import {
   formatDateTime,
 } from '@/components/listing-forms';
 import { formatNaira } from '@/components/renter/format';
+import { buttonClass } from '@/components/ui';
 
 const SUBTYPE_LABELS: Record<string, string> = { built_property: 'Built Property', land: 'Land' };
 
@@ -49,15 +50,15 @@ function OwnerSaleListings() {
     <div className="mx-auto max-w-4xl space-y-5">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <h1 className="flex items-center gap-2 font-display text-2xl font-bold text-navy-900">
-            <Landmark className="h-5 w-5 text-veriq-secondary" /> Property for Sale
+          <h1 className="flex items-center gap-2 font-display text-2xl font-bold text-foreground">
+            <Landmark className="h-5 w-5 text-primary" /> Property for Sale
           </h1>
-          <p className="mt-1 text-sm leading-6 text-slate-500">
+          <p className="mt-1 text-sm leading-6 text-muted-foreground">
             Ask Veriq to represent a property you own. Veriq visits, reviews your documents and signs a sales
             representation agreement with you before publishing.
           </p>
         </div>
-        <Link href="/dashboard/operator/sales/new" className="btn-primary flex-shrink-0 !py-2.5">
+        <Link href="/dashboard/operator/sales/new" className={buttonClass('primary', 'default', 'flex-shrink-0')}>
           <Plus className="h-4 w-4" /> Submit a property for sale
         </Link>
       </header>
@@ -89,11 +90,11 @@ function OwnerSaleListings() {
                 <li key={item.id}>
                   <Link
                     href={`/dashboard/operator/sales/${item.id}`}
-                    className="flex flex-col gap-3 rounded-xl border border-slate-200 p-4 transition-colors hover:border-veriq-secondary sm:flex-row sm:items-center sm:justify-between"
+                    className="flex flex-col gap-3 rounded-xl border border-[#ffffff18] p-4 transition-colors hover:border-primary sm:flex-row sm:items-center sm:justify-between"
                   >
                     <div className="min-w-0 space-y-1">
-                      <p className="truncate font-semibold text-navy-900">{item.title}</p>
-                      <p className="text-xs text-slate-500">
+                      <p className="truncate font-semibold text-foreground">{item.title}</p>
+                      <p className="text-xs text-muted-foreground">
                         {SUBTYPE_LABELS[item.subtype] ?? item.subtype} · {formatNaira(item.askingPrice)} · updated{' '}
                         {formatDateTime(item.updatedAt)}
                       </p>
@@ -103,7 +104,7 @@ function OwnerSaleListings() {
                         {item.saleOutcome && <StatusBadge tone="slate">Sale {item.saleOutcome}</StatusBadge>}
                       </div>
                     </div>
-                    <ChevronRight className="h-4 w-4 flex-shrink-0 text-slate-400" />
+                    <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
                   </Link>
                 </li>
               );

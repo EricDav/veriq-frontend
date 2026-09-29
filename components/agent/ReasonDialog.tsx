@@ -44,7 +44,7 @@ export function ReasonDialog({
   return (
     <Modal isOpen={isOpen} onClose={() => !busy && onClose()} title={title} size="md">
       <div className="space-y-4">
-        {description && <div className="text-sm text-slate-600">{description}</div>}
+        {description && <div className="text-sm text-muted-foreground">{description}</div>}
         <Field label={label} hint={optional ? 'Optional' : `At least ${minLength} characters`}>
           <textarea
             className="input resize-y !py-2 text-sm"

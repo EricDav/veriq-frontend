@@ -1,3 +1,4 @@
+import type { BadgeTone } from '@/components/ui';
 import { ApiError } from '@/lib/api';
 
 export const humanize = (value: string | null | undefined) =>
@@ -53,25 +54,30 @@ export const toNumber = (value: number | string | null | undefined): number | nu
   return Number.isFinite(parsed) ? parsed : null;
 };
 
-export const PUBLICATION_STATUS_STYLES: Record<string, string> = {
-  draft: 'bg-slate-100 text-slate-600',
-  submitted: 'bg-blue-50 text-blue-700',
-  verification_in_progress: 'bg-indigo-50 text-indigo-700',
-  needs_correction: 'bg-amber-50 text-amber-700',
-  ready_to_publish: 'bg-teal-50 text-teal-700',
-  published: 'bg-emerald-50 text-emerald-700',
-  suspended: 'bg-red-50 text-red-700',
-  archived: 'bg-slate-200 text-slate-600',
+/**
+ * The prototype's palette has four badge tones only — emerald, neutral, amber, red — so every status
+ * map below lands on one of them rather than inventing a colour per status (design system: "Amber and
+ * red appear as badge and notice variants only").
+ */
+export const PUBLICATION_STATUS_TONES: Record<string, BadgeTone> = {
+  draft: 'neutral',
+  submitted: 'amber',
+  verification_in_progress: 'amber',
+  needs_correction: 'red',
+  ready_to_publish: 'success',
+  published: 'success',
+  suspended: 'red',
+  archived: 'neutral',
 };
 
-export const CASE_STATUS_STYLES: Record<string, string> = {
-  pending: 'bg-blue-50 text-blue-700',
-  in_progress: 'bg-indigo-50 text-indigo-700',
-  needs_correction: 'bg-amber-50 text-amber-700',
-  ready_to_publish: 'bg-teal-50 text-teal-700',
-  published: 'bg-emerald-50 text-emerald-700',
-  suspended: 'bg-red-50 text-red-700',
-  closed: 'bg-slate-200 text-slate-600',
+export const CASE_STATUS_TONES: Record<string, BadgeTone> = {
+  pending: 'amber',
+  in_progress: 'amber',
+  needs_correction: 'red',
+  ready_to_publish: 'success',
+  published: 'success',
+  suspended: 'red',
+  closed: 'neutral',
 };
 
 export const CATEGORY_LABELS: Record<string, string> = {
@@ -89,9 +95,9 @@ export const IDENTITY_STATUS_LABELS: Record<string, string> = {
   identity_rejected: 'Identity rejected',
 };
 
-export const IDENTITY_STATUS_STYLES: Record<string, string> = {
-  account_submitted: 'bg-slate-100 text-slate-600',
-  identity_pending: 'bg-amber-50 text-amber-700',
-  identity_verified: 'bg-emerald-50 text-emerald-700',
-  identity_rejected: 'bg-red-50 text-red-700',
+export const IDENTITY_STATUS_TONES: Record<string, BadgeTone> = {
+  account_submitted: 'neutral',
+  identity_pending: 'amber',
+  identity_verified: 'success',
+  identity_rejected: 'red',
 };

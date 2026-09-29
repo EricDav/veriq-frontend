@@ -39,18 +39,20 @@ const ICONS: Record<ToastVariant, React.ReactNode> = {
   info: <Info className="h-4 w-4 flex-shrink-0" />,
 };
 
+// On the prototype's tokens: the palette has no warning colour of its own beyond amber and
+// --destructive, so a toast borrows the same tints as Badge and Notice.
 const STYLES: Record<ToastVariant, string> = {
-  success: 'bg-emerald-50 border-emerald-200 text-emerald-800',
-  error: 'bg-red-50 border-red-200 text-red-800',
-  warning: 'bg-amber-50 border-amber-200 text-amber-800',
-  info: 'bg-blue-50 border-blue-200 text-blue-800',
+  success: 'border-[#10b98135] bg-card text-[#6ee7b7]',
+  error: 'border-[#fb718530] bg-card text-[#fda4af]',
+  warning: 'border-[#fbbf2430] bg-card text-[#fcd34d]',
+  info: 'border-border bg-card text-foreground',
 };
 
 const ICON_STYLES: Record<ToastVariant, string> = {
-  success: 'text-emerald-500',
-  error: 'text-red-500',
-  warning: 'text-amber-500',
-  info: 'text-blue-500',
+  success: 'text-primary',
+  error: 'text-destructive',
+  warning: 'text-[#fcd34d]',
+  info: 'text-muted-foreground',
 };
 
 function ToastItem({
@@ -62,14 +64,14 @@ function ToastItem({
 }) {
   return (
     <div
-      className={`flex items-start gap-3 rounded-xl border px-4 py-3 shadow-lg text-sm max-w-sm animate-fade-up ${STYLES[toast.variant]}`}
+      className={`flex max-w-sm animate-fade-up items-start gap-3 rounded-xl border px-4 py-3 text-ui-md shadow-2xl ${STYLES[toast.variant]}`}
       role="alert"
     >
       <span className={ICON_STYLES[toast.variant]}>{ICONS[toast.variant]}</span>
       <p className="flex-1 font-medium leading-snug">{toast.message}</p>
       <button
         onClick={() => onDismiss(toast.id)}
-        className="opacity-50 hover:opacity-100 transition-opacity -mt-0.5"
+        className="-mt-0.5 opacity-50 transition-opacity hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         aria-label="Dismiss"
       >
         <X className="h-3.5 w-3.5" />

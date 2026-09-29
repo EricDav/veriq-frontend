@@ -85,7 +85,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Veriq Property" />
       </head>
-      <body className="bg-white text-navy-900 antialiased">
+      <body className="bg-background text-foreground antialiased">
         <AuthProvider>
           <ToastProvider>
             <PWARegister />

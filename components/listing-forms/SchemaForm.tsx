@@ -100,28 +100,47 @@ export function SchemaForm({
           {field.label}
           {field.fixed === undefined &&
             (required ? (
-              <span className="ml-1 text-red-500" aria-label="required">*</span>
+              <span className="ml-1 text-destructive" aria-label="required">*</span>
             ) : (
-              <span className="ml-1.5 text-xs font-normal text-slate-400">Optional</span>
+              <span className="ml-1.5 text-xs font-normal text-muted-foreground">Optional</span>
             ))}
         </label>
         {field.fixed !== undefined ? (
-          <p className="flex items-center gap-2 rounded-lg border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-            <Lock className="h-3.5 w-3.5" /> Fixed at {String(field.fixed)} for {schema.label}
+          <p className="flex items-center gap-2 rounded-unit border border-dashed border-[#ffffff25] bg-[#070b1444] px-4 py-3 text-ui-md text-muted-foreground">
+            <Lock aria-hidden="true" className="h-3.5 w-3.5" /> Fixed at {String(field.fixed)} for {schema.label}
           </p>
         ) : !editable ? (
-          <p className={cn('rounded-lg bg-slate-50 px-4 py-3 text-sm', isEmptyValue(current) ? 'text-slate-400' : 'text-navy-900')}>
+          <p className={cn('rounded-unit border border-[#ffffff18] bg-[#070b1444] px-4 py-3 text-ui-md', isEmptyValue(current) ? 'text-muted-foreground' : 'text-foreground')}>
             {displayAnswer(field, current)}
           </p>
         ) : (
-          <FieldControl field={field} id={inputId} value={current} onChange={set} invalid={fieldIssues.length > 0} />
+          <FieldControl
+            field={field}
+            id={inputId}
+            value={current}
+            onChange={set}
+            invalid={fieldIssues.length > 0}
+            describedBy={
+              [field.help ? `${inputId}-hint` : null, fieldIssues.length ? `${inputId}-error` : null]
+                .filter(Boolean)
+                .join(' ') || undefined
+            }
+          />
         )}
-        {field.help && <p className="mt-1 text-xs text-slate-500">{field.help}</p>}
-        {fieldIssues.map((message) => (
-          <p key={message} className="mt-1 text-xs font-medium text-red-600">
-            {message}
+        {field.help && (
+          <p id={`${inputId}-hint`} className="mt-1 text-xs text-muted-foreground">
+            {field.help}
           </p>
-        ))}
+        )}
+        {fieldIssues.length > 0 && (
+          <div id={`${inputId}-error`} role="alert">
+            {fieldIssues.map((message) => (
+              <p key={message} className="mt-1 text-xs font-medium text-destructive">
+                {message}
+              </p>
+            ))}
+          </div>
+        )}
       </div>
     );
   };
@@ -138,14 +157,14 @@ export function SchemaForm({
       <fieldset key={group} className="space-y-4">
         {(groups.length > 1 || groupTitles?.[group]) && (
           <legend className="mb-2">
-            <span className="font-display text-sm font-semibold uppercase tracking-wide text-slate-500">
+            <span className="font-display text-ui-xs font-semibold uppercase tracking-[0.18em] text-primary">
               {groupTitles?.[group] ?? DEFAULT_GROUP_TITLES[group]}
             </span>
-            {description && <span className="mt-0.5 block text-xs text-slate-500">{description}</span>}
+            {description && <span className="mt-1 block text-xs text-muted-foreground">{description}</span>}
           </legend>
         )}
         {groups.length === 1 && !groupTitles?.[group] && description && (
-          <p className="text-xs text-slate-500">{description}</p>
+          <p className="text-xs text-muted-foreground">{description}</p>
         )}
         {plain.length > 0 && (
           <div className="grid gap-4 sm:grid-cols-2">{plain.map((field) => renderField(field, null))}</div>
@@ -158,7 +177,7 @@ export function SchemaForm({
               ? schema.fields.find((field) => field.key === component.countField)
               : undefined;
             return (
-              <p key={component.key} className="rounded-lg border border-dashed border-slate-200 px-4 py-3 text-xs text-slate-500">
+              <p key={component.key} className="rounded-unit border border-dashed border-[#ffffff25] px-4 py-3 text-xs text-muted-foreground">
                 {countField
                   ? `Enter "${countField.label}" to add a section for each ${component.label.toLowerCase()}.`
                   : `No ${component.label.toLowerCase()} sections apply to ${schema.label}.`}
@@ -166,8 +185,8 @@ export function SchemaForm({
             );
           }
           return own.map((instance) => (
-            <div key={`${group}-${instance.key}`} className="rounded-xl border border-slate-200 p-4">
-              <p className="mb-3 text-sm font-semibold text-navy-900">{instance.label}</p>
+            <div key={`${group}-${instance.key}`} className="rounded-unit border border-[#ffffff18] bg-[#070b1444] p-[17px]">
+              <p className="mb-3 text-ui-md font-semibold text-foreground">{instance.label}</p>
               <div className="grid gap-4 sm:grid-cols-2">
                 {componentFields.map((field) => renderField(field, instance))}
               </div>
@@ -196,14 +215,19 @@ function FieldControl({
   value,
   onChange,
   invalid,
+  describedBy,
 }: {
   field: FieldDef;
   id: string;
   value: unknown;
   onChange: (value: unknown) => void;
   invalid: boolean;
+  /** Ids of the help and error lines this control is annotated by, so a screen reader reads both. */
+  describedBy?: string;
 }) {
-  const inputClass = cn('input', invalid && 'border-red-400 focus:border-red-500 focus:ring-red-100');
+  const inputClass = cn('input', invalid && 'border-destructive focus:border-destructive focus:ring-[#fb718540]');
+  /** Applied to every control in this switch, so help and errors are announced with the field. */
+  const a11y = { 'aria-invalid': invalid || undefined, 'aria-describedby': describedBy };
 
   switch (field.type) {
     case 'select':
@@ -211,7 +235,7 @@ function FieldControl({
     case 'presence':
     case 'ordinal':
       return (
-        <select id={id} className={inputClass} value={typeof value === 'string' ? value : ''} onChange={(event) => onChange(event.target.value)}>
+        <select id={id} {...a11y} className={inputClass} value={typeof value === 'string' ? value : ''} onChange={(event) => onChange(event.target.value)}>
           <option value="">Select…</option>
           {(field.options ?? []).map((option) => (
             <option key={option.value} value={option.value}>
@@ -229,7 +253,7 @@ function FieldControl({
         return onChange([...selected.filter((item) => field.type !== 'defects' || item !== 'none_observed'), option]);
       };
       return (
-        <div id={id} role="group" className={cn('flex flex-wrap gap-2 rounded-lg', invalid && 'ring-2 ring-red-200')}>
+        <div id={id} role="group" {...a11y} className={cn('flex flex-wrap gap-2 rounded-unit', invalid && 'ring-2 ring-[#fb718540]')}>
           {(field.options ?? []).map((option) => {
             const active = selected.includes(option.value);
             return (
@@ -240,7 +264,10 @@ function FieldControl({
                 onClick={() => toggle(option.value)}
                 className={cn(
                   'rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors',
-                  active ? 'border-veriq-secondary bg-veriq-secondary text-white' : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+                  active
+                    ? 'border-primary bg-primary text-primary-foreground'
+                    : 'border-[#ffffff18] bg-[#070b1444] text-muted-foreground hover:border-[#10b98170] hover:text-foreground',
                 )}
               >
                 {option.label}
@@ -255,10 +282,11 @@ function FieldControl({
       return (
         <div className="relative">
           {field.type === 'money' && (
-            <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm text-slate-400">₦</span>
+            <span aria-hidden="true" className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">₦</span>
           )}
           <input
             id={id}
+            {...a11y}
             type="number"
             inputMode="numeric"
             step={1}
@@ -279,6 +307,7 @@ function FieldControl({
       return (
         <textarea
           id={id}
+          {...a11y}
           rows={3}
           maxLength={field.max ?? 2000}
           className={inputClass}
@@ -290,6 +319,7 @@ function FieldControl({
       return (
         <input
           id={id}
+          {...a11y}
           type="url"
           inputMode="url"
           placeholder="https://"
@@ -303,6 +333,7 @@ function FieldControl({
       return (field.max ?? 2000) > 300 ? (
         <textarea
           id={id}
+          {...a11y}
           rows={3}
           maxLength={field.max ?? 2000}
           className={inputClass}
@@ -312,6 +343,7 @@ function FieldControl({
       ) : (
         <input
           id={id}
+          {...a11y}
           type="text"
           maxLength={field.max}
           className={inputClass}

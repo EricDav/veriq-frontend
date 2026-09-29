@@ -56,9 +56,9 @@ const EVIDENCE_SOURCES: Array<{ value: 'renter' | 'agent' | 'operator'; label: s
 function JsonBlock({ label, value }: { label: string; value: Record<string, unknown> | null }) {
   if (!value) return null;
   return (
-    <details className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-      <summary className="cursor-pointer text-xs font-bold text-navy-900">{label}</summary>
-      <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap break-words text-[11px] text-slate-600">{JSON.stringify(value, null, 2)}</pre>
+    <details className="rounded-xl border border-[#ffffff12] bg-[#ffffff08] p-3">
+      <summary className="cursor-pointer text-xs font-bold text-foreground">{label}</summary>
+      <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap break-words text-[11px] text-muted-foreground">{JSON.stringify(value, null, 2)}</pre>
     </details>
   );
 }
@@ -171,7 +171,7 @@ export default function AdminRefundDetailPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
-      <Link href="/dashboard/admin/refunds" className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-navy-900">
+      <Link href="/dashboard/admin/refunds" className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground">
         <ArrowLeft className="h-4 w-4" /> Back to refund queue
       </Link>
 
@@ -191,7 +191,7 @@ export default function AdminRefundDetailPage() {
       ) : refund ? (
         <>
           {creditNotice && (
-            <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4 text-sm text-emerald-900">
+            <div className="rounded-xl border border-[#10b98135] bg-[#10b98112] p-4 text-sm text-primary">
               <p className="font-semibold">Refund credited: {naira(creditNotice.credited)} to the renter’s Veriq Wallet.</p>
               <p className="mt-1">Renter available balance: {naira(creditNotice.balance)}.</p>
               {creditNotice.message && <p className="mt-1 text-xs">{creditNotice.message}</p>}
@@ -199,15 +199,15 @@ export default function AdminRefundDetailPage() {
           )}
 
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <div className="card p-4"><p className="text-[11px] font-semibold uppercase text-slate-400">Status</p><div className="mt-1"><StatusBadge status={refund.status} /></div></div>
-            <div className="card p-4"><p className="text-[11px] font-semibold uppercase text-slate-400">Charged</p><p className="font-display text-xl font-black text-navy-900">{naira(refund.chargedAmount)}</p></div>
-            <div className="card p-4"><p className="text-[11px] font-semibold uppercase text-slate-400">Credited</p><p className="font-display text-xl font-black text-navy-900">{refund.creditedAmount === null ? '—' : naira(refund.creditedAmount)}</p></div>
-            <div className="card p-4"><p className="text-[11px] font-semibold uppercase text-slate-400">Requested</p><p className="text-sm font-semibold text-navy-900">{dateTime(refund.createdAt)}</p></div>
+            <div className="card p-4"><p className="text-[11px] font-semibold uppercase text-muted-foreground">Status</p><div className="mt-1"><StatusBadge status={refund.status} /></div></div>
+            <div className="card p-4"><p className="text-[11px] font-semibold uppercase text-muted-foreground">Charged</p><p className="font-display text-xl font-black text-foreground">{naira(refund.chargedAmount)}</p></div>
+            <div className="card p-4"><p className="text-[11px] font-semibold uppercase text-muted-foreground">Credited</p><p className="font-display text-xl font-black text-foreground">{refund.creditedAmount === null ? '—' : naira(refund.creditedAmount)}</p></div>
+            <div className="card p-4"><p className="text-[11px] font-semibold uppercase text-muted-foreground">Requested</p><p className="text-sm font-semibold text-foreground">{dateTime(refund.createdAt)}</p></div>
           </div>
 
           {(refund.flaggedForReview || !refund.timely || refund.createdByAdminId) && (
-            <div className="flex flex-wrap items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-              <ShieldAlert className="h-5 w-5 flex-shrink-0 text-amber-600" />
+            <div className="flex flex-wrap items-center gap-3 rounded-xl border border-[#fbbf2430] bg-[#fbbf2410] p-4 text-sm text-[#fcd34d]">
+              <ShieldAlert className="h-5 w-5 flex-shrink-0 text-[#fcd34d]" />
               <div className="space-y-1">
                 {refund.flaggedForReview && (
                   <p className="flex items-center gap-1.5"><Flag className="h-3.5 w-3.5" /> Flagged for review{refund.flagReason ? `: ${refund.flagReason}` : ''}. A flag never denies a legitimate refund on its own.</p>
@@ -220,20 +220,20 @@ export default function AdminRefundDetailPage() {
 
           {open && (
             <div className="card flex flex-col gap-3 p-4 hover:shadow-card sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-sm text-slate-600">
+              <p className="text-sm text-muted-foreground">
                 Approving credits {naira(refund.chargedAmount)} to the renter’s Veriq Wallet.{' '}
                 {refund.caseType === 'unlock_purchase'
                   ? 'It also terminates the unlock access and cancels or reverses the linked Agent earning.'
                   : 'The separately paid valid unlock, its access and its legitimate Agent earning are preserved.'}
               </p>
               <div className="flex flex-wrap gap-2">
-                <button type="button" onClick={() => setDialog('evidence')} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-navy-700 hover:bg-slate-50">
+                <button type="button" onClick={() => setDialog('evidence')} className="inline-flex items-center gap-1.5 rounded-lg border border-[#ffffff12] px-3 py-2 text-xs font-bold text-foreground hover:bg-[#ffffff08]">
                   <MessageSquare className="h-3.5 w-3.5" /> Request evidence
                 </button>
-                <button type="button" onClick={() => setDialog('reject')} className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50">
+                <button type="button" onClick={() => setDialog('reject')} className="inline-flex items-center gap-1.5 rounded-lg border border-[#fb718530] px-3 py-2 text-xs font-bold text-destructive hover:bg-[#fb718510]">
                   <XCircle className="h-3.5 w-3.5" /> Reject
                 </button>
-                <button type="button" onClick={() => { setResponsibleSource(refund.responsibleSource ?? ''); setDialog('approve'); }} className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-700">
+                <button type="button" onClick={() => { setResponsibleSource(refund.responsibleSource ?? ''); setDialog('approve'); }} className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-bold text-foreground hover:bg-[#34d399]">
                   <CheckCircle2 className="h-3.5 w-3.5" /> Approve &amp; credit wallet
                 </button>
               </div>
@@ -267,7 +267,7 @@ export default function AdminRefundDetailPage() {
                 <KeyValue
                   label="Renter"
                   value={
-                    <Link href={`/dashboard/admin/ledger?tab=wallet&userId=${encodeURIComponent(refund.userId)}`} className="font-mono text-emerald-700 underline">
+                    <Link href={`/dashboard/admin/ledger?tab=wallet&userId=${encodeURIComponent(refund.userId)}`} className="font-mono text-primary underline">
                       {refund.userId}
                     </Link>
                   }
@@ -286,14 +286,14 @@ export default function AdminRefundDetailPage() {
                 <StatusBadge status={refund.caseType} label={REFUND_CASE_TYPE_LABELS[refund.caseType]} tone={refund.caseType === 'excess_payment' ? 'purple' : 'blue'} />
                 <StatusBadge status="draft" label={humanize(refund.reason)} />
               </div>
-              <p className="whitespace-pre-wrap text-sm text-slate-700">{refund.explanation || 'No explanation was provided.'}</p>
+              <p className="whitespace-pre-wrap text-sm text-muted-foreground">{refund.explanation || 'No explanation was provided.'}</p>
               {refund.evidenceUrls.length > 0 && (
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Evidence supplied</p>
+                  <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Evidence supplied</p>
                   <ul className="mt-1 space-y-1">
                     {refund.evidenceUrls.map((url) => (
                       <li key={url}>
-                        <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 break-all text-xs font-semibold text-emerald-700 underline">
+                        <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 break-all text-xs font-semibold text-primary underline">
                           {url} <ExternalLink className="h-3 w-3 flex-shrink-0" />
                         </a>
                       </li>
@@ -303,26 +303,26 @@ export default function AdminRefundDetailPage() {
               )}
               {refund.evidenceRequests.length > 0 && (
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Evidence requests</p>
+                  <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Evidence requests</p>
                   <ul className="mt-1 space-y-2">
                     {refund.evidenceRequests.map((request, index) => (
-                      <li key={`${request.at}-${index}`} className="rounded-lg bg-slate-50 p-3 text-xs">
-                        <p className="font-semibold text-navy-900">From {humanize(request.from)} · {dateTime(request.at)}</p>
-                        <p className="mt-0.5 text-slate-600">{request.message}</p>
+                      <li key={`${request.at}-${index}`} className="rounded-lg bg-[#ffffff08] p-3 text-xs">
+                        <p className="font-semibold text-foreground">From {humanize(request.from)} · {dateTime(request.at)}</p>
+                        <p className="mt-0.5 text-muted-foreground">{request.message}</p>
                       </li>
                     ))}
                   </ul>
                 </div>
               )}
               {refund.decisionReason && (
-                <div className="rounded-lg bg-slate-50 p-3 text-xs">
-                  <p className="font-semibold text-navy-900">Decision · {dateTime(refund.decidedAt)}</p>
-                  <p className="mt-0.5 text-slate-600">{refund.decisionReason}</p>
-                  {refund.responsibleSource && <p className="mt-1 text-slate-600">Responsible source: {humanize(refund.responsibleSource)}</p>}
+                <div className="rounded-lg bg-[#ffffff08] p-3 text-xs">
+                  <p className="font-semibold text-foreground">Decision · {dateTime(refund.decidedAt)}</p>
+                  <p className="mt-0.5 text-muted-foreground">{refund.decisionReason}</p>
+                  {refund.responsibleSource && <p className="mt-1 text-muted-foreground">Responsible source: {humanize(refund.responsibleSource)}</p>}
                 </div>
               )}
               {refund.status === 'approved' && refund.creditedMessage && (
-                <p className="rounded-lg bg-emerald-50 p-3 text-xs text-emerald-900">{refund.creditedMessage}</p>
+                <p className="rounded-lg bg-[#10b98112] p-3 text-xs text-primary">{refund.creditedMessage}</p>
               )}
             </div>
           </Panel>
@@ -334,7 +334,7 @@ export default function AdminRefundDetailPage() {
                 <JsonBlock label="Street intelligence snapshot" value={refund.snapshots.streetIntelligence} />
                 <JsonBlock label="Pricing snapshot" value={refund.snapshots.pricing} />
                 {!refund.snapshots.availability && !refund.snapshots.streetIntelligence && !refund.snapshots.pricing && (
-                  <p className="text-xs text-slate-500">No snapshots were recorded with this unlock.</p>
+                  <p className="text-xs text-muted-foreground">No snapshots were recorded with this unlock.</p>
                 )}
               </div>
             </Panel>
@@ -348,7 +348,7 @@ export default function AdminRefundDetailPage() {
             ) : (
               <TableScroll>
                 <table className="w-full min-w-[640px]">
-                  <thead className="bg-slate-50">
+                  <thead className="bg-[#ffffff08]">
                     <tr>
                       <th className={th}>When</th>
                       <th className={th}>Action</th>
@@ -356,13 +356,13 @@ export default function AdminRefundDetailPage() {
                       <th className={th}>Reason</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-[#ffffff12]">
                     {events.map((event) => (
                       <tr key={event.id}>
                         <td className={td}><span className="whitespace-nowrap text-xs">{dateTime(event.createdAt)}</span></td>
                         <td className={td}><span className="text-xs font-semibold">{humanize(event.action)}</span></td>
-                        <td className={td}><span className="break-all font-mono text-[11px] text-slate-500">{event.actorUserId}</span></td>
-                        <td className={td}><span className="text-xs text-slate-600">{event.reason || '—'}</span></td>
+                        <td className={td}><span className="break-all font-mono text-[11px] text-muted-foreground">{event.actorUserId}</span></td>
+                        <td className={td}><span className="text-xs text-muted-foreground">{event.reason || '—'}</span></td>
                       </tr>
                     ))}
                   </tbody>
@@ -390,20 +390,20 @@ export default function AdminRefundDetailPage() {
           refund ? (
             <div className="space-y-2">
               <p>{naira(refund.chargedAmount)} will be credited to the renter’s Veriq Wallet. Refunds are wallet credit, never cash.</p>
-              <p className="text-xs text-slate-500">Credits do not expire and can be used toward any future unlock.</p>
+              <p className="text-xs text-muted-foreground">Credits do not expire and can be used toward any future unlock.</p>
             </div>
           ) : null
         }
       >
         <div>
-          <label className="label text-xs" htmlFor="responsible-source">Responsible source <span className="font-normal text-slate-400">(optional)</span></label>
+          <label className="label text-xs" htmlFor="responsible-source">Responsible source <span className="font-normal text-muted-foreground">(optional)</span></label>
           <select id="responsible-source" className="input" value={responsibleSource} onChange={(event) => setResponsibleSource(event.target.value as RefundResponsibleSource | '')}>
             <option value="">Not attributed</option>
             {REFUND_RESPONSIBLE_SOURCES.map((value) => (
               <option key={value} value={value}>{humanize(value)}</option>
             ))}
           </select>
-          <p className="mt-1 text-[11px] text-slate-400">Never attribute a refund to Agent verification without evidence; the choice feeds the internal Agent Quality Score.</p>
+          <p className="mt-1 text-[11px] text-muted-foreground">Never attribute a refund to Agent verification without evidence; the choice feeds the internal Agent Quality Score.</p>
         </div>
       </ReasonDialog>
 

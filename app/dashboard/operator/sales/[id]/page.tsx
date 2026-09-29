@@ -25,6 +25,7 @@ import {
 } from '@/components/listing-forms';
 import { SaleDocumentStatusList } from '@/components/renter/SaleDocumentStatusList';
 import { formatNaira } from '@/components/renter/format';
+import { buttonClass } from '@/components/ui';
 
 const SUBTYPE_LABELS: Record<string, string> = { built_property: 'Built Property', land: 'Land' };
 
@@ -114,7 +115,7 @@ function OwnerSaleSubmission() {
             Try again
           </button>
         </Notice>
-        <Link href="/dashboard/operator/sales" className="btn-outline !py-2.5">
+        <Link href="/dashboard/operator/sales" className={buttonClass('secondary')}>
           Back to my sale submissions
         </Link>
       </div>
@@ -130,13 +131,13 @@ function OwnerSaleSubmission() {
   return (
     <div className="mx-auto max-w-4xl space-y-5">
       <header className="space-y-2">
-        <Link href="/dashboard/operator/sales" className="text-sm font-medium text-veriq-secondary hover:underline">
+        <Link href="/dashboard/operator/sales" className="text-sm font-medium text-primary hover:underline">
           Back to my sale submissions
         </Link>
-        <h1 className="flex items-center gap-2 font-display text-2xl font-bold text-navy-900">
-          <Landmark className="h-5 w-5 text-veriq-secondary" /> {sale.title}
+        <h1 className="flex items-center gap-2 font-display text-2xl font-bold text-foreground">
+          <Landmark className="h-5 w-5 text-primary" /> {sale.title}
         </h1>
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-muted-foreground">
           {SUBTYPE_LABELS[sale.subtype] ?? sale.subtype} · {formatNaira(sale.askingPrice)} · {property.area},{' '}
           {property.city}, {property.state}
         </p>
@@ -171,35 +172,35 @@ function OwnerSaleSubmission() {
       <SectionCard title="Where your submission stands" description="Everything below comes from Veriq's own checks.">
         <dl className="grid gap-3 sm:grid-cols-2">
           <div>
-            <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Submitted</dt>
-            <dd className="mt-0.5 text-sm text-navy-900">{formatDateTime(sale.submittedAt)}</dd>
+            <dt className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Submitted</dt>
+            <dd className="mt-0.5 text-sm text-foreground">{formatDateTime(sale.submittedAt)}</dd>
           </div>
           <div>
-            <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Veriq&apos;s physical visit</dt>
-            <dd className="mt-0.5 flex items-center gap-1.5 text-sm text-navy-900">
-              <Footprints className="h-3.5 w-3.5 text-veriq-secondary" />
+            <dt className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Veriq&apos;s physical visit</dt>
+            <dd className="mt-0.5 flex items-center gap-1.5 text-sm text-foreground">
+              <Footprints className="h-3.5 w-3.5 text-primary" />
               {sale.physicalVisitAt ? formatDateTime(sale.physicalVisitAt) : 'Not done yet'}
             </dd>
           </div>
           <div>
-            <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Published</dt>
-            <dd className="mt-0.5 text-sm text-navy-900">{formatDateTime(sale.publishedAt)}</dd>
+            <dt className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Published</dt>
+            <dd className="mt-0.5 text-sm text-foreground">{formatDateTime(sale.publishedAt)}</dd>
           </div>
           <div>
-            <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Completed sale</dt>
-            <dd className="mt-0.5 text-sm text-navy-900">
+            <dt className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Completed sale</dt>
+            <dd className="mt-0.5 text-sm text-foreground">
               {sale.salePriceAmount === null ? 'Not recorded' : formatNaira(sale.salePriceAmount)}
               {sale.commissionAmount !== null && (
-                <span className="block text-xs text-slate-500">Commission {formatNaira(sale.commissionAmount)}</span>
+                <span className="block text-xs text-muted-foreground">Commission {formatNaira(sale.commissionAmount)}</span>
               )}
             </dd>
           </div>
         </dl>
 
         {data.outstanding.length > 0 ? (
-          <div className="rounded-xl border border-slate-200 p-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Still needed before publication</p>
-            <ul className="mt-1 ml-4 list-disc space-y-0.5 text-sm text-slate-700">
+          <div className="rounded-xl border border-[#ffffff18] p-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Still needed before publication</p>
+            <ul className="mt-1 ml-4 list-disc space-y-0.5 text-sm text-muted-foreground">
               {data.outstanding.map((blocker) => (
                 <li key={blocker.code}>{blocker.message}</li>
               ))}
@@ -220,15 +221,15 @@ function OwnerSaleSubmission() {
               <StatusBadge tone={agreement.status === 'signed' ? 'emerald' : 'amber'}>
                 <FileSignature className="h-3 w-3" /> {agreement.status}
               </StatusBadge>
-              <span className="text-sm text-navy-900">Your commission: {agreement.commissionPercent}% of the sale price</span>
+              <span className="text-sm text-foreground">Your commission: {agreement.commissionPercent}% of the sale price</span>
             </div>
             {agreement.signedAt ? (
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-muted-foreground">
                 Signed {formatDateTime(agreement.signedAt)}
                 {agreement.signedByOwnerName ? ` as ${agreement.signedByOwnerName}` : ''}.
               </p>
             ) : (
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-muted-foreground">
                 Veriq has prepared the agreement. It is signed by both sides before your property is published.
               </p>
             )}
@@ -237,7 +238,7 @@ function OwnerSaleSubmission() {
                 href={agreement.documentUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm font-semibold text-veriq-secondary hover:underline"
+                className="text-sm font-semibold text-primary hover:underline"
               >
                 Open the signed agreement
               </a>
@@ -291,7 +292,7 @@ function OwnerSaleSubmission() {
         title="Photos"
         description="Clear photos help buyers decide before they enquire. A front exterior image is used as the listing cover."
       >
-        <span className="mb-2 flex items-center gap-1.5 text-xs text-slate-500">
+        <span className="mb-2 flex items-center gap-1.5 text-xs text-muted-foreground">
           <ImageIcon className="h-3.5 w-3.5" /> Categories that do not apply to your property are marked Optional.
         </span>
         <MediaChecklist ownerType="sale_listing" ownerId={sale.id} onChanged={load} />
@@ -305,13 +306,13 @@ function OwnerSaleSubmission() {
           {submitError && <IssueList message={submitError.message} issues={submitError.issues} />}
           <ListingDeclarationPanel state={declaration} idPrefix="owner-sale-declaration" disabled={submitting} />
           <div className="flex items-center justify-between gap-3">
-            <p className="flex items-start gap-1.5 text-xs text-slate-500">
+            <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
               <ShieldCheck className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
               A Veriq Agent will call you to arrange the physical visit after you submit.
             </p>
             <button
               type="button"
-              className="btn-primary flex-shrink-0 !py-2.5"
+              className={buttonClass('primary', 'default', 'flex-shrink-0')}
               disabled={submitting || !declaration.canSubmit}
               onClick={() => void submit()}
             >

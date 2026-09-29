@@ -44,18 +44,18 @@ export function FieldShell({
       {label && (
         <label htmlFor={htmlFor} className={cn('label', labelClassName)}>
           {label}
-          {required && <span className="ml-1 text-red-500">*</span>}
-          {optional && !required && <span className="ml-1.5 text-xs font-normal text-slate-400">Optional</span>}
+          {required && <span className="ml-1 text-destructive">*</span>}
+          {optional && !required && <span className="ml-1.5 text-xs font-normal text-muted-foreground">Optional</span>}
         </label>
       )}
       {children}
       {hint && !error && (
-        <p id={htmlFor ? `${htmlFor}-hint` : undefined} className="mt-1 text-xs text-slate-500">
+        <p id={htmlFor ? `${htmlFor}-hint` : undefined} className="mt-1 text-xs text-muted-foreground">
           {hint}
         </p>
       )}
       {error && (
-        <p id={htmlFor ? `${htmlFor}-error` : undefined} role="alert" className="mt-1 text-xs font-medium text-red-600">
+        <p id={htmlFor ? `${htmlFor}-error` : undefined} role="alert" className="mt-1 text-xs font-medium text-destructive">
           {error}
         </p>
       )}
@@ -122,7 +122,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
         required={required}
         aria-invalid={error ? true : undefined}
         aria-describedby={describedBy || undefined}
-        className={cn('input', error && 'border-red-300 focus:border-red-400 focus:ring-red-100', className)}
+        className={cn('input', error && 'border-destructive focus:border-destructive focus:ring-[#fb718540]', className)}
         value={value}
         onChange={(event) => onValueChange(event.target.value)}
       >

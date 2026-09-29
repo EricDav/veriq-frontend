@@ -5,6 +5,7 @@ import { RefreshCw, Upload } from 'lucide-react';
 import { listingMediaApi } from '@/lib/api/operator';
 import { ACCEPTED_IMAGE_INPUT } from '@/lib/upload';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { buttonClass } from '@/components/ui';
 import { useToast } from '@/components/ui/Toast';
 import { cn } from '@/lib/utils';
 import type { MediaOwnerType } from '@/types/operator';
@@ -98,18 +99,23 @@ export function MediaUploader({
     <label
       htmlFor={inputId}
       className={cn(
-        'inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-navy-800 transition-colors hover:bg-slate-50',
-        blocked && 'cursor-not-allowed opacity-50 hover:bg-white',
+        buttonClass('secondary', 'small'),
+        'cursor-pointer focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background',
+        blocked && 'cursor-not-allowed opacity-60 hover:bg-[#ffffff06]',
         className,
       )}
     >
       {progress ? (
-        <>
+        <span role="status" aria-live="polite" className="inline-flex items-center gap-[9px]">
           <LoadingSpinner size="sm" /> Uploading {progress.done + 1 > progress.total ? progress.total : progress.done + 1}/{progress.total}
-        </>
+        </span>
       ) : (
         <>
-          {replacing ? <RefreshCw className="h-3.5 w-3.5" /> : <Upload className="h-3.5 w-3.5" />}
+          {replacing ? (
+            <RefreshCw aria-hidden="true" className="h-3.5 w-3.5" />
+          ) : (
+            <Upload aria-hidden="true" className="h-3.5 w-3.5" />
+          )}
           {label ?? (replacing ? 'Replace' : 'Add images')}
         </>
       )}

@@ -29,11 +29,15 @@ export function SchemaTabs({ schema, groups, value, onChange, issues = [], readO
   const available = groups.filter((group) => schemaHasGroup(schema, group, OPERATOR_HIDDEN_FIELDS));
   const [active, setActive] = useState<FieldGroup>(available[0] ?? 'facts');
   const current = available.includes(active) ? active : available[0];
-  if (!current) return <p className="text-sm text-slate-500">This form has no questions for you to answer.</p>;
+  if (!current) return <p className="text-ui-md text-muted-foreground">This form has no questions for you to answer.</p>;
 
   return (
     <div className="space-y-4">
-      <div role="tablist" className="flex gap-1 overflow-x-auto rounded-xl bg-slate-100 p-1">
+      <div
+        role="tablist"
+        aria-label="Listing sections"
+        className="flex flex-wrap gap-1.5 rounded-review border border-[#ffffff18] bg-card p-1.5"
+      >
         {available.map((group) => {
           const count = issues.filter((issue) => issue.path.startsWith(`${group}.`)).length;
           return (
@@ -44,12 +48,18 @@ export function SchemaTabs({ schema, groups, value, onChange, issues = [], readO
               aria-selected={current === group}
               onClick={() => setActive(group)}
               className={cn(
-                'flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-2 text-xs font-semibold transition-colors',
-                current === group ? 'bg-white text-navy-900 shadow-sm' : 'text-slate-500 hover:text-navy-900',
+                'flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-btn px-3 py-2.5 text-ui-sm font-semibold transition-colors',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card',
+                current === group ? 'bg-[#10b9811a] text-[#6ee7b7]' : 'text-muted-foreground hover:text-foreground',
               )}
             >
               {TAB_LABELS[group]}
-              {count > 0 && <span className="rounded-full bg-red-100 px-1.5 text-[10px] font-bold text-red-700">{count}</span>}
+              {count > 0 && (
+                <span className="rounded-full bg-[#fb718520] px-1.5 text-[10px] font-semibold text-[#fda4af]">
+                  {count}
+                  <span className="sr-only"> issues</span>
+                </span>
+              )}
             </button>
           );
         })}

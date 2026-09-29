@@ -66,7 +66,7 @@ function HistoryTable({ rows, nameOf }: { rows: AssignmentHistoryRow[]; nameOf: 
   return (
     <TableScroll>
       <table className="w-full min-w-[640px]">
-        <thead className="bg-slate-50">
+        <thead className="bg-[#ffffff08]">
           <tr>
             <th className={th}>Veriq Agent</th>
             <th className={th}>Source</th>
@@ -74,7 +74,7 @@ function HistoryTable({ rows, nameOf }: { rows: AssignmentHistoryRow[]; nameOf: 
             <th className={th}>Reason</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100">
+        <tbody className="divide-y divide-[#ffffff12]">
           {rows.map((row) => (
             <tr key={row.id}>
               <td className={td}>
@@ -84,9 +84,9 @@ function HistoryTable({ rows, nameOf }: { rows: AssignmentHistoryRow[]; nameOf: 
               <td className={td}><span className="text-xs">{SOURCE_LABELS[row.source] ?? humanize(row.source)}</span></td>
               <td className={td}>
                 <p className="whitespace-nowrap text-xs">From {dateTime(row.effectiveFrom)}</p>
-                <p className="whitespace-nowrap text-xs text-slate-500">{row.effectiveUntil ? `Until ${dateTime(row.effectiveUntil)}` : 'Still in effect'}</p>
+                <p className="whitespace-nowrap text-xs text-muted-foreground">{row.effectiveUntil ? `Until ${dateTime(row.effectiveUntil)}` : 'Still in effect'}</p>
               </td>
-              <td className={td}><p className="max-w-xs text-xs text-slate-600">{row.reason || '—'}</p></td>
+              <td className={td}><p className="max-w-xs text-xs text-muted-foreground">{row.reason || '—'}</p></td>
             </tr>
           ))}
         </tbody>
@@ -313,7 +313,7 @@ export default function AdminAssignmentsPage() {
           ) : (
             <TableScroll>
               <table className="w-full min-w-[860px]">
-                <thead className="bg-slate-50">
+                <thead className="bg-[#ffffff08]">
                   <tr>
                     <th className={th}>Operator</th>
                     <th className={th}>Categories</th>
@@ -324,12 +324,12 @@ export default function AdminAssignmentsPage() {
                     <th className={th}><span className="sr-only">Actions</span></th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-[#ffffff12]">
                   {queue.operators.map((item) => (
-                    <tr key={item.id} className="hover:bg-slate-50/60">
+                    <tr key={item.id} className="hover:bg-[#ffffff08]">
                       <td className={td}>
                         <p className="font-semibold">{item.name || 'Unnamed Operator'}</p>
-                        <p className="text-xs text-slate-500">{[item.email, item.phone].filter(Boolean).join(' · ') || item.id}</p>
+                        <p className="text-xs text-muted-foreground">{[item.email, item.phone].filter(Boolean).join(' · ') || item.id}</p>
                       </td>
                       <td className={td}>
                         <p className="max-w-[180px] text-xs">{item.categories.length ? item.categories.map(categoryLabel).join(', ') : '—'}</p>
@@ -341,21 +341,21 @@ export default function AdminAssignmentsPage() {
                         ) : (
                           <div>
                             <StatusBadge status="suspended" label="Agent suspended" />
-                            <p className="mt-1 text-[11px] text-slate-500">{directory.nameOf(item.assignedAgentId)}</p>
+                            <p className="mt-1 text-[11px] text-muted-foreground">{directory.nameOf(item.assignedAgentId)}</p>
                           </div>
                         )}
                       </td>
                       <td className={td}>
                         <p className="text-xs">{item.properties.total} total</p>
-                        <p className="text-[11px] text-slate-500">{item.properties.pending} not yet published</p>
+                        <p className="text-[11px] text-muted-foreground">{item.properties.pending} not yet published</p>
                       </td>
                       <td className={td}><span className="whitespace-nowrap text-xs">{dateOnly(item.createdAt)}</span></td>
                       <td className={`${td} text-right`}>
                         <div className="flex justify-end gap-2">
-                          <button type="button" onClick={() => openHistory({ kind: 'operator', id: item.id, name: item.name })} className="rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-50" title="Assignment history" aria-label="Assignment history">
+                          <button type="button" onClick={() => openHistory({ kind: 'operator', id: item.id, name: item.name })} className="rounded-lg border border-[#ffffff12] p-2 text-muted-foreground hover:bg-[#ffffff08]" title="Assignment history" aria-label="Assignment history">
                             <History className="h-4 w-4" />
                           </button>
-                          <button type="button" onClick={() => openAssign({ kind: 'operator', id: item.id, name: item.name, currentAgentId: item.assignedAgentId })} className="whitespace-nowrap rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-700">
+                          <button type="button" onClick={() => openAssign({ kind: 'operator', id: item.id, name: item.name, currentAgentId: item.assignedAgentId })} className="whitespace-nowrap rounded-lg bg-primary px-3 py-2 text-xs font-bold text-foreground hover:bg-[#34d399]">
                             {item.assignedAgentId ? 'Reassign' : 'Assign Agent'}
                           </button>
                         </div>
@@ -378,7 +378,7 @@ export default function AdminAssignmentsPage() {
           ) : (
             <TableScroll>
               <table className="w-full min-w-[760px]">
-                <thead className="bg-slate-50">
+                <thead className="bg-[#ffffff08]">
                   <tr>
                     <th className={th}>Property</th>
                     <th className={th}>Category</th>
@@ -388,21 +388,21 @@ export default function AdminAssignmentsPage() {
                     <th className={th}><span className="sr-only">Actions</span></th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-[#ffffff12]">
                   {queue.propertiesWithoutAgent.map((item) => {
                     const operator = queue.operators.find((row) => row.id === item.operatorId);
                     return (
-                      <tr key={item.id} className="hover:bg-slate-50/60">
+                      <tr key={item.id} className="hover:bg-[#ffffff08]">
                         <td className={td}>
                           <p className="max-w-[240px] truncate font-semibold">{item.title}</p>
-                          <p className="font-mono text-[11px] text-slate-400">{item.id}</p>
+                          <p className="font-mono text-[11px] text-muted-foreground">{item.id}</p>
                         </td>
                         <td className={td}><span className="text-xs">{categoryLabel(item.category)}</span></td>
                         <td className={td}><StatusBadge status={item.publicationStatus} /></td>
                         <td className={td}>
                           <p className="text-xs">{operator?.name ?? item.operatorId ?? '—'}</p>
                           {operator && (
-                            <button type="button" onClick={() => openAssign({ kind: 'operator', id: operator.id, name: operator.name, currentAgentId: operator.assignedAgentId })} className="mt-1 text-[11px] font-bold text-emerald-700 hover:underline">
+                            <button type="button" onClick={() => openAssign({ kind: 'operator', id: operator.id, name: operator.name, currentAgentId: operator.assignedAgentId })} className="mt-1 text-[11px] font-bold text-primary hover:underline">
                               Assign this Operator instead
                             </button>
                           )}
@@ -410,10 +410,10 @@ export default function AdminAssignmentsPage() {
                         <td className={td}><span className="whitespace-nowrap text-xs">{dateOnly(item.createdAt)}</span></td>
                         <td className={`${td} text-right`}>
                           <div className="flex justify-end gap-2">
-                            <button type="button" onClick={() => openHistory({ kind: 'property', id: item.id, name: item.title })} className="rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-50" title="Assignment history" aria-label="Assignment history">
+                            <button type="button" onClick={() => openHistory({ kind: 'property', id: item.id, name: item.title })} className="rounded-lg border border-[#ffffff12] p-2 text-muted-foreground hover:bg-[#ffffff08]" title="Assignment history" aria-label="Assignment history">
                               <History className="h-4 w-4" />
                             </button>
-                            <button type="button" onClick={() => openAssign({ kind: 'property', id: item.id, name: item.title, currentAgentId: null })} className="whitespace-nowrap rounded-lg border border-emerald-200 px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50">
+                            <button type="button" onClick={() => openAssign({ kind: 'property', id: item.id, name: item.title, currentAgentId: null })} className="whitespace-nowrap rounded-lg border border-[#10b98135] px-3 py-2 text-xs font-bold text-primary hover:bg-[#10b98112]">
                               Property-level assign
                             </button>
                           </div>
@@ -433,7 +433,7 @@ export default function AdminAssignmentsPage() {
           <Panel title="Property Operators" description="Search any Operator to reassign or review history.">
             <div className="space-y-3 p-4">
               <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <input aria-label="Search Operators" className="input !pl-9" value={operatorQuery} onChange={(event) => setOperatorQuery(event.target.value)} placeholder="Name, email, phone or ID" />
               </div>
               {lookupError ? (
@@ -443,12 +443,12 @@ export default function AdminAssignmentsPage() {
               ) : lookupOperators.length === 0 ? (
                 <EmptyState title="No Operators found" />
               ) : (
-                <ul className="max-h-[520px] divide-y divide-slate-100 overflow-y-auto rounded-lg border border-slate-100">
+                <ul className="max-h-[520px] divide-y divide-[#ffffff12] overflow-y-auto rounded-lg border border-[#ffffff12]">
                   {lookupOperators.map((item) => (
                     <li key={item.id}>
-                      <button type="button" onClick={() => setLookupOperator(item)} className={`w-full px-3 py-2.5 text-left ${lookupOperator?.id === item.id ? 'bg-emerald-50' : 'hover:bg-slate-50'}`}>
-                        <span className="block truncate text-sm font-semibold text-navy-900">{item.name || item.id}</span>
-                        <span className="block truncate text-xs text-slate-500">{directory.nameOf(item.assignedAgentId)} · {item.listingCount} listing{item.listingCount === 1 ? '' : 's'}</span>
+                      <button type="button" onClick={() => setLookupOperator(item)} className={`w-full px-3 py-2.5 text-left ${lookupOperator?.id === item.id ? 'bg-[#10b98112]' : 'hover:bg-[#ffffff08]'}`}>
+                        <span className="block truncate text-sm font-semibold text-foreground">{item.name || item.id}</span>
+                        <span className="block truncate text-xs text-muted-foreground">{directory.nameOf(item.assignedAgentId)} · {item.listingCount} listing{item.listingCount === 1 ? '' : 's'}</span>
                       </button>
                     </li>
                   ))}
@@ -466,7 +466,7 @@ export default function AdminAssignmentsPage() {
                   <button type="button" onClick={() => openHistory({ kind: 'operator', id: lookupOperator.id, name: lookupOperator.name })} className="btn-outline !px-3 !py-2 !text-xs">
                     <History className="h-3.5 w-3.5" /> History
                   </button>
-                  <button type="button" onClick={() => openAssign({ kind: 'operator', id: lookupOperator.id, name: lookupOperator.name, currentAgentId: lookupOperator.assignedAgentId })} className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-700">
+                  <button type="button" onClick={() => openAssign({ kind: 'operator', id: lookupOperator.id, name: lookupOperator.name, currentAgentId: lookupOperator.assignedAgentId })} className="rounded-lg bg-primary px-3 py-2 text-xs font-bold text-foreground hover:bg-[#34d399]">
                     {lookupOperator.assignedAgentId ? 'Reassign Operator' : 'Assign Operator'}
                   </button>
                 </>
@@ -481,7 +481,7 @@ export default function AdminAssignmentsPage() {
               ) : (
                 <TableScroll>
                   <table className="w-full min-w-[640px]">
-                    <thead className="bg-slate-50">
+                    <thead className="bg-[#ffffff08]">
                       <tr>
                         <th className={th}>Property</th>
                         <th className={th}>Status</th>
@@ -489,26 +489,26 @@ export default function AdminAssignmentsPage() {
                         <th className={th}><span className="sr-only">Actions</span></th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-[#ffffff12]">
                       {lookupListings.map((row) => {
                         const differs = row.agentId !== lookupOperator.assignedAgentId;
                         return (
                           <tr key={row.targetId}>
                             <td className={td}>
                               <p className="max-w-[240px] truncate font-semibold">{row.title}</p>
-                              <p className="text-[11px] text-slate-500">{categoryLabel(row.category)} · <span className="font-mono">{row.targetId}</span></p>
+                              <p className="text-[11px] text-muted-foreground">{categoryLabel(row.category)} · <span className="font-mono">{row.targetId}</span></p>
                             </td>
                             <td className={td}><StatusBadge status={row.publicationStatus} /></td>
                             <td className={td}>
                               <p className="text-xs">{row.currentAgent?.name || directory.nameOf(row.agentId)}</p>
-                              {differs && <p className="text-[11px] font-semibold text-amber-700">Differs from Operator’s Agent</p>}
+                              {differs && <p className="text-[11px] font-semibold text-[#fcd34d]">Differs from Operator’s Agent</p>}
                             </td>
                             <td className={`${td} text-right`}>
                               <div className="flex justify-end gap-2">
-                                <button type="button" onClick={() => openHistory({ kind: 'property', id: row.targetId, name: row.title })} className="rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-50" title="History and override" aria-label="History and override">
+                                <button type="button" onClick={() => openHistory({ kind: 'property', id: row.targetId, name: row.title })} className="rounded-lg border border-[#ffffff12] p-2 text-muted-foreground hover:bg-[#ffffff08]" title="History and override" aria-label="History and override">
                                   <History className="h-4 w-4" />
                                 </button>
-                                <button type="button" onClick={() => openAssign({ kind: 'property', id: row.targetId, name: row.title, currentAgentId: row.agentId })} className="whitespace-nowrap rounded-lg border border-emerald-200 px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50">
+                                <button type="button" onClick={() => openAssign({ kind: 'property', id: row.targetId, name: row.title, currentAgentId: row.agentId })} className="whitespace-nowrap rounded-lg border border-[#10b98135] px-3 py-2 text-xs font-bold text-primary hover:bg-[#10b98112]">
                                   Override Agent
                                 </button>
                               </div>
@@ -538,7 +538,7 @@ export default function AdminAssignmentsPage() {
       >
         {historyTarget && (
           <div className="space-y-4">
-            <p className="text-sm font-semibold text-navy-900">{historyTarget.name || historyTarget.id}</p>
+            <p className="text-sm font-semibold text-foreground">{historyTarget.name || historyTarget.id}</p>
             {historyError ? (
               <ErrorPanel error={historyError} onRetry={() => void loadHistory(historyTarget)} />
             ) : historyLoading ? (
@@ -546,24 +546,24 @@ export default function AdminAssignmentsPage() {
             ) : operatorView ? (
               <>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                  <div className="rounded-xl bg-slate-50 p-3 text-xs"><p className="text-slate-400">Current Agent</p><p className="font-semibold text-navy-900">{directory.nameOf(operatorView.assignedAgentId)}</p></div>
-                  <div className="rounded-xl bg-slate-50 p-3 text-xs"><p className="text-slate-400">Referral code used at signup</p><p className="font-mono font-semibold text-navy-900">{operatorView.referralCodeUsed ?? 'None'}</p></div>
+                  <div className="rounded-xl bg-[#ffffff08] p-3 text-xs"><p className="text-muted-foreground">Current Agent</p><p className="font-semibold text-foreground">{directory.nameOf(operatorView.assignedAgentId)}</p></div>
+                  <div className="rounded-xl bg-[#ffffff08] p-3 text-xs"><p className="text-muted-foreground">Referral code used at signup</p><p className="font-mono font-semibold text-foreground">{operatorView.referralCodeUsed ?? 'None'}</p></div>
                 </div>
                 <HistoryTable rows={operatorView.history} nameOf={directory.nameOf} />
               </>
             ) : propertyView ? (
               <>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                  <div className="rounded-xl bg-slate-50 p-3 text-xs"><p className="text-slate-400">Current Agent</p><p className="font-semibold text-navy-900">{directory.nameOf(propertyView.agentId)}</p></div>
-                  <div className="rounded-xl bg-slate-50 p-3 text-xs"><p className="text-slate-400">Operator</p><p className="break-all font-mono font-semibold text-navy-900">{propertyView.operatorId ?? 'None'}</p></div>
-                  <div className="rounded-xl bg-slate-50 p-3 text-xs"><p className="text-slate-400">Assignment basis</p><p className="font-semibold text-navy-900">{propertyView.hasPropertyOverride ? 'Property-level override' : 'Follows Operator'}</p></div>
+                  <div className="rounded-xl bg-[#ffffff08] p-3 text-xs"><p className="text-muted-foreground">Current Agent</p><p className="font-semibold text-foreground">{directory.nameOf(propertyView.agentId)}</p></div>
+                  <div className="rounded-xl bg-[#ffffff08] p-3 text-xs"><p className="text-muted-foreground">Operator</p><p className="break-all font-mono font-semibold text-foreground">{propertyView.operatorId ?? 'None'}</p></div>
+                  <div className="rounded-xl bg-[#ffffff08] p-3 text-xs"><p className="text-muted-foreground">Assignment basis</p><p className="font-semibold text-foreground">{propertyView.hasPropertyOverride ? 'Property-level override' : 'Follows Operator'}</p></div>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <button type="button" onClick={() => openAssign({ kind: 'property', id: propertyView.propertyId, name: historyTarget.name, currentAgentId: propertyView.agentId })} className="rounded-lg border border-emerald-200 px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50">
+                  <button type="button" onClick={() => openAssign({ kind: 'property', id: propertyView.propertyId, name: historyTarget.name, currentAgentId: propertyView.agentId })} className="rounded-lg border border-[#10b98135] px-3 py-2 text-xs font-bold text-primary hover:bg-[#10b98112]">
                     Override Agent for this Property
                   </button>
                   {propertyView.hasPropertyOverride && (
-                    <button type="button" onClick={() => setClearTarget(historyTarget)} className="rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50">
+                    <button type="button" onClick={() => setClearTarget(historyTarget)} className="rounded-lg border border-[#fb718530] px-3 py-2 text-xs font-bold text-destructive hover:bg-[#fb718510]">
                       Clear override
                     </button>
                   )}
@@ -585,12 +585,12 @@ export default function AdminAssignmentsPage() {
         message={
           assignTarget ? (
             <div className="space-y-2">
-              <p><strong className="text-navy-900">{assignTarget.name || assignTarget.id}</strong></p>
+              <p><strong className="text-foreground">{assignTarget.name || assignTarget.id}</strong></p>
               <p>Current Agent: {directory.nameOf(assignTarget.currentAgentId)}</p>
               {assignTarget.kind === 'operator' ? (
-                <p className="rounded-lg bg-slate-50 p-3 text-xs">All of this Operator’s Properties and Shared Property opportunities move to the selected Agent, except Properties with a property-level override. Future qualifying unlocks earn for the new Agent; recorded earnings stay with the previous Agent.</p>
+                <p className="rounded-lg bg-[#ffffff08] p-3 text-xs">All of this Operator’s Properties and Shared Property opportunities move to the selected Agent, except Properties with a property-level override. Future qualifying unlocks earn for the new Agent; recorded earnings stay with the previous Agent.</p>
               ) : (
-                <p className="rounded-lg bg-amber-50 p-3 text-xs text-amber-900">This overrides the Operator’s Agent for this Property only. Later Operator reassignments will not move it until the override is cleared.</p>
+                <p className="rounded-lg bg-[#fbbf2410] p-3 text-xs text-[#fcd34d]">This overrides the Operator’s Agent for this Property only. Later Operator reassignments will not move it until the override is cleared.</p>
               )}
             </div>
           ) : null
@@ -599,7 +599,7 @@ export default function AdminAssignmentsPage() {
         <div>
           <label className="label text-xs" htmlFor="assign-agent">New Veriq Agent</label>
           <AgentSelect id="assign-agent" value={assignAgentId} onChange={(agentId) => setAssignAgentId(agentId)} excludeAgentId={assignTarget?.currentAgentId} required />
-          <p className="mt-1 text-[11px] text-slate-400">Suspended Agents cannot receive assignments.</p>
+          <p className="mt-1 text-[11px] text-muted-foreground">Suspended Agents cannot receive assignments.</p>
         </div>
       </ReasonDialog>
 

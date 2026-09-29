@@ -82,59 +82,59 @@ export default async function RefundPolicyPage() {
 
   return (
     <>
-      <section className="bg-navy-900 pb-14 pt-28 text-white sm:pt-32">
+      <section className="bg-background pb-14 pt-28 text-foreground sm:pt-32">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-          <p className="text-xs font-bold uppercase tracking-wider text-emerald-300">Refund Policy</p>
+          <p className="text-xs font-bold uppercase tracking-wider text-[#6ee7b7]">Refund Policy</p>
           <h1 className="mt-2 font-display text-3xl font-bold leading-tight sm:text-4xl">Refund protection for paid unlocks</h1>
-          <p className="mt-5 text-sm leading-7 text-white/70 sm:text-base">
+          <p className="mt-5 text-sm leading-7 text-muted-foreground sm:text-base">
             Veriq charges for time-limited access to verified property information. Refund rules apply only where money or wallet value was actually
             charged, and they cover problems with the accuracy, availability or delivery of what you unlocked — not the outcome of your search.
           </p>
           <div className="mt-6 space-y-3">
-            <div className="flex items-start gap-3 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 p-4">
-              <Scale className="mt-0.5 h-5 w-5 flex-shrink-0 text-emerald-300" />
+            <div className="flex items-start gap-3 rounded-2xl border border-[#10b98135] bg-[#10b98112] p-4">
+              <Scale className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#6ee7b7]" />
               <div>
-                <p className="text-sm font-semibold text-white">The launch rule</p>
-                <p className="mt-1 text-sm leading-6 text-emerald-100">{policy.launchRule}</p>
+                <p className="text-sm font-semibold text-foreground">The launch rule</p>
+                <p className="mt-1 text-sm leading-6 text-[#6ee7b7]">{policy.launchRule}</p>
               </div>
             </div>
-            <div className="flex items-start gap-3 rounded-2xl border border-white/15 bg-white/5 p-4">
-              <Wallet className="mt-0.5 h-5 w-5 flex-shrink-0 text-emerald-300" />
-              <p className="text-sm leading-6 text-white/80">{policy.creditOnly}</p>
+            <div className="flex items-start gap-3 rounded-2xl border border-white/15 bg-[#ffffff06] p-4">
+              <Wallet className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#6ee7b7]" />
+              <p className="text-sm leading-6 text-foreground">{policy.creditOnly}</p>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="bg-white py-14 sm:py-16">
+      <section className="bg-card py-14 sm:py-16">
         <div className="mx-auto grid max-w-5xl gap-6 px-4 sm:px-6 lg:grid-cols-2 lg:px-8">
-          <article className="rounded-2xl border border-slate-200 p-6">
-            <h2 className="flex items-center gap-2 font-display text-xl font-bold text-navy-900"><CheckCircle2 className="h-5 w-5 text-emerald-500" /> What qualifies</h2>
+          <article className="rounded-2xl border border-[#ffffff12] p-6">
+            <h2 className="flex items-center gap-2 font-display text-xl font-bold text-foreground"><CheckCircle2 className="h-5 w-5 text-primary" /> What qualifies</h2>
             <ul className="mt-4 space-y-3">
               {policy.qualifying.map((item) => (
-                <li key={item} className="flex items-start gap-2 text-sm leading-6 text-slate-700"><CheckCircle2 className="mt-1 h-3.5 w-3.5 flex-shrink-0 text-emerald-500" /> {item}</li>
+                <li key={item} className="flex items-start gap-2 text-sm leading-6 text-muted-foreground"><CheckCircle2 className="mt-1 h-3.5 w-3.5 flex-shrink-0 text-primary" /> {item}</li>
               ))}
             </ul>
           </article>
-          <article className="rounded-2xl border border-slate-200 p-6">
-            <h2 className="flex items-center gap-2 font-display text-xl font-bold text-navy-900"><XCircle className="h-5 w-5 text-red-400" /> What does not qualify</h2>
+          <article className="rounded-2xl border border-[#ffffff12] p-6">
+            <h2 className="flex items-center gap-2 font-display text-xl font-bold text-foreground"><XCircle className="h-5 w-5 text-[#fda4af]" /> What does not qualify</h2>
             <ul className="mt-4 space-y-3">
               {policy.nonQualifying.map((item) => (
-                <li key={item} className="flex items-start gap-2 text-sm leading-6 text-slate-700"><XCircle className="mt-1 h-3.5 w-3.5 flex-shrink-0 text-red-400" /> {item}</li>
+                <li key={item} className="flex items-start gap-2 text-sm leading-6 text-muted-foreground"><XCircle className="mt-1 h-3.5 w-3.5 flex-shrink-0 text-[#fda4af]" /> {item}</li>
               ))}
             </ul>
           </article>
         </div>
       </section>
 
-      <section className="bg-veriq-surface py-14 sm:py-16">
+      <section className="bg-background py-14 sm:py-16">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-          <h2 className="flex items-center gap-2 font-display text-2xl font-black text-navy-900"><ListChecks className="h-6 w-6 text-veriq-secondary" /> How to request a refund</h2>
+          <h2 className="flex items-center gap-2 font-display text-2xl font-black text-foreground"><ListChecks className="h-6 w-6 text-primary" /> How to request a refund</h2>
           <ol className="mt-6 space-y-4">
             {STEPS.map((step, index) => (
-              <li key={step} className="flex gap-4 rounded-2xl border border-slate-200 bg-white p-4">
-                <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-navy-900 text-xs font-bold text-white">{index + 1}</span>
-                <p className="text-sm leading-6 text-slate-700">{step}</p>
+              <li key={step} className="flex gap-4 rounded-2xl border border-[#ffffff12] bg-card p-4">
+                <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-background text-xs font-bold text-foreground">{index + 1}</span>
+                <p className="text-sm leading-6 text-muted-foreground">{step}</p>
               </li>
             ))}
           </ol>
@@ -145,49 +145,49 @@ export default async function RefundPolicyPage() {
         </div>
       </section>
 
-      <section className="bg-white py-14 sm:py-16">
+      <section className="bg-card py-14 sm:py-16">
         <div className="mx-auto grid max-w-5xl gap-5 px-4 sm:px-6 md:grid-cols-2 lg:px-8">
-          <article className="rounded-2xl border border-slate-200 p-5">
-            <p className="flex items-center gap-2 font-display text-base font-bold text-navy-900"><Clock className="h-4 w-4 text-veriq-secondary" /> The refund window</p>
-            <p className="mt-2 text-sm leading-6 text-veriq-muted">
+          <article className="rounded-2xl border border-[#ffffff12] p-5">
+            <p className="flex items-center gap-2 font-display text-base font-bold text-foreground"><Clock className="h-4 w-4 text-primary" /> The refund window</p>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
               A paid unlock gives you 24 hours of access from confirmed payment, and the refund window is the same 24 hours. It never outlives your
               access, so a request has to arrive before your access expires. The exact deadline for each unlock is shown in My Unlocks and on the
               refund form.
             </p>
           </article>
-          <article className="rounded-2xl border border-slate-200 p-5">
-            <p className="flex items-center gap-2 font-display text-base font-bold text-navy-900"><ShieldCheck className="h-4 w-4 text-veriq-secondary" /> Who decides</p>
-            <p className="mt-2 text-sm leading-6 text-veriq-muted">
+          <article className="rounded-2xl border border-[#ffffff12] p-5">
+            <p className="flex items-center gap-2 font-display text-base font-bold text-foreground"><ShieldCheck className="h-4 w-4 text-primary" /> Who decides</p>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
               The listing&apos;s Veriq Agent confirms or disputes that the unit became unavailable inside your access window, and Admin decides every
               case that the launch rule does not settle outright. The Property Operator may be asked for evidence but never decides. Decisions and the
               evidence behind them are recorded, and the related Agent earnings stay on hold until the 24-hour window and any dispute are resolved.
             </p>
           </article>
-          <article className="rounded-2xl border border-slate-200 p-5">
-            <p className="flex items-center gap-2 font-display text-base font-bold text-navy-900"><Wallet className="h-4 w-4 text-veriq-secondary" /> What approval changes</p>
-            <p className="mt-2 text-sm leading-6 text-veriq-muted">
+          <article className="rounded-2xl border border-[#ffffff12] p-5">
+            <p className="flex items-center gap-2 font-display text-base font-bold text-foreground"><Wallet className="h-4 w-4 text-primary" /> What approval changes</p>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
               An approved refund of the unlock purchase credits the full amount charged — including any wallet-funded part — to your Veriq Wallet and ends
               access to that listing immediately. A duplicate charge is refunded on its own and leaves your separately paid, valid unlock untouched.
             </p>
           </article>
-          <article className="rounded-2xl border border-slate-200 p-5">
-            <p className="flex items-center gap-2 font-display text-base font-bold text-navy-900"><Gift className="h-4 w-4 text-veriq-secondary" /> Free Unlocks</p>
-            <p className="mt-2 text-sm leading-6 text-veriq-muted">{policy.freeUnlock} <Link href="/contact" className="font-semibold text-veriq-secondary hover:underline">Contact support</Link> if a Free Unlock had an access or accuracy problem.</p>
+          <article className="rounded-2xl border border-[#ffffff12] p-5">
+            <p className="flex items-center gap-2 font-display text-base font-bold text-foreground"><Gift className="h-4 w-4 text-primary" /> Free Unlocks</p>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">{policy.freeUnlock} <Link href="/contact" className="font-semibold text-primary hover:underline">Contact support</Link> if a Free Unlock had an access or accuracy problem.</p>
           </article>
         </div>
       </section>
 
-      <section className="bg-veriq-surface pb-16">
+      <section className="bg-background pb-16">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm leading-6 text-veriq-muted">
-            <p className="font-semibold text-navy-900">Fair use</p>
+          <div className="rounded-2xl border border-[#ffffff12] bg-card p-6 text-sm leading-6 text-muted-foreground">
+            <p className="font-semibold text-foreground">Fair use</p>
             <p className="mt-2">
               Veriq reviews repeated or unusual refund behaviour to protect legitimate refund rights for everyone. Evidence and decisions remain on record,
               and a request is never rejected simply because you have asked before. Disputed community Street Intelligence is reviewed against the street
               version shown and its source and confidence labels; disagreement alone does not establish inaccuracy.
             </p>
             <p className="mt-3">
-              Questions about a specific decision? <Link href="/contact" className="font-semibold text-veriq-secondary hover:underline">Contact Veriq support</Link>.
+              Questions about a specific decision? <Link href="/contact" className="font-semibold text-primary hover:underline">Contact Veriq support</Link>.
             </p>
           </div>
         </div>

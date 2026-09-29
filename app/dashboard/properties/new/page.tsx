@@ -5,6 +5,7 @@ import { ArrowRight, Building2, ClipboardCheck, Home, Landmark, ShieldCheck, Use
 import { useAuth } from '@/context/AuthContext';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
 import { UserRole } from '@/types';
+import { buttonClass } from '@/components/ui';
 
 interface Destination {
   href: string;
@@ -115,10 +116,10 @@ export default function LegacyCreatePropertyPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="card space-y-3 p-6">
-        <span className="badge bg-amber-50 text-amber-700">Page moved</span>
-        <h1 className="font-display text-2xl font-bold text-navy-900">{heading}</h1>
-        <p className="text-sm leading-relaxed text-slate-600">{explanation}</p>
-        <p className="text-xs text-slate-500">
+        <span className="badge bg-[#fbbf2410] text-[#fcd34d] border-[#fbbf2430]">Page moved</span>
+        <h1 className="font-display text-2xl font-bold text-foreground">{heading}</h1>
+        <p className="text-sm leading-relaxed text-muted-foreground">{explanation}</p>
+        <p className="text-xs text-muted-foreground">
           The old agent property-creation endpoint has been retired, so this form no longer exists.
         </p>
       </div>
@@ -128,22 +129,22 @@ export default function LegacyCreatePropertyPage() {
           <Link
             key={link.href}
             href={link.href}
-            className={`card flex items-start gap-4 p-5 ${link.primary ? 'ring-1 ring-veriq-secondary/40' : ''}`}
+            className={`card flex items-start gap-4 p-5 ${link.primary ? 'ring-1 ring-[#10b98166]' : ''}`}
           >
-            <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-emerald-50">
-              <link.icon className="h-5 w-5 text-veriq-secondary" />
+            <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-[#10b98112]">
+              <link.icon className="h-5 w-5 text-primary" />
             </span>
             <span className="min-w-0 flex-1">
-              <span className="flex items-center gap-1.5 font-semibold text-navy-900">
-                {link.label} <ArrowRight className="h-4 w-4 text-veriq-secondary" />
+              <span className="flex items-center gap-1.5 font-semibold text-foreground">
+                {link.label} <ArrowRight className="h-4 w-4 text-primary" />
               </span>
-              <span className="mt-0.5 block text-sm text-slate-500">{link.description}</span>
+              <span className="mt-0.5 block text-sm text-muted-foreground">{link.description}</span>
             </span>
           </Link>
         ))}
       </div>
 
-      <Link href="/dashboard" className="btn-ghost">Back to dashboard</Link>
+      <Link href="/dashboard" className={buttonClass('ghost')}>Back to dashboard</Link>
     </div>
   );
 }

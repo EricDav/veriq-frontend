@@ -43,7 +43,7 @@ export function IdentityDecisionForm({ onDecide }: { onDecide: (status: Operator
           {busy ? <LoadingSpinner size="sm" /> : <UserCheck className="h-3.5 w-3.5" />} Record decision
         </button>
       </div>
-      <p className="text-[11px] text-slate-400">Identity verification is separate from listing verification (§7.6) and applies to all of this Operator&apos;s listings.</p>
+      <p className="text-[11px] text-muted-foreground">Identity verification is separate from listing verification (§7.6) and applies to all of this Operator&apos;s listings.</p>
     </div>
   );
 }

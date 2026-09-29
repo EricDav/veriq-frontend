@@ -34,18 +34,18 @@ function getTestimonials(content?: SiteContent): Testimonial[] {
 export function TrustStats({ content }: { content?: SiteContent }) {
   const testimonials = getTestimonials(content);
   return (
-    <section className="bg-navy-900 py-16 text-white sm:py-20">
+    <section className="bg-background py-16 text-foreground sm:py-20">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <div className="text-center">
           <h2 className="font-display text-3xl font-black">Built for smarter property decisions</h2>
-          <p className="mt-3 text-sm text-slate-400">Veriq brings transparency and structure to the property search process.</p>
+          <p className="mt-3 text-sm text-muted-foreground">Veriq brings transparency and structure to the property search process.</p>
         </div>
         <div className="mt-9 grid gap-4 md:grid-cols-3">
           {PROOF.map(({ icon: Icon, title, items }) => (
-            <div key={title} className="rounded-lg border border-white/10 bg-white/[0.05] p-5">
-              <h3 className="flex items-center gap-2 text-sm font-bold"><Icon className="h-4 w-4 text-emerald-400" />{title}</h3>
+            <div key={title} className="rounded-lg border border-white/10 bg-card/[0.05] p-5">
+              <h3 className="flex items-center gap-2 text-sm font-bold"><Icon className="h-4 w-4 text-primary" />{title}</h3>
               <ul className="mt-4 space-y-2">
-                {items.map((item) => <li key={item} className="flex items-center gap-2 text-xs text-slate-300"><CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />{item}</li>)}
+                {items.map((item) => <li key={item} className="flex items-center gap-2 text-xs text-muted-foreground"><CheckCircle2 className="h-3.5 w-3.5 text-primary" />{item}</li>)}
               </ul>
             </div>
           ))}
@@ -55,18 +55,18 @@ export function TrustStats({ content }: { content?: SiteContent }) {
           <div className="mt-12">
             <div className="text-center">
               <h2 className="font-display text-2xl font-black">{content?.title || 'What our users say'}</h2>
-              {content?.subtitle && <p className="mt-2 text-sm text-slate-500">{content.subtitle}</p>}
+              {content?.subtitle && <p className="mt-2 text-sm text-muted-foreground">{content.subtitle}</p>}
             </div>
             <div className="mt-7 grid gap-4 md:grid-cols-3">
               {testimonials.map((item, index) => (
-                <figure key={`${item.name}-${index}`} className="rounded-lg border border-white/10 bg-white/[0.05] p-5">
-                  <Quote className="h-5 w-5 fill-emerald-400 text-emerald-400" />
-                  <blockquote className="mt-3 text-sm leading-6 text-slate-300">“{item.quote}”</blockquote>
+                <figure key={`${item.name}-${index}`} className="rounded-lg border border-white/10 bg-card/[0.05] p-5">
+                  <Quote className="h-5 w-5 fill-primary text-primary" />
+                  <blockquote className="mt-3 text-sm leading-6 text-muted-foreground">“{item.quote}”</blockquote>
                   <figcaption className="mt-5 flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-500 text-xs font-bold text-white">{item.initials}</div>
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-xs font-bold text-foreground">{item.initials}</div>
                     <div>
-                      <p className="text-sm font-bold text-white">{item.name}</p>
-                      {item.role && <p className="text-xs text-slate-500">{item.role}</p>}
+                      <p className="text-sm font-bold text-foreground">{item.name}</p>
+                      {item.role && <p className="text-xs text-muted-foreground">{item.role}</p>}
                     </div>
                   </figcaption>
                 </figure>

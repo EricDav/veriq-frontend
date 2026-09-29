@@ -158,8 +158,8 @@ export function LocationPicker({ value, onChange }: { value: LocationDraft; onCh
         </Field>
       </div>
 
-      <div className="rounded-xl border border-slate-100 p-3">
-        <p className="mb-2 flex items-center gap-2 text-sm font-semibold text-navy-900">
+      <div className="rounded-xl border border-[#ffffff10] p-3">
+        <p className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
           <MapPin className="h-4 w-4" /> Street / Estate / Road
         </p>
         {!proposing ? (
@@ -183,27 +183,27 @@ export function LocationPicker({ value, onChange }: { value: LocationDraft; onCh
               </button>
             </div>
             {streets.length > 0 && (
-              <ul className="max-h-48 divide-y divide-slate-100 overflow-y-auto rounded-lg border border-slate-100">
+              <ul className="max-h-48 divide-y divide-[#ffffff10] overflow-y-auto rounded-lg border border-[#ffffff10]">
                 {streets.map((street) => (
                   <li key={street.id}>
                     <button
                       type="button"
                       onClick={() => set({ streetId: street.id, proposedStreetName: '' })}
-                      className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-slate-50 ${value.streetId === street.id ? 'bg-emerald-50' : ''}`}
+                      className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-[#070b1444] ${value.streetId === street.id ? 'bg-[#10b98112]' : ''}`}
                     >
                       <span>
                         {street.streetName}
-                        <span className="block text-[11px] text-slate-500">
+                        <span className="block text-[11px] text-muted-foreground">
                           {street.area}, {street.city}
                         </span>
                       </span>
-                      {value.streetId === street.id && <span className="text-[11px] font-bold text-emerald-700">Selected</span>}
+                      {value.streetId === street.id && <span className="text-[11px] font-bold text-[#6ee7b7]">Selected</span>}
                     </button>
                   </li>
                 ))}
               </ul>
             )}
-            <button type="button" className="text-xs font-semibold text-veriq-secondary hover:underline" onClick={() => { setProposing(true); set({ streetId: '' }); }}>
+            <button type="button" className="text-xs font-semibold text-primary hover:underline" onClick={() => { setProposing(true); set({ streetId: '' }); }}>
               The street is missing — propose it
             </button>
           </div>
@@ -216,7 +216,7 @@ export function LocationPicker({ value, onChange }: { value: LocationDraft; onCh
               A proposed street goes to Admin for approval. You can verify the listing while it is pending, but publication and Initial Veriq
               Intelligence are blocked until it is approved (§4.1, §24.3).
             </InlineNotice>
-            <button type="button" className="text-xs font-semibold text-veriq-secondary hover:underline" onClick={() => { setProposing(false); set({ proposedStreetName: '' }); }}>
+            <button type="button" className="text-xs font-semibold text-primary hover:underline" onClick={() => { setProposing(false); set({ proposedStreetName: '' }); }}>
               Search approved streets instead
             </button>
           </div>
@@ -242,8 +242,8 @@ export function LocationPicker({ value, onChange }: { value: LocationDraft; onCh
           </Field>
         </div>
       </div>
-      {lookupError && <p className="text-xs text-red-600">{lookupError}</p>}
-      <p className="text-[11px] text-slate-400">Coordinates recorded here are the submitted values; verify them on the canonical Property after creation (§4.3).</p>
+      {lookupError && <p className="text-xs text-destructive">{lookupError}</p>}
+      <p className="text-[11px] text-muted-foreground">Coordinates recorded here are the submitted values; verify them on the canonical Property after creation (§4.3).</p>
     </div>
   );
 }

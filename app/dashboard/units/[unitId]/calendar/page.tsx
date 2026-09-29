@@ -83,17 +83,17 @@ export default function UnitCalendarPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-5">
       <header className="space-y-2">
-        <h1 className="flex items-center gap-2 font-display text-2xl font-bold text-navy-900">
-          <CalendarDays className="h-5 w-5 text-veriq-secondary" /> {calendar.displayLabel} calendar
+        <h1 className="flex items-center gap-2 font-display text-2xl font-bold text-foreground">
+          <CalendarDays className="h-5 w-5 text-primary" /> {calendar.displayLabel} calendar
         </h1>
-        <p className="text-sm leading-6 text-slate-500">
+        <p className="text-sm leading-6 text-muted-foreground">
           Short Let availability is checked against the dates a renter selects. Marking the nights this unit is taken is
           what stops someone paying to unlock a stay that is not free. Bookable from {formatDate(calendar.bookableFrom)}{' '}
           to {formatDate(calendar.bookableUntil)}.
         </p>
         <Link
           href={`/dashboard/browse/${calendar.propertyId}`}
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-veriq-secondary hover:underline"
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
         >
           <Home className="h-3.5 w-3.5" /> Open the property
         </Link>

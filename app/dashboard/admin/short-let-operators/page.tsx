@@ -158,10 +158,10 @@ export default function AdminShortLetOperatorsPage() {
     <div className="mx-auto max-w-6xl space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-display text-2xl font-bold text-navy-900">
+          <h1 className="font-display text-2xl font-bold text-foreground">
             Short Let Operators
           </h1>
-          <p className="text-sm text-veriq-muted">
+          <p className="text-sm text-muted-foreground">
             Approve operators and manage the master directory.
           </p>
         </div>
@@ -187,8 +187,8 @@ export default function AdminShortLetOperatorsPage() {
           ))}
         </select>
       </div>
-      <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
-        <div className="grid grid-cols-[2fr_1.2fr_1fr_1fr_auto] gap-4 border-b bg-slate-50 px-5 py-3 text-xs font-semibold text-slate-500">
+      <div className="overflow-hidden rounded-lg border border-[#ffffff12] bg-card">
+        <div className="grid grid-cols-[2fr_1.2fr_1fr_1fr_auto] gap-4 border-b bg-[#ffffff08] px-5 py-3 text-xs font-semibold text-muted-foreground">
           <span>Operator</span>
           <span>Contact</span>
           <span>Approval</span>
@@ -196,9 +196,9 @@ export default function AdminShortLetOperatorsPage() {
           <span>Action</span>
         </div>
         {loading ? (
-          <p className="p-8 text-center text-sm text-slate-500">Loading operators...</p>
+          <p className="p-8 text-center text-sm text-muted-foreground">Loading operators...</p>
         ) : items.length === 0 ? (
-          <p className="p-8 text-center text-sm text-slate-500">
+          <p className="p-8 text-center text-sm text-muted-foreground">
             No operators found.
           </p>
         ) : (
@@ -208,14 +208,14 @@ export default function AdminShortLetOperatorsPage() {
               className="grid grid-cols-[2fr_1.2fr_1fr_1fr_auto] items-center gap-4 border-b px-5 py-4 text-sm last:border-0"
             >
               <div>
-                <p className="font-semibold text-navy-900">{item.name}</p>
-                <p className="text-xs text-slate-500">
+                <p className="font-semibold text-foreground">{item.name}</p>
+                <p className="text-xs text-muted-foreground">
                   {item.websiteUrl || "No website"}
                 </p>
               </div>
               <div>
                 <p>{item.contactPerson || "Not provided"}</p>
-                <p className="text-xs text-slate-500">{item.phone}</p>
+                <p className="text-xs text-muted-foreground">{item.phone}</p>
               </div>
               <select
                 className="input !py-2"
@@ -242,7 +242,7 @@ export default function AdminShortLetOperatorsPage() {
       </div>
       {form && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-lg rounded-lg bg-white p-6 shadow-xl">
+          <div className="w-full max-w-lg rounded-lg bg-card p-6 shadow-xl">
             <div className="mb-5 flex items-center justify-between">
               <h2 className="font-display text-lg font-bold">
                 {form.id ? "Edit" : "Add"} operator
@@ -266,7 +266,7 @@ export default function AdminShortLetOperatorsPage() {
                   <span className="label">{label}</span>
                   <input
                     id={`operator-${key}`}
-                    className={`input ${formErrors[key as OperatorField] ? "!border-red-500 !bg-red-50/40 focus:!border-red-600 focus:!ring-2 focus:!ring-red-200" : ""}`}
+                    className={`input ${formErrors[key as OperatorField] ? "!border-destructive !bg-[#fb718510] focus:!border-destructive focus:!ring-2 focus:!ring-[#fb718530]" : ""}`}
                     type={
                       key === "email"
                         ? "email"
@@ -286,7 +286,7 @@ export default function AdminShortLetOperatorsPage() {
                     aria-describedby={formErrors[key as OperatorField] ? `${key}-error` : undefined}
                   />
                   {formErrors[key as OperatorField] && (
-                    <span id={`${key}-error`} role="alert" className="mt-1.5 block text-xs font-semibold leading-5 text-red-600">
+                    <span id={`${key}-error`} role="alert" className="mt-1.5 block text-xs font-semibold leading-5 text-destructive">
                       {formErrors[key as OperatorField]}
                     </span>
                   )}
@@ -305,16 +305,16 @@ export default function AdminShortLetOperatorsPage() {
       )}
       {listingOperator && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-2xl rounded-lg bg-white p-6 shadow-xl">
+          <div className="w-full max-w-2xl rounded-lg bg-card p-6 shadow-xl">
             <div className="mb-5 flex items-start justify-between">
-              <div><h2 className="font-display text-lg font-bold">{listingOperator.name}</h2><p className="text-sm text-slate-500">Associated Short Let listings</p></div>
+              <div><h2 className="font-display text-lg font-bold">{listingOperator.name}</h2><p className="text-sm text-muted-foreground">Associated Short Let listings</p></div>
               <button title="Close" onClick={() => setListingOperator(null)}><X /></button>
             </div>
             <div className="max-h-[60vh] space-y-2 overflow-y-auto">
-              {listings.length === 0 ? <p className="rounded-md bg-slate-50 p-6 text-center text-sm text-slate-500">No listings are associated with this operator.</p> : listings.map((listing) => (
-                <div key={listing.id} className="flex items-center justify-between gap-4 rounded-md border border-slate-200 p-4">
-                  <div><p className="font-semibold text-navy-900">{listing.title}</p><p className="text-xs text-slate-500">{listing.area}, {listing.city}</p></div>
-                  <span className={`rounded-full px-2 py-1 text-xs font-semibold capitalize ${listing.status === ListingStatus.ACTIVE ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>{listing.status}</span>
+              {listings.length === 0 ? <p className="rounded-md bg-[#ffffff08] p-6 text-center text-sm text-muted-foreground">No listings are associated with this operator.</p> : listings.map((listing) => (
+                <div key={listing.id} className="flex items-center justify-between gap-4 rounded-md border border-[#ffffff12] p-4">
+                  <div><p className="font-semibold text-foreground">{listing.title}</p><p className="text-xs text-muted-foreground">{listing.area}, {listing.city}</p></div>
+                  <span className={`rounded-full px-2 py-1 text-xs font-semibold capitalize ${listing.status === ListingStatus.ACTIVE ? "bg-[#10b98112] text-primary" : "bg-[#ffffff08] text-muted-foreground"}`}>{listing.status}</span>
                 </div>
               ))}
             </div>

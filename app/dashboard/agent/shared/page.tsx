@@ -8,7 +8,7 @@ import { UserRole } from '@/types';
 import { sharedVerificationApi } from '@/lib/api/agent';
 import { useAuth } from '@/context/AuthContext';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
-import { CASE_STATUS_STYLES, PUBLICATION_STATUS_STYLES, errorMessage, humanize, relativeAge } from '@/components/agent/format';
+import { CASE_STATUS_TONES, PUBLICATION_STATUS_TONES, errorMessage, humanize, relativeAge } from '@/components/agent/format';
 import { EmptyBlock, ErrorBlock, InlineNotice, LoadingBlock, PageHeader, StatusPill, smallButton } from '@/components/agent/ui';
 
 const TYPE_LABELS: Record<string, string> = {
@@ -74,10 +74,10 @@ export default function SharedVerificationQueuePage() {
         occupancy/permission (authority), household facts and contribution terms before you publish again (§28.2).
       </InlineNotice>
 
-      <div className="card !shadow-sm grid grid-cols-1 gap-3 p-4 sm:grid-cols-3">
+      <div className="card grid grid-cols-1 gap-3 p-4 sm:grid-cols-3">
         <label className="relative block sm:col-span-2">
           <span className="sr-only">Search</span>
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input className="input !py-2 !pl-9 text-sm" placeholder="Search label, area or city" value={query} onChange={(event) => setQuery(event.target.value)} />
         </label>
         <select className="input !py-2 text-sm" value={kind} onChange={(event) => setKind(event.target.value as typeof kind)} aria-label="Case type">
@@ -101,26 +101,26 @@ export default function SharedVerificationQueuePage() {
           {filtered.map((item) => (
             <li key={item.id}>
               {item.opportunity ? (
-                <Link href={`/dashboard/agent/shared/${item.opportunity.id}`} className="card !shadow-sm flex flex-col gap-3 p-4 hover:!shadow-card-hover sm:flex-row sm:items-center sm:justify-between">
+                <Link href={`/dashboard/agent/shared/${item.opportunity.id}`} className="card flex flex-col gap-3 p-4 transition-colors hover:border-[#10b98170] sm:flex-row sm:items-center sm:justify-between">
                   <div className="min-w-0 space-y-1">
-                    <p className="truncate font-semibold text-navy-900">{item.opportunity.displayLabel}</p>
-                    <p className="text-xs text-slate-500">
+                    <p className="truncate font-semibold text-foreground">{item.opportunity.displayLabel}</p>
+                    <p className="text-xs text-muted-foreground">
                       {TYPE_LABELS[item.opportunity.opportunityType] ?? humanize(item.opportunity.opportunityType)} · {item.opportunity.area}, {item.opportunity.city}
                     </p>
                     <div className="flex flex-wrap gap-1.5">
-                      <StatusPill value={item.status} styles={CASE_STATUS_STYLES} />
-                      <StatusPill value={item.opportunity.publicationStatus} styles={PUBLICATION_STATUS_STYLES} />
-                      {item.isReverification && <span className="badge bg-purple-50 !px-2 !py-0.5 text-[11px] text-purple-700">Re-verification</span>}
-                      {item.escalated && <span className="badge bg-red-100 !px-2 !py-0.5 text-[11px] text-red-800">Escalated</span>}
+                      <StatusPill value={item.status} tones={CASE_STATUS_TONES} />
+                      <StatusPill value={item.opportunity.publicationStatus} tones={PUBLICATION_STATUS_TONES} />
+                      {item.isReverification && <span className="badge bg-[#ffffff06] !px-2 !py-0.5 text-[11px] text-muted-foreground border-[#ffffff20]">Re-verification</span>}
+                      {item.escalated && <span className="badge bg-[#fb718518] !px-2 !py-0.5 text-[11px] text-[#fda4af] border-[#fb718530]">Escalated</span>}
                     </div>
                   </div>
                   <div className="flex items-center justify-between gap-3 sm:justify-end">
-                    <span className="text-xs text-slate-500">Opened {relativeAge(item.createdAt)}</span>
-                    <ChevronRight className="h-4 w-4 text-slate-400" />
+                    <span className="text-xs text-muted-foreground">Opened {relativeAge(item.createdAt)}</span>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
                   </div>
                 </Link>
               ) : (
-                <div className="card !shadow-sm p-4 text-sm text-slate-500">Case {item.id}: the opportunity record is no longer available.</div>
+                <div className="card p-4 text-sm text-muted-foreground">Case {item.id}: the opportunity record is no longer available.</div>
               )}
             </li>
           ))}

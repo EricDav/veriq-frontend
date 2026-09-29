@@ -35,22 +35,22 @@ export function StatusTimeline({ status, correctionNotes, submittedAt, published
           return (
             <li key={step} className="flex items-center gap-3 sm:flex-1 sm:flex-col sm:items-center sm:gap-2 sm:text-center">
               <div className="flex items-center sm:w-full">
-                <span className={cn('hidden h-0.5 flex-1 sm:block', index === 0 ? 'invisible' : index <= currentIndex ? 'bg-veriq-secondary' : 'bg-slate-200')} />
+                <span className={cn('hidden h-0.5 flex-1 sm:block', index === 0 ? 'invisible' : index <= currentIndex ? 'bg-primary' : 'bg-[#ffffff20]')} />
                 <span
                   className={cn(
-                    'flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border-2 text-xs font-bold',
-                    done && 'border-veriq-secondary bg-veriq-secondary text-white',
-                    current && !correction && 'border-veriq-secondary bg-white text-veriq-secondary',
-                    current && correction && 'border-red-500 bg-red-50 text-red-600',
-                    !done && !current && 'border-slate-200 bg-white text-slate-400',
+                    'flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border-2 text-xs font-semibold',
+                    done && 'border-primary bg-primary text-primary-foreground',
+                    current && !correction && 'border-primary bg-[#10b98112] text-[#6ee7b7]',
+                    current && correction && 'border-destructive bg-[#fb718510] text-[#fda4af]',
+                    !done && !current && 'border-[#ffffff20] bg-[#070b1444] text-muted-foreground',
                   )}
                   aria-current={current ? 'step' : undefined}
                 >
-                  {done ? <Check className="h-3.5 w-3.5" /> : index + 1}
+                  {done ? <Check aria-hidden="true" className="h-3.5 w-3.5" /> : index + 1}
                 </span>
-                <span className={cn('hidden h-0.5 flex-1 sm:block', index === steps.length - 1 ? 'invisible' : index < currentIndex ? 'bg-veriq-secondary' : 'bg-slate-200')} />
+                <span className={cn('hidden h-0.5 flex-1 sm:block', index === steps.length - 1 ? 'invisible' : index < currentIndex ? 'bg-primary' : 'bg-[#ffffff20]')} />
               </div>
-              <span className={cn('text-xs font-medium', current ? (correction ? 'text-red-600' : 'text-navy-900') : done ? 'text-slate-700' : 'text-slate-400')}>
+              <span className={cn('text-xs font-medium', current ? (correction ? 'text-[#fda4af]' : 'text-foreground') : done ? 'text-[#6ee7b7]' : 'text-muted-foreground')}>
                 {PUBLICATION_STATUS_META[step].label}
               </span>
             </li>
@@ -58,9 +58,9 @@ export function StatusTimeline({ status, correctionNotes, submittedAt, published
         })}
       </ol>
 
-      <p className="text-sm text-slate-600">{PUBLICATION_STATUS_META[status].description}</p>
+      <p className="text-ui-md text-muted-foreground">{PUBLICATION_STATUS_META[status].description}</p>
       {(submittedAt || publishedAt) && (
-        <p className="text-xs text-slate-500">
+        <p className="text-ui-sm text-muted-foreground">
           {submittedAt && `Submitted ${formatDateTime(submittedAt)}`}
           {submittedAt && publishedAt && ' · '}
           {publishedAt && `Published ${formatDateTime(publishedAt)}`}

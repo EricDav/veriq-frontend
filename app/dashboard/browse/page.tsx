@@ -262,7 +262,7 @@ export default function BrowsePropertiesPage() {
     <div className="max-w-7xl mx-auto space-y-5">
       {/* Header */}
       <div>
-        <h1 className="font-display text-2xl font-bold text-navy-900">Browse Properties</h1>
+        <h1 className="font-display text-2xl font-bold text-foreground">Browse Properties</h1>
         <p className="text-sm text-veriq-muted">
           {isLoading ? 'Loading listings…' : accessFilter === 'unlocked' ? `${total} active unlocked ${total === 1 ? 'property' : 'properties'}` : `${total} verified listings available`}
         </p>
@@ -299,7 +299,7 @@ export default function BrowsePropertiesPage() {
       {/* Search + filter toggle row */}
       <div className="flex items-center gap-3 flex-wrap">
         <form onSubmit={handleSearchSubmit} className="flex flex-1 min-w-64 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5">
-          <Search className="h-4 w-4 text-slate-400 flex-shrink-0" />
+          <Search className="h-4 w-4 text-muted-foreground flex-shrink-0" />
           <input
             type="text"
             value={search}
@@ -309,7 +309,7 @@ export default function BrowsePropertiesPage() {
           />
           {search && (
             <button type="button" onClick={() => { setSearch(''); handleClearFilters(); }}>
-              <X className="h-3.5 w-3.5 text-slate-400 hover:text-slate-600" />
+              <X className="h-3.5 w-3.5 text-muted-foreground hover:text-muted-foreground" />
             </button>
           )}
         </form>
@@ -602,7 +602,7 @@ export default function BrowsePropertiesPage() {
       {/* Trust banner */}
       <div className="flex items-center gap-3 rounded-xl bg-veriq-secondary/10 border border-veriq-secondary/20 px-4 py-3">
         <Shield className="h-4 w-4 text-veriq-secondary flex-shrink-0" />
-        <p className="text-xs text-navy-800">
+        <p className="text-xs text-foreground">
           <strong>Verified listings</strong> — unlock a property&apos;s intelligence report to access full details, agent contact, and disclosures.
         </p>
       </div>
@@ -615,9 +615,9 @@ export default function BrowsePropertiesPage() {
       ) : properties.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 text-center card">
           <div className="h-16 w-16 rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
-            <Search className="h-8 w-8 text-slate-400" />
+            <Search className="h-8 w-8 text-muted-foreground" />
           </div>
-          <h3 className="font-display text-lg font-bold text-navy-900 mb-2">No properties found</h3>
+          <h3 className="font-display text-lg font-bold text-foreground mb-2">No properties found</h3>
           <p className="text-sm text-veriq-muted max-w-xs">
             Try adjusting your filters or searching a different area.
           </p>
@@ -662,7 +662,7 @@ export default function BrowsePropertiesPage() {
                   {p}
                 </button>
               ))}
-              {totalPages > 5 && <span className="text-slate-400 text-sm">…</span>}
+              {totalPages > 5 && <span className="text-muted-foreground text-sm">…</span>}
               <button
                 disabled={page === totalPages}
                 onClick={() => setPage((p) => p + 1)}

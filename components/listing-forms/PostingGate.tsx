@@ -6,6 +6,7 @@ import { BadgeCheck, CircleDashed, Contact, Lock, ShieldCheck, SmartphoneNfc } f
 import { operatorAccountsApi } from '@/lib/api/operator';
 import type { PostingReadiness, PostingRequirementKey } from '@/types/operator';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { Button, ChipIcon, Panel } from '@/components/ui';
 import { errorMessage } from './issues';
 import { Notice } from './ui';
 
@@ -77,30 +78,28 @@ export function PostingRequirementList({
         return (
           <li
             key={item.requirement}
-            className={`flex flex-col gap-2 rounded-xl border p-3 sm:flex-row sm:items-center sm:justify-between ${
-              item.satisfied ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-white'
+            className={`flex flex-col gap-2 rounded-unit border p-[17px] wide:flex-row wide:items-center wide:justify-between ${
+              item.satisfied ? 'border-[#10b98135] bg-[#10b98112]' : 'border-[#ffffff18] bg-[#070b1444]'
             }`}
           >
             <div className="flex min-w-0 items-start gap-2.5">
               {item.satisfied ? (
-                <ShieldCheck className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-600" />
+                <ShieldCheck aria-hidden="true" className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" />
               ) : (
-                <CircleDashed className="mt-0.5 h-4 w-4 flex-shrink-0 text-slate-400" />
+                <CircleDashed aria-hidden="true" className="mt-0.5 h-4 w-4 flex-shrink-0 text-muted-foreground" />
               )}
               <div className="min-w-0">
-                <p className={`text-sm font-semibold ${item.satisfied ? 'text-emerald-900' : 'text-navy-900'}`}>
-                  <Icon className="mr-1.5 inline h-3.5 w-3.5 align-[-2px]" />
+                <p className={`text-ui-md font-semibold ${item.satisfied ? 'text-[#6ee7b7]' : 'text-foreground'}`}>
+                  <Icon aria-hidden="true" className="mr-1.5 inline h-3.5 w-3.5 align-[-2px]" />
                   {item.label}
                 </p>
-                <p className={`text-xs ${item.satisfied ? 'text-emerald-800' : 'text-slate-500'}`}>
-                  {item.satisfied ? 'Done' : item.message}
-                </p>
+                <p className="text-ui-sm text-muted-foreground">{item.satisfied ? 'Done' : item.message}</p>
               </div>
             </div>
             {!item.satisfied && (
-              <Link href={action.href} className="btn-outline flex-shrink-0 !px-3 !py-2 !text-xs">
-                {action.label}
-              </Link>
+              <Button asChild variant="secondary" size="small" className="flex-shrink-0">
+                <Link href={action.href}>{action.label}</Link>
+              </Button>
             )}
           </li>
         );
@@ -126,8 +125,8 @@ export function PostingGate({
 
   if (loading && !readiness) {
     return (
-      <div className="flex items-center justify-center gap-2 py-16 text-sm text-slate-500">
-        <LoadingSpinner size="lg" className="text-veriq-secondary" /> Checking your Operator verification…
+      <div role="status" aria-live="polite" className="flex items-center justify-center gap-2 py-16 text-ui-md text-muted-foreground">
+        <LoadingSpinner size="lg" className="text-primary" /> Checking your Operator verification…
       </div>
     );
   }
@@ -136,9 +135,9 @@ export function PostingGate({
     return (
       <Notice tone="error" title="We could not check your Operator verification">
         <p>{errorMessage(error, 'Veriq needs to confirm your identity before you post a listing.')}</p>
-        <button type="button" onClick={() => void reload()} className="mt-2 text-sm font-semibold underline">
+        <Button variant="secondary" size="small" className="mt-3" onClick={() => void reload()}>
           Try again
-        </button>
+        </Button>
       </Notice>
     );
   }
@@ -146,16 +145,16 @@ export function PostingGate({
   if (readiness.canPost) return <>{children}</>;
 
   return (
-    <section className="card space-y-4 p-5 sm:p-6" aria-labelledby="posting-gate-heading">
+    <Panel as="section" className="space-y-4" aria-labelledby="posting-gate-heading">
       <div className="flex items-start gap-3">
-        <span className="grid h-10 w-10 flex-shrink-0 place-items-center rounded-xl bg-amber-50 text-amber-600">
-          <Lock className="h-5 w-5" />
-        </span>
+        <ChipIcon>
+          <Lock aria-hidden="true" className="h-5 w-5" />
+        </ChipIcon>
         <div className="min-w-0">
-          <h2 id="posting-gate-heading" className="font-display text-base font-bold text-navy-900">
+          <h2 id="posting-gate-heading" className="font-display text-base font-semibold text-foreground">
             {title}
           </h2>
-          <p className="mt-1 text-sm leading-6 text-slate-500">
+          <p className="mt-1 text-ui-md leading-6 text-muted-foreground">
             Verifying your account confirms who you are. It does not confirm that you own a particular property —
             each listing is verified on its own.
           </p>
@@ -167,14 +166,14 @@ export function PostingGate({
           <p>{readiness.furtherEvidenceNote ?? 'Veriq needs limited further evidence to clarify your identity, role or authority.'}</p>
         </Notice>
       )}
-      <div className="flex flex-wrap gap-2">
-        <Link href="/dashboard/operator/verification" className="btn-primary !py-2.5">
-          Open my verification checklist
-        </Link>
-        <Link href="/dashboard/operator" className="btn-outline !py-2.5">
-          Back to my dashboard
-        </Link>
+      <div className="flex flex-wrap gap-3">
+        <Button asChild>
+          <Link href="/dashboard/operator/verification">Open my verification checklist</Link>
+        </Button>
+        <Button asChild variant="secondary">
+          <Link href="/dashboard/operator">Back to my dashboard</Link>
+        </Button>
       </div>
-    </section>
+    </Panel>
   );
 }

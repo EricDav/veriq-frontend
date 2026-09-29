@@ -48,7 +48,7 @@ export default function RetiredAgentSaleCreationPage() {
         backHref="/dashboard/agent/sales"
         backLabel="Property for Sale"
         subtitle="Veriq Agents no longer create sale listings. The owner submits from their Operator dashboard, and you verify, agree terms and publish."
-        badges={<span className="badge bg-amber-50 text-amber-700">Page moved</span>}
+        badges={<span className="badge bg-[#fbbf2410] text-[#fcd34d] border-[#fbbf2430]">Page moved</span>}
       />
 
       <InlineNotice tone="info">
@@ -62,16 +62,16 @@ export default function RetiredAgentSaleCreationPage() {
           <Link
             key={step.href}
             href={step.href}
-            className={`card flex items-start gap-4 p-5 ${step.primary ? 'ring-1 ring-veriq-secondary/40' : ''}`}
+            className={`card flex items-start gap-4 p-5 ${step.primary ? 'ring-1 ring-[#10b98166]' : ''}`}
           >
-            <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-emerald-50">
-              <step.icon className="h-5 w-5 text-veriq-secondary" />
+            <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-[#10b98112]">
+              <step.icon className="h-5 w-5 text-primary" />
             </span>
             <span className="min-w-0 flex-1">
-              <span className="flex items-center gap-1.5 font-semibold text-navy-900">
-                {step.label} <ArrowRight className="h-4 w-4 text-veriq-secondary" />
+              <span className="flex items-center gap-1.5 font-semibold text-foreground">
+                {step.label} <ArrowRight className="h-4 w-4 text-primary" />
               </span>
-              <span className="mt-0.5 block text-sm text-slate-500">{step.description}</span>
+              <span className="mt-0.5 block text-sm text-muted-foreground">{step.description}</span>
             </span>
           </Link>
         ))}

@@ -11,6 +11,7 @@ import { UserRole } from '@/types';
 import { PageLoader, LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { PropertyCard } from '@/components/properties/PropertyCard';
 import { AgentAssignedProperties } from '@/components/agent/AgentAssignedProperties';
+import { buttonClass } from '@/components/ui';
 
 const formatDate = (value: string | null | undefined) =>
   value ? new Date(value).toLocaleString() : 'Not provided';
@@ -42,10 +43,10 @@ function UserPropertiesView() {
     <div className="max-w-5xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-display text-2xl font-bold text-navy-900">My Properties</h1>
-          <p className="text-sm text-veriq-muted">Properties you&apos;ve unlocked intelligence reports for</p>
+          <h1 className="font-display text-2xl font-bold text-foreground">My Properties</h1>
+          <p className="text-sm text-muted-foreground">Properties you&apos;ve unlocked intelligence reports for</p>
         </div>
-        <Link href="/properties" className="btn-primary !text-sm !py-2.5">
+        <Link href="/properties" className={buttonClass()}>
           <Plus className="h-4 w-4" /> Find Properties
         </Link>
       </div>
@@ -62,22 +63,22 @@ function UserPropertiesView() {
                 property={consultation.property}
                 detailHref={`/dashboard/browse/${consultation.propertyId}`}
               />
-              <p className="rounded-xl bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
+              <p className="rounded-xl bg-[#10b98112] px-3 py-2 text-xs font-semibold text-[#6ee7b7]">
                 Access valid until {formatDate(consultation.accessExpiresAt)}
               </p>
             </div>
           ))}
         </div>
       ) : (
-        <div className="rounded-2xl bg-veriq-surface border border-slate-200 p-8 flex flex-col items-center text-center">
-          <div className="h-16 w-16 rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
-            <Home className="h-8 w-8 text-slate-400" />
+        <div className="rounded-2xl bg-veriq-surface border border-[#ffffff18] p-8 flex flex-col items-center text-center">
+          <div className="h-16 w-16 rounded-2xl bg-[#ffffff0f] flex items-center justify-center mb-4">
+            <Home className="h-8 w-8 text-muted-foreground" />
           </div>
-          <h3 className="font-display text-base font-bold text-navy-900 mb-2">No active unlocked reports</h3>
-          <p className="text-sm text-veriq-muted mb-5 max-w-sm">
+          <h3 className="font-display text-base font-bold text-foreground mb-2">No active unlocked reports</h3>
+          <p className="text-sm text-muted-foreground mb-5 max-w-sm">
             Browse properties and unlock intelligence reports to access full details and contact agents.
           </p>
-          <Link href="/properties" className="btn-primary">Browse Properties</Link>
+          <Link href="/properties" className={buttonClass()}>Browse Properties</Link>
         </div>
       )}
     </div>

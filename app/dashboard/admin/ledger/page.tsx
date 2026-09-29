@@ -310,7 +310,7 @@ function AdminLedgerInner() {
         <input id="ledger-to" type="date" className="input" value={range.to} onChange={(event) => setRange((r) => ({ ...r, to: event.target.value }))} />
       </div>
       <button type="button" onClick={() => { setTxPage(1); refresh(); }} className="btn-outline !py-2.5 !text-sm">Apply range</button>
-      <p className="text-xs text-slate-500 sm:ml-auto">Unlock and revenue figures use settlement dates in this range.</p>
+      <p className="text-xs text-muted-foreground sm:ml-auto">Unlock and revenue figures use settlement dates in this range.</p>
     </div>
   );
 
@@ -361,9 +361,9 @@ function AdminLedgerInner() {
               <Panel title="Agent earnings balances" description="Totals across all Agents, by earning state.">
                 <div className="grid grid-cols-2 gap-2 p-4 sm:grid-cols-4 lg:grid-cols-7">
                   {BUCKET_LABELS.map(({ key, label }) => (
-                    <div key={key} className="rounded-xl bg-slate-50 p-3">
-                      <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">{label}</p>
-                      <p className="mt-1 text-sm font-bold text-navy-900">{naira(overview.agentBalances[key] ?? 0)}</p>
+                    <div key={key} className="rounded-xl bg-[#ffffff08] p-3">
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
+                      <p className="mt-1 text-sm font-bold text-foreground">{naira(overview.agentBalances[key] ?? 0)}</p>
                     </div>
                   ))}
                 </div>
@@ -387,7 +387,7 @@ function AdminLedgerInner() {
               onSubmit={(event) => { event.preventDefault(); setTxPage(1); setTxSearch(txSearchInput.trim()); }}
               className="relative"
             >
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <input aria-label="Search unlock transactions" className="input !pl-9" value={txSearchInput} onChange={(event) => setTxSearchInput(event.target.value)} placeholder="Payment reference or renter email — press Enter" />
             </form>
             <select aria-label="Unlock status" className="input" value={txStatus} onChange={(event) => { setTxPage(1); setTxStatus(event.target.value as UnlockStatus | ''); }}>
@@ -405,7 +405,7 @@ function AdminLedgerInner() {
               <>
                 <TableScroll>
                   <table className="w-full min-w-[1080px]">
-                    <thead className="bg-slate-50">
+                    <thead className="bg-[#ffffff08]">
                       <tr>
                         <th className={th}>Created</th>
                         <th className={th}>Renter</th>
@@ -417,37 +417,37 @@ function AdminLedgerInner() {
                         <th className={th}><span className="sr-only">Actions</span></th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-[#ffffff12]">
                       {transactions.map((tx) => (
-                        <tr key={tx.id} className="hover:bg-slate-50/60">
+                        <tr key={tx.id} className="hover:bg-[#ffffff08]">
                           <td className={td}><span className="whitespace-nowrap text-xs">{dateTime(tx.createdAt)}</span></td>
                           <td className={td}>
                             <p className="text-xs font-semibold">{tx.user ? `${tx.user.firstName} ${tx.user.lastName}`.trim() : 'Unknown'}</p>
-                            <p className="text-[11px] text-slate-500">{tx.user?.email ?? tx.id}</p>
+                            <p className="text-[11px] text-muted-foreground">{tx.user?.email ?? tx.id}</p>
                           </td>
                           <td className={td}>
                             <p className="text-xs">{TARGET_LABELS[tx.targetType] ?? humanize(tx.targetType)}</p>
-                            <p className="break-all font-mono text-[11px] text-slate-400">{tx.propertyId ?? tx.sharedOpportunityId ?? tx.saleListingId ?? '—'}</p>
+                            <p className="break-all font-mono text-[11px] text-muted-foreground">{tx.propertyId ?? tx.sharedOpportunityId ?? tx.saleListingId ?? '—'}</p>
                           </td>
                           <td className={td}>
                             <StatusBadge status={tx.status} />
-                            {tx.failureReason && <p className="mt-1 max-w-[180px] text-[11px] text-red-600">{tx.failureReason}</p>}
+                            {tx.failureReason && <p className="mt-1 max-w-[180px] text-[11px] text-destructive">{tx.failureReason}</p>}
                           </td>
                           <td className={`${td} text-right`}>
                             <p className="whitespace-nowrap font-semibold">{naira(tx.feeAmount)}</p>
-                            <p className="whitespace-nowrap text-[11px] text-slate-500">{naira(tx.walletAmount)} wallet · {naira(tx.externalAmount)} direct</p>
-                            {tx.priceSource && <p className="whitespace-nowrap text-[11px] text-slate-400">{humanize(tx.priceSource)}</p>}
+                            <p className="whitespace-nowrap text-[11px] text-muted-foreground">{naira(tx.walletAmount)} wallet · {naira(tx.externalAmount)} direct</p>
+                            {tx.priceSource && <p className="whitespace-nowrap text-[11px] text-muted-foreground">{humanize(tx.priceSource)}</p>}
                           </td>
                           <td className={`${td} text-right`}>
                             <p className="whitespace-nowrap text-xs">{naira(tx.platformShareAmount ?? 0)} / {naira(tx.agentShareAmount ?? 0)}</p>
-                            {tx.agentSharePercent !== null && <p className="whitespace-nowrap text-[11px] text-slate-500">{Number(tx.agentSharePercent)}% Agent share</p>}
+                            {tx.agentSharePercent !== null && <p className="whitespace-nowrap text-[11px] text-muted-foreground">{Number(tx.agentSharePercent)}% Agent share</p>}
                           </td>
                           <td className={td}>
                             <p className="break-all font-mono text-[11px]">{tx.paymentReference ?? '—'}</p>
-                            <p className="text-[11px] text-slate-500">{tx.paymentProvider ? humanize(tx.paymentProvider) : ''}{tx.settledAt ? ` · settled ${dateOnly(tx.settledAt)}` : ''}</p>
+                            <p className="text-[11px] text-muted-foreground">{tx.paymentProvider ? humanize(tx.paymentProvider) : ''}{tx.settledAt ? ` · settled ${dateOnly(tx.settledAt)}` : ''}</p>
                           </td>
                           <td className={`${td} text-right`}>
-                            <Link href={`/dashboard/admin/refunds?unlockId=${encodeURIComponent(tx.id)}`} className="whitespace-nowrap rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-bold text-navy-700 hover:bg-slate-50">
+                            <Link href={`/dashboard/admin/refunds?unlockId=${encodeURIComponent(tx.id)}`} className="whitespace-nowrap rounded-lg border border-[#ffffff12] px-2.5 py-1.5 text-xs font-bold text-foreground hover:bg-[#ffffff08]">
                               Refund case
                             </Link>
                           </td>
@@ -475,7 +475,7 @@ function AdminLedgerInner() {
             ) : (
               <TableScroll>
                 <table className="w-full min-w-[760px]">
-                  <thead className="bg-slate-50">
+                  <thead className="bg-[#ffffff08]">
                     <tr>
                       <th className={th}>Veriq Agent</th>
                       <th className={`${th} text-right`}>Unlocks</th>
@@ -485,18 +485,18 @@ function AdminLedgerInner() {
                       <th className={`${th} text-right`}>Cancelled</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-[#ffffff12]">
                     {revenue.map((row) => (
-                      <tr key={row.agentId} className="hover:bg-slate-50/60">
+                      <tr key={row.agentId} className="hover:bg-[#ffffff08]">
                         <td className={td}>
                           <p className="font-semibold">{row.agentName?.trim() || row.agentId}</p>
-                          <p className="font-mono text-[11px] text-slate-400">{row.agentId}</p>
+                          <p className="font-mono text-[11px] text-muted-foreground">{row.agentId}</p>
                         </td>
                         <td className={`${td} text-right`}>{row.unlocks.toLocaleString('en-NG')}</td>
                         <td className={`${td} whitespace-nowrap text-right`}>{naira(row.gross)}</td>
                         <td className={`${td} whitespace-nowrap text-right font-semibold`}>{naira(row.agentShare)}</td>
                         <td className={`${td} whitespace-nowrap text-right`}>{naira(Math.max(0, row.gross - row.agentShare))}</td>
-                        <td className={`${td} whitespace-nowrap text-right text-slate-500`}>{naira(row.cancelled)}</td>
+                        <td className={`${td} whitespace-nowrap text-right text-muted-foreground`}>{naira(row.cancelled)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -511,7 +511,7 @@ function AdminLedgerInner() {
         <div className="space-y-4">
           <div className="card grid grid-cols-1 gap-3 p-4 hover:shadow-card sm:grid-cols-2 lg:grid-cols-4">
             <form onSubmit={(event) => { event.preventDefault(); setWalletPage(1); setWalletSearch(walletSearchInput.trim()); }} className="relative lg:col-span-2">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <input aria-label="Search the wallet ledger" className="input !pl-9" value={walletSearchInput} onChange={(event) => setWalletSearchInput(event.target.value)} placeholder="Name, email, reference or description — press Enter" />
             </form>
             <select aria-label="Transaction type" className="input" value={walletType} onChange={(event) => { setWalletPage(1); setWalletType(event.target.value as WalletTransactionType | ''); }}>
@@ -540,7 +540,7 @@ function AdminLedgerInner() {
               <>
                 <TableScroll>
                   <table className="w-full min-w-[900px]">
-                    <thead className="bg-slate-50">
+                    <thead className="bg-[#ffffff08]">
                       <tr>
                         <th className={th}>When</th>
                         <th className={th}>Account</th>
@@ -551,21 +551,21 @@ function AdminLedgerInner() {
                         <th className={th}>Description</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-[#ffffff12]">
                       {walletRows.map((row) => (
-                        <tr key={row.id} className="hover:bg-slate-50/60">
+                        <tr key={row.id} className="hover:bg-[#ffffff08]">
                           <td className={td}><span className="whitespace-nowrap text-xs">{dateTime(row.createdAt)}</span></td>
                           <td className={td}>
                             <p className="text-xs font-semibold">{row.user?.name?.trim() || 'Unknown'}</p>
-                            <p className="text-[11px] text-slate-500">{row.user?.email ?? row.userId}</p>
+                            <p className="text-[11px] text-muted-foreground">{row.user?.email ?? row.userId}</p>
                           </td>
                           <td className={td}><StatusBadge status={row.type} label={humanize(row.type)} tone={row.type === 'refund' ? 'green' : row.type === 'debit' ? 'slate' : 'blue'} /></td>
                           <td className={`${td} whitespace-nowrap text-right font-semibold`}>{naira(row.amount)}</td>
-                          <td className={`${td} whitespace-nowrap text-right text-slate-500`}>{row.balanceAfter === null ? '—' : naira(row.balanceAfter)}</td>
+                          <td className={`${td} whitespace-nowrap text-right text-muted-foreground`}>{row.balanceAfter === null ? '—' : naira(row.balanceAfter)}</td>
                           <td className={td}><StatusBadge status={row.status} /></td>
                           <td className={td}>
-                            <p className="max-w-[240px] text-xs text-slate-600">{row.description || '—'}</p>
-                            {row.paymentReference && <p className="break-all font-mono text-[11px] text-slate-400">{row.paymentReference}</p>}
+                            <p className="max-w-[240px] text-xs text-muted-foreground">{row.description || '—'}</p>
+                            {row.paymentReference && <p className="break-all font-mono text-[11px] text-muted-foreground">{row.paymentReference}</p>}
                           </td>
                         </tr>
                       ))}
@@ -590,7 +590,7 @@ function AdminLedgerInner() {
             ) : (
               <TableScroll>
                 <table className="w-full min-w-[1040px]">
-                  <thead className="bg-slate-50">
+                  <thead className="bg-[#ffffff08]">
                     <tr>
                       <th className={th}>Agent</th>
                       {BUCKET_LABELS.map(({ key, label }) => (
@@ -599,9 +599,9 @@ function AdminLedgerInner() {
                       <th className={th}><span className="sr-only">Actions</span></th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-[#ffffff12]">
                     {balances.map((row) => (
-                      <tr key={row.agentId} className="hover:bg-slate-50/60">
+                      <tr key={row.agentId} className="hover:bg-[#ffffff08]">
                         <td className={td}>
                           <p className="font-semibold">{row.agentName?.trim() || row.agentId}</p>
                           <StatusBadge status={row.isActive ? 'active' : 'suspended'} />
@@ -612,7 +612,7 @@ function AdminLedgerInner() {
                           </td>
                         ))}
                         <td className={`${td} text-right`}>
-                          <button type="button" onClick={() => { setAdjustAmount(''); setAdjustAgent(row); }} className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-bold text-navy-700 hover:bg-slate-50">
+                          <button type="button" onClick={() => { setAdjustAmount(''); setAdjustAgent(row); }} className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg border border-[#ffffff12] px-2.5 py-1.5 text-xs font-bold text-foreground hover:bg-[#ffffff08]">
                             <Plus className="h-3.5 w-3.5" /> Adjustment
                           </button>
                         </td>
@@ -633,7 +633,7 @@ function AdminLedgerInner() {
               <option value="">All withdrawals</option>
               {PAYOUT_STATUSES.map((value) => <option key={value} value={value}>{humanize(value)}</option>)}
             </select>
-            <p className="text-xs text-slate-500">Mark a withdrawal paid only after the bank transfer is complete. Rejecting returns the amount to withdrawable.</p>
+            <p className="text-xs text-muted-foreground">Mark a withdrawal paid only after the bank transfer is complete. Rejecting returns the amount to withdrawable.</p>
           </div>
           {payoutsError && <ErrorPanel error={payoutsError} onRetry={() => void loadPayouts()} />}
           <Panel title="Withdrawals" description="Agent payout requests drawn from withdrawable earnings.">
@@ -645,7 +645,7 @@ function AdminLedgerInner() {
               <>
                 <TableScroll>
                   <table className="w-full min-w-[960px]">
-                    <thead className="bg-slate-50">
+                    <thead className="bg-[#ffffff08]">
                       <tr>
                         <th className={th}>Requested</th>
                         <th className={th}>Agent</th>
@@ -656,33 +656,33 @@ function AdminLedgerInner() {
                         <th className={th}><span className="sr-only">Actions</span></th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-[#ffffff12]">
                       {payouts.map((payout) => (
-                        <tr key={payout.id} className="hover:bg-slate-50/60">
+                        <tr key={payout.id} className="hover:bg-[#ffffff08]">
                           <td className={td}>
                             <p className="whitespace-nowrap text-xs">{dateTime(payout.createdAt)}</p>
-                            <p className="break-all font-mono text-[11px] text-slate-400">{payout.reference}</p>
+                            <p className="break-all font-mono text-[11px] text-muted-foreground">{payout.reference}</p>
                           </td>
                           <td className={td}>
                             <p className="text-xs font-semibold">{payout.agentName?.trim() || payout.agentId}</p>
-                            {payout.note && <p className="max-w-[180px] text-[11px] text-slate-500">{payout.note}</p>}
+                            {payout.note && <p className="max-w-[180px] text-[11px] text-muted-foreground">{payout.note}</p>}
                           </td>
                           <td className={`${td} whitespace-nowrap text-right font-bold`}>{naira(payout.amount)}</td>
                           <td className={td}>
                             <p className="text-xs">{payout.bankSnapshot?.bankName ?? '—'}</p>
-                            <p className="text-[11px] text-slate-500">{payout.bankSnapshot?.bankAccountName ?? ''}</p>
-                            <p className="font-mono text-[11px] text-slate-500">{payout.bankSnapshot?.bankAccountNumber ?? ''}</p>
+                            <p className="text-[11px] text-muted-foreground">{payout.bankSnapshot?.bankAccountName ?? ''}</p>
+                            <p className="font-mono text-[11px] text-muted-foreground">{payout.bankSnapshot?.bankAccountNumber ?? ''}</p>
                           </td>
                           <td className={td}><StatusBadge status={payout.status} /></td>
                           <td className={td}>
-                            <p className="whitespace-nowrap text-[11px] text-slate-500">{payout.decidedAt ? dateTime(payout.decidedAt) : 'Awaiting decision'}</p>
-                            {payout.decisionNote && <p className="max-w-[180px] text-[11px] text-slate-600">{payout.decisionNote}</p>}
+                            <p className="whitespace-nowrap text-[11px] text-muted-foreground">{payout.decidedAt ? dateTime(payout.decidedAt) : 'Awaiting decision'}</p>
+                            {payout.decisionNote && <p className="max-w-[180px] text-[11px] text-muted-foreground">{payout.decisionNote}</p>}
                           </td>
                           <td className={`${td} text-right`}>
                             {payout.status === 'requested' && (
                               <div className="flex justify-end gap-1.5">
-                                <button type="button" onClick={() => setPayoutAction({ payout, kind: 'reject' })} className="whitespace-nowrap rounded-lg border border-red-200 px-2.5 py-1.5 text-xs font-bold text-red-600 hover:bg-red-50">Reject</button>
-                                <button type="button" onClick={() => setPayoutAction({ payout, kind: 'paid' })} className="whitespace-nowrap rounded-lg bg-emerald-600 px-2.5 py-1.5 text-xs font-bold text-white hover:bg-emerald-700">Mark paid</button>
+                                <button type="button" onClick={() => setPayoutAction({ payout, kind: 'reject' })} className="whitespace-nowrap rounded-lg border border-[#fb718530] px-2.5 py-1.5 text-xs font-bold text-destructive hover:bg-[#fb718510]">Reject</button>
+                                <button type="button" onClick={() => setPayoutAction({ payout, kind: 'paid' })} className="whitespace-nowrap rounded-lg bg-primary px-2.5 py-1.5 text-xs font-bold text-foreground hover:bg-[#34d399]">Mark paid</button>
                               </div>
                             )}
                           </td>
@@ -711,8 +711,8 @@ function AdminLedgerInner() {
         message={
           adjustAgent ? (
             <div className="space-y-2">
-              <p><strong className="text-navy-900">{adjustAgent.agentName?.trim() || adjustAgent.agentId}</strong> · withdrawable today {naira(adjustAgent.buckets.withdrawable)}</p>
-              <p className="text-xs text-slate-500">Use a negative amount to correct an overpayment and a positive amount to credit an owed sum.</p>
+              <p><strong className="text-foreground">{adjustAgent.agentName?.trim() || adjustAgent.agentId}</strong> · withdrawable today {naira(adjustAgent.buckets.withdrawable)}</p>
+              <p className="text-xs text-muted-foreground">Use a negative amount to correct an overpayment and a positive amount to credit an owed sum.</p>
             </div>
           ) : null
         }
@@ -720,7 +720,7 @@ function AdminLedgerInner() {
         <div>
           <label className="label text-xs" htmlFor="adjust-amount">Amount (₦, whole naira, may be negative)</label>
           <input id="adjust-amount" type="number" step={1} className="input" value={adjustAmount} onChange={(event) => setAdjustAmount(event.target.value)} />
-          <p className="mt-1 text-[11px] text-slate-500">{adjustValid ? signedNaira(adjustValue) : 'Enter a non-zero whole number.'}</p>
+          <p className="mt-1 text-[11px] text-muted-foreground">{adjustValid ? signedNaira(adjustValue) : 'Enter a non-zero whole number.'}</p>
         </div>
       </ReasonDialog>
 
@@ -738,7 +738,7 @@ function AdminLedgerInner() {
         message={
           payoutAction ? (
             <p>
-              {naira(payoutAction.payout.amount)} to <strong className="text-navy-900">{payoutAction.payout.agentName?.trim() || payoutAction.payout.agentId}</strong>
+              {naira(payoutAction.payout.amount)} to <strong className="text-foreground">{payoutAction.payout.agentName?.trim() || payoutAction.payout.agentId}</strong>
               {payoutAction.kind === 'paid'
                 ? '. The allocated earnings become Withdrawn.'
                 : '. The allocations are voided and the amount stays withdrawable for the Agent.'}

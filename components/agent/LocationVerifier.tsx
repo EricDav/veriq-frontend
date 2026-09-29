@@ -5,6 +5,7 @@ import { Crosshair, MapPin, Save } from 'lucide-react';
 import type { AddressRecord } from '@/types/agent';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { formatDateTime, toNumber } from './format';
+import { Button } from '@/components/ui';
 import { Field, InlineNotice, smallButton } from './ui';
 
 export interface LocationSubmit {
@@ -20,9 +21,9 @@ function AddressSummary({ title, record }: { title: string; record: AddressRecor
   const lat = toNumber(record.latitude as number | string | null | undefined);
   const lng = toNumber(record.longitude as number | string | null | undefined);
   return (
-    <div className="rounded-xl bg-slate-50 p-3 text-xs text-slate-600">
-      <p className="mb-1 font-bold uppercase tracking-wide text-slate-400">{title}</p>
-      <p className="text-sm text-navy-900">{record.address ?? '—'}</p>
+    <div className="rounded-xl bg-[#070b1444] p-3 text-xs text-muted-foreground">
+      <p className="mb-1 font-bold uppercase tracking-wide text-muted-foreground">{title}</p>
+      <p className="text-sm text-foreground">{record.address ?? '—'}</p>
       {record.buildingName && <p>Building: {record.buildingName}</p>}
       {record.streetName && <p>Street: {record.streetName}</p>}
       {record.landmark && <p>Landmark: {record.landmark}</p>}
@@ -32,12 +33,12 @@ function AddressSummary({ title, record }: { title: string; record: AddressRecor
       {lat !== null && lng !== null && (
         <p>
           {lat.toFixed(6)}, {lng.toFixed(6)} ·{' '}
-          <a className="font-semibold text-veriq-secondary hover:underline" href={`https://www.google.com/maps?q=${lat},${lng}`} target="_blank" rel="noopener noreferrer">
+          <a className="font-semibold text-primary hover:underline" href={`https://www.google.com/maps?q=${lat},${lng}`} target="_blank" rel="noopener noreferrer">
             Open map
           </a>
         </p>
       )}
-      {typeof record.verifiedAt === 'string' && <p className="mt-1 text-slate-400">Verified {formatDateTime(record.verifiedAt)}</p>}
+      {typeof record.verifiedAt === 'string' && <p className="mt-1 text-muted-foreground">Verified {formatDateTime(record.verifiedAt)}</p>}
     </div>
   );
 }
@@ -143,14 +144,21 @@ export function LocationVerifier({
               <input className="input !py-2 text-sm" maxLength={64} value={canonicalPropertyId} onChange={(event) => setCanonicalPropertyId(event.target.value)} />
             </Field>
           )}
-          {localError && <p className="text-xs text-red-600">{localError}</p>}
+          {localError && <p className="text-xs text-destructive">{localError}</p>}
           <div className="flex flex-wrap justify-end gap-2">
             <button type="button" className={smallButton} onClick={useDeviceLocation} disabled={locating || saving}>
               {locating ? <LoadingSpinner size="sm" /> : <Crosshair className="h-3.5 w-3.5" />} Use my current GPS position
             </button>
-            <button type="submit" className="btn-primary !px-4 !py-2 text-sm" disabled={saving}>
-              {saving ? <LoadingSpinner size="sm" /> : verified ? <Save className="h-4 w-4" /> : <MapPin className="h-4 w-4" />} Save verified location
-            </button>
+            <Button type="submit" size="small" disabled={saving}>
+              {saving ? (
+                <LoadingSpinner size="sm" />
+              ) : verified ? (
+                <Save aria-hidden="true" className="h-4 w-4" />
+              ) : (
+                <MapPin aria-hidden="true" className="h-4 w-4" />
+              )}{' '}
+              Save verified location
+            </Button>
           </div>
         </form>
       )}

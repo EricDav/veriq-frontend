@@ -52,11 +52,11 @@ import { NotApplicableRequests } from '@/components/agent/NotApplicableRequests'
 import { ReasonDialog } from '@/components/agent/ReasonDialog';
 import { StreetIntelligencePanel } from '@/components/agent/StreetIntelligencePanel';
 import {
-  CASE_STATUS_STYLES,
+  CASE_STATUS_TONES,
   CATEGORY_LABELS,
   IDENTITY_STATUS_LABELS,
-  IDENTITY_STATUS_STYLES,
-  PUBLICATION_STATUS_STYLES,
+  IDENTITY_STATUS_TONES,
+  PUBLICATION_STATUS_TONES,
   describeError,
   errorMessage,
   formatDateTime,
@@ -104,18 +104,18 @@ function OperatorIdentityCard({
   const operator = workspace.operator;
 
   if (!operator) {
-    return <p className="text-sm text-slate-500">This Property has no Property Operator (Agent-created record). Identity checks do not apply.</p>;
+    return <p className="text-sm text-muted-foreground">This Property has no Property Operator (Agent-created record). Identity checks do not apply.</p>;
   }
   return (
     <div className="space-y-4">
       <dl className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <KeyValue label="Operator" value={operator.name || '—'} />
         <KeyValue label="Type" value={humanize(operator.operatorType)} />
-        <KeyValue label="Phone" value={operator.phone ? <a className="text-veriq-secondary hover:underline" href={`tel:${operator.phone}`}>{operator.phone}</a> : '—'} />
+        <KeyValue label="Phone" value={operator.phone ? <a className="text-primary hover:underline" href={`tel:${operator.phone}`}>{operator.phone}</a> : '—'} />
       </dl>
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs text-slate-500">Identity status:</span>
-        <StatusPill value={operator.identityStatus} styles={IDENTITY_STATUS_STYLES} label={IDENTITY_STATUS_LABELS[operator.identityStatus]} />
+        <span className="text-xs text-muted-foreground">Identity status:</span>
+        <StatusPill value={operator.identityStatus} tones={IDENTITY_STATUS_TONES} label={IDENTITY_STATUS_LABELS[operator.identityStatus]} />
       </div>
       <IdentityDecisionForm onDecide={onDecide} />
     </div>
@@ -155,28 +155,28 @@ function DuplicatesCard({
   return (
     <div className="space-y-3">
       {candidates.length === 0 ? (
-        <p className="text-sm text-slate-500">No probable duplicate Properties were detected for this location.</p>
+        <p className="text-sm text-muted-foreground">No probable duplicate Properties were detected for this location.</p>
       ) : (
         <ul className="space-y-2">
           {candidates.map((candidate) => (
-            <li key={candidate.targetId} className="rounded-xl border border-slate-100 p-3">
+            <li key={candidate.targetId} className="rounded-xl border border-[#ffffff10] p-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="font-mono text-xs text-navy-900">{candidate.targetId}</p>
-                <span className="badge bg-slate-100 !px-2 !py-0.5 text-[11px] text-slate-600">Score {Math.round(candidate.score * 100) / 100}</span>
+                <p className="font-mono text-xs text-foreground">{candidate.targetId}</p>
+                <span className="badge bg-[#ffffff0f] !px-2 !py-0.5 text-[11px] text-muted-foreground border-[#ffffff20]">Score {Math.round(candidate.score * 100) / 100}</span>
               </div>
-              {candidate.reasons.length > 0 && <p className="mt-1 text-xs text-slate-600">{candidate.reasons.map(humanize).join(' · ')}</p>}
+              {candidate.reasons.length > 0 && <p className="mt-1 text-xs text-muted-foreground">{candidate.reasons.map(humanize).join(' · ')}</p>}
             </li>
           ))}
         </ul>
       )}
       <p className="text-xs">
         Status:{' '}
-        <strong className={verificationCase.duplicateResolved ? 'text-emerald-700' : 'text-amber-700'}>
+        <strong className={verificationCase.duplicateResolved ? 'text-[#6ee7b7]' : 'text-[#fcd34d]'}>
           {verificationCase.duplicateResolved ? 'Resolved' : 'Unresolved — reconcile before publication'}
         </strong>
       </p>
       {!disabled && candidates.length > 0 && (
-        <div className="space-y-3 rounded-xl border border-slate-100 p-3">
+        <div className="space-y-3 rounded-xl border border-[#ffffff10] p-3">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Decision">
               <select className="input !py-2 text-sm" value={decision} onChange={(event) => setDecision(event.target.value as typeof decision)}>
@@ -214,7 +214,7 @@ function DuplicatesCard({
         </div>
       )}
       <Modal isOpen={confirming} onClose={() => !busy && setConfirming(false)} title="Reconcile as duplicate" size="sm">
-        <p className="mb-5 text-sm text-slate-600">
+        <p className="mb-5 text-sm text-muted-foreground">
           This submission will be archived as a duplicate of <span className="font-mono">{duplicateOfId}</span> and this verification case closes. The
           canonical Property keeps its ID and history (§4.5).
         </p>
@@ -262,23 +262,23 @@ function UnitCard({
   );
 
   return (
-    <div className="rounded-2xl border border-slate-100">
+    <div className="rounded-2xl border border-[#ffffff10]">
       <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <p className="font-semibold text-navy-900">{unit.displayLabel}</p>
-          <p className="text-xs text-slate-500">
+          <p className="font-semibold text-foreground">{unit.displayLabel}</p>
+          <p className="text-xs text-muted-foreground">
             {unit.unitType}
             {unit.subtype ? ` · ${humanize(unit.subtype)}` : ''}
           </p>
           <div className="mt-2 flex flex-wrap gap-1.5">
-            <span className={`badge !px-2 !py-0.5 text-[11px] ${unit.verificationStatus === 'verified' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
+            <span className={`badge !px-2 !py-0.5 text-[11px] ${unit.verificationStatus === 'verified' ? 'bg-[#10b98112] text-[#6ee7b7]' : 'bg-[#fbbf2410] text-[#fcd34d]'}`}>
               {humanize(unit.verificationStatus)}
             </span>
-            <span className={`badge !px-2 !py-0.5 text-[11px] ${unit.availabilityStatus === 'available' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
+            <span className={`badge !px-2 !py-0.5 text-[11px] ${unit.availabilityStatus === 'available' ? 'bg-[#10b98112] text-[#6ee7b7]' : 'bg-[#ffffff0f] text-muted-foreground'}`}>
               {humanize(unit.availabilityStatus)}
             </span>
-            {unit.issues.length > 0 && <span className="badge bg-red-50 !px-2 !py-0.5 text-[11px] text-red-700">{unit.issues.length} incomplete field{unit.issues.length === 1 ? '' : 's'}</span>}
-            {unit.media && !unit.media.complete && <span className="badge bg-red-50 !px-2 !py-0.5 text-[11px] text-red-700">Media incomplete</span>}
+            {unit.issues.length > 0 && <span className="badge bg-[#fb718510] !px-2 !py-0.5 text-[11px] text-[#fda4af] border-[#fb718530]">{unit.issues.length} incomplete field{unit.issues.length === 1 ? '' : 's'}</span>}
+            {unit.media && !unit.media.complete && <span className="badge bg-[#fb718510] !px-2 !py-0.5 text-[11px] text-[#fda4af] border-[#fb718530]">Media incomplete</span>}
           </div>
         </div>
         {unit.verificationStatus !== 'verified' && (
@@ -296,13 +296,13 @@ function UnitCard({
           </button>
         )}
       </div>
-      <div className="flex gap-1 overflow-x-auto border-t border-slate-100 px-2">
+      <div className="flex gap-1 overflow-x-auto border-t border-[#ffffff10] px-2">
         {(['record', 'edit', 'media', 'availability'] as const).map((key) => (
           <button
             key={key}
             type="button"
             onClick={() => setTab(key)}
-            className={`whitespace-nowrap border-b-2 px-3 py-2 text-xs font-semibold ${tab === key ? 'border-veriq-secondary text-navy-900' : 'border-transparent text-slate-500 hover:text-navy-900'}`}
+            className={`whitespace-nowrap border-b-2 px-3 py-2 text-xs font-semibold ${tab === key ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
           >
             {key === 'record' ? 'Record' : key === 'edit' ? 'Correct' : key === 'media' ? 'Media' : 'Availability'}
           </button>
@@ -519,11 +519,11 @@ export default function VerificationWorkspacePage() {
         subtitle={`${CATEGORY_LABELS[property.category] ?? property.category} · ${property.area}, ${property.city}, ${property.state} · Property ID ${property.id}`}
         badges={
           <>
-            <StatusPill value={verificationCase.status} styles={CASE_STATUS_STYLES} label={`Case: ${humanize(verificationCase.status)}`} />
-            <StatusPill value={property.publicationStatus} styles={PUBLICATION_STATUS_STYLES} />
-            {verificationCase.isReverification && <span className="badge bg-purple-50 !px-2.5 !py-0.5 text-[11px] text-purple-700">Re-verification</span>}
-            {verificationCase.escalated && <span className="badge bg-red-100 !px-2.5 !py-0.5 text-[11px] text-red-800">Escalated</span>}
-            {property.sensitiveChangesFrozen && <span className="badge bg-red-50 !px-2.5 !py-0.5 text-[11px] text-red-700">Dispute freeze</span>}
+            <StatusPill value={verificationCase.status} tones={CASE_STATUS_TONES} label={`Case: ${humanize(verificationCase.status)}`} />
+            <StatusPill value={property.publicationStatus} tones={PUBLICATION_STATUS_TONES} />
+            {verificationCase.isReverification && <span className="badge bg-[#ffffff06] !px-2.5 !py-0.5 text-[11px] text-muted-foreground border-[#ffffff20]">Re-verification</span>}
+            {verificationCase.escalated && <span className="badge bg-[#fb718518] !px-2.5 !py-0.5 text-[11px] text-[#fda4af] border-[#fb718530]">Escalated</span>}
+            {property.sensitiveChangesFrozen && <span className="badge bg-[#fb718510] !px-2.5 !py-0.5 text-[11px] text-[#fda4af] border-[#fb718530]">Dispute freeze</span>}
           </>
         }
         actions={
@@ -557,11 +557,11 @@ export default function VerificationWorkspacePage() {
         }
       />
 
-      <nav className="sticky top-0 z-10 -mx-4 overflow-x-auto border-y border-slate-100 bg-white/95 px-4 py-2 backdrop-blur sm:mx-0 sm:rounded-xl sm:border">
+      <nav className="sticky top-0 z-10 -mx-4 overflow-x-auto border-y border-[#ffffff10] bg-[#111827f2] px-4 py-2 backdrop-blur sm:mx-0 sm:rounded-xl sm:border">
         <ul className="flex gap-1">
           {SECTIONS.map((section) => (
             <li key={section.id}>
-              <a href={`#${section.id}`} className="block whitespace-nowrap rounded-lg px-2.5 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100 hover:text-navy-900">
+              <a href={`#${section.id}`} className="block whitespace-nowrap rounded-lg px-2.5 py-1 text-xs font-semibold text-muted-foreground hover:bg-[#ffffff0f] hover:text-foreground">
                 {section.label}
               </a>
             </li>
@@ -679,8 +679,8 @@ export default function VerificationWorkspacePage() {
                 groups={['facts', 'intelligence']}
                 issues={workspace.propertyIssues}
               />
-              <details className="rounded-xl border border-slate-100 p-3">
-                <summary className="cursor-pointer text-sm font-semibold text-navy-900">Correct facts &amp; intelligence</summary>
+              <details className="rounded-xl border border-[#ffffff10] p-3">
+                <summary className="cursor-pointer text-sm font-semibold text-foreground">Correct facts &amp; intelligence</summary>
                 <div className="mt-4">
                   <AnswersEditor
                     key={property.updatedAt}
@@ -707,14 +707,14 @@ export default function VerificationWorkspacePage() {
               </details>
             </>
           ) : (
-            <p className="text-sm text-slate-500">This category has no property-level schema.</p>
+            <p className="text-sm text-muted-foreground">This category has no property-level schema.</p>
           )}
         </div>
       </PanelCard>
 
       <PanelCard id="units" title={`Units (${workspace.units.length})`} icon={Home} subtitle="A Unit becomes verified only with complete subtype facts, intelligence and media (G.9).">
         {workspace.units.length === 0 ? (
-          <p className="text-sm text-slate-500">No Units have been documented for this Property.</p>
+          <p className="text-sm text-muted-foreground">No Units have been documented for this Property.</p>
         ) : (
           <div className="space-y-4">
             {workspace.units.map((unit) => (
@@ -736,16 +736,16 @@ export default function VerificationWorkspacePage() {
 
       <PanelCard id="media" title="Property media" icon={ImageIcon} subtitle="Property-level sections and the single public cover. Unit media is reviewed on each Unit.">
         <div className="space-y-5">
-          {workspace.propertyMedia ? <MediaReviewPanel ownerType="property" ownerId={property.id} onChanged={load} /> : <p className="text-sm text-slate-500">This category has no property-level media schema.</p>}
+          {workspace.propertyMedia ? <MediaReviewPanel ownerType="property" ownerId={property.id} onChanged={load} /> : <p className="text-sm text-muted-foreground">This category has no property-level media schema.</p>}
           <div>
-            <p className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-400">Operator Not Applicable requests</p>
+            <p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">Operator Not Applicable requests</p>
             <NotApplicableRequests listingTitle={property.title} onChanged={load} />
           </div>
         </div>
       </PanelCard>
 
       <PanelCard id="evidence" title="Authority & verification evidence" icon={FileText}>
-        {evidenceError ? <ErrorBlock message={evidenceError} onRetry={loadSecondary} /> : evidence ? <EvidenceList items={evidence} /> : <p className="text-sm text-slate-500">Loading evidence…</p>}
+        {evidenceError ? <ErrorBlock message={evidenceError} onRetry={loadSecondary} /> : evidence ? <EvidenceList items={evidence} /> : <p className="text-sm text-muted-foreground">Loading evidence…</p>}
       </PanelCard>
 
       <PanelCard
@@ -759,19 +759,19 @@ export default function VerificationWorkspacePage() {
         }
       >
         {!revisions ? (
-          <p className="text-sm text-slate-500">Loading revisions…</p>
+          <p className="text-sm text-muted-foreground">Loading revisions…</p>
         ) : revisions.length === 0 ? (
-          <p className="text-sm text-slate-500">No Operator revisions for this Property.</p>
+          <p className="text-sm text-muted-foreground">No Operator revisions for this Property.</p>
         ) : (
-          <ul className="divide-y divide-slate-100 rounded-xl border border-slate-100">
+          <ul className="divide-y divide-[#ffffff10] rounded-xl border border-[#ffffff10]">
             {revisions.map((revision) => (
               <li key={revision.id} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 text-xs">
-                <span className="text-navy-900">
+                <span className="text-foreground">
                   {humanize(revision.kind)} · {humanize(revision.targetType)}
                   {revision.message ? ` · “${revision.message}”` : ''}
                 </span>
-                <span className="flex items-center gap-2 text-slate-500">
-                  <span className={`badge !px-2 !py-0.5 text-[10px] ${revision.status === 'pending' ? 'bg-amber-50 text-amber-700' : revision.status === 'approved' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
+                <span className="flex items-center gap-2 text-muted-foreground">
+                  <span className={`badge !px-2 !py-0.5 text-[10px] ${revision.status === 'pending' ? 'bg-[#fbbf2410] text-[#fcd34d]' : revision.status === 'approved' ? 'bg-[#10b98112] text-[#6ee7b7]' : 'bg-[#ffffff0f] text-muted-foreground'}`}>
                     {humanize(revision.status)}
                   </span>
                   {formatDateTime(revision.createdAt)}
@@ -804,7 +804,7 @@ export default function VerificationWorkspacePage() {
       />
       <Modal isOpen={dialog === 'publish'} onClose={() => busy === null && setDialog(null)} title="Publish Property" size="sm">
         <div className="space-y-4">
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-muted-foreground">
             You are publishing directly under your publishing permission (§8.3). The Operator is notified and verified Units become discoverable.
           </p>
           {readiness.blockers.length > 0 && <BlockersList title="Current blockers" blockers={readiness.blockers} compact />}
@@ -817,7 +817,7 @@ export default function VerificationWorkspacePage() {
             </button>
           </div>
           {readiness.blockers.length > 0 && (
-            <p className="flex items-start gap-1.5 text-[11px] text-amber-700">
+            <p className="flex items-start gap-1.5 text-[11px] text-[#fcd34d]">
               <AlertTriangle className="mt-0.5 h-3 w-3 flex-shrink-0" /> Publication will be refused while blockers remain.
             </p>
           )}

@@ -13,11 +13,11 @@ import { errorMessage, formatDateTime, formatNaira, humanize } from '@/component
 import { EmptyBlock, ErrorBlock, Field, InlineNotice, LoadingBlock, PageHeader, PanelCard, smallButton, smallPrimaryButton } from '@/components/agent/ui';
 
 const EARNING_STATUS_STYLES: Record<AgentEarningStatus, string> = {
-  pending: 'bg-amber-50 text-amber-700',
+  pending: 'bg-[#fbbf2410] text-[#fcd34d]',
   refund_review_hold: 'bg-orange-50 text-orange-700',
-  withdrawable: 'bg-emerald-50 text-emerald-700',
-  withdrawn: 'bg-slate-100 text-slate-600',
-  cancelled: 'bg-red-50 text-red-700',
+  withdrawable: 'bg-[#10b98112] text-[#6ee7b7]',
+  withdrawn: 'bg-[#ffffff0f] text-muted-foreground',
+  cancelled: 'bg-[#fb718510] text-[#fda4af]',
 };
 
 const EARNING_STATUS_LABELS: Record<AgentEarningStatus, string> = {
@@ -29,13 +29,13 @@ const EARNING_STATUS_LABELS: Record<AgentEarningStatus, string> = {
 };
 
 const BUCKETS: Array<{ key: keyof AgentEarningsPayload['buckets']; label: string; hint: string; tone: string }> = [
-  { key: 'pending', label: 'Pending', hint: 'Held for the configured hold period after each unlock.', tone: 'text-amber-700' },
+  { key: 'pending', label: 'Pending', hint: 'Held for the configured hold period after each unlock.', tone: 'text-[#fcd34d]' },
   { key: 'refundReviewHold', label: 'Refund review hold', hint: 'A refund request is open on the unlock; released if the refund is rejected.', tone: 'text-orange-700' },
-  { key: 'withdrawable', label: 'Withdrawable', hint: 'Cleared earnings you can request to withdraw.', tone: 'text-emerald-700' },
-  { key: 'inWithdrawal', label: 'In withdrawal', hint: 'Allocated to a withdrawal request awaiting Admin payment.', tone: 'text-blue-700' },
-  { key: 'withdrawn', label: 'Withdrawn', hint: 'Paid out by Admin.', tone: 'text-slate-700' },
-  { key: 'cancelled', label: 'Cancelled', hint: 'Cancelled after an approved refund of the unlock purchase.', tone: 'text-red-700' },
-  { key: 'adjustments', label: 'Adjustments', hint: 'Explicit Admin ledger corrections; historical balances are never rewritten.', tone: 'text-purple-700' },
+  { key: 'withdrawable', label: 'Withdrawable', hint: 'Cleared earnings you can request to withdraw.', tone: 'text-[#6ee7b7]' },
+  { key: 'inWithdrawal', label: 'In withdrawal', hint: 'Allocated to a withdrawal request awaiting Admin payment.', tone: 'text-muted-foreground' },
+  { key: 'withdrawn', label: 'Withdrawn', hint: 'Paid out by Admin.', tone: 'text-foreground' },
+  { key: 'cancelled', label: 'Cancelled', hint: 'Cancelled after an approved refund of the unlock purchase.', tone: 'text-[#fda4af]' },
+  { key: 'adjustments', label: 'Adjustments', hint: 'Explicit Admin ledger corrections; historical balances are never rewritten.', tone: 'text-muted-foreground' },
 ];
 
 export default function AgentEarningsPage() {
@@ -117,10 +117,10 @@ export default function AgentEarningsPage() {
         <>
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             {BUCKETS.map((bucket) => (
-              <div key={bucket.key} className="card !shadow-sm p-4">
-                <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">{bucket.label}</p>
+              <div key={bucket.key} className="card p-4">
+                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{bucket.label}</p>
                 <p className={`mt-1 text-xl font-black ${bucket.tone}`}>{data.bucketsFormatted?.[bucket.key] ?? formatNaira(data.buckets[bucket.key])}</p>
-                <p className="mt-1 text-[11px] leading-snug text-slate-500">{bucket.hint}</p>
+                <p className="mt-1 text-[11px] leading-snug text-muted-foreground">{bucket.hint}</p>
               </div>
             ))}
           </div>
@@ -173,13 +173,13 @@ export default function AgentEarningsPage() {
                 </button>
               </div>
               {!data.isEligible && data.bankDetailsComplete && !data.hasPendingWithdrawal && (
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-muted-foreground">
                   Your withdrawable balance is below the {formatNaira(data.minWithdrawalAmount)} minimum. Earnings become withdrawable when their hold
                   period ends and no refund case is open.
                 </p>
               )}
               <div className="flex items-center gap-2">
-                <button type="button" className="text-xs font-semibold text-slate-500 hover:text-navy-900" onClick={() => setAmount(String(data.buckets.withdrawable))}>
+                <button type="button" className="text-xs font-semibold text-muted-foreground hover:text-foreground" onClick={() => setAmount(String(data.buckets.withdrawable))}>
                   Use full withdrawable balance
                 </button>
               </div>
@@ -205,8 +205,8 @@ export default function AgentEarningsPage() {
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[620px] text-sm">
-                  <thead className="text-left text-[11px] uppercase tracking-wide text-slate-400">
-                    <tr className="border-b border-slate-100">
+                  <thead className="text-left text-[11px] uppercase tracking-wide text-muted-foreground">
+                    <tr className="border-b border-[#ffffff10]">
                       <th className="px-3 py-2 font-medium">Created</th>
                       <th className="px-3 py-2 font-medium">Type</th>
                       <th className="px-3 py-2 font-medium">Amount</th>
@@ -215,22 +215,22 @@ export default function AgentEarningsPage() {
                       <th className="px-3 py-2 font-medium">Hold / release</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-50">
+                  <tbody className="divide-y divide-[#ffffff10]">
                     {earnings.map((earning) => (
                       <tr key={earning.id}>
-                        <td className="px-3 py-2 text-xs text-slate-600">{formatDateTime(earning.createdAt)}</td>
-                        <td className="px-3 py-2 text-xs text-slate-600">
+                        <td className="px-3 py-2 text-xs text-muted-foreground">{formatDateTime(earning.createdAt)}</td>
+                        <td className="px-3 py-2 text-xs text-muted-foreground">
                           {humanize(earning.kind)}
-                          {earning.note ? <span className="block text-[11px] text-slate-400">{earning.note}</span> : null}
+                          {earning.note ? <span className="block text-[11px] text-muted-foreground">{earning.note}</span> : null}
                         </td>
-                        <td className={`px-3 py-2 text-sm font-semibold ${earning.amount < 0 ? 'text-red-600' : 'text-navy-900'}`}>{formatNaira(earning.amount)}</td>
-                        <td className="px-3 py-2 text-xs text-slate-600">
+                        <td className={`px-3 py-2 text-sm font-semibold ${earning.amount < 0 ? 'text-destructive' : 'text-foreground'}`}>{formatNaira(earning.amount)}</td>
+                        <td className="px-3 py-2 text-xs text-muted-foreground">
                           {earning.sharePercent !== null ? `${earning.sharePercent}% of ${formatNaira(earning.basisAmount)}` : '—'}
                         </td>
                         <td className="px-3 py-2">
                           <span className={`badge !px-2 !py-0.5 text-[11px] ${EARNING_STATUS_STYLES[earning.status]}`}>{EARNING_STATUS_LABELS[earning.status]}</span>
                         </td>
-                        <td className="px-3 py-2 text-xs text-slate-600">
+                        <td className="px-3 py-2 text-xs text-muted-foreground">
                           {earning.status === 'pending' && earning.holdUntil && `Releases ${formatDateTime(earning.holdUntil)}`}
                           {earning.status === 'refund_review_hold' && 'Held until the refund case is decided'}
                           {earning.status === 'withdrawable' && earning.withdrawableAt && `Cleared ${formatDateTime(earning.withdrawableAt)}`}
@@ -249,20 +249,20 @@ export default function AgentEarningsPage() {
             {data.payouts.length === 0 ? (
               <EmptyBlock title="No withdrawal requests yet" />
             ) : (
-              <ul className="divide-y divide-slate-100 rounded-xl border border-slate-100">
+              <ul className="divide-y divide-[#ffffff10] rounded-xl border border-[#ffffff10]">
                 {data.payouts.map((payout) => (
                   <li key={payout.id} className="flex flex-wrap items-center justify-between gap-2 px-3 py-3">
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-navy-900">{formatNaira(payout.amount)}</p>
-                      <p className="text-[11px] text-slate-500">
+                      <p className="text-sm font-semibold text-foreground">{formatNaira(payout.amount)}</p>
+                      <p className="text-[11px] text-muted-foreground">
                         {formatDateTime(payout.createdAt)} · ref {payout.reference}
                         {payout.bankSnapshot?.bankName ? ` · ${payout.bankSnapshot.bankName}` : ''}
                       </p>
-                      {payout.decisionNote && <p className="text-xs text-slate-600">{payout.decisionNote}</p>}
+                      {payout.decisionNote && <p className="text-xs text-muted-foreground">{payout.decisionNote}</p>}
                     </div>
                     <span
                       className={`badge !px-2 !py-0.5 text-[11px] ${
-                        payout.status === 'paid' ? 'bg-emerald-50 text-emerald-700' : payout.status === 'rejected' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'
+                        payout.status === 'paid' ? 'bg-[#10b98112] text-[#6ee7b7]' : payout.status === 'rejected' ? 'bg-[#fb718510] text-[#fda4af]' : 'bg-[#fbbf2410] text-[#fcd34d]'
                       }`}
                     >
                       {humanize(payout.status)}

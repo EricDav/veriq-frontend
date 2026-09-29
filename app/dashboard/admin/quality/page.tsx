@@ -57,14 +57,14 @@ function scoreTone(score: number | null): 'green' | 'amber' | 'red' | 'slate' {
 
 function ScoreBar({ score }: { score: number | null }) {
   const tone = scoreTone(score);
-  const colour = tone === 'green' ? 'bg-emerald-500' : tone === 'amber' ? 'bg-amber-500' : tone === 'red' ? 'bg-red-500' : 'bg-slate-300';
+  const colour = tone === 'green' ? 'bg-primary' : tone === 'amber' ? 'bg-[#fcd34d]' : tone === 'red' ? 'bg-destructive' : 'bg-[#ffffff08]';
   return (
     <div className="min-w-[120px]">
       <div className="flex items-center justify-between gap-2">
-        <span className="font-display text-lg font-black text-navy-900">{score === null ? 'No data' : score}</span>
-        {score !== null && <span className="text-[11px] text-slate-400">/ 100</span>}
+        <span className="font-display text-lg font-black text-foreground">{score === null ? 'No data' : score}</span>
+        {score !== null && <span className="text-[11px] text-muted-foreground">/ 100</span>}
       </div>
-      <div className="mt-1 h-1.5 w-full rounded-full bg-slate-100">
+      <div className="mt-1 h-1.5 w-full rounded-full bg-[#ffffff08]">
         <div className={`h-1.5 rounded-full ${colour}`} style={{ width: `${score === null ? 0 : Math.max(2, Math.min(100, score))}%` }} />
       </div>
     </div>
@@ -75,12 +75,12 @@ function ComponentGrid({ components, weights }: { components: Record<QualityComp
   return (
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
       {QUALITY_COMPONENT_KEYS.map((key) => (
-        <div key={key} className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2">
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+        <div key={key} className="rounded-lg border border-[#ffffff12] bg-[#ffffff08] px-3 py-2">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
             {COMPONENT_LABELS[key]}
             {weights ? ` · ${Math.round(weights[key] * 100)}%` : ''}
           </p>
-          <p className="text-sm font-bold text-navy-900">{components[key] === null ? 'No data' : components[key]}</p>
+          <p className="text-sm font-bold text-foreground">{components[key] === null ? 'No data' : components[key]}</p>
         </div>
       ))}
     </div>
@@ -238,7 +238,7 @@ function AdminQualityInner() {
         ) : (
           <TableScroll>
             <table className="w-full min-w-[1040px]">
-              <thead className="bg-slate-50">
+              <thead className="bg-[#ffffff08]">
                 <tr>
                   <th className={th}>Agent</th>
                   <th className={th}>Score</th>
@@ -248,28 +248,28 @@ function AdminQualityInner() {
                   <th className={th}><span className="sr-only">Detail</span></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#ffffff12]">
                 {rows.map((row) => (
-                  <tr key={row.agentId} className="hover:bg-slate-50/60">
+                  <tr key={row.agentId} className="hover:bg-[#ffffff08]">
                     <td className={td}>
                       <p className="font-semibold">{row.name || row.agentId}</p>
-                      <p className="font-mono text-[11px] text-slate-400">{row.agentId}</p>
+                      <p className="font-mono text-[11px] text-muted-foreground">{row.agentId}</p>
                     </td>
                     <td className={td}><ScoreBar score={row.score} /></td>
                     <td className={td}>
                       <div className="flex max-w-[280px] flex-wrap gap-1">
                         {QUALITY_COMPONENT_KEYS.map((key) => (
-                          <span key={key} className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600">
+                          <span key={key} className="rounded-md bg-[#ffffff08] px-1.5 py-0.5 text-[10px] text-muted-foreground">
                             {COMPONENT_LABELS[key]}: <strong>{row.components[key] === null ? '—' : row.components[key]}</strong>
                           </span>
                         ))}
                       </div>
                     </td>
                     <td className={td}>
-                      <p className="text-[11px] text-slate-600">{row.metrics.ratingCount} ratings{row.metrics.ratingAverage !== null ? ` · avg ${row.metrics.ratingAverage.toFixed(1)}/5` : ''}</p>
-                      <p className="text-[11px] text-slate-600">{row.metrics.verificationRefunds} verification refunds of {row.metrics.paidUnlocks} paid unlocks</p>
-                      <p className="text-[11px] text-slate-600">{row.metrics.staleExpiries} stale availability expiries · {row.metrics.lowResolutionMedia}/{row.metrics.approvedMedia} low-resolution images</p>
-                      <p className="text-[11px] text-slate-600">{row.metrics.postPublicationCorrections} corrections after publication · {row.metrics.publishedListings} published</p>
+                      <p className="text-[11px] text-muted-foreground">{row.metrics.ratingCount} ratings{row.metrics.ratingAverage !== null ? ` · avg ${row.metrics.ratingAverage.toFixed(1)}/5` : ''}</p>
+                      <p className="text-[11px] text-muted-foreground">{row.metrics.verificationRefunds} verification refunds of {row.metrics.paidUnlocks} paid unlocks</p>
+                      <p className="text-[11px] text-muted-foreground">{row.metrics.staleExpiries} stale availability expiries · {row.metrics.lowResolutionMedia}/{row.metrics.approvedMedia} low-resolution images</p>
+                      <p className="text-[11px] text-muted-foreground">{row.metrics.postPublicationCorrections} corrections after publication · {row.metrics.publishedListings} published</p>
                     </td>
                     <td className={td}>
                       <div className="flex flex-col gap-1">
@@ -278,7 +278,7 @@ function AdminQualityInner() {
                       </div>
                     </td>
                     <td className={`${td} text-right`}>
-                      <button type="button" onClick={() => setDetailAgentId(row.agentId)} className="whitespace-nowrap rounded-lg bg-navy-900 px-3 py-1.5 text-xs font-bold text-white hover:bg-navy-700">
+                      <button type="button" onClick={() => setDetailAgentId(row.agentId)} className="whitespace-nowrap rounded-lg bg-background px-3 py-1.5 text-xs font-bold text-foreground hover:bg-[#ffffff0d]">
                         Audits &amp; detail
                       </button>
                     </td>
@@ -299,8 +299,8 @@ function AdminQualityInner() {
           <div className="space-y-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <p className="font-display text-base font-bold text-navy-900">{detail.name || detail.agentId}</p>
-                <p className="font-mono text-[11px] text-slate-400">{detail.agentId}</p>
+                <p className="font-display text-base font-bold text-foreground">{detail.name || detail.agentId}</p>
+                <p className="font-mono text-[11px] text-muted-foreground">{detail.agentId}</p>
               </div>
               <ScoreBar score={detail.score} />
             </div>
@@ -318,9 +318,9 @@ function AdminQualityInner() {
               <KeyValue label="Post-publication corrections" value={detail.metrics.postPublicationCorrections} />
             </div>
 
-            <form onSubmit={submitAudit} className="space-y-3 rounded-xl border border-slate-200 p-4">
-              <h3 className="flex items-center gap-2 font-display text-sm font-bold text-navy-900">
-                <ClipboardList className="h-4 w-4 text-veriq-secondary" /> Record a quality audit
+            <form onSubmit={submitAudit} className="space-y-3 rounded-xl border border-[#ffffff12] p-4">
+              <h3 className="flex items-center gap-2 font-display text-sm font-bold text-foreground">
+                <ClipboardList className="h-4 w-4 text-primary" /> Record a quality audit
               </h3>
               {auditError && <ErrorPanel error={auditError} />}
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -336,35 +336,35 @@ function AdminQualityInner() {
                 <div>
                   <label className="label text-xs" htmlFor="audit-score">Score (0–100)</label>
                   <input id="audit-score" type="number" min={0} max={100} step={1} className="input" value={auditScore} onChange={(event) => setAuditScore(event.target.value)} required />
-                  {!auditValid && <p className="mt-1 text-[11px] text-red-600">Enter a whole number between 0 and 100.</p>}
+                  {!auditValid && <p className="mt-1 text-[11px] text-destructive">Enter a whole number between 0 and 100.</p>}
                 </div>
                 <div>
-                  <label className="label text-xs" htmlFor="audit-target-type">Audited record type <span className="font-normal text-slate-400">(optional)</span></label>
+                  <label className="label text-xs" htmlFor="audit-target-type">Audited record type <span className="font-normal text-muted-foreground">(optional)</span></label>
                   <input id="audit-target-type" className="input" maxLength={40} placeholder="property, sale_listing, unit…" value={auditTargetType} onChange={(event) => setAuditTargetType(event.target.value)} />
                 </div>
                 <div>
-                  <label className="label text-xs" htmlFor="audit-target-id">Audited record ID <span className="font-normal text-slate-400">(optional)</span></label>
+                  <label className="label text-xs" htmlFor="audit-target-id">Audited record ID <span className="font-normal text-muted-foreground">(optional)</span></label>
                   <input id="audit-target-id" className="input font-mono" maxLength={64} value={auditTargetId} onChange={(event) => setAuditTargetId(event.target.value)} />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="label text-xs" htmlFor="audit-notes">Findings <span className="font-normal text-slate-400">(optional)</span></label>
+                  <label className="label text-xs" htmlFor="audit-notes">Findings <span className="font-normal text-muted-foreground">(optional)</span></label>
                   <textarea id="audit-notes" className="input min-h-20" maxLength={2000} value={auditNotes} onChange={(event) => setAuditNotes(event.target.value)} />
                 </div>
               </div>
-              <p className="text-[11px] text-slate-500">The Agent is notified that an audit was recorded. Audits are permanent and feed the internal score.</p>
+              <p className="text-[11px] text-muted-foreground">The Agent is notified that an audit was recorded. Audits are permanent and feed the internal score.</p>
               <button type="submit" disabled={!auditValid || savingAudit} className="btn-primary !py-2.5 !text-sm">
                 {savingAudit && <LoadingSpinner size="sm" />} Record audit
               </button>
             </form>
 
             <div>
-              <h3 className="mb-2 text-sm font-bold text-navy-900">Recent audits</h3>
+              <h3 className="mb-2 text-sm font-bold text-foreground">Recent audits</h3>
               {detail.audits.length === 0 ? (
                 <EmptyState title="No audits recorded" description="Record the first audit above." />
               ) : (
                 <TableScroll>
                   <table className="w-full min-w-[560px]">
-                    <thead className="bg-slate-50">
+                    <thead className="bg-[#ffffff08]">
                       <tr>
                         <th className={th}>When</th>
                         <th className={th}>Outcome</th>
@@ -373,14 +373,14 @@ function AdminQualityInner() {
                         <th className={th}>Findings</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-[#ffffff12]">
                       {detail.audits.map((audit) => (
                         <tr key={audit.id}>
                           <td className={td}><span className="whitespace-nowrap text-xs">{dateTime(audit.createdAt)}</span></td>
                           <td className={td}><StatusBadge status={audit.outcome} /></td>
                           <td className={td}><span className="text-xs font-bold">{audit.score}</span></td>
-                          <td className={td}><span className="break-all font-mono text-[11px] text-slate-500">{audit.targetType ? `${audit.targetType}: ${audit.targetId ?? '—'}` : '—'}</span></td>
-                          <td className={td}><p className="max-w-xs text-xs text-slate-600">{audit.notes || '—'}</p></td>
+                          <td className={td}><span className="break-all font-mono text-[11px] text-muted-foreground">{audit.targetType ? `${audit.targetType}: ${audit.targetId ?? '—'}` : '—'}</span></td>
+                          <td className={td}><p className="max-w-xs text-xs text-muted-foreground">{audit.notes || '—'}</p></td>
                         </tr>
                       ))}
                     </tbody>

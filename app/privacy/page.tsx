@@ -38,48 +38,48 @@ export default async function PrivacyPolicyPage() {
           </svg>
         </div>
         <div className="relative mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">
-          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-semibold text-gold-300">
+          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/20 bg-[#ffffff0f] px-4 py-1.5 text-xs font-semibold text-primary">
             <Shield className="h-3.5 w-3.5" />
             {hero?.subtitle ?? 'Privacy'}
           </div>
-          <h1 className="font-display mb-4 text-4xl font-bold text-white sm:text-5xl">{hero?.title ?? 'Privacy Policy'}</h1>
-          <p className="text-sm text-white/70 sm:text-base">{hero?.body ?? 'Last Updated: June 2026'}</p>
+          <h1 className="font-display mb-4 text-4xl font-bold text-foreground sm:text-5xl">{hero?.title ?? 'Privacy Policy'}</h1>
+          <p className="text-sm text-muted-foreground sm:text-base">{hero?.body ?? 'Last Updated: June 2026'}</p>
         </div>
       </section>
 
-      <section className="bg-white py-16 sm:py-20">
+      <section className="bg-card py-16 sm:py-20">
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
           <div className="space-y-8">
-            <p className="text-sm leading-7 text-veriq-muted sm:text-base">
+            <p className="text-sm leading-7 text-muted-foreground sm:text-base">
               {intro?.body ?? 'Veriq Property ("we", "our", or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and protect the information you provide when using our website, forms, and services.'}
             </p>
 
             {sections.map((section) => (
-              <section key={section.title} className="rounded-2xl border border-slate-100 bg-veriq-surface p-5 sm:p-6">
-                <h2 className="font-display mb-3 text-xl font-bold text-navy-900">{section.title}</h2>
-                {section.body && <p className="mb-3 text-sm leading-7 text-veriq-muted">{section.body}</p>}
+              <section key={section.title} className="rounded-2xl border border-[#ffffff12] bg-background p-5 sm:p-6">
+                <h2 className="font-display mb-3 text-xl font-bold text-foreground">{section.title}</h2>
+                {section.body && <p className="mb-3 text-sm leading-7 text-muted-foreground">{section.body}</p>}
                 {Array.isArray(section.items) && (
-                  <ul className="space-y-2 pl-5 text-sm leading-7 text-veriq-muted">
+                  <ul className="space-y-2 pl-5 text-sm leading-7 text-muted-foreground">
                     {section.items.map((item) => <li key={item} className="list-disc">{item}</li>)}
                   </ul>
                 )}
               </section>
             ))}
 
-            <section className="rounded-2xl border border-veriq-secondary/20 bg-veriq-secondary/5 p-5 sm:p-6">
-              <h2 className="font-display mb-3 text-xl font-bold text-navy-900">{contact?.title ?? 'Contact Us'}</h2>
-              <p className="mb-4 text-sm leading-7 text-veriq-muted">
+            <section className="rounded-2xl border border-[#10b98135] bg-[#10b98112] p-5 sm:p-6">
+              <h2 className="font-display mb-3 text-xl font-bold text-foreground">{contact?.title ?? 'Contact Us'}</h2>
+              <p className="mb-4 text-sm leading-7 text-muted-foreground">
                 {contact?.body ?? 'If you have questions about this Privacy Policy or how your information is used, please contact us:'}
               </p>
-              <div className="space-y-2 text-sm text-navy-800">
+              <div className="space-y-2 text-sm text-foreground">
                 <p className="font-semibold">Veriq Property</p>
-                <p>Website: <a href={`https://${contactData.website ?? 'www.veriqproperty.com'}`} className="font-semibold text-veriq-secondary hover:underline">{contactData.website ?? 'www.veriqproperty.com'}</a></p>
-                <p>Email: <a href={`mailto:${contactData.email ?? 'info@veriqproperty.com'}`} className="font-semibold text-veriq-secondary hover:underline">{contactData.email ?? 'info@veriqproperty.com'}</a></p>
+                <p>Website: <a href={`https://${contactData.website ?? 'www.veriqproperty.com'}`} className="font-semibold text-primary hover:underline">{contactData.website ?? 'www.veriqproperty.com'}</a></p>
+                <p>Email: <a href={`mailto:${contactData.email ?? 'info@veriqproperty.com'}`} className="font-semibold text-primary hover:underline">{contactData.email ?? 'info@veriqproperty.com'}</a></p>
               </div>
             </section>
 
-            <div className="flex flex-col gap-3 rounded-2xl bg-navy-900 p-5 text-white sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-sm text-white/80">{agreement?.body ?? 'By using our website, forms, or services, you agree to this Privacy Policy.'}</p>
+            <div className="flex flex-col gap-3 rounded-2xl bg-background p-5 text-foreground sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-foreground">{agreement?.body ?? 'By using our website, forms, or services, you agree to this Privacy Policy.'}</p>
               <Link href="/contact" className="btn-gold shrink-0 !py-2.5 !text-sm">Contact Us</Link>
             </div>
           </div>

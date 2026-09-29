@@ -17,7 +17,7 @@ export default function SavedPage() {
     <div className="max-w-5xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-display text-2xl font-bold text-navy-900">Saved Properties</h1>
+          <h1 className="font-display text-2xl font-bold text-foreground">Saved Properties</h1>
           <p className="text-sm text-veriq-muted">{SAVED.length} properties saved to your list</p>
         </div>
         <Link href={BROWSE_HREF} className="btn-outline !text-sm !py-2.5">
@@ -31,26 +31,26 @@ export default function SavedPage() {
             <div className={`h-20 w-20 rounded-xl ${prop.color} flex-shrink-0`} />
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-2">
-                <Link href={`${BROWSE_HREF}/${prop.id}`} className="font-semibold text-navy-900 text-sm leading-snug hover:text-veriq-secondary transition-colors line-clamp-2">
+                <Link href={`${BROWSE_HREF}/${prop.id}`} className="font-semibold text-foreground text-sm leading-snug hover:text-veriq-secondary transition-colors line-clamp-2">
                   {prop.title}
                 </Link>
                 <button type="button" className="text-slate-300 hover:text-red-400 transition-colors flex-shrink-0" aria-label={`Remove ${prop.title} from saved properties`}>
                   <Trash2 className="h-4 w-4" />
                 </button>
               </div>
-              <div className="flex items-center gap-1 text-xs text-slate-400 mt-1 mb-2">
+              <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1 mb-2">
                 <MapPin className="h-3 w-3" />
                 {prop.location}
               </div>
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-1">
                   <Star className="h-3.5 w-3.5 text-gold-500 fill-gold-500" />
-                  <span className="text-xs font-semibold text-navy-800">{prop.trustScore}%</span>
+                  <span className="text-xs font-semibold text-foreground">{prop.trustScore}%</span>
                 </div>
-                <span className="text-xs text-slate-400">Saved {prop.savedAt}</span>
+                <span className="text-xs text-muted-foreground">Saved {prop.savedAt}</span>
               </div>
               <div className="mt-3 flex items-center justify-between">
-                <p className="text-sm font-bold text-navy-900">₦{prop.price.toLocaleString()}<span className="text-xs font-normal text-slate-400">/yr</span></p>
+                <p className="text-sm font-bold text-foreground">₦{prop.price.toLocaleString()}<span className="text-xs font-normal text-muted-foreground">/yr</span></p>
                 <Link href={`${BROWSE_HREF}/${prop.id}`} className="inline-flex items-center gap-1 rounded-lg bg-veriq-secondary px-3 py-1.5 text-xs font-semibold text-white hover:bg-navy-700 transition-colors">
                   <Lock className="h-3 w-3" />
                   Unlock
@@ -64,7 +64,7 @@ export default function SavedPage() {
       {SAVED.length === 0 && (
         <div className="card p-12 text-center">
           <Heart className="h-12 w-12 text-slate-200 mx-auto mb-4" />
-          <h3 className="font-display text-lg font-bold text-navy-900 mb-2">No saved properties yet</h3>
+          <h3 className="font-display text-lg font-bold text-foreground mb-2">No saved properties yet</h3>
           <p className="text-sm text-veriq-muted mb-6">Start browsing and save properties you&apos;re interested in.</p>
           <Link href={BROWSE_HREF} className="btn-primary">Browse Properties</Link>
         </div>

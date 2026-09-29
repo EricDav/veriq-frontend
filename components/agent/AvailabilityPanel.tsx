@@ -17,11 +17,11 @@ const SALE_REASONS: Array<{ value: SaleUnavailableReason; label: string }> = [
 function FreshnessLine({ confirmedAt, expiresAt, changedAt }: { confirmedAt: string | null; expiresAt: string | null; changedAt: string | null }) {
   const expired = expiresAt ? new Date(expiresAt).getTime() < Date.now() : false;
   return (
-    <p className="text-[11px] text-slate-500">
+    <p className="text-[11px] text-muted-foreground">
       {changedAt && <>Changed {formatDateTime(changedAt)} · </>}
       {confirmedAt && <>Confirmed {formatDateTime(confirmedAt)} · </>}
       {expiresAt ? (
-        <span className={expired ? 'font-semibold text-red-600' : ''}>
+        <span className={expired ? 'font-semibold text-destructive' : ''}>
           {expired ? 'Freshness expired' : 'Fresh until'} {formatDateTime(expiresAt)}
         </span>
       ) : (
@@ -56,7 +56,7 @@ export function UnitAvailabilityControl({
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center gap-2">
-        <span className={cn('badge !px-2.5 !py-0.5 text-[11px]', status === 'available' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600')}>
+        <span className={cn('badge !px-2.5 !py-0.5 text-[11px]', status === 'available' ? 'bg-[#10b98112] text-[#6ee7b7]' : 'bg-[#ffffff0f] text-muted-foreground')}>
           {status === 'available' ? availableLabel : 'Unavailable'}
         </span>
         <FreshnessLine confirmedAt={confirmedAt} expiresAt={expiresAt} changedAt={changedAt} />
@@ -120,7 +120,7 @@ export function SaleAvailabilityControl({
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
-        <span className={cn('badge !px-2.5 !py-0.5 text-[11px]', status === 'available' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600')}>
+        <span className={cn('badge !px-2.5 !py-0.5 text-[11px]', status === 'available' ? 'bg-[#10b98112] text-[#6ee7b7]' : 'bg-[#ffffff0f] text-muted-foreground')}>
           {status === 'available' ? 'Available' : `Unavailable${unavailableReason ? ` · ${SALE_REASONS.find((item) => item.value === unavailableReason)?.label ?? unavailableReason}` : ''}`}
         </span>
         <FreshnessLine confirmedAt={confirmedAt} expiresAt={expiresAt} changedAt={changedAt} />

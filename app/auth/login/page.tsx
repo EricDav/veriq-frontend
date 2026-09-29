@@ -88,57 +88,57 @@ function LoginPageInner() {
         {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2.5 mb-6">
-            <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-navy-950 p-2 ring-1 ring-white/10">
+            <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-background p-2 ring-1 ring-white/10">
               <Image src="/images/Logo.png" alt="Veriq Logo" width={40} height={40} className="rounded-lg" />
             </span>
             <div className="flex flex-col leading-none text-left">
-              <span className="font-display text-xl font-bold text-white">Veriq</span>
-              <span className="text-[10px] font-semibold tracking-widest uppercase text-gold-400">Property</span>
+              <span className="font-display text-xl font-bold text-foreground">Veriq</span>
+              <span className="text-[10px] font-semibold tracking-widest uppercase text-primary">Property</span>
             </div>
           </Link>
-          <h1 className="font-display text-2xl font-bold text-white mb-1">Welcome back</h1>
-          <p className="text-white/60 text-sm">Sign in to your Veriq Property account</p>
+          <h1 className="font-display text-2xl font-bold text-foreground mb-1">Welcome back</h1>
+          <p className="text-muted-foreground text-sm">Sign in to your Veriq Property account</p>
         </div>
 
         {/* Form card */}
-        <div className="rounded-2xl bg-white/10 border border-white/20 backdrop-blur-xl p-8 shadow-2xl">
+        <div className="rounded-2xl bg-[#ffffff0f] border border-white/20 backdrop-blur-xl p-8 shadow-2xl">
           {/* Server error */}
           {serverError && (
-            <div className="mb-5 flex items-start gap-2.5 rounded-xl bg-red-500/20 border border-red-400/30 px-4 py-3">
-              <AlertCircle className="h-4 w-4 text-red-300 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-red-200">{serverError}</p>
+            <div className="mb-5 flex items-start gap-2.5 rounded-xl bg-[#fb718510] border border-[#fb718530] px-4 py-3">
+              <AlertCircle className="h-4 w-4 text-[#fda4af] flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-[#fda4af]">{serverError}</p>
             </div>
           )}
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
             {/* Email */}
             <div>
-              <label className="block text-sm font-medium text-white/80 mb-1.5">
+              <label className="block text-sm font-medium text-foreground mb-1.5">
                 Email Address
               </label>
               <input
                 {...register('email')}
                 type="email"
                 autoComplete="email"
-                className={`w-full rounded-lg border bg-white/10 px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none transition-all focus:ring-2 focus:ring-white/10 ${
+                className={`w-full rounded-lg border bg-[#ffffff0f] px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none transition-all focus:ring-2 focus:ring-white/10 ${
                   errors.email
-                    ? 'border-red-400/60 focus:border-red-400/60'
+                    ? 'border-[#fb718530] focus:border-[#fb718530]'
                     : 'border-white/20 focus:border-white/40'
                 }`}
                 placeholder="you@example.com"
               />
               {errors.email && (
-                <p className="mt-1.5 text-xs text-red-300">{errors.email.message}</p>
+                <p className="mt-1.5 text-xs text-[#fda4af]">{errors.email.message}</p>
               )}
             </div>
 
             {/* Password */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-sm font-medium text-white/80">Password</label>
+                <label className="block text-sm font-medium text-foreground">Password</label>
                 <Link
                   href="/auth/forgot-password"
-                  className="text-xs text-gold-400 hover:text-gold-300 transition-colors"
+                  className="text-xs text-primary hover:text-primary transition-colors"
                 >
                   Forgot password?
                 </Link>
@@ -148,9 +148,9 @@ function LoginPageInner() {
                   {...register('password')}
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password"
-                  className={`w-full rounded-lg border bg-white/10 px-4 py-3 pr-11 text-sm text-white placeholder:text-white/30 outline-none transition-all focus:ring-2 focus:ring-white/10 ${
+                  className={`w-full rounded-lg border bg-[#ffffff0f] px-4 py-3 pr-11 text-sm text-foreground placeholder:text-muted-foreground outline-none transition-all focus:ring-2 focus:ring-white/10 ${
                     errors.password
-                      ? 'border-red-400/60 focus:border-red-400/60'
+                      ? 'border-[#fb718530] focus:border-[#fb718530]'
                       : 'border-white/20 focus:border-white/40'
                   }`}
                   placeholder="Enter your password"
@@ -158,13 +158,13 @@ function LoginPageInner() {
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70 transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground transition-colors"
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
               {errors.password && (
-                <p className="mt-1.5 text-xs text-red-300">{errors.password.message}</p>
+                <p className="mt-1.5 text-xs text-[#fda4af]">{errors.password.message}</p>
               )}
             </div>
 
@@ -172,22 +172,22 @@ function LoginPageInner() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-gold-gradient py-3.5 text-sm font-bold text-navy-900 shadow-gold-glow transition-all duration-200 hover:scale-[1.02] active:scale-95 disabled:opacity-60 disabled:scale-100"
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary py-3.5 text-sm font-bold text-foreground shadow-glow transition-all duration-200 hover:scale-[1.02] active:scale-95 disabled:opacity-60 disabled:scale-100"
             >
-              {isSubmitting && <LoadingSpinner size="sm" className="text-navy-900" />}
+              {isSubmitting && <LoadingSpinner size="sm" className="text-foreground" />}
               {isSubmitting ? 'Signing in…' : 'Sign In'}
             </button>
           </form>
 
           <div className="mt-5 space-y-4">
-            <div className="flex items-center gap-3 text-[11px] uppercase text-white/40"><span className="h-px flex-1 bg-white/15" />or<span className="h-px flex-1 bg-white/15" /></div>
+            <div className="flex items-center gap-3 text-[11px] uppercase text-muted-foreground"><span className="h-px flex-1 bg-[#ffffff14]" />or<span className="h-px flex-1 bg-[#ffffff14]" /></div>
             <GoogleSignInButton onCredential={async (credential) => { setServerError(null); await loginWithGoogle(credential); success('Welcome back!'); }} />
           </div>
 
           <div className="mt-6 text-center">
-            <p className="text-sm text-white/60">
+            <p className="text-sm text-muted-foreground">
               Don&apos;t have an account?{' '}
-              <Link href="/auth/register" className="text-gold-400 font-semibold hover:text-gold-300 transition-colors">
+              <Link href="/auth/register" className="text-primary font-semibold hover:text-primary transition-colors">
                 Create account
               </Link>
             </p>
@@ -195,11 +195,11 @@ function LoginPageInner() {
         </div>
 
         <div className="mt-6 flex items-center justify-center gap-4">
-          <Link href="/auth/register?role=operator" className="text-xs text-white/50 hover:text-white/70 transition-colors">
-            Join as Property Operator
+          <Link href="/auth/register?role=agent" className="text-xs text-muted-foreground hover:text-muted-foreground transition-colors">
+            Join as Agent
           </Link>
-          <span className="text-white/20">•</span>
-          <Link href="/terms" className="text-xs text-white/50 hover:text-white/70 transition-colors">
+          <span className="text-muted-foreground">•</span>
+          <Link href="/terms" className="text-xs text-muted-foreground hover:text-muted-foreground transition-colors">
             Terms of Service
           </Link>
         </div>

@@ -3,6 +3,7 @@
 import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from './Button';
 
 interface ModalProps {
   isOpen: boolean;
@@ -61,7 +62,7 @@ export function Modal({
       {/* Panel */}
       <div
         className={cn(
-          'relative w-full rounded-2xl bg-white shadow-2xl animate-fade-up',
+          'relative w-full rounded-panel border border-border bg-card text-foreground shadow-2xl animate-fade-up',
           sizeClasses[size],
           className,
         )}
@@ -70,13 +71,14 @@ export function Modal({
       >
         {/* Header */}
         {title && (
-          <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
-            <h2 className="font-display text-base font-bold text-navy-900">
+          <div className="flex items-center justify-between border-b border-border px-6 py-4">
+            <h2 className="font-display text-base font-semibold text-foreground">
               {title}
             </h2>
             <button
               onClick={onClose}
-              className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+              aria-label="Close"
+              className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-[#ffffff0d] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
             >
               <X className="h-4 w-4" />
             </button>
@@ -117,27 +119,19 @@ export function ConfirmDialog({
 }: ConfirmDialogProps) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title} size="sm">
-      <p className="text-sm text-veriq-muted mb-6 leading-relaxed">{message}</p>
-      <div className="flex gap-3 justify-end">
-        <button
-          onClick={onClose}
-          disabled={isLoading}
-          className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-medium text-navy-700 hover:bg-slate-50 transition-colors disabled:opacity-50"
-        >
+      <p className="mb-6 text-sm leading-relaxed text-muted-foreground">{message}</p>
+      <div className="flex justify-end gap-3">
+        <Button variant="secondary" size="small" onClick={onClose} disabled={isLoading}>
           {cancelLabel}
-        </button>
-        <button
+        </Button>
+        <Button
+          size="small"
           onClick={onConfirm}
           disabled={isLoading}
-          className={cn(
-            'rounded-xl px-5 py-2.5 text-sm font-bold transition-all disabled:opacity-50',
-            variant === 'danger'
-              ? 'bg-red-600 text-white hover:bg-red-700'
-              : 'bg-veriq-secondary text-white hover:bg-navy-700',
-          )}
+          className={cn(variant === 'danger' && 'bg-destructive text-primary-foreground hover:bg-[#fda4af]')}
         >
           {isLoading ? 'Processing…' : confirmLabel}
-        </button>
+        </Button>
       </div>
     </Modal>
   );

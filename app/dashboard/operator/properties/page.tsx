@@ -18,6 +18,7 @@ import {
   formatDate,
 } from '@/components/listing-forms';
 import type { OperatorPropertiesList, OperatorPropertyCategory, OperatorPropertySummary } from '@/types/operator';
+import { buttonClass } from '@/components/ui';
 
 const STATUS_FILTERS: Array<{ value: string; label: string; match: (property: OperatorPropertySummary) => boolean }> = [
   { value: 'all', label: 'All', match: () => true },
@@ -84,10 +85,10 @@ function PropertiesList() {
     <div className="mx-auto max-w-6xl space-y-5">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="font-display text-2xl font-bold text-navy-900">My Properties</h1>
-          <p className="text-sm text-slate-500">Residential Properties, Short Lets and Hostels you operate on Veriq.</p>
+          <h1 className="font-display text-2xl font-bold text-foreground">My Properties</h1>
+          <p className="text-sm text-muted-foreground">Residential Properties, Short Lets and Hostels you operate on Veriq.</p>
         </div>
-        <Link href="/dashboard/operator/properties/new" className="btn-primary !py-2.5"><Plus className="h-4 w-4" /> Add Property</Link>
+        <Link href="/dashboard/operator/properties/new" className={buttonClass()}><Plus className="h-4 w-4" /> Add Property</Link>
       </div>
 
       {loadError ? (
@@ -106,7 +107,7 @@ function PropertiesList() {
                     key={filter.value}
                     type="button"
                     onClick={() => setStatus(filter.value)}
-                    className={`whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-semibold ${status === filter.value ? 'border-veriq-secondary bg-veriq-secondary text-white' : 'border-slate-200 bg-white text-slate-600'}`}
+                    className={`whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-semibold ${status === filter.value ? 'border-primary bg-primary text-primary-foreground' : 'border-[#ffffff18] bg-card text-muted-foreground'}`}
                   >
                     {filter.label} ({total})
                   </button>
@@ -115,7 +116,7 @@ function PropertiesList() {
             </div>
             <div className="grid gap-3 sm:grid-cols-[1fr_220px]">
               <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <input className="input pl-9" placeholder="Search by title or area" value={query} onChange={(event) => setQuery(event.target.value)} aria-label="Search properties" />
               </div>
               <select className="input" value={category} onChange={(event) => setCategory(event.target.value as OperatorPropertyCategory | 'all')} aria-label="Filter by category">
@@ -130,7 +131,7 @@ function PropertiesList() {
           {(data?.properties.length ?? 0) === 0 ? (
             <EmptyState icon={<Building2 className="h-12 w-12" />} title="You have not added a property yet">
               Submit a Residential Property, Short Let or Hostel. It stays private until your Veriq Agent verifies and publishes it.
-              <div className="mt-3"><Link href="/dashboard/operator/properties/new" className="btn-primary !py-2">Add Property</Link></div>
+              <div className="mt-3"><Link href="/dashboard/operator/properties/new" className={buttonClass()}>Add Property</Link></div>
             </EmptyState>
           ) : filtered.length === 0 ? (
             <EmptyState title="No properties match these filters">Try another status, category or search term.</EmptyState>
@@ -144,8 +145,8 @@ function PropertiesList() {
                   <li key={property.id}>
                     <Link href={`/dashboard/operator/properties/${property.id}`} className="card flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
                       <div className="min-w-0 space-y-1">
-                        <p className="truncate font-semibold text-navy-900">{property.title}</p>
-                        <p className="text-xs text-slate-500">
+                        <p className="truncate font-semibold text-foreground">{property.title}</p>
+                        <p className="text-xs text-muted-foreground">
                           {CATEGORY_LABELS[property.category]} · {property.area}, {property.city} · updated {formatDate(property.updatedAt)}
                         </p>
                         <div className="flex flex-wrap gap-1.5 pt-1">
@@ -161,16 +162,16 @@ function PropertiesList() {
                       </div>
                       <dl className="grid flex-shrink-0 grid-cols-3 gap-4 text-center text-xs sm:w-72">
                         <div>
-                          <dt className="text-slate-500">Documented</dt>
-                          <dd className="font-display text-lg font-bold text-navy-900">{property.documentedUnits}<span className="text-xs font-normal text-slate-400">/{known}</span></dd>
+                          <dt className="text-muted-foreground">Documented</dt>
+                          <dd className="font-display text-lg font-bold text-foreground">{property.documentedUnits}<span className="text-xs font-normal text-muted-foreground">/{known}</span></dd>
                         </div>
                         <div>
-                          <dt className="text-slate-500">Verified</dt>
-                          <dd className="font-display text-lg font-bold text-navy-900">{property.verifiedUnits}</dd>
+                          <dt className="text-muted-foreground">Verified</dt>
+                          <dd className="font-display text-lg font-bold text-foreground">{property.verifiedUnits}</dd>
                         </div>
                         <div>
-                          <dt className="text-slate-500">Available</dt>
-                          <dd className={`font-display text-lg font-bold ${property.availableUnits > 0 ? 'text-veriq-secondary' : 'text-slate-400'}`}>{property.availableUnits}</dd>
+                          <dt className="text-muted-foreground">Available</dt>
+                          <dd className={`font-display text-lg font-bold ${property.availableUnits > 0 ? 'text-primary' : 'text-muted-foreground'}`}>{property.availableUnits}</dd>
                         </div>
                       </dl>
                     </Link>

@@ -12,8 +12,8 @@ import { PageLoader } from '@/components/ui/LoadingSpinner';
 import {
   CATEGORY_LABELS,
   IDENTITY_STATUS_LABELS,
-  IDENTITY_STATUS_STYLES,
-  PUBLICATION_STATUS_STYLES,
+  IDENTITY_STATUS_TONES,
+  PUBLICATION_STATUS_TONES,
   errorMessage,
   formatDateTime,
   formatNaira,
@@ -144,10 +144,10 @@ export default function AgentPortfolioPage() {
         backLabel="Agent dashboard"
         badges={
           <>
-            <span className={`badge !px-2.5 !py-0.5 text-[11px] ${agent.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
+            <span className={`badge !px-2.5 !py-0.5 text-[11px] ${agent.isActive ? 'bg-[#10b98112] text-[#6ee7b7]' : 'bg-[#fb718510] text-[#fda4af]'}`}>
               {agent.isActive ? 'Active Agent' : 'Suspended'}
             </span>
-            <span className={`badge !px-2.5 !py-0.5 text-[11px] ${agent.publishingPermission ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
+            <span className={`badge !px-2.5 !py-0.5 text-[11px] ${agent.publishingPermission ? 'bg-[#10b98112] text-[#6ee7b7]' : 'bg-[#fbbf2410] text-[#fcd34d]'}`}>
               {agent.publishingPermission ? 'Publishing permission active' : 'No publishing permission'}
             </span>
           </>
@@ -170,26 +170,26 @@ export default function AgentPortfolioPage() {
         {agent.referralCode ? (
           <div className="space-y-3">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-xl bg-navy-900 px-4 py-2 font-mono text-lg font-bold tracking-widest text-white">{agent.referralCode}</span>
+              <span className="rounded-unit border border-[#ffffff18] bg-[#070b1444] px-4 py-2 font-mono text-lg font-semibold tracking-widest text-foreground">{agent.referralCode}</span>
               <button type="button" className={smallButton} onClick={() => copy(agent.referralCode ?? '', 'code', 'Referral code')}>
-                {copied === 'code' ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />} Copy code
+                {copied === 'code' ? <Check className="h-3.5 w-3.5 text-[#34d399]" /> : <Copy className="h-3.5 w-3.5" />} Copy code
               </button>
             </div>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-              <p className="min-w-0 flex-1 truncate rounded-lg border border-slate-200 bg-veriq-surface px-3 py-2 text-xs text-navy-700">{referralLink || '—'}</p>
+              <p className="min-w-0 flex-1 truncate rounded-lg border border-[#ffffff18] bg-veriq-surface px-3 py-2 text-xs text-foreground">{referralLink || '—'}</p>
               <div className="flex gap-2">
                 <button type="button" className={smallButton} onClick={() => copy(referralLink, 'link', 'Referral link')} disabled={!referralLink}>
-                  {copied === 'link' ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />} Copy link
+                  {copied === 'link' ? <Check className="h-3.5 w-3.5 text-[#34d399]" /> : <Copy className="h-3.5 w-3.5" />} Copy link
                 </button>
                 <button type="button" className={smallButton} onClick={shareReferral} disabled={!referralLink}>
                   <Share2 className="h-3.5 w-3.5" /> Share
                 </button>
               </div>
             </div>
-            <p className="text-[11px] text-slate-400">The link opens Property Operator registration with your code pre-filled.</p>
+            <p className="text-[11px] text-muted-foreground">The link opens Property Operator registration with your code pre-filled.</p>
           </div>
         ) : (
-          <p className="text-sm text-slate-500">Admin has not issued a referral code for your account yet.</p>
+          <p className="text-sm text-muted-foreground">Admin has not issued a referral code for your account yet.</p>
         )}
       </PanelCard>
 
@@ -200,10 +200,10 @@ export default function AgentPortfolioPage() {
       >
         {agent.username ? (
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <p className="min-w-0 flex-1 truncate rounded-lg border border-slate-200 bg-veriq-surface px-3 py-2 text-xs text-navy-700">{profileLink}</p>
+            <p className="min-w-0 flex-1 truncate rounded-lg border border-[#ffffff18] bg-veriq-surface px-3 py-2 text-xs text-foreground">{profileLink}</p>
             <div className="flex gap-2">
               <button type="button" className={smallButton} onClick={() => copy(profileLink, 'profile', 'Profile link')}>
-                {copied === 'profile' ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />} Copy
+                {copied === 'profile' ? <Check className="h-3.5 w-3.5 text-[#34d399]" /> : <Copy className="h-3.5 w-3.5" />} Copy
               </button>
               <Link href={`/${agent.username}`} target="_blank" className={smallButton}>
                 <ExternalLink className="h-3.5 w-3.5" /> View profile
@@ -211,9 +211,9 @@ export default function AgentPortfolioPage() {
             </div>
           </div>
         ) : (
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-muted-foreground">
             Your public profile username is not set yet. Complete your{' '}
-            <Link href="/dashboard/agent" className="font-semibold text-veriq-secondary hover:underline">
+            <Link href="/dashboard/agent" className="font-semibold text-primary hover:underline">
               Agent profile
             </Link>
             .
@@ -225,21 +225,21 @@ export default function AgentPortfolioPage() {
         {operators.length === 0 ? (
           <EmptyBlock title="No Operators assigned yet" message="Admin assigns Operators to you, or they register with your referral code." />
         ) : (
-          <ul className="divide-y divide-slate-100 rounded-xl border border-slate-100">
+          <ul className="divide-y divide-[#ffffff10] rounded-xl border border-[#ffffff10]">
             {operators.map((operator) => (
               <li key={operator.id} className="flex flex-wrap items-center justify-between gap-2 px-3 py-3">
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold text-navy-900">{operator.name || 'Property Operator'}</p>
-                  <p className="text-[11px] text-slate-500">
+                  <p className="text-sm font-semibold text-foreground">{operator.name || 'Property Operator'}</p>
+                  <p className="text-[11px] text-muted-foreground">
                     {operator.phone ?? '—'}
                     {operator.email ? ` · ${operator.email}` : ''} · {operator.propertyCount} propert{operator.propertyCount === 1 ? 'y' : 'ies'}
                     {operator.referralCodeUsed ? ` · referral ${operator.referralCodeUsed}` : ''}
                   </p>
                   {operator.categories && operator.categories.length > 0 && (
-                    <p className="text-[11px] text-slate-400">{operator.categories.map((category) => CATEGORY_LABELS[category] ?? category).join(', ')}</p>
+                    <p className="text-[11px] text-muted-foreground">{operator.categories.map((category) => CATEGORY_LABELS[category] ?? category).join(', ')}</p>
                   )}
                 </div>
-                <StatusPill value={operator.identityStatus} styles={IDENTITY_STATUS_STYLES} label={IDENTITY_STATUS_LABELS[operator.identityStatus]} />
+                <StatusPill value={operator.identityStatus} tones={IDENTITY_STATUS_TONES} label={IDENTITY_STATUS_LABELS[operator.identityStatus]} />
               </li>
             ))}
           </ul>
@@ -250,19 +250,19 @@ export default function AgentPortfolioPage() {
         {properties.length === 0 ? (
           <EmptyBlock title="No properties assigned" message="Properties submitted by your Operators appear here." />
         ) : (
-          <ul className="divide-y divide-slate-100 rounded-xl border border-slate-100">
+          <ul className="divide-y divide-[#ffffff10] rounded-xl border border-[#ffffff10]">
             {properties.map((property) => {
               const caseId = caseByProperty.get(property.id);
               return (
                 <li key={property.id} className="flex flex-wrap items-center justify-between gap-2 px-3 py-3">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-navy-900">{property.title}</p>
-                    <p className="text-[11px] text-slate-500">
+                    <p className="truncate text-sm font-semibold text-foreground">{property.title}</p>
+                    <p className="text-[11px] text-muted-foreground">
                       {CATEGORY_LABELS[property.category] ?? property.category} · {property.area}, {property.city} · updated {formatDateTime(property.updatedAt)}
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <StatusPill value={property.publicationStatus} styles={PUBLICATION_STATUS_STYLES} />
+                    <StatusPill value={property.publicationStatus} tones={PUBLICATION_STATUS_TONES} />
                     {caseId ? (
                       <Link href={`/dashboard/agent/verification/${caseId}`} className={smallButton}>
                         Open case
@@ -291,20 +291,20 @@ export default function AgentPortfolioPage() {
         }
       >
         {shared.length === 0 ? (
-          <p className="text-sm text-slate-500">No open Shared Property cases.</p>
+          <p className="text-sm text-muted-foreground">No open Shared Property cases.</p>
         ) : (
-          <ul className="divide-y divide-slate-100 rounded-xl border border-slate-100">
+          <ul className="divide-y divide-[#ffffff10] rounded-xl border border-[#ffffff10]">
             {shared.map((item) =>
               item.opportunity ? (
                 <li key={item.id} className="flex flex-wrap items-center justify-between gap-2 px-3 py-3">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-navy-900">{item.opportunity.displayLabel}</p>
-                    <p className="text-[11px] text-slate-500">
+                    <p className="truncate text-sm font-semibold text-foreground">{item.opportunity.displayLabel}</p>
+                    <p className="text-[11px] text-muted-foreground">
                       {humanize(item.opportunity.opportunityType)} · {item.opportunity.area}, {item.opportunity.city}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <StatusPill value={item.opportunity.publicationStatus} styles={PUBLICATION_STATUS_STYLES} />
+                    <StatusPill value={item.opportunity.publicationStatus} tones={PUBLICATION_STATUS_TONES} />
                     <Link href={`/dashboard/agent/shared/${item.opportunity.id}`} className={smallButton}>
                       Open
                     </Link>
@@ -326,19 +326,19 @@ export default function AgentPortfolioPage() {
         }
       >
         {sales.length === 0 ? (
-          <p className="text-sm text-slate-500">You do not manage any Property for Sale listings yet.</p>
+          <p className="text-sm text-muted-foreground">You do not manage any Property for Sale listings yet.</p>
         ) : (
-          <ul className="divide-y divide-slate-100 rounded-xl border border-slate-100">
+          <ul className="divide-y divide-[#ffffff10] rounded-xl border border-[#ffffff10]">
             {sales.map((sale) => (
               <li key={sale.id} className="flex flex-wrap items-center justify-between gap-2 px-3 py-3">
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-navy-900">{sale.title}</p>
-                  <p className="text-[11px] text-slate-500">
+                  <p className="truncate text-sm font-semibold text-foreground">{sale.title}</p>
+                  <p className="text-[11px] text-muted-foreground">
                     {sale.subtype === 'land' ? 'Land' : 'Built Property'} · {formatNaira(sale.askingPrice)}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <StatusPill value={sale.publicationStatus} styles={PUBLICATION_STATUS_STYLES} />
+                  <StatusPill value={sale.publicationStatus} tones={PUBLICATION_STATUS_TONES} />
                   <Link href={`/dashboard/agent/sales/${sale.id}`} className={smallButton}>
                     Open
                   </Link>

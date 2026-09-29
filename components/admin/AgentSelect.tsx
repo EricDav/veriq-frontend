@@ -78,7 +78,11 @@ export function AgentSelect({
           </option>
         ))}
       </select>
-      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+      {error && (
+        <p role="alert" className="mt-1 text-xs font-medium text-destructive">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

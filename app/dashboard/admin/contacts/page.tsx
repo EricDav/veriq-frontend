@@ -11,9 +11,9 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/components/ui/Toast';
 
 const STATUS_STYLE: Record<ContactSubmissionStatus, string> = {
-  new: 'bg-blue-100 text-blue-700',
-  read: 'bg-amber-100 text-amber-700',
-  resolved: 'bg-emerald-100 text-emerald-700',
+  new: 'bg-[#ffffff08] text-muted-foreground',
+  read: 'bg-[#fbbf2410] text-[#fcd34d]',
+  resolved: 'bg-[#10b98112] text-primary',
 };
 
 function formatDate(value: string) {
@@ -72,12 +72,12 @@ export default function AdminContactsPage() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="mb-1 flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100">
-              <Mail className="h-5 w-5 text-blue-600" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#ffffff08]">
+              <Mail className="h-5 w-5 text-muted-foreground" />
             </div>
-            <h1 className="font-display text-2xl font-bold text-navy-900">Contact Form Submissions</h1>
+            <h1 className="font-display text-2xl font-bold text-foreground">Contact Form Submissions</h1>
           </div>
-          <p className="text-sm text-veriq-muted">Review messages submitted from the public contact page.</p>
+          <p className="text-sm text-muted-foreground">Review messages submitted from the public contact page.</p>
         </div>
         <button onClick={load} className="btn-primary !py-2.5 !text-sm flex items-center gap-2">
           <RefreshCw className="h-4 w-4" /> Refresh
@@ -85,12 +85,12 @@ export default function AdminContactsPage() {
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center py-24"><LoadingSpinner size="lg" className="text-veriq-secondary" /></div>
+        <div className="flex justify-center py-24"><LoadingSpinner size="lg" className="text-primary" /></div>
       ) : items.length === 0 ? (
         <div className="card p-12 text-center">
-          <Mail className="mx-auto mb-4 h-10 w-10 text-slate-300" />
-          <h2 className="font-display text-lg font-bold text-navy-900">No submissions yet</h2>
-          <p className="mt-1 text-sm text-veriq-muted">Contact form messages will appear here.</p>
+          <Mail className="mx-auto mb-4 h-10 w-10 text-muted-foreground" />
+          <h2 className="font-display text-lg font-bold text-foreground">No submissions yet</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Contact form messages will appear here.</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -100,17 +100,17 @@ export default function AdminContactsPage() {
                 <div className="min-w-0 flex-1">
                   <div className="mb-2 flex flex-wrap items-center gap-2">
                     <span className={`badge text-[10px] ${STATUS_STYLE[item.status]}`}>{item.status}</span>
-                    <span className="flex items-center gap-1 text-xs text-slate-400">
+                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
                       <Clock className="h-3.5 w-3.5" /> {formatDate(item.createdAt)}
                     </span>
                   </div>
-                  <h2 className="text-base font-bold text-navy-900">{item.subject}</h2>
-                  <p className="mt-1 text-sm text-veriq-muted">
-                    {item.firstName} {item.lastName} · <a href={`mailto:${item.email}`} className="text-veriq-secondary hover:underline">{item.email}</a>
-                    {item.phone ? <> · <a href={`tel:${item.phone}`} className="text-veriq-secondary hover:underline">{item.phone}</a></> : null}
+                  <h2 className="text-base font-bold text-foreground">{item.subject}</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {item.firstName} {item.lastName} · <a href={`mailto:${item.email}`} className="text-primary hover:underline">{item.email}</a>
+                    {item.phone ? <> · <a href={`tel:${item.phone}`} className="text-primary hover:underline">{item.phone}</a></> : null}
                   </p>
-                  {item.role && <p className="mt-1 text-xs capitalize text-slate-400">Role: {item.role}</p>}
-                  <p className="mt-4 whitespace-pre-wrap rounded-xl bg-veriq-surface p-4 text-sm leading-relaxed text-navy-800">{item.message}</p>
+                  {item.role && <p className="mt-1 text-xs capitalize text-muted-foreground">Role: {item.role}</p>}
+                  <p className="mt-4 whitespace-pre-wrap rounded-xl bg-background p-4 text-sm leading-relaxed text-foreground">{item.message}</p>
                 </div>
                 <div className="flex flex-wrap gap-2 lg:flex-col">
                   {(['new', 'read', 'resolved'] as ContactSubmissionStatus[]).map((status) => (
@@ -119,7 +119,7 @@ export default function AdminContactsPage() {
                       type="button"
                       disabled={updatingId === item.id || item.status === status}
                       onClick={() => updateStatus(item.id, status)}
-                      className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold capitalize text-navy-700 hover:border-veriq-secondary disabled:cursor-not-allowed disabled:opacity-50"
+                      className="rounded-lg border border-[#ffffff12] px-3 py-2 text-xs font-semibold capitalize text-foreground hover:border-primary disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {updatingId === item.id && item.status !== status ? <LoadingSpinner size="sm" /> : status}
                     </button>

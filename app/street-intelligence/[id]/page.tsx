@@ -52,12 +52,12 @@ function updatedLabel(value: string | null) {
 
 function RatingDots({ level, maxLevel }: { level: number | null; maxLevel: number }) {
   if (!level) {
-    return <div className="flex gap-1 text-slate-300" aria-hidden="true">{Array.from({ length: maxLevel }).map((_, idx) => <span key={idx}>—</span>)}</div>;
+    return <div className="flex gap-1 text-muted-foreground" aria-hidden="true">{Array.from({ length: maxLevel }).map((_, idx) => <span key={idx}>—</span>)}</div>;
   }
   return (
     <div className="flex gap-1" aria-hidden="true">
       {Array.from({ length: maxLevel }).map((_, idx) => (
-        <span key={idx} className={idx < level ? 'text-emerald-600' : 'text-slate-300'}>●</span>
+        <span key={idx} className={idx < level ? 'text-primary' : 'text-muted-foreground'}>●</span>
       ))}
     </div>
   );
@@ -113,37 +113,37 @@ function ShareStreet({ streetName, location }: { streetName: string; location: s
       label: 'WhatsApp',
       icon: MessageCircle,
       action: () => openShareUrl(`https://wa.me/?text=${encodedText}%20${encodedUrl}`),
-      className: 'text-emerald-700 hover:bg-emerald-50',
+      className: 'text-primary hover:bg-[#10b98112]',
     },
     {
       label: 'Facebook',
       icon: Facebook,
       action: () => openShareUrl(`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`),
-      className: 'text-blue-700 hover:bg-blue-50',
+      className: 'text-muted-foreground hover:bg-[#ffffff08]',
     },
     {
       label: 'Instagram',
       icon: Instagram,
       action: () => void shareFromDevice(),
-      className: 'text-pink-700 hover:bg-pink-50',
+      className: 'text-muted-foreground hover:bg-[#ffffff08]',
     },
     {
       label: 'X',
       icon: X,
       action: () => openShareUrl(`https://twitter.com/intent/tweet?text=${encodedText}&url=${encodedUrl}`),
-      className: 'text-slate-900 hover:bg-slate-100',
+      className: 'text-foreground hover:bg-[#ffffff08]',
     },
     {
       label: 'LinkedIn',
       icon: Linkedin,
       action: () => openShareUrl(`https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`),
-      className: 'text-sky-800 hover:bg-sky-50',
+      className: 'text-muted-foreground hover:bg-[#ffffff08]',
     },
     {
       label: 'Email',
       icon: Mail,
       action: () => { window.location.href = `mailto:?subject=${encodeURIComponent(`${streetName} Street Intelligence`)}&body=${encodedText}%0A%0A${encodedUrl}`; },
-      className: 'text-slate-700 hover:bg-slate-100',
+      className: 'text-muted-foreground hover:bg-[#ffffff08]',
     },
   ];
 
@@ -156,35 +156,35 @@ function ShareStreet({ streetName, location }: { streetName: string; location: s
       </div>
 
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-navy-900/60 p-4 sm:items-center" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setIsOpen(false); }}>
-          <section role="dialog" aria-modal="true" aria-labelledby="share-street-title" className="w-full max-w-md rounded-lg bg-white p-5 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-[#070b1499] p-4 sm:items-center" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setIsOpen(false); }}>
+          <section role="dialog" aria-modal="true" aria-labelledby="share-street-title" className="w-full max-w-md rounded-lg bg-card p-5 shadow-2xl">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 id="share-street-title" className="font-display text-lg font-bold text-navy-900">Share {streetName}</h2>
-                <p className="mt-1 text-sm text-veriq-muted">Help someone make a better-informed property decision.</p>
+                <h2 id="share-street-title" className="font-display text-lg font-bold text-foreground">Share {streetName}</h2>
+                <p className="mt-1 text-sm text-muted-foreground">Help someone make a better-informed property decision.</p>
               </div>
-              <button type="button" onClick={() => setIsOpen(false)} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100" aria-label="Close share options">
+              <button type="button" onClick={() => setIsOpen(false)} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-[#ffffff08]" aria-label="Close share options">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <button type="button" onClick={() => void shareFromDevice()} className="mt-5 flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-navy-900 px-4 text-sm font-medium text-white hover:bg-navy-800">
+            <button type="button" onClick={() => void shareFromDevice()} className="mt-5 flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-background px-4 text-sm font-medium text-foreground hover:bg-card">
               <Share2 className="h-4 w-4" /> Share with another app
             </button>
 
             <div className="mt-4 grid grid-cols-3 gap-2">
               {shareOptions.map(({ label, icon: Icon, action, className }) => (
-                <button key={label} type="button" onClick={action} className={`flex min-h-16 flex-col items-center justify-center gap-1 rounded-lg border border-slate-200 px-2 text-xs font-medium transition-colors ${className}`}>
+                <button key={label} type="button" onClick={action} className={`flex min-h-16 flex-col items-center justify-center gap-1 rounded-lg border border-[#ffffff12] px-2 text-xs font-medium transition-colors ${className}`}>
                   <Icon className="h-5 w-5" /> {label}
                 </button>
               ))}
             </div>
 
-            <button type="button" onClick={() => void copyLink()} className="mt-4 flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-slate-300 px-4 text-sm font-medium text-navy-900 hover:bg-slate-50">
-              {feedback?.startsWith('Link copied') ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
+            <button type="button" onClick={() => void copyLink()} className="mt-4 flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-[#ffffff12] px-4 text-sm font-medium text-foreground hover:bg-[#ffffff08]">
+              {feedback?.startsWith('Link copied') ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
               Copy link
             </button>
-            {feedback && <p role="status" className="mt-3 text-center text-xs text-veriq-muted">{feedback}</p>}
+            {feedback && <p role="status" className="mt-3 text-center text-xs text-muted-foreground">{feedback}</p>}
           </section>
         </div>
       )}
@@ -253,18 +253,18 @@ function StreetResult() {
   }, [payload]);
 
   if (isLoading) {
-    return <div className="flex min-h-screen items-center justify-center bg-veriq-surface"><LoadingSpinner size="lg" /></div>;
+    return <div className="flex min-h-screen items-center justify-center bg-background"><LoadingSpinner size="lg" /></div>;
   }
 
   if (!payload) {
     return (
-      <div className="min-h-screen bg-veriq-surface pt-24">
+      <div className="min-h-screen bg-background pt-24">
         <main className="mx-auto min-w-0 max-w-4xl px-4 py-16 text-center sm:px-6">
-          <h1 className="font-display text-2xl font-bold text-navy-900">
+          <h1 className="font-display text-2xl font-bold text-foreground">
             {notFound ? 'Street not found' : 'Unable to load Street Intelligence'}
           </h1>
           <>
-              <p className="mx-auto mt-3 max-w-xl break-words text-sm text-veriq-muted">{loadError ?? 'This street is unavailable or is still awaiting admin approval.'}</p>
+              <p className="mx-auto mt-3 max-w-xl break-words text-sm text-muted-foreground">{loadError ?? 'This street is unavailable or is still awaiting admin approval.'}</p>
               <Link href="/street-intelligence" className="btn-primary mt-6">Back to Street Intelligence</Link>
           </>
         </main>
@@ -280,33 +280,33 @@ function StreetResult() {
   }).toString()}`;
 
   return (
-    <div className="min-h-screen bg-veriq-surface pt-24">
+    <div className="min-h-screen bg-background pt-24">
       <main className="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
-        <Link href="/street-intelligence" className="mb-6 inline-flex items-center gap-2 text-sm text-veriq-muted hover:text-navy-900">
+        <Link href="/street-intelligence" className="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" /> Back to Street Intelligence
         </Link>
 
-        <div className="mb-6 rounded-2xl bg-navy-900 p-6 text-white">
-          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-white/10">
-            <MapPin className="h-6 w-6 text-gold-400" />
+        <div className="mb-6 rounded-2xl bg-background p-6 text-foreground">
+          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[#ffffff0f]">
+            <MapPin className="h-6 w-6 text-primary" />
           </div>
           <h1 className="font-display text-3xl font-black">{street.streetName}</h1>
-          <p className="mt-1 text-sm text-white/70">{street.area}, {street.city}, {street.state}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{street.area}, {street.city}, {street.state}</p>
           <div className="mt-5 flex flex-wrap gap-3 text-xs">
-            <span className="rounded-full bg-white/10 px-3 py-1.5">
+            <span className="rounded-full bg-[#ffffff0f] px-3 py-1.5">
               Last community update: {payload.lastUpdated ? new Date(payload.lastUpdated).toLocaleDateString() : 'Not enough data'}
             </span>
-            <span className="rounded-full bg-white/10 px-3 py-1.5">{payload.contributors} Community Contributors</span>
+            <span className="rounded-full bg-[#ffffff0f] px-3 py-1.5">{payload.contributors} Community Contributors</span>
           </div>
         </div>
 
-        <div className="mb-6 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm leading-6 text-blue-900">
+        <div className="mb-6 rounded-2xl border border-[#ffffff12] bg-[#ffffff08] p-4 text-sm leading-6 text-muted-foreground">
           {payload.sourceNotice}
         </div>
 
         {SECTIONS.map((section) => (
           <section key={section} className="mb-8">
-            <h2 className="mb-4 font-display text-lg font-black text-navy-900">{section}</h2>
+            <h2 className="mb-4 font-display text-lg font-black text-foreground">{section}</h2>
             <div className="grid gap-4 sm:grid-cols-2">
           {payload.results.filter((item) => item.section === section).map((result) => {
             const label = result.status === 'insufficient_data'
@@ -316,28 +316,28 @@ function StreetResult() {
               <section key={result.categoryId} className="card p-5">
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <div>
-                    <h2 className="font-display text-base font-bold text-navy-900">{result.category}</h2>
+                    <h2 className="font-display text-base font-bold text-foreground">{result.category}</h2>
                     <p className={`mt-1 text-sm font-black ${
-                      result.status === 'mixed' ? 'text-amber-700' :
-                      result.status === 'insufficient_data' ? 'text-slate-500' :
-                      result.isPositiveScale ? 'text-emerald-700' : 'text-blue-700'
+                      result.status === 'mixed' ? 'text-[#fcd34d]' :
+                      result.status === 'insufficient_data' ? 'text-muted-foreground' :
+                      result.isPositiveScale ? 'text-primary' : 'text-muted-foreground'
                     }`}>
                       {label}
                     </p>
                   </div>
-                  <BarChart3 className="h-5 w-5 text-slate-300" />
+                  <BarChart3 className="h-5 w-5 text-muted-foreground" />
                 </div>
                 <RatingDots level={result.level} maxLevel={result.maxLevel} />
                 {result.supplementaryResult.length > 0 && (
-                  <p className="mt-3 text-xs text-veriq-muted">
-                    <strong className="text-navy-900">Works Well On:</strong> {result.supplementaryResult.join(' • ')}
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    <strong className="text-foreground">Works Well On:</strong> {result.supplementaryResult.join(' • ')}
                   </p>
                 )}
-                <div className="mt-3 space-y-1 text-xs text-veriq-muted">
+                <div className="mt-3 space-y-1 text-xs text-muted-foreground">
                   <p className="flex items-start gap-1"><Users className="mt-0.5 h-3.5 w-3.5 shrink-0" /> Source: {sourceLabel(result.sources)}</p>
                   {result.confidenceScore !== undefined && (
                     <p>
-                      Confidence: <strong className="capitalize text-navy-900">{result.confidenceLevel}</strong>
+                      Confidence: <strong className="capitalize text-foreground">{result.confidenceLevel}</strong>
                       {' '}({result.confidenceScore}%) from {result.evidenceCount} {result.evidenceCount === 1 ? 'record' : 'records'}
                     </p>
                   )}
@@ -353,16 +353,16 @@ function StreetResult() {
           </section>
         ))}
 
-        <section className="mb-8 border-y border-slate-200 py-8">
+        <section className="mb-8 border-y border-[#ffffff12] py-8">
           <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
             <div>
-              <p className="mb-1 text-xs font-bold uppercase text-emerald-700">Continue your search</p>
-              <h2 className="font-display text-xl font-black text-navy-900">
+              <p className="mb-1 text-xs font-bold uppercase text-primary">Continue your search</p>
+              <h2 className="font-display text-xl font-black text-foreground">
                 {propertyScope === 'street' && relatedProperties.length > 0
                   ? `Properties on ${street.streetName}`
                   : `Properties around ${street.area}`}
               </h2>
-              <p className="mt-1 text-sm text-veriq-muted">Use what you have learned about the street to compare available homes nearby.</p>
+              <p className="mt-1 text-sm text-muted-foreground">Use what you have learned about the street to compare available homes nearby.</p>
             </div>
             <Link href={browsePropertiesUrl} className="btn-primary inline-flex">
               Browse properties <ArrowRight className="h-4 w-4" />
@@ -376,22 +376,22 @@ function StreetResult() {
               {relatedProperties.map((property) => <PropertyCard key={property.id} property={property} />)}
             </div>
           ) : (
-            <div className="flex flex-col items-center border border-dashed border-slate-300 bg-white px-5 py-10 text-center">
-              <Building2 className="mb-3 h-8 w-8 text-slate-300" />
-              <p className="font-bold text-navy-900">No active listings here yet</p>
-              <p className="mt-1 max-w-md text-sm text-veriq-muted">Explore the wider property directory for other verified listings in {street.city}.</p>
+            <div className="flex flex-col items-center border border-dashed border-[#ffffff12] bg-card px-5 py-10 text-center">
+              <Building2 className="mb-3 h-8 w-8 text-muted-foreground" />
+              <p className="font-bold text-foreground">No active listings here yet</p>
+              <p className="mt-1 max-w-md text-sm text-muted-foreground">Explore the wider property directory for other verified listings in {street.city}.</p>
               <Link href={browsePropertiesUrl} className="btn-outline mt-5 inline-flex">Explore nearby properties</Link>
             </div>
           )}
         </section>
 
-        <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-5">
-          <p className="font-bold text-navy-900">Know This Area?</p>
-          <p className="mt-1 text-sm text-veriq-muted">Has anything changed? Do you have more recent or accurate information? Help keep this Street Intelligence up to date for everyone.</p>
+        <div className="mt-8 rounded-2xl border border-[#ffffff12] bg-card p-5">
+          <p className="font-bold text-foreground">Know This Area?</p>
+          <p className="mt-1 text-sm text-muted-foreground">Has anything changed? Do you have more recent or accurate information? Help keep this Street Intelligence up to date for everyone.</p>
           <Link href={`/dashboard/community?streetId=${street.id}`} className="btn-primary mt-4 inline-flex">Update This Street</Link>
         </div>
 
-        <p className="mt-6 text-xs leading-5 text-slate-500">
+        <p className="mt-6 text-xs leading-5 text-muted-foreground">
           Street Intelligence reflects the experiences of Community Contributors and may change as new reports are submitted. Users should make independent enquiries before making a property decision.
         </p>
         <ShareStreet streetName={street.streetName} location={`${street.area}, ${street.city}, ${street.state}`} />

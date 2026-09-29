@@ -1,4 +1,5 @@
 import { ApiError } from '@/lib/api';
+import type { BadgeTone } from '@/components/ui';
 import type { ListingTargetType, RefundReason, RefundStatus, UnlockStatus } from '@/types/renter';
 
 const API_ORIGIN = process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api/v1', '') ?? 'http://localhost:3000';
@@ -71,23 +72,23 @@ export const CATEGORY_LABELS: Record<string, string> = {
   for_sale: 'Property for Sale',
 };
 
-export const UNLOCK_STATUS_META: Record<UnlockStatus, { label: string; cls: string }> = {
-  pending_payment: { label: 'Awaiting payment', cls: 'bg-amber-50 text-amber-700' },
-  paid: { label: 'Paid', cls: 'bg-blue-50 text-blue-700' },
-  unlocked: { label: 'Unlocked', cls: 'bg-emerald-50 text-emerald-700' },
-  expired: { label: 'Access ended', cls: 'bg-slate-100 text-slate-600' },
-  refund_requested: { label: 'Refund requested', cls: 'bg-purple-50 text-purple-700' },
-  refunded: { label: 'Refunded to wallet', cls: 'bg-purple-50 text-purple-700' },
-  payment_failed: { label: 'Payment not completed', cls: 'bg-red-50 text-red-700' },
-  cancelled: { label: 'Checkout cancelled', cls: 'bg-slate-100 text-slate-600' },
-  duplicate_payment: { label: 'Duplicate payment', cls: 'bg-orange-50 text-orange-700' },
+export const UNLOCK_STATUS_META: Record<UnlockStatus, { label: string; tone: BadgeTone }> = {
+  pending_payment: { label: 'Awaiting payment', tone: 'amber' },
+  paid: { label: 'Paid', tone: 'neutral' },
+  unlocked: { label: 'Unlocked', tone: 'success' },
+  expired: { label: 'Access ended', tone: 'neutral' },
+  refund_requested: { label: 'Refund requested', tone: 'amber' },
+  refunded: { label: 'Refunded to wallet', tone: 'success' },
+  payment_failed: { label: 'Payment not completed', tone: 'red' },
+  cancelled: { label: 'Checkout cancelled', tone: 'neutral' },
+  duplicate_payment: { label: 'Duplicate payment', tone: 'amber' },
 };
 
-export const REFUND_STATUS_META: Record<RefundStatus, { label: string; cls: string }> = {
-  requested: { label: 'Submitted', cls: 'bg-blue-50 text-blue-700' },
-  under_review: { label: 'Under review', cls: 'bg-amber-50 text-amber-700' },
-  approved: { label: 'Approved — credited to wallet', cls: 'bg-emerald-50 text-emerald-700' },
-  rejected: { label: 'Not approved', cls: 'bg-red-50 text-red-700' },
+export const REFUND_STATUS_META: Record<RefundStatus, { label: string; tone: BadgeTone }> = {
+  requested: { label: 'Submitted', tone: 'neutral' },
+  under_review: { label: 'Under review', tone: 'amber' },
+  approved: { label: 'Approved — credited to wallet', tone: 'success' },
+  rejected: { label: 'Not approved', tone: 'red' },
 };
 
 export const REFUND_REASON_LABELS: Record<RefundReason, string> = {

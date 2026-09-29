@@ -65,8 +65,8 @@ export default function AdminStatesPage() {
     <div className="mx-auto max-w-5xl space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-display text-2xl font-bold text-navy-900">Allowed States</h1>
-          <p className="text-sm text-veriq-muted">
+          <h1 className="font-display text-2xl font-bold text-foreground">Allowed States</h1>
+          <p className="text-sm text-muted-foreground">
             Choose where users can sign up and agents can list properties.
           </p>
         </div>
@@ -78,23 +78,23 @@ export default function AdminStatesPage() {
 
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="card p-5">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Total States</p>
-          <p className="mt-2 text-2xl font-black text-navy-900">{states.length}</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Total States</p>
+          <p className="mt-2 text-2xl font-black text-foreground">{states.length}</p>
         </div>
         <div className="card p-5">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Active</p>
-          <p className="mt-2 text-2xl font-black text-emerald-600">{activeCount}</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Active</p>
+          <p className="mt-2 text-2xl font-black text-primary">{activeCount}</p>
         </div>
         <div className="card p-5">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Inactive</p>
-          <p className="mt-2 text-2xl font-black text-slate-500">{states.length - activeCount}</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Inactive</p>
+          <p className="mt-2 text-2xl font-black text-muted-foreground">{states.length - activeCount}</p>
         </div>
       </div>
 
       <div className="card overflow-hidden">
-        <div className="border-b border-slate-100 px-5 py-4">
-          <h2 className="flex items-center gap-2 font-display text-base font-bold text-navy-900">
-            <MapPin className="h-4 w-4 text-veriq-secondary" />
+        <div className="border-b border-[#ffffff12] px-5 py-4">
+          <h2 className="flex items-center gap-2 font-display text-base font-bold text-foreground">
+            <MapPin className="h-4 w-4 text-primary" />
             Nigerian States
           </h2>
         </div>
@@ -108,11 +108,11 @@ export default function AdminStatesPage() {
             {states.map((state) => (
               <div
                 key={state.id}
-                className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3"
+                className="flex items-center justify-between gap-3 rounded-xl border border-[#ffffff12] bg-card px-4 py-3"
               >
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-navy-900">{state.name}</p>
-                  <p className={`mt-0.5 flex items-center gap-1 text-xs ${state.isActive ? 'text-emerald-600' : 'text-slate-400'}`}>
+                  <p className="truncate text-sm font-semibold text-foreground">{state.name}</p>
+                  <p className={`mt-0.5 flex items-center gap-1 text-xs ${state.isActive ? 'text-primary' : 'text-muted-foreground'}`}>
                     <ShieldCheck className="h-3 w-3" />
                     {state.isActive ? 'Allowed' : 'Disabled'}
                   </p>
@@ -122,12 +122,12 @@ export default function AdminStatesPage() {
                   onClick={() => toggleState(state)}
                   disabled={updatingId === state.id}
                   className={`relative h-7 w-12 rounded-full transition-colors ${
-                    state.isActive ? 'bg-emerald-500' : 'bg-slate-300'
+                    state.isActive ? 'bg-primary' : 'bg-[#ffffff08]'
                   } disabled:opacity-60`}
                   aria-label={`${state.isActive ? 'Disable' : 'Enable'} ${state.name}`}
                 >
                   <span
-                    className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                    className={`absolute top-1 h-5 w-5 rounded-full bg-card shadow transition-transform ${
                       state.isActive ? 'translate-x-5' : 'translate-x-1'
                     }`}
                   />

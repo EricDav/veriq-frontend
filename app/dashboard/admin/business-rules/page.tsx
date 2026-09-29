@@ -231,13 +231,13 @@ export default function AdminBusinessRulesPage() {
       ) : payload ? (
         <>
           <section className="card p-5 hover:shadow-card">
-            <h2 className="flex items-center gap-2 font-display text-sm font-bold text-navy-900">
-              <Lock className="h-4 w-4 text-slate-400" /> Fixed policies (not editable in this version)
+            <h2 className="flex items-center gap-2 font-display text-sm font-bold text-foreground">
+              <Lock className="h-4 w-4 text-muted-foreground" /> Fixed policies (not editable in this version)
             </h2>
             <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <div className="rounded-xl bg-slate-50 p-3 text-xs"><p className="text-slate-500">Property Operator unlock share</p><p className="text-base font-bold text-navy-900">{payload.fixedPolicies.operatorUnlockSharePercent}%</p></div>
-              <div className="rounded-xl bg-slate-50 p-3 text-xs"><p className="text-slate-500">Listing / submission fee</p><p className="text-base font-bold text-navy-900">{naira(payload.fixedPolicies.listingSubmissionFeeNaira)}</p></div>
-              <div className="rounded-xl bg-slate-50 p-3 text-xs"><p className="text-slate-500">Agent commission basis</p><p className="text-base font-bold text-navy-900">{humanize(payload.fixedPolicies.agentCommissionBasis)}</p></div>
+              <div className="rounded-xl bg-[#ffffff08] p-3 text-xs"><p className="text-muted-foreground">Property Operator unlock share</p><p className="text-base font-bold text-foreground">{payload.fixedPolicies.operatorUnlockSharePercent}%</p></div>
+              <div className="rounded-xl bg-[#ffffff08] p-3 text-xs"><p className="text-muted-foreground">Listing / submission fee</p><p className="text-base font-bold text-foreground">{naira(payload.fixedPolicies.listingSubmissionFeeNaira)}</p></div>
+              <div className="rounded-xl bg-[#ffffff08] p-3 text-xs"><p className="text-muted-foreground">Agent commission basis</p><p className="text-base font-bold text-foreground">{humanize(payload.fixedPolicies.agentCommissionBasis)}</p></div>
             </div>
           </section>
 
@@ -247,22 +247,22 @@ export default function AdminBusinessRulesPage() {
                 <div className="flex flex-col gap-4 p-5 lg:flex-row lg:items-start lg:justify-between">
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <h2 className="font-display text-base font-bold text-navy-900">{rule.label}</h2>
+                      <h2 className="font-display text-base font-bold text-foreground">{rule.label}</h2>
                       {rule.financial && <StatusBadge status="scheduled" label="Financial · effective-dated" />}
                       {rule.categoryScoped && <StatusBadge status="draft" label="Category overrides allowed" tone="purple" />}
                     </div>
-                    <p className="mt-1 text-sm text-slate-500">{rule.description}</p>
-                    <p className="mt-2 font-mono text-[11px] text-slate-400">{rule.key} · {UNIT_LABELS[rule.unit]} · range {formatRuleValue(rule.min, rule.unit)} – {formatRuleValue(rule.max, rule.unit)}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">{rule.description}</p>
+                    <p className="mt-2 font-mono text-[11px] text-muted-foreground">{rule.key} · {UNIT_LABELS[rule.unit]} · range {formatRuleValue(rule.min, rule.unit)} – {formatRuleValue(rule.max, rule.unit)}</p>
                   </div>
                   <div className="flex flex-col items-start gap-2 lg:items-end">
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">In force now</p>
-                    <p className="font-display text-2xl font-black text-navy-900">{formatRuleValue(rule.currentValue, rule.unit)}</p>
-                    <p className="text-xs text-slate-500">{SOURCE_LABELS[rule.currentSource]} · launch default {formatRuleValue(rule.defaultValue, rule.unit)}</p>
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">In force now</p>
+                    <p className="font-display text-2xl font-black text-foreground">{formatRuleValue(rule.currentValue, rule.unit)}</p>
+                    <p className="text-xs text-muted-foreground">{SOURCE_LABELS[rule.currentSource]} · launch default {formatRuleValue(rule.defaultValue, rule.unit)}</p>
                     <div className="flex flex-wrap gap-2">
-                      <button type="button" onClick={() => openHistory(rule)} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-bold text-navy-700 hover:bg-slate-50">
+                      <button type="button" onClick={() => openHistory(rule)} className="inline-flex items-center gap-1 rounded-lg border border-[#ffffff12] px-3 py-1.5 text-xs font-bold text-foreground hover:bg-[#ffffff08]">
                         <History className="h-3.5 w-3.5" /> History
                       </button>
-                      <button type="button" onClick={() => openChange(rule)} className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700">
+                      <button type="button" onClick={() => openChange(rule)} className="inline-flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-foreground hover:bg-[#34d399]">
                         <SlidersHorizontal className="h-3.5 w-3.5" /> Change global value
                       </button>
                     </div>
@@ -270,22 +270,22 @@ export default function AdminBusinessRulesPage() {
                 </div>
 
                 {rule.categoryScoped && rule.categoryValues && (
-                  <div className="border-t border-slate-100 bg-slate-50/50 p-5">
-                    <p className="mb-3 text-xs font-bold uppercase tracking-wide text-slate-500">Category overrides</p>
+                  <div className="border-t border-[#ffffff12] bg-[#ffffff08] p-5">
+                    <p className="mb-3 text-xs font-bold uppercase tracking-wide text-muted-foreground">Category overrides</p>
                     <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-5">
                       {PROPERTY_CATEGORIES.map((category) => {
                         const override = rule.categoryValues?.[category] ?? null;
                         return (
-                          <div key={category} className="rounded-xl border border-slate-200 bg-white p-3">
-                            <p className="text-xs font-semibold text-navy-900">{categoryLabel(category)}</p>
-                            <p className="mt-1 text-sm font-bold text-navy-900">{override === null ? formatRuleValue(rule.currentValue, rule.unit) : formatRuleValue(override, rule.unit)}</p>
-                            <p className="text-[11px] text-slate-500">{override === null ? 'Uses global value' : 'Category override'}</p>
+                          <div key={category} className="rounded-xl border border-[#ffffff12] bg-card p-3">
+                            <p className="text-xs font-semibold text-foreground">{categoryLabel(category)}</p>
+                            <p className="mt-1 text-sm font-bold text-foreground">{override === null ? formatRuleValue(rule.currentValue, rule.unit) : formatRuleValue(override, rule.unit)}</p>
+                            <p className="text-[11px] text-muted-foreground">{override === null ? 'Uses global value' : 'Category override'}</p>
                             <div className="mt-2 flex flex-wrap gap-1.5">
-                              <button type="button" onClick={() => openChange(rule, category)} className="rounded-md border border-slate-200 px-2 py-1 text-[11px] font-bold text-navy-700 hover:bg-slate-50">
+                              <button type="button" onClick={() => openChange(rule, category)} className="rounded-md border border-[#ffffff12] px-2 py-1 text-[11px] font-bold text-foreground hover:bg-[#ffffff08]">
                                 {override === null ? 'Set override' : 'Change'}
                               </button>
                               {override !== null && (
-                                <button type="button" onClick={() => { setClearEffectiveFrom(''); setClearTarget({ rule, category }); }} className="inline-flex items-center gap-1 rounded-md border border-red-200 px-2 py-1 text-[11px] font-bold text-red-600 hover:bg-red-50">
+                                <button type="button" onClick={() => { setClearEffectiveFrom(''); setClearTarget({ rule, category }); }} className="inline-flex items-center gap-1 rounded-md border border-[#fb718530] px-2 py-1 text-[11px] font-bold text-destructive hover:bg-[#fb718510]">
                                   <XCircle className="h-3 w-3" /> Clear
                                 </button>
                               )}
@@ -298,8 +298,8 @@ export default function AdminBusinessRulesPage() {
                 )}
 
                 {rule.scheduled.length > 0 && (
-                  <div className="border-t border-slate-100 p-5">
-                    <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-blue-700">
+                  <div className="border-t border-[#ffffff12] p-5">
+                    <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-muted-foreground">
                       <CalendarClock className="h-3.5 w-3.5" /> Scheduled future values
                     </p>
                     <TableScroll>
@@ -312,19 +312,19 @@ export default function AdminBusinessRulesPage() {
                             <th className={th}>Reason</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="divide-y divide-[#ffffff12]">
                           {rule.scheduled.map((row) => (
                             <tr key={row.id}>
                               <td className={td}><span className="text-xs">{scopeLabel(row.scope)}</span></td>
                               <td className={td}><span className="text-xs font-semibold">{formatRuleValue(row.value, rule.unit)}</span></td>
                               <td className={td}><span className="whitespace-nowrap text-xs">{dateTime(row.effectiveFrom)}</span></td>
-                              <td className={td}><span className="text-xs text-slate-600">{row.reason || '—'}</span></td>
+                              <td className={td}><span className="text-xs text-muted-foreground">{row.reason || '—'}</span></td>
                             </tr>
                           ))}
                         </tbody>
                       </table>
                     </TableScroll>
-                    <p className="mt-2 text-[11px] text-slate-500">Scheduled rows cannot be deleted. To cancel one, schedule another value at or after the same time.</p>
+                    <p className="mt-2 text-[11px] text-muted-foreground">Scheduled rows cannot be deleted. To cancel one, schedule another value at or after the same time.</p>
                   </div>
                 )}
               </section>
@@ -344,26 +344,26 @@ export default function AdminBusinessRulesPage() {
             }}
           >
             <div>
-              <p className="font-semibold text-navy-900">{change.rule.label}</p>
-              <p className="text-xs text-slate-500">Scope: {change.scope === 'global' ? 'Global' : categoryLabel(change.scope)}</p>
+              <p className="font-semibold text-foreground">{change.rule.label}</p>
+              <p className="text-xs text-muted-foreground">Scope: {change.scope === 'global' ? 'Global' : categoryLabel(change.scope)}</p>
             </div>
             <div>
               <label className="label text-xs" htmlFor="rule-value">New value ({UNIT_LABELS[change.rule.unit]})</label>
               <input id="rule-value" type="number" className="input" min={change.rule.min} max={change.rule.max} step={change.rule.unit === 'percent' ? '0.01' : '1'} value={value} onChange={(event) => setValue(event.target.value)} required />
-              {value.trim() !== '' && Number.isFinite(numericValue) && <p className="mt-1 text-[11px] text-slate-500">{formatRuleValue(numericValue, change.rule.unit)}</p>}
+              {value.trim() !== '' && Number.isFinite(numericValue) && <p className="mt-1 text-[11px] text-muted-foreground">{formatRuleValue(numericValue, change.rule.unit)}</p>}
             </div>
             <div>
-              <label className="label text-xs" htmlFor="rule-effective">Effective from <span className="font-normal text-slate-400">(blank = immediately)</span></label>
+              <label className="label text-xs" htmlFor="rule-effective">Effective from <span className="font-normal text-muted-foreground">(blank = immediately)</span></label>
               <input id="rule-effective" type="datetime-local" className="input" value={effectiveFrom} onChange={(event) => setEffectiveFrom(event.target.value)} />
             </div>
-            {validation && <p className="text-xs font-semibold text-red-600">{validation}</p>}
-            <p className="rounded-lg bg-slate-50 p-3 text-xs text-slate-600">
+            {validation && <p className="text-xs font-semibold text-destructive">{validation}</p>}
+            <p className="rounded-lg bg-[#ffffff08] p-3 text-xs text-muted-foreground">
               {change.rule.financial
                 ? 'Applies to new transactions from the effective time only. Existing unlocks, refund windows and earnings keep the values recorded when they were created.'
                 : 'Applies from the effective time. Earlier records keep their recorded values.'}
             </p>
             <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-              <button type="button" onClick={() => setChange(null)} className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-medium text-navy-700 hover:bg-slate-50">Cancel</button>
+              <button type="button" onClick={() => setChange(null)} className="rounded-xl border border-[#ffffff12] px-5 py-2.5 text-sm font-medium text-foreground hover:bg-[#ffffff08]">Cancel</button>
               <button type="submit" disabled={!!validation} className="btn-primary !py-2.5">Review change</button>
             </div>
           </form>
@@ -380,8 +380,8 @@ export default function AdminBusinessRulesPage() {
         message={
           change ? (
             <p>
-              <strong className="text-navy-900">{change.rule.label}</strong> ({change.scope === 'global' ? 'global' : categoryLabel(change.scope)}) becomes{' '}
-              <strong className="text-navy-900">{formatRuleValue(numericValue, change.rule.unit)}</strong> from{' '}
+              <strong className="text-foreground">{change.rule.label}</strong> ({change.scope === 'global' ? 'global' : categoryLabel(change.scope)}) becomes{' '}
+              <strong className="text-foreground">{formatRuleValue(numericValue, change.rule.unit)}</strong> from{' '}
               {effectiveFrom ? dateTime(new Date(effectiveFrom)) : 'now'}.
             </p>
           ) : null
@@ -399,15 +399,15 @@ export default function AdminBusinessRulesPage() {
         message={
           clearTarget ? (
             <p>
-              {categoryLabel(clearTarget.category)} will use the global <strong className="text-navy-900">{clearTarget.rule.label}</strong> ({formatRuleValue(clearTarget.rule.currentValue, clearTarget.rule.unit)} today) from the effective time.
+              {categoryLabel(clearTarget.category)} will use the global <strong className="text-foreground">{clearTarget.rule.label}</strong> ({formatRuleValue(clearTarget.rule.currentValue, clearTarget.rule.unit)} today) from the effective time.
             </p>
           ) : null
         }
       >
         <div>
-          <label className="label text-xs" htmlFor="clear-effective">Effective from <span className="font-normal text-slate-400">(blank = immediately)</span></label>
+          <label className="label text-xs" htmlFor="clear-effective">Effective from <span className="font-normal text-muted-foreground">(blank = immediately)</span></label>
           <input id="clear-effective" type="datetime-local" className="input" value={clearEffectiveFrom} onChange={(event) => setClearEffectiveFrom(event.target.value)} />
-          {!clearEffectiveValid && <p className="mt-1 text-[11px] text-red-600">The effective time cannot be in the past.</p>}
+          {!clearEffectiveValid && <p className="mt-1 text-[11px] text-destructive">The effective time cannot be in the past.</p>}
         </div>
       </ReasonDialog>
 
@@ -422,7 +422,7 @@ export default function AdminBusinessRulesPage() {
           ) : (
             <TableScroll>
               <table className="w-full min-w-[640px]">
-                <thead className="bg-slate-50">
+                <thead className="bg-[#ffffff08]">
                   <tr>
                     <th className={th}>Scope</th>
                     <th className={th}>Value</th>
@@ -431,7 +431,7 @@ export default function AdminBusinessRulesPage() {
                     <th className={th}>Reason</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-[#ffffff12]">
                   {history.map((row) => (
                     <tr key={row.id}>
                       <td className={td}><span className="text-xs">{scopeLabel(row.scope)}</span></td>
@@ -440,8 +440,8 @@ export default function AdminBusinessRulesPage() {
                         <p className="whitespace-nowrap text-xs">{dateTime(row.effectiveFrom)}</p>
                         {new Date(row.effectiveFrom).getTime() > Date.now() && <StatusBadge status="scheduled" />}
                       </td>
-                      <td className={td}><span className="whitespace-nowrap text-xs text-slate-500">{dateTime(row.createdAt)}</span></td>
-                      <td className={td}><span className="text-xs text-slate-600">{row.reason || '—'}</span></td>
+                      <td className={td}><span className="whitespace-nowrap text-xs text-muted-foreground">{dateTime(row.createdAt)}</span></td>
+                      <td className={td}><span className="text-xs text-muted-foreground">{row.reason || '—'}</span></td>
                     </tr>
                   ))}
                 </tbody>

@@ -31,10 +31,10 @@ export function FAQClient({
   });
 
   return (
-    <section className="py-20 bg-white">
+    <section className="py-20 bg-card">
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
         <div className="relative mb-6">
-          <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             type="text"
             className="input pl-11"
@@ -51,8 +51,8 @@ export function FAQClient({
               onClick={() => setActiveCategory(cat.value)}
               className={`rounded-full px-4 py-1.5 text-sm font-medium transition-all ${
                 activeCategory === cat.value
-                  ? 'bg-veriq-secondary text-white'
-                  : 'bg-slate-100 text-navy-700 hover:bg-slate-200'
+                  ? 'bg-primary text-foreground'
+                  : 'bg-[#ffffff08] text-foreground hover:bg-[#ffffff08]'
               }`}
             >
               {cat.label}
@@ -62,7 +62,7 @@ export function FAQClient({
 
         <div className="space-y-3">
           {filtered.length === 0 ? (
-            <div className="text-center py-12 text-veriq-muted">
+            <div className="text-center py-12 text-muted-foreground">
               No results found for &ldquo;{search}&rdquo;
             </div>
           ) : (
@@ -73,19 +73,19 @@ export function FAQClient({
                 <div
                   key={`${faq.q}-${globalIndex}`}
                   className={`rounded-2xl border transition-all duration-200 ${
-                    isOpen ? 'border-veriq-secondary/30 bg-blue-50/50' : 'border-slate-200 bg-white hover:border-slate-300'
+                    isOpen ? 'border-[#10b98135] bg-[#ffffff08]' : 'border-[#ffffff12] bg-card hover:border-[#ffffff12]'
                   }`}
                 >
                   <button
                     className="w-full flex items-center justify-between gap-4 px-6 py-5 text-left"
                     onClick={() => setOpenIndex(isOpen ? null : globalIndex)}
                   >
-                    <span className="font-semibold text-navy-900 text-sm leading-snug">{faq.q}</span>
-                    <ChevronDown className={`h-5 w-5 flex-shrink-0 text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-180 text-veriq-secondary' : ''}`} />
+                    <span className="font-semibold text-foreground text-sm leading-snug">{faq.q}</span>
+                    <ChevronDown className={`h-5 w-5 flex-shrink-0 text-muted-foreground transition-transform duration-200 ${isOpen ? 'rotate-180 text-primary' : ''}`} />
                   </button>
                   {isOpen && (
                     <div className="px-6 pb-5">
-                      <p className="whitespace-pre-line text-sm leading-relaxed text-veriq-muted">{faq.a}</p>
+                      <p className="whitespace-pre-line text-sm leading-relaxed text-muted-foreground">{faq.a}</p>
                     </div>
                   )}
                 </div>
@@ -94,9 +94,9 @@ export function FAQClient({
           )}
         </div>
 
-        <div className="mt-12 rounded-2xl bg-veriq-surface p-8 text-center">
-          <h3 className="font-display text-lg font-bold text-navy-900 mb-2">{ctaTitle}</h3>
-          <p className="text-sm text-veriq-muted mb-5">{ctaBody}</p>
+        <div className="mt-12 rounded-2xl bg-background p-8 text-center">
+          <h3 className="font-display text-lg font-bold text-foreground mb-2">{ctaTitle}</h3>
+          <p className="text-sm text-muted-foreground mb-5">{ctaBody}</p>
           <a href="/contact" className="btn-primary">
             Contact Support
           </a>

@@ -11,30 +11,39 @@ const TikTokIcon = () => (
   </svg>
 );
 
+/**
+ * The prototype's three columns — Explore, Veriq, Here to help. This product has pages the prototype
+ * does not, so each one is folded into the column it belongs to rather than dropped.
+ */
 const FOOTER_LINKS = {
   Explore: [
-    { label: "Browse Properties", href: "/properties" },
+    { label: "Find a property", href: "/properties" },
+    { label: "Street Intelligence", href: "/street-intelligence" },
     { label: "Shared Property", href: "/shared" },
     { label: "Property for Sale", href: "/for-sale" },
-    { label: "Street Intelligence", href: "/street-intelligence" },
+    { label: "List your property", href: "/auth/register?role=operator" },
+  ],
+  Veriq: [
+    { label: "About us", href: "/about" },
+    { label: "How it works", href: "/how-it-works" },
+    { label: "The Veriq Journal", href: "/blog" },
+    { label: "Contact", href: "/contact" },
     { label: "For Agents", href: "/auth/register?role=agent" },
   ],
-  Company: [
-    { label: "How It Works", href: "/how-it-works" },
-    { label: "About Us", href: "/about" },
-    { label: "Contact Us", href: "/contact" },
-    { label: "FAQ", href: "/faq" },
-    { label: "Blog", href: "/blog" },
-  ],
-  "Trust & Legal": [
-    { label: "Refund Policy", href: "/refund-policy" },
-    { label: "Verification Rules", href: "/verification-rules" },
-    { label: "Safety & Verification", href: "/safety" },
-    { label: "Property Operator Terms", href: "/operator-terms" },
-    { label: "Terms of Service", href: "/terms" },
-    { label: "Privacy Policy", href: "/privacy" },
+  "Here to help": [
+    { label: "FAQs", href: "/faq" },
+    { label: "Refund policy", href: "/refund-policy" },
+    { label: "Safety guide", href: "/safety" },
+    { label: "Verification rules", href: "/verification-rules" },
   ],
 };
+
+/** The legal links the prototype puts on the bottom bar rather than in a column. */
+const LEGAL_LINKS = [
+  { label: "Terms", href: "/terms" },
+  { label: "Privacy", href: "/privacy" },
+  { label: "Operator terms", href: "/operator-terms" },
+];
 
 const SOCIAL_LINKS = [
   {
@@ -68,26 +77,27 @@ export function Footer() {
   };
 
   return (
-    <footer className="bg-navy-900 text-white">
+    <footer className="border-t border-border bg-background text-muted-foreground">
       {/* Main footer */}
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-5">
           {/* Brand */}
           <div className="lg:col-span-2">
             <Link href="/" className="flex items-center gap-2.5 mb-5">
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-navy-950 p-1.5 ring-1 ring-white/10">
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-background p-1.5 ring-1 ring-white/10">
                 <Image src="/images/Logo.png" alt="Veriq Logo" width={36} height={36} className="rounded-lg" />
               </span>
               <div className="flex flex-col leading-none">
-                <span className="font-display text-lg font-bold tracking-tight text-white">Veriq</span>
-                <span className="text-[10px] font-semibold tracking-widest uppercase text-gold-400">Property</span>
+                <span className="font-display text-lg font-bold tracking-tight text-foreground">Veriq</span>
+                <span className="text-[10px] font-semibold tracking-widest uppercase text-primary">Property</span>
               </div>
             </Link>
-            <p className="text-slate-400 text-sm leading-relaxed max-w-xs">
-              A trust-focused property intelligence platform helping people make smarter decisions before physical inspections.
+            <p className="text-muted-foreground text-sm leading-relaxed max-w-xs">
+              Know the property. Understand the street.<br />
+              Make your next move with clarity.
             </p>
             <div className="mt-6">
-              <p className="text-xs text-slate-500 mb-3 uppercase tracking-wider font-semibold">Follow us</p>
+              <p className="text-xs text-muted-foreground mb-3 uppercase tracking-wider font-semibold">Follow us</p>
               <div className="flex items-center gap-3">
                 {SOCIAL_LINKS.map((s) => (
                   <a
@@ -96,7 +106,7 @@ export function Footer() {
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={s.label}
-                    className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/5 text-slate-400 transition-all duration-200 hover:bg-white/10 hover:text-white"
+                    className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#ffffff06] text-muted-foreground transition-all duration-200 hover:bg-[#ffffff0f] hover:text-foreground"
                   >
                     {s.icon}
                   </a>
@@ -107,23 +117,23 @@ export function Footer() {
             <button
               type="button"
               onClick={openInstallPrompt}
-              className="mt-6 flex w-full max-w-xs items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-left transition-colors hover:bg-white/10"
+              className="mt-6 flex w-full max-w-xs items-center gap-2 rounded-lg border border-input bg-[#ffffff06] px-4 py-3 text-left transition-colors hover:bg-[#ffffff0f]"
             >
-              <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-navy-950 p-1.5 ring-1 ring-white/10">
+              <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-background p-1.5 ring-1 ring-white/10">
                 <Image src="/images/Logo.png" alt="Veriq Logo" width={32} height={32} className="rounded-md" />
               </span>
               <div>
-                <p className="text-xs font-semibold text-white">Install as App</p>
-                <p className="text-[11px] text-slate-500">Add to home screen for the best experience</p>
+                <p className="text-xs font-semibold text-foreground">Install as App</p>
+                <p className="text-[11px] text-muted-foreground">Add to home screen for the best experience</p>
               </div>
-              <Download className="ml-auto h-4 w-4 text-gold-400" />
+              <Download className="ml-auto h-4 w-4 text-primary" />
             </button>
           </div>
 
           {/* Links */}
           {Object.entries(FOOTER_LINKS).map(([category, links]) => (
             <div key={category}>
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-4">
+              <h3 className="mb-4 font-display text-sm font-semibold text-foreground">
                 {category}
               </h3>
               <ul className="space-y-2.5">
@@ -131,7 +141,7 @@ export function Footer() {
                   <li key={link.href}>
                     <Link
                       href={link.href}
-                      className="text-sm text-slate-400 hover:text-white transition-colors duration-150"
+                      className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-150"
                     >
                       {link.label}
                     </Link>
@@ -144,17 +154,22 @@ export function Footer() {
       </div>
 
       {/* Bottom bar */}
-      <div className="border-t border-white/5">
+      <div className="border-t border-border">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-xs text-slate-500">
-            &copy; {new Date().getFullYear()} Veriq Property. All rights reserved.
+          <p className="text-xs text-muted-foreground">
+            &copy; {new Date().getFullYear()} Veriq Global Services Ltd.
           </p>
-          <div className="flex items-center gap-1.5">
-            <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-            <p className="text-xs text-slate-500">
-              Know Before You Go<span className="text-gold-500 font-semibold">.</span>
-            </p>
-          </div>
+          <nav aria-label="Legal" className="flex flex-wrap items-center gap-5">
+            {LEGAL_LINKS.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
         </div>
       </div>
     </footer>

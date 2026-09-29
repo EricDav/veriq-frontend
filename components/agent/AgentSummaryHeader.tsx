@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { ClipboardCheck, FileClock, Landmark, Users, Wallet } from 'lucide-react';
 import { agentEarningsApi, agentPortfolioApi, revisionsApi, saleListingsApi, verificationApi } from '@/lib/api/agent';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { panelClass } from '@/components/ui';
+import { cn } from '@/lib/utils';
 import { formatNaira } from './format';
 
 interface Summary {
@@ -66,22 +68,22 @@ export function AgentSummaryHeader() {
     <div className="space-y-3">
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         {tiles.map((tile) => (
-          <Link key={tile.href} href={tile.href} className="card !shadow-sm p-3 hover:!shadow-card-hover">
-            <tile.icon className="h-4 w-4 text-slate-400" />
-            <p className="mt-1.5 text-xl font-black text-navy-900">{loading ? <LoadingSpinner size="sm" /> : (tile.value ?? '—')}</p>
-            <p className="text-[11px] font-semibold text-navy-800">{tile.label}</p>
-            <p className="text-[11px] text-slate-500">{tile.suffix}</p>
+          <Link key={tile.href} href={tile.href} className={cn(panelClass, "p-[17px] transition-colors hover:border-[#10b98170]")}>
+            <tile.icon className="h-4 w-4 text-muted-foreground" />
+            <p className="mt-1.5 text-xl font-black text-foreground">{loading ? <LoadingSpinner size="sm" /> : (tile.value ?? '—')}</p>
+            <p className="text-[11px] font-semibold text-foreground">{tile.label}</p>
+            <p className="text-[11px] text-muted-foreground">{tile.suffix}</p>
           </Link>
         ))}
-        <Link href="/dashboard/agent/earnings" className="card !shadow-sm p-3 hover:!shadow-card-hover">
-          <Wallet className="h-4 w-4 text-slate-400" />
-          <p className="mt-1.5 text-xl font-black text-emerald-700">{loading ? <LoadingSpinner size="sm" /> : summary.withdrawable === null ? '—' : formatNaira(summary.withdrawable)}</p>
-          <p className="text-[11px] font-semibold text-navy-800">Earnings</p>
-          <p className="text-[11px] text-slate-500">withdrawable now</p>
+        <Link href="/dashboard/agent/earnings" className={cn(panelClass, "p-[17px] transition-colors hover:border-[#10b98170]")}>
+          <Wallet className="h-4 w-4 text-muted-foreground" />
+          <p className="mt-1.5 text-xl font-black text-[#6ee7b7]">{loading ? <LoadingSpinner size="sm" /> : summary.withdrawable === null ? '—' : formatNaira(summary.withdrawable)}</p>
+          <p className="text-[11px] font-semibold text-foreground">Earnings</p>
+          <p className="text-[11px] text-muted-foreground">withdrawable now</p>
         </Link>
       </div>
       {summary.publishingPermission === false && (
-        <p className="rounded-xl border border-amber-100 bg-amber-50 px-4 py-2 text-xs text-amber-800">
+        <p className="rounded-xl border border-[#fbbf2425] bg-[#fbbf2409] px-4 py-2 text-xs text-[#fcd34d]">
           Publishing permission is not active on your account, so publication is blocked on every assigned listing until Admin grants it (§8.3).
         </p>
       )}

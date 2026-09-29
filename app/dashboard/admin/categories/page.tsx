@@ -95,22 +95,22 @@ export default function AdminCategoriesPage() {
             <section key={item.id} className="card flex flex-col gap-4 p-5 hover:shadow-card">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h2 className="font-display text-base font-bold text-navy-900">{categoryLabel(item.category)}</h2>
-                  <p className="mt-1 text-xs text-slate-500">{DESCRIPTIONS[item.category] ?? item.category}</p>
+                  <h2 className="font-display text-base font-bold text-foreground">{categoryLabel(item.category)}</h2>
+                  <p className="mt-1 text-xs text-muted-foreground">{DESCRIPTIONS[item.category] ?? item.category}</p>
                 </div>
                 <StatusBadge status={item.isEnabled ? 'enabled' : 'disabled'} />
               </div>
               <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="rounded-lg bg-slate-50 p-2"><p className="text-slate-400">Schema version</p><p className="font-semibold text-navy-900">v{item.schemaVersion}</p></div>
-                <div className="rounded-lg bg-slate-50 p-2"><p className="text-slate-400">Last updated</p><p className="font-semibold text-navy-900">{dateTime(item.updatedAt)}</p></div>
+                <div className="rounded-lg bg-[#ffffff08] p-2"><p className="text-muted-foreground">Schema version</p><p className="font-semibold text-foreground">v{item.schemaVersion}</p></div>
+                <div className="rounded-lg bg-[#ffffff08] p-2"><p className="text-muted-foreground">Last updated</p><p className="font-semibold text-foreground">{dateTime(item.updatedAt)}</p></div>
               </div>
               <button
                 type="button"
                 onClick={() => setPending(item)}
                 className={
                   item.isEnabled
-                    ? 'inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 px-4 py-2.5 text-sm font-bold text-red-600 hover:bg-red-50'
-                    : 'inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-700'
+                    ? 'inline-flex items-center justify-center gap-2 rounded-lg border border-[#fb718530] px-4 py-2.5 text-sm font-bold text-destructive hover:bg-[#fb718510]'
+                    : 'inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-foreground hover:bg-[#34d399]'
                 }
               >
                 {item.isEnabled ? <PowerOff className="h-4 w-4" /> : <Power className="h-4 w-4" />}

@@ -38,12 +38,12 @@ function PaginationControls({ page, total, pageSize, onChange }: {
   const first = (page - 1) * pageSize + 1;
   const last = Math.min(page * pageSize, total);
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 bg-slate-50 px-5 py-3">
-      <p className="text-xs text-slate-500">Showing {first}-{last} of {total}</p>
+    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#ffffff12] bg-[#ffffff08] px-5 py-3">
+      <p className="text-xs text-muted-foreground">Showing {first}-{last} of {total}</p>
       <div className="flex items-center gap-2">
-        <button type="button" aria-label="Previous moderation page" disabled={page === 1} onClick={() => onChange(page - 1)} className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 disabled:opacity-40"><ChevronLeft className="h-4 w-4" /></button>
-        <span className="min-w-20 text-center text-xs font-semibold text-slate-600">Page {page} of {pages}</span>
-        <button type="button" aria-label="Next moderation page" disabled={page === pages} onClick={() => onChange(page + 1)} className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 disabled:opacity-40"><ChevronRight className="h-4 w-4" /></button>
+        <button type="button" aria-label="Previous moderation page" disabled={page === 1} onClick={() => onChange(page - 1)} className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#ffffff12] bg-card text-muted-foreground disabled:opacity-40"><ChevronLeft className="h-4 w-4" /></button>
+        <span className="min-w-20 text-center text-xs font-semibold text-muted-foreground">Page {page} of {pages}</span>
+        <button type="button" aria-label="Next moderation page" disabled={page === pages} onClick={() => onChange(page + 1)} className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#ffffff12] bg-card text-muted-foreground disabled:opacity-40"><ChevronRight className="h-4 w-4" /></button>
       </div>
     </div>
   );
@@ -60,7 +60,7 @@ function StreetCombobox({ label, search, onSearch, streets, selectedId, onSelect
 }) {
   const [open, setOpen] = useState(false);
   return <div className="relative">
-    <Search className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-slate-400" />
+    <Search className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
     <input
       role="combobox"
       aria-label={label}
@@ -75,9 +75,9 @@ function StreetCombobox({ label, search, onSearch, streets, selectedId, onSelect
       onBlur={() => window.setTimeout(() => setOpen(false), 150)}
       onChange={(event) => { onSearch(event.target.value); setOpen(true); }}
     />
-    {open && !disabled && <div id={`${label.replace(/\s+/g, '-').toLowerCase()}-options`} role="listbox" className="absolute z-30 mt-1 max-h-64 w-full overflow-y-auto rounded-lg border border-slate-200 bg-white p-1 shadow-lg">
-      {streets.map((street) => <button key={street.id} type="button" role="option" aria-selected={selectedId === street.id} onMouseDown={(event) => event.preventDefault()} onClick={() => { onSearch(street.streetName); onSelect(street); setOpen(false); }} className={`block w-full rounded-md px-3 py-2 text-left ${selectedId === street.id ? 'bg-emerald-50' : 'hover:bg-slate-50'}`}><span className="block text-sm font-bold text-navy-900">{street.streetName}</span><span className="block text-xs text-slate-500">{street.area}, {street.city}</span></button>)}
-      {streets.length === 0 && <p className="px-3 py-3 text-xs text-slate-500">No matching approved streets.</p>}
+    {open && !disabled && <div id={`${label.replace(/\s+/g, '-').toLowerCase()}-options`} role="listbox" className="absolute z-30 mt-1 max-h-64 w-full overflow-y-auto rounded-lg border border-[#ffffff12] bg-card p-1 shadow-lg">
+      {streets.map((street) => <button key={street.id} type="button" role="option" aria-selected={selectedId === street.id} onMouseDown={(event) => event.preventDefault()} onClick={() => { onSearch(street.streetName); onSelect(street); setOpen(false); }} className={`block w-full rounded-md px-3 py-2 text-left ${selectedId === street.id ? 'bg-[#10b98112]' : 'hover:bg-[#ffffff08]'}`}><span className="block text-sm font-bold text-foreground">{street.streetName}</span><span className="block text-xs text-muted-foreground">{street.area}, {street.city}</span></button>)}
+      {streets.length === 0 && <p className="px-3 py-3 text-xs text-muted-foreground">No matching approved streets.</p>}
     </div>}
   </div>;
 }
@@ -374,8 +374,8 @@ export default function AdminCommunityPage() {
     <div className="mx-auto max-w-6xl space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="font-display text-2xl font-black text-navy-900">Community &amp; Street Intelligence</h1>
-          <p className="mt-1 text-sm text-veriq-muted">Manage Street Intelligence health, location governance and contribution moderation.</p>
+          <h1 className="font-display text-2xl font-black text-foreground">Community &amp; Street Intelligence</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Manage Street Intelligence health, location governance and contribution moderation.</p>
         </div>
         <button onClick={load} className="btn-outline !py-2.5 !text-sm">
           <RefreshCw className="h-4 w-4" /> Refresh
@@ -385,31 +385,31 @@ export default function AdminCommunityPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {Object.entries(analytics ?? {}).map(([key, value]) => (
           <div key={key} className="card p-5">
-            <BarChart3 className="mb-3 h-5 w-5 text-veriq-secondary" />
-            <p className="text-2xl font-black text-navy-900">{String(value)}</p>
-            <p className="mt-1 text-xs capitalize text-slate-500">{key.replace(/([A-Z])/g, ' $1')}</p>
+            <BarChart3 className="mb-3 h-5 w-5 text-primary" />
+            <p className="text-2xl font-black text-foreground">{String(value)}</p>
+            <p className="mt-1 text-xs capitalize text-muted-foreground">{key.replace(/([A-Z])/g, ' $1')}</p>
           </div>
         ))}
       </div>
 
       <section className="space-y-4" data-testid="location-directory">
-        <div><h2 className="font-display text-lg font-bold text-navy-900">Location Directory</h2><p className="mt-1 text-xs text-veriq-muted">Select one level at a time: State → LGA → Area → Street.</p></div>
+        <div><h2 className="font-display text-lg font-bold text-foreground">Location Directory</h2><p className="mt-1 text-xs text-muted-foreground">Select one level at a time: State → LGA → Area → Street.</p></div>
         <div className="card space-y-5 p-5">
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <div><label className="mb-1.5 block text-xs font-bold text-slate-600">Approved state</label><select aria-label="Directory state" className="input" value={directoryState} onChange={(event) => { setDirectoryState(event.target.value); setAreaLocationId(''); setDirectoryAreaId(''); setDirectoryStreets([]); }}><option value="">Select state</option>{directoryStates.filter((item) => item.isActive).map((item) => <option key={item.id} value={item.name}>{item.name}</option>)}</select></div>
-            <div><label className="mb-1.5 block text-xs font-bold text-slate-600">Local government</label><div className="flex gap-2"><select aria-label="Directory LGA" className="input" value={areaLocationId} disabled={!directoryState} onChange={(event) => { setAreaLocationId(event.target.value); setDirectoryAreaId(''); }}><option value="">Select LGA</option>{directoryLocations.filter((item) => item.isActive).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select><button type="button" className="btn-outline !px-3" title="Add LGA" onClick={() => setDirectoryModal({ kind: 'lga', mode: 'add', name: '' })}><Plus className="h-4 w-4" /></button>{selectedDirectoryLocation && <button type="button" className="btn-outline !px-3" title="Edit LGA" onClick={() => setDirectoryModal({ kind: 'lga', mode: 'edit', id: selectedDirectoryLocation.id, name: selectedDirectoryLocation.name })}><Pencil className="h-4 w-4" /></button>}</div></div>
-            <div><label className="mb-1.5 block text-xs font-bold text-slate-600">Area / neighbourhood</label><div className="flex gap-2"><select aria-label="Directory area" className="input" value={directoryAreaId} disabled={!areaLocationId} onChange={(event) => setDirectoryAreaId(event.target.value)}><option value="">All areas</option>{directoryAreas.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select><button type="button" className="btn-outline !px-3" disabled={!areaLocationId} title="Add area" onClick={() => setDirectoryModal({ kind: 'area', mode: 'add', name: '' })}><Plus className="h-4 w-4" /></button>{directoryAreaId && <button type="button" className="btn-outline !px-3" title="Edit area" onClick={() => { const area = directoryAreas.find((item) => item.id === directoryAreaId); if (area) setDirectoryModal({ kind: 'area', mode: 'edit', id: area.id, name: area.name }); }}><Pencil className="h-4 w-4" /></button>}</div></div>
-            <div><label className="mb-1.5 block text-xs font-bold text-slate-600">Street</label><div className="flex gap-2"><div className="min-w-0 flex-1"><StreetCombobox label="Directory street" search={directoryStreetSearch} onSearch={(value) => { setDirectoryStreetSearch(value); if (value !== streetEdit.streetName) setStreetEdit((current) => ({ ...current, streetId: '' })); }} streets={directoryStreets} selectedId={streetEdit.streetId} disabled={!areaLocationId} onSelect={(item) => setStreetEdit({ streetId: item.id, locationId: item.locationId ?? '', areaId: item.areaId ?? '', streetName: item.streetName, latitude: item.latitude?.toString() ?? '', longitude: item.longitude?.toString() ?? '' })} /></div><button type="button" className="btn-outline !px-3" disabled={!directoryAreaId} title="Add street" onClick={() => setDirectoryModal({ kind: 'street', mode: 'add', name: '' })}><Plus className="h-4 w-4" /></button></div></div>
+            <div><label className="mb-1.5 block text-xs font-bold text-muted-foreground">Approved state</label><select aria-label="Directory state" className="input" value={directoryState} onChange={(event) => { setDirectoryState(event.target.value); setAreaLocationId(''); setDirectoryAreaId(''); setDirectoryStreets([]); }}><option value="">Select state</option>{directoryStates.filter((item) => item.isActive).map((item) => <option key={item.id} value={item.name}>{item.name}</option>)}</select></div>
+            <div><label className="mb-1.5 block text-xs font-bold text-muted-foreground">Local government</label><div className="flex gap-2"><select aria-label="Directory LGA" className="input" value={areaLocationId} disabled={!directoryState} onChange={(event) => { setAreaLocationId(event.target.value); setDirectoryAreaId(''); }}><option value="">Select LGA</option>{directoryLocations.filter((item) => item.isActive).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select><button type="button" className="btn-outline !px-3" title="Add LGA" onClick={() => setDirectoryModal({ kind: 'lga', mode: 'add', name: '' })}><Plus className="h-4 w-4" /></button>{selectedDirectoryLocation && <button type="button" className="btn-outline !px-3" title="Edit LGA" onClick={() => setDirectoryModal({ kind: 'lga', mode: 'edit', id: selectedDirectoryLocation.id, name: selectedDirectoryLocation.name })}><Pencil className="h-4 w-4" /></button>}</div></div>
+            <div><label className="mb-1.5 block text-xs font-bold text-muted-foreground">Area / neighbourhood</label><div className="flex gap-2"><select aria-label="Directory area" className="input" value={directoryAreaId} disabled={!areaLocationId} onChange={(event) => setDirectoryAreaId(event.target.value)}><option value="">All areas</option>{directoryAreas.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select><button type="button" className="btn-outline !px-3" disabled={!areaLocationId} title="Add area" onClick={() => setDirectoryModal({ kind: 'area', mode: 'add', name: '' })}><Plus className="h-4 w-4" /></button>{directoryAreaId && <button type="button" className="btn-outline !px-3" title="Edit area" onClick={() => { const area = directoryAreas.find((item) => item.id === directoryAreaId); if (area) setDirectoryModal({ kind: 'area', mode: 'edit', id: area.id, name: area.name }); }}><Pencil className="h-4 w-4" /></button>}</div></div>
+            <div><label className="mb-1.5 block text-xs font-bold text-muted-foreground">Street</label><div className="flex gap-2"><div className="min-w-0 flex-1"><StreetCombobox label="Directory street" search={directoryStreetSearch} onSearch={(value) => { setDirectoryStreetSearch(value); if (value !== streetEdit.streetName) setStreetEdit((current) => ({ ...current, streetId: '' })); }} streets={directoryStreets} selectedId={streetEdit.streetId} disabled={!areaLocationId} onSelect={(item) => setStreetEdit({ streetId: item.id, locationId: item.locationId ?? '', areaId: item.areaId ?? '', streetName: item.streetName, latitude: item.latitude?.toString() ?? '', longitude: item.longitude?.toString() ?? '' })} /></div><button type="button" className="btn-outline !px-3" disabled={!directoryAreaId} title="Add street" onClick={() => setDirectoryModal({ kind: 'street', mode: 'add', name: '' })}><Plus className="h-4 w-4" /></button></div></div>
           </div>
-          {streetEdit.streetId && <div className="border-t border-slate-100 pt-4"><div className="flex flex-wrap gap-2"><button type="button" className="btn-outline !py-2 !text-xs" onClick={() => setDirectoryModal({ kind: 'street', mode: 'edit', id: streetEdit.streetId, name: streetEdit.streetName })}><Pencil className="h-3.5 w-3.5" /> Edit street</button><button type="button" className="rounded-lg bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700" onClick={() => runHierarchyAction(() => communityApi.deleteStreetAdmin(streetEdit.streetId), 'Street disabled.')}><Trash2 className="mr-1 inline h-3.5 w-3.5" /> Disable</button></div></div>}
-          <div className="border-t border-slate-100 pt-4"><p className="mb-2 text-xs font-bold text-navy-900">Add another state</p><div className="flex max-w-xl gap-2"><select aria-label="Add community state" className="input" value={stateToActivate} onChange={(event) => setStateToActivate(event.target.value)}><option value="">Select unapproved state</option>{directoryStates.filter((item) => !item.isActive).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select><button type="button" className="btn-primary !px-3" disabled={!stateToActivate || saving} onClick={() => { const selected = directoryStates.find((item) => item.id === stateToActivate); if (selected) void runHierarchyAction(() => locationsApi.updateState(selected.id, true), `${selected.name} approved.`).then(() => setStateToActivate('')); }}><Plus className="h-4 w-4" /></button></div></div>
+          {streetEdit.streetId && <div className="border-t border-[#ffffff12] pt-4"><div className="flex flex-wrap gap-2"><button type="button" className="btn-outline !py-2 !text-xs" onClick={() => setDirectoryModal({ kind: 'street', mode: 'edit', id: streetEdit.streetId, name: streetEdit.streetName })}><Pencil className="h-3.5 w-3.5" /> Edit street</button><button type="button" className="rounded-lg bg-[#fb718510] px-3 py-2 text-xs font-bold text-destructive" onClick={() => runHierarchyAction(() => communityApi.deleteStreetAdmin(streetEdit.streetId), 'Street disabled.')}><Trash2 className="mr-1 inline h-3.5 w-3.5" /> Disable</button></div></div>}
+          <div className="border-t border-[#ffffff12] pt-4"><p className="mb-2 text-xs font-bold text-foreground">Add another state</p><div className="flex max-w-xl gap-2"><select aria-label="Add community state" className="input" value={stateToActivate} onChange={(event) => setStateToActivate(event.target.value)}><option value="">Select unapproved state</option>{directoryStates.filter((item) => !item.isActive).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select><button type="button" className="btn-primary !px-3" disabled={!stateToActivate || saving} onClick={() => { const selected = directoryStates.find((item) => item.id === stateToActivate); if (selected) void runHierarchyAction(() => locationsApi.updateState(selected.id, true), `${selected.name} approved.`).then(() => setStateToActivate('')); }}><Plus className="h-4 w-4" /></button></div></div>
         </div>
       </section>
 
       <section className="card space-y-4 p-6">
         <div>
-          <h2 className="font-display text-lg font-bold text-navy-900">Initial Street Intelligence</h2>
-          <p className="mt-1 text-xs text-veriq-muted">Select a street to update existing responses or complete the empty questionnaire when no initial intelligence exists.</p>
+          <h2 className="font-display text-lg font-bold text-foreground">Initial Street Intelligence</h2>
+          <p className="mt-1 text-xs text-muted-foreground">Select a street to update existing responses or complete the empty questionnaire when no initial intelligence exists.</p>
         </div>
         <div className="grid gap-3 md:grid-cols-4">
           <select className="input" aria-label="Initial intelligence state" value={observationScope.state} onChange={(event) => setObservationScope({ state: event.target.value, locationId: '', areaId: '' })}>
@@ -422,7 +422,7 @@ export default function AdminCommunityPage() {
           </select>
           <div className="md:col-span-2"><StreetCombobox label="Initial intelligence street" search={observationSearch} onSearch={(value) => { setObservationSearch(value); const selected = observationStreets.find((item) => item.id === observation.streetId); if (value !== selected?.streetName) setObservation((current) => ({ ...current, streetId: '' })); }} streets={observationStreets} selectedId={observation.streetId} disabled={!observationScope.locationId} onSelect={(street) => setObservation((current) => ({ ...current, streetId: street.id }))} /></div>
         </div>
-        {loadingObservations ? <div className="flex justify-center py-8"><LoadingSpinner /></div> : observation.streetId && <div className="space-y-3">{categories.map((category) => { const answer = observationAnswers[category.id] ?? { optionId: '', supplementaryValue: [] }; return <fieldset key={category.id} className="rounded-lg border border-slate-200 p-4"><legend className="px-1 text-sm font-bold text-navy-900">{category.question ?? category.name}</legend><div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{category.options.filter((option) => option.isActive).sort((a, b) => a.sortOrder - b.sortOrder).map((option) => <label key={option.id} className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold ${answer.optionId === option.id ? 'border-emerald-500 bg-emerald-50 text-emerald-800' : 'border-slate-200 text-slate-600'}`}><input type="radio" name={`category-${category.id}`} checked={answer.optionId === option.id} onChange={() => setObservationAnswers((current) => ({ ...current, [category.id]: { ...answer, optionId: option.id } }))} />{option.label}</label>)}</div>{category.supplementaryConfig && <div className="mt-3 flex flex-wrap gap-2">{category.supplementaryConfig.options.map((value) => <label key={value} className="inline-flex items-center gap-2 rounded border border-slate-200 px-2 py-1.5 text-xs"><input type="checkbox" checked={answer.supplementaryValue.includes(value)} onChange={() => setObservationAnswers((current) => ({ ...current, [category.id]: { ...answer, supplementaryValue: answer.supplementaryValue.includes(value) ? answer.supplementaryValue.filter((item) => item !== value) : [...answer.supplementaryValue, value] } }))} />{value}</label>)}</div>}</fieldset>; })}</div>}
+        {loadingObservations ? <div className="flex justify-center py-8"><LoadingSpinner /></div> : observation.streetId && <div className="space-y-3">{categories.map((category) => { const answer = observationAnswers[category.id] ?? { optionId: '', supplementaryValue: [] }; return <fieldset key={category.id} className="rounded-lg border border-[#ffffff12] p-4"><legend className="px-1 text-sm font-bold text-foreground">{category.question ?? category.name}</legend><div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{category.options.filter((option) => option.isActive).sort((a, b) => a.sortOrder - b.sortOrder).map((option) => <label key={option.id} className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold ${answer.optionId === option.id ? 'border-[#10b98135] bg-[#10b98112] text-primary' : 'border-[#ffffff12] text-muted-foreground'}`}><input type="radio" name={`category-${category.id}`} checked={answer.optionId === option.id} onChange={() => setObservationAnswers((current) => ({ ...current, [category.id]: { ...answer, optionId: option.id } }))} />{option.label}</label>)}</div>{category.supplementaryConfig && <div className="mt-3 flex flex-wrap gap-2">{category.supplementaryConfig.options.map((value) => <label key={value} className="inline-flex items-center gap-2 rounded border border-[#ffffff12] px-2 py-1.5 text-xs"><input type="checkbox" checked={answer.supplementaryValue.includes(value)} onChange={() => setObservationAnswers((current) => ({ ...current, [category.id]: { ...answer, supplementaryValue: answer.supplementaryValue.includes(value) ? answer.supplementaryValue.filter((item) => item !== value) : [...answer.supplementaryValue, value] } }))} />{value}</label>)}</div>}</fieldset>; })}</div>}
         <button
           type="button"
           className="btn-primary"
@@ -438,12 +438,12 @@ export default function AdminCommunityPage() {
 
       <div id="free-unlocks" className="scroll-mt-24 card flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-[#fbbf2410] text-[#fcd34d]">
             <Gift className="h-5 w-5" />
           </div>
           <div>
-            <h2 className="font-display text-base font-bold text-navy-900">Free Unlock has moved</h2>
-            <p className="mt-1 text-xs leading-5 text-veriq-muted">
+            <h2 className="font-display text-base font-bold text-foreground">Free Unlock has moved</h2>
+            <p className="mt-1 text-xs leading-5 text-muted-foreground">
               Free Unlock is now managed per listing under Pricing: select the Property Operator first, then the listing, and set an optional schedule with an internal reason.
             </p>
           </div>
@@ -454,40 +454,40 @@ export default function AdminCommunityPage() {
       </div>
 
       <section className="card overflow-hidden" aria-labelledby="moderation-workspace-title">
-        <div className="flex flex-col gap-4 border-b border-slate-100 p-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-4 border-b border-[#ffffff12] p-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 id="moderation-workspace-title" className="font-display text-lg font-bold text-navy-900">Moderation Workspace</h2>
-            <p className="mt-1 text-xs text-veriq-muted">Review one queue at a time. Pending work is surfaced first.</p>
+            <h2 id="moderation-workspace-title" className="font-display text-lg font-bold text-foreground">Moderation Workspace</h2>
+            <p className="mt-1 text-xs text-muted-foreground">Review one queue at a time. Pending work is surfaced first.</p>
           </div>
-          <div className="grid grid-cols-2 rounded-lg border border-slate-200 bg-slate-50 p-1" role="tablist" aria-label="Moderation queue">
-            <button type="button" role="tab" aria-selected={moderationTab === 'streets'} onClick={() => setModerationTab('streets')} className={`rounded-md px-4 py-2 text-xs font-bold ${moderationTab === 'streets' ? 'bg-navy-900 text-white shadow-sm' : 'text-slate-600 hover:bg-white'}`}>
-              Street Requests <span className={moderationTab === 'streets' ? 'text-white/70' : 'text-amber-700'}>{streetStatusCounts.pending ?? 0}</span>
+          <div className="grid grid-cols-2 rounded-lg border border-[#ffffff12] bg-[#ffffff08] p-1" role="tablist" aria-label="Moderation queue">
+            <button type="button" role="tab" aria-selected={moderationTab === 'streets'} onClick={() => setModerationTab('streets')} className={`rounded-md px-4 py-2 text-xs font-bold ${moderationTab === 'streets' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:bg-card'}`}>
+              Street Requests <span className={moderationTab === 'streets' ? 'text-muted-foreground' : 'text-[#fcd34d]'}>{streetStatusCounts.pending ?? 0}</span>
             </button>
-            <button type="button" role="tab" aria-selected={moderationTab === 'contributions'} onClick={() => setModerationTab('contributions')} className={`rounded-md px-4 py-2 text-xs font-bold ${moderationTab === 'contributions' ? 'bg-navy-900 text-white shadow-sm' : 'text-slate-600 hover:bg-white'}`}>
-              Contributions <span className={moderationTab === 'contributions' ? 'text-white/70' : 'text-amber-700'}>{contributions.length}</span>
+            <button type="button" role="tab" aria-selected={moderationTab === 'contributions'} onClick={() => setModerationTab('contributions')} className={`rounded-md px-4 py-2 text-xs font-bold ${moderationTab === 'contributions' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:bg-card'}`}>
+              Contributions <span className={moderationTab === 'contributions' ? 'text-muted-foreground' : 'text-[#fcd34d]'}>{contributions.length}</span>
             </button>
           </div>
         </div>
 
         {moderationTab === 'streets' && <div data-testid="street-moderation" role="tabpanel">
-          <div className="border-b border-slate-100 p-5">
+          <div className="border-b border-[#ffffff12] p-5">
             <div className="flex items-start justify-between gap-4">
             <div>
-              <h2 className="font-display text-base font-bold text-navy-900">Street Moderation</h2>
-              <p className="mt-1 text-xs text-veriq-muted">Recent additions appear first. Select a state and location to find older streets.</p>
+              <h2 className="font-display text-base font-bold text-foreground">Street Moderation</h2>
+              <p className="mt-1 text-xs text-muted-foreground">Recent additions appear first. Select a state and location to find older streets.</p>
             </div>
-            <div className="flex items-center gap-2 rounded-lg bg-amber-50 px-3 py-2 text-amber-800">
+            <div className="flex items-center gap-2 rounded-lg bg-[#fbbf2410] px-3 py-2 text-[#fcd34d]">
               <BellRing className="h-4 w-4" />
               <span className="text-xs font-bold">{streetStatusCounts.pending ?? 0} pending</span>
             </div>
             </div>
-            <div className="mt-4 flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-800">
+            <div className="mt-4 flex items-center gap-2 rounded-lg bg-[#ffffff08] px-3 py-2 text-xs font-semibold text-muted-foreground">
               <Clock3 className="h-4 w-4" />
               {locationHistorySelected ? `Showing all streets in ${moderationLocation?.name}` : 'Showing all pending requests and streets added in the past 48 hours'}
             </div>
             <div className="mt-4 grid gap-2 sm:grid-cols-2">
               <label className="relative sm:col-span-2">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <input className="input !pl-9" value={streetSearch} onChange={(event) => setStreetSearch(event.target.value)} placeholder="Search street, area, location or landmark" />
               </label>
               <select aria-label="Moderation state" className="input" value={streetStateFilter} onChange={(event) => { setStreetStateFilter(event.target.value); setStreetLocationFilter(''); setStreetAreaFilter(''); }}>
@@ -507,46 +507,46 @@ export default function AdminCommunityPage() {
               {(['all', ...Object.values(StreetStatus)] as const).map((status) => {
                 const count = status === 'all' ? scopedStreets.length : streetStatusCounts[status] ?? 0;
                 const active = streetStatusFilter === status;
-                return <button key={status} type="button" onClick={() => setStreetStatusFilter(status)} className={`whitespace-nowrap rounded-lg px-3 py-2 text-xs font-bold ${active ? 'bg-navy-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
-                  <span className="capitalize">{status}</span> <span className={active ? 'text-white/70' : 'text-slate-400'}>{count}</span>
+                return <button key={status} type="button" onClick={() => setStreetStatusFilter(status)} className={`whitespace-nowrap rounded-lg px-3 py-2 text-xs font-bold ${active ? 'bg-primary text-primary-foreground' : 'bg-[#ffffff08] text-muted-foreground hover:bg-[#ffffff08]'}`}>
+                  <span className="capitalize">{status}</span> <span className={active ? 'text-muted-foreground' : 'text-muted-foreground'}>{count}</span>
                 </button>;
               })}
             </div>
           </div>
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-[#ffffff12]">
             {paginatedStreets.map((street) => (
               <div key={street.id} className="p-5">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="font-bold text-navy-900">{street.streetName}</p>
-                    <p className="mt-1 text-xs text-veriq-muted">{street.area}, {street.city}, {street.state}</p>
-                    {street.landmark && <p className="mt-1 text-xs text-slate-400">Landmark: {street.landmark}</p>}
+                    <p className="font-bold text-foreground">{street.streetName}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{street.area}, {street.city}, {street.state}</p>
+                    {street.landmark && <p className="mt-1 text-xs text-muted-foreground">Landmark: {street.landmark}</p>}
                   </div>
-                  <span className="badge bg-slate-100 text-[10px] capitalize text-slate-600">{street.status}</span>
+                  <span className="badge bg-[#ffffff08] text-[10px] capitalize text-muted-foreground">{street.status}</span>
                 </div>
                 <div className="mt-4 flex flex-wrap gap-2">
-                  {street.status !== StreetStatus.APPROVED && <button type="button" disabled={reviewingId === street.id} onClick={() => reviewStreet(street, StreetStatus.APPROVED)} className="rounded-lg bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700">
+                  {street.status !== StreetStatus.APPROVED && <button type="button" disabled={reviewingId === street.id} onClick={() => reviewStreet(street, StreetStatus.APPROVED)} className="rounded-lg bg-[#10b98112] px-3 py-2 text-xs font-bold text-primary">
                     <CheckCircle className="mr-1 inline h-3.5 w-3.5" /> Approve
                   </button>}
-                  {street.status !== StreetStatus.REJECTED && <button type="button" disabled={reviewingId === street.id} onClick={() => reviewStreet(street, StreetStatus.REJECTED)} className="rounded-lg bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700">
+                  {street.status !== StreetStatus.REJECTED && <button type="button" disabled={reviewingId === street.id} onClick={() => reviewStreet(street, StreetStatus.REJECTED)} className="rounded-lg bg-[#fb718510] px-3 py-2 text-xs font-bold text-destructive">
                     <XCircle className="mr-1 inline h-3.5 w-3.5" /> Reject
                   </button>}
-                  {street.status !== StreetStatus.DISABLED && <button type="button" disabled={reviewingId === street.id} onClick={() => reviewStreet(street, StreetStatus.DISABLED)} className="rounded-lg bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700">
+                  {street.status !== StreetStatus.DISABLED && <button type="button" disabled={reviewingId === street.id} onClick={() => reviewStreet(street, StreetStatus.DISABLED)} className="rounded-lg bg-[#ffffff08] px-3 py-2 text-xs font-bold text-muted-foreground">
                     Disable
                   </button>}
                 </div>
               </div>
             ))}
-            {filteredStreets.length === 0 && <div className="p-10 text-center"><MapPin className="mx-auto mb-3 h-6 w-6 text-slate-300" /><p className="text-sm font-semibold text-slate-600">{streetStateFilter && !streetLocationFilter ? 'Select a location' : 'No matching streets'}</p><p className="mt-1 text-xs text-slate-400">{streetStateFilter && !streetLocationFilter ? 'Choose a location to view its full street history.' : 'Try another status, area, or search term.'}</p></div>}
+            {filteredStreets.length === 0 && <div className="p-10 text-center"><MapPin className="mx-auto mb-3 h-6 w-6 text-muted-foreground" /><p className="text-sm font-semibold text-muted-foreground">{streetStateFilter && !streetLocationFilter ? 'Select a location' : 'No matching streets'}</p><p className="mt-1 text-xs text-muted-foreground">{streetStateFilter && !streetLocationFilter ? 'Choose a location to view its full street history.' : 'Try another status, area, or search term.'}</p></div>}
           </div>
           <PaginationControls page={streetPage} total={filteredStreets.length} pageSize={MODERATION_PAGE_SIZE} onChange={setStreetPage} />
         </div>}
 
         {moderationTab === 'contributions' && <div role="tabpanel" data-testid="contribution-moderation">
-          <div className="flex items-start justify-between gap-4 border-b border-slate-100 p-5">
+          <div className="flex items-start justify-between gap-4 border-b border-[#ffffff12] p-5">
             <div>
-              <h2 className="font-display text-base font-bold text-navy-900">Contribution Moderation</h2>
-              <p className="mt-1 text-xs text-veriq-muted">Review contributor reports before they affect public intelligence.</p>
+              <h2 className="font-display text-base font-bold text-foreground">Contribution Moderation</h2>
+              <p className="mt-1 text-xs text-muted-foreground">Review contributor reports before they affect public intelligence.</p>
             </div>
             <select
               aria-label="Contribution moderation status"
@@ -561,40 +561,40 @@ export default function AdminCommunityPage() {
               <option value="all">All statuses</option>
             </select>
           </div>
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-[#ffffff12]">
             {paginatedContributions.map((contribution) => (
               <div key={contribution.id} className="p-5">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="font-bold text-navy-900">{contribution.street?.streetName ?? contribution.streetId}</p>
-                    <p className="mt-1 text-xs text-veriq-muted capitalize">{contribution.relationshipType.replace(/_/g, ' ')} · {contribution.relationshipRecency.replace(/_/g, ' ')}</p>
-                    <p className="mt-1 text-xs text-slate-400">{contribution.answers?.length ?? 0} category answers</p>
+                    <p className="font-bold text-foreground">{contribution.street?.streetName ?? contribution.streetId}</p>
+                    <p className="mt-1 text-xs text-muted-foreground capitalize">{contribution.relationshipType.replace(/_/g, ' ')} · {contribution.relationshipRecency.replace(/_/g, ' ')}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{contribution.answers?.length ?? 0} category answers</p>
                   </div>
-                  <span className="badge bg-slate-100 text-[10px] capitalize text-slate-600">{contribution.status}</span>
+                  <span className="badge bg-[#ffffff08] text-[10px] capitalize text-muted-foreground">{contribution.status}</span>
                 </div>
                 <div className="mt-4 flex flex-wrap gap-2">
-                  {contribution.status !== ContributionStatus.APPROVED && <button type="button" disabled={reviewingId === contribution.id} onClick={() => reviewContribution(contribution, ContributionStatus.APPROVED)} className="rounded-lg bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700">
+                  {contribution.status !== ContributionStatus.APPROVED && <button type="button" disabled={reviewingId === contribution.id} onClick={() => reviewContribution(contribution, ContributionStatus.APPROVED)} className="rounded-lg bg-[#10b98112] px-3 py-2 text-xs font-bold text-primary">
                     <CheckCircle className="mr-1 inline h-3.5 w-3.5" /> Approve
                   </button>}
-                  {contribution.status !== ContributionStatus.REJECTED && <button type="button" disabled={reviewingId === contribution.id} onClick={() => reviewContribution(contribution, ContributionStatus.REJECTED)} className="rounded-lg bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700">
+                  {contribution.status !== ContributionStatus.REJECTED && <button type="button" disabled={reviewingId === contribution.id} onClick={() => reviewContribution(contribution, ContributionStatus.REJECTED)} className="rounded-lg bg-[#fb718510] px-3 py-2 text-xs font-bold text-destructive">
                     <XCircle className="mr-1 inline h-3.5 w-3.5" /> Reject
                   </button>}
-                  {contribution.status !== ContributionStatus.FLAGGED && <button type="button" disabled={reviewingId === contribution.id} onClick={() => reviewContribution(contribution, ContributionStatus.FLAGGED)} className="rounded-lg bg-amber-50 px-3 py-2 text-xs font-bold text-amber-700">
+                  {contribution.status !== ContributionStatus.FLAGGED && <button type="button" disabled={reviewingId === contribution.id} onClick={() => reviewContribution(contribution, ContributionStatus.FLAGGED)} className="rounded-lg bg-[#fbbf2410] px-3 py-2 text-xs font-bold text-[#fcd34d]">
                     <Flag className="mr-1 inline h-3.5 w-3.5" /> Flag
                   </button>}
                 </div>
               </div>
             ))}
-            {contributions.length === 0 && <p className="p-8 text-center text-sm text-slate-500">No {contributionStatusFilter === 'all' ? '' : `${contributionStatusFilter} `}contributions found.</p>}
+            {contributions.length === 0 && <p className="p-8 text-center text-sm text-muted-foreground">No {contributionStatusFilter === 'all' ? '' : `${contributionStatusFilter} `}contributions found.</p>}
           </div>
           <PaginationControls page={contributionPage} total={contributions.length} pageSize={MODERATION_PAGE_SIZE} onChange={setContributionPage} />
         </div>}
       </section>
 
-      {directoryModal && <div className="fixed inset-0 z-[100] flex items-center justify-center bg-navy-950/55 px-4 py-6" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setDirectoryModal(null); }}>
-        <form role="dialog" aria-modal="true" aria-labelledby="directory-modal-title" onSubmit={saveDirectoryModal} className="w-full max-w-md rounded-lg bg-white p-6 shadow-2xl">
-          <div className="flex items-start justify-between gap-4"><div><p className="text-xs font-bold uppercase text-emerald-700">Location directory</p><h2 id="directory-modal-title" className="mt-1 font-display text-lg font-black text-navy-900">{directoryModal.mode === 'add' ? 'Add' : 'Edit'} {directoryModal.kind === 'lga' ? 'local government' : directoryModal.kind}</h2></div><button type="button" aria-label="Close directory editor" onClick={() => setDirectoryModal(null)} className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50"><XCircle className="h-4 w-4" /></button></div>
-          <label className="mt-5 block"><span className="mb-1.5 block text-xs font-bold text-slate-600">Name</span><input autoFocus className="input" value={directoryModal.name} maxLength={180} onChange={(event) => setDirectoryModal((current) => current ? { ...current, name: event.target.value } : null)} placeholder={`Enter ${directoryModal.kind === 'lga' ? 'local government' : directoryModal.kind} name`} required /></label>
+      {directoryModal && <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#070b148c] px-4 py-6" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setDirectoryModal(null); }}>
+        <form role="dialog" aria-modal="true" aria-labelledby="directory-modal-title" onSubmit={saveDirectoryModal} className="w-full max-w-md rounded-lg bg-card p-6 shadow-2xl">
+          <div className="flex items-start justify-between gap-4"><div><p className="text-xs font-bold uppercase text-primary">Location directory</p><h2 id="directory-modal-title" className="mt-1 font-display text-lg font-black text-foreground">{directoryModal.mode === 'add' ? 'Add' : 'Edit'} {directoryModal.kind === 'lga' ? 'local government' : directoryModal.kind}</h2></div><button type="button" aria-label="Close directory editor" onClick={() => setDirectoryModal(null)} className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#ffffff12] text-muted-foreground hover:bg-[#ffffff08]"><XCircle className="h-4 w-4" /></button></div>
+          <label className="mt-5 block"><span className="mb-1.5 block text-xs font-bold text-muted-foreground">Name</span><input autoFocus className="input" value={directoryModal.name} maxLength={180} onChange={(event) => setDirectoryModal((current) => current ? { ...current, name: event.target.value } : null)} placeholder={`Enter ${directoryModal.kind === 'lga' ? 'local government' : directoryModal.kind} name`} required /></label>
           <div className="mt-6 flex justify-end gap-3"><button type="button" className="btn-outline !py-2.5" onClick={() => setDirectoryModal(null)}>Cancel</button><button type="submit" className="btn-primary !py-2.5" disabled={saving || !directoryModal.name.trim()}>{saving ? <LoadingSpinner size="sm" /> : <><Save className="h-4 w-4" /> Save</>}</button></div>
         </form>
       </div>}

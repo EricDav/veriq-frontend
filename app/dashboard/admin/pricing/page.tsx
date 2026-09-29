@@ -175,14 +175,14 @@ function PropertyPricingTab({
                   value={
                     <span>
                       <span className="text-sm font-bold">{naira(override ?? priceRule.currentValue)}</span>
-                      <span className="block text-[10px] text-slate-500">{override === null ? 'Uses global' : 'Category override'}</span>
+                      <span className="block text-[10px] text-muted-foreground">{override === null ? 'Uses global' : 'Category override'}</span>
                     </span>
                   }
                 />
               );
             })}
             {priceRule.scheduled.length > 0 && (
-              <p className="col-span-full text-xs text-blue-700">{priceRule.scheduled.length} scheduled price change{priceRule.scheduled.length === 1 ? '' : 's'} pending — see Business Rules.</p>
+              <p className="col-span-full text-xs text-muted-foreground">{priceRule.scheduled.length} scheduled price change{priceRule.scheduled.length === 1 ? '' : 's'} pending — see Business Rules.</p>
             )}
           </div>
         ) : (
@@ -222,14 +222,14 @@ function PropertyPricingTab({
                     <KeyValue label="Listing override" value={pricing.overridePrice === null ? 'None' : naira(pricing.overridePrice)} />
                   </div>
                   {pricing.freeUnlockActive && (
-                    <p className="rounded-lg bg-amber-50 p-3 text-xs text-amber-900">
+                    <p className="rounded-lg bg-[#fbbf2410] p-3 text-xs text-[#fcd34d]">
                       A Free Unlock is active, so renters currently pay ₦0. Changing the price here does not change the Free Unlock rule, and the stored price applies once the Free Unlock ends.
                     </p>
                   )}
                   <div>
                     <label className="label text-xs" htmlFor="listing-price">Property price (₦)</label>
                     <input id="listing-price" type="number" min={min} max={max} step={1} className="input" value={priceInput} onChange={(event) => setPriceInput(event.target.value)} placeholder={`Default ${naira(pricing.defaultPrice)}`} />
-                    <p className="mt-1 text-[11px] text-slate-500">
+                    <p className="mt-1 text-[11px] text-muted-foreground">
                       {priceInput.trim() !== '' && !priceValid ? `Whole naira between ${naira(min)} and ${naira(max)}.` : priceInput.trim() !== '' ? naira(priceValue) : 'Enter a price to override the default.'}
                     </p>
                   </div>
@@ -241,21 +241,21 @@ function PropertyPricingTab({
                       <RotateCcw className="h-4 w-4" /> Use Default Price
                     </button>
                   </div>
-                  <p className="text-[11px] text-slate-500">Price changes apply to new unlocks from now. Existing unlocks keep the price recorded at checkout.</p>
+                  <p className="text-[11px] text-muted-foreground">Price changes apply to new unlocks from now. Existing unlocks keep the price recorded at checkout.</p>
 
                   <div>
-                    <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">Price history</h3>
+                    <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">Price history</h3>
                     {pricing.history.length === 0 ? (
-                      <p className="text-xs text-slate-500">No listing-level price changes recorded.</p>
+                      <p className="text-xs text-muted-foreground">No listing-level price changes recorded.</p>
                     ) : (
-                      <ul className="divide-y divide-slate-100 rounded-lg border border-slate-100">
+                      <ul className="divide-y divide-[#ffffff12] rounded-lg border border-[#ffffff12]">
                         {pricing.history.map((row) => (
                           <li key={row.id} className="px-3 py-2 text-xs">
                             <div className="flex items-center justify-between gap-2">
-                              <span className="font-semibold text-navy-900">{row.priceNaira === null ? 'Reset to default' : naira(row.priceNaira)}</span>
-                              <span className="whitespace-nowrap text-slate-500">{dateTime(row.effectiveFrom)}</span>
+                              <span className="font-semibold text-foreground">{row.priceNaira === null ? 'Reset to default' : naira(row.priceNaira)}</span>
+                              <span className="whitespace-nowrap text-muted-foreground">{dateTime(row.effectiveFrom)}</span>
                             </div>
-                            {row.reason && <p className="mt-0.5 text-slate-600">{row.reason}</p>}
+                            {row.reason && <p className="mt-0.5 text-muted-foreground">{row.reason}</p>}
                           </li>
                         ))}
                       </ul>
@@ -278,9 +278,9 @@ function PropertyPricingTab({
         message={
           selected && pricing ? (
             pendingAction === 'default' ? (
-              <p><strong className="text-navy-900">{selected.title}</strong> returns to the default price of {naira(pricing.defaultPrice)} for new unlocks.</p>
+              <p><strong className="text-foreground">{selected.title}</strong> returns to the default price of {naira(pricing.defaultPrice)} for new unlocks.</p>
             ) : (
-              <p><strong className="text-navy-900">{selected.title}</strong> will cost <strong className="text-navy-900">{naira(priceValue)}</strong> to unlock (currently {naira(pricing.effectivePrice)}).</p>
+              <p><strong className="text-foreground">{selected.title}</strong> will cost <strong className="text-foreground">{naira(priceValue)}</strong> to unlock (currently {naira(pricing.effectivePrice)}).</p>
             )
           ) : null
         }
@@ -469,7 +469,7 @@ function FreeUnlockTab({
         ) : (
           <TableScroll>
             <table className="w-full min-w-[980px]">
-              <thead className="bg-slate-50">
+              <thead className="bg-[#ffffff08]">
                 <tr>
                   <th className={th}>Listing</th>
                   <th className={th}>Current Agent</th>
@@ -480,26 +480,26 @@ function FreeUnlockTab({
                   <th className={th}><span className="sr-only">Actions</span></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#ffffff12]">
                 {rules.map((rule) => (
-                  <tr key={rule.id} className="hover:bg-slate-50/60">
+                  <tr key={rule.id} className="hover:bg-[#ffffff08]">
                     <td className={td}>
                       <p className="max-w-[220px] truncate font-semibold">{rule.listing?.title ?? 'Listing not found'}</p>
-                      <p className="text-[11px] text-slate-500">{TARGET_LABELS[rule.targetType]}{rule.listing ? ` · ${categoryLabel(rule.listing.category)}` : ''}</p>
-                      <p className="font-mono text-[11px] text-slate-400">{rule.targetId}</p>
+                      <p className="text-[11px] text-muted-foreground">{TARGET_LABELS[rule.targetType]}{rule.listing ? ` · ${categoryLabel(rule.listing.category)}` : ''}</p>
+                      <p className="font-mono text-[11px] text-muted-foreground">{rule.targetId}</p>
                     </td>
                     <td className={td}><span className="text-xs">{agentName(rule.listing?.agentId ?? null)}</span></td>
                     <td className={td}><StatusBadge status={rule.status} /></td>
                     <td className={td}><span className="whitespace-nowrap text-xs">{dateTime(rule.startsAt)}</span></td>
                     <td className={td}><span className="whitespace-nowrap text-xs">{rule.disabledAt ? `Disabled ${dateTime(rule.disabledAt)}` : rule.endsAt ? dateTime(rule.endsAt) : 'No end date'}</span></td>
-                    <td className={td}><p className="max-w-[240px] text-xs text-slate-600">{rule.reason}</p></td>
+                    <td className={td}><p className="max-w-[240px] text-xs text-muted-foreground">{rule.reason}</p></td>
                     <td className={`${td} text-right`}>
                       {rule.status !== 'disabled' && (
                         <div className="flex justify-end gap-1.5">
-                          <button type="button" onClick={() => openEdit(rule)} className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-bold text-navy-700 hover:bg-slate-50">
+                          <button type="button" onClick={() => openEdit(rule)} className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg border border-[#ffffff12] px-2.5 py-1.5 text-xs font-bold text-foreground hover:bg-[#ffffff08]">
                             <Pencil className="h-3.5 w-3.5" /> {rule.status === 'expired' ? 'Extend' : 'Edit'}
                           </button>
-                          <button type="button" onClick={() => setDisableRule(rule)} className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg border border-red-200 px-2.5 py-1.5 text-xs font-bold text-red-600 hover:bg-red-50">
+                          <button type="button" onClick={() => setDisableRule(rule)} className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg border border-[#fb718530] px-2.5 py-1.5 text-xs font-bold text-destructive hover:bg-[#fb718510]">
                             <Power className="h-3.5 w-3.5" /> Disable
                           </button>
                         </div>
@@ -540,34 +540,34 @@ function FreeUnlockTab({
                   <KeyValue label="Unlock now" value={selected.freeUnlock ? <StatusBadge status="active" label="Free" /> : <StatusBadge status="draft" label="Paid" />} />
                 </div>
                 {notPublished && (
-                  <p className="rounded-lg bg-red-50 p-3 text-xs text-red-800">Free Unlock can only be attached to a published listing.</p>
+                  <p className="rounded-lg bg-[#fb718510] p-3 text-xs text-destructive">Free Unlock can only be attached to a published listing.</p>
                 )}
                 {openListingRule && (
-                  <p className="rounded-lg bg-amber-50 p-3 text-xs text-amber-900">
+                  <p className="rounded-lg bg-[#fbbf2410] p-3 text-xs text-[#fcd34d]">
                     This listing already has a {openListingRule.status} Free Unlock ({dateTime(openListingRule.startsAt)} – {openListingRule.endsAt ? dateTime(openListingRule.endsAt) : 'no end'}). Edit or disable it in the table above; periods cannot overlap.
                   </p>
                 )}
                 <fieldset className="space-y-2">
                   <legend className="label text-xs">Start</legend>
                   <label className="flex items-center gap-2 text-sm">
-                    <input type="radio" name="free-start" checked={startMode === 'now'} onChange={() => setStartMode('now')} className="accent-emerald-600" /> Immediately
+                    <input type="radio" name="free-start" checked={startMode === 'now'} onChange={() => setStartMode('now')} className="accent-[#10b981]" /> Immediately
                   </label>
                   <label className="flex items-center gap-2 text-sm">
-                    <input type="radio" name="free-start" checked={startMode === 'scheduled'} onChange={() => setStartMode('scheduled')} className="accent-emerald-600" /> Scheduled
+                    <input type="radio" name="free-start" checked={startMode === 'scheduled'} onChange={() => setStartMode('scheduled')} className="accent-[#10b981]" /> Scheduled
                   </label>
                   {startMode === 'scheduled' && (
                     <input aria-label="Start date and time" type="datetime-local" className="input" value={startsAt} onChange={(event) => setStartsAt(event.target.value)} />
                   )}
                 </fieldset>
                 <div>
-                  <label className="label text-xs" htmlFor="free-end">End <span className="font-normal text-slate-400">(optional)</span></label>
+                  <label className="label text-xs" htmlFor="free-end">End <span className="font-normal text-muted-foreground">(optional)</span></label>
                   <input id="free-end" type="datetime-local" className="input" value={endsAt} onChange={(event) => setEndsAt(event.target.value)} />
                 </div>
-                {scheduleError && (startMode === 'scheduled' || endsAt) && <p className="text-xs font-semibold text-red-600">{scheduleError}</p>}
+                {scheduleError && (startMode === 'scheduled' || endsAt) && <p className="text-xs font-semibold text-destructive">{scheduleError}</p>}
                 <button type="button" disabled={!!scheduleError || notPublished} onClick={() => setCreateOpen(true)} className="btn-primary w-full !py-2.5 !text-sm">
                   <Gift className="h-4 w-4" /> {startMode === 'scheduled' ? 'Schedule Free Unlock' : 'Enable Free Unlock'}
                 </button>
-                <p className="text-[11px] text-slate-500">Free Unlock is separate from Property Pricing: it never changes the stored listing price.</p>
+                <p className="text-[11px] text-muted-foreground">Free Unlock is separate from Property Pricing: it never changes the stored listing price.</p>
               </div>
             </Panel>
           )}
@@ -585,7 +585,7 @@ function FreeUnlockTab({
         message={
           selected ? (
             <p>
-              <strong className="text-navy-900">{selected.title}</strong> will unlock for ₦0 from{' '}
+              <strong className="text-foreground">{selected.title}</strong> will unlock for ₦0 from{' '}
               {startMode === 'scheduled' && startsAt ? dateTime(new Date(startsAt)) : 'now'}
               {endsAt ? ` until ${dateTime(new Date(endsAt))}` : ' with no end date'}. No Agent earning is created from free unlocks.
             </p>
@@ -602,20 +602,20 @@ function FreeUnlockTab({
         reasonLabel="Internal note (replaces the rule note; the previous note stays in the audit log)"
         maxLength={1000}
         canConfirm={!editError}
-        message={editRule ? <p><strong className="text-navy-900">{editRule.listing?.title ?? editRule.targetId}</strong> · <span className="capitalize">{editRule.status}</span></p> : null}
+        message={editRule ? <p><strong className="text-foreground">{editRule.listing?.title ?? editRule.targetId}</strong> · <span className="capitalize">{editRule.status}</span></p> : null}
       >
         {editRule && (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label className="label text-xs" htmlFor="edit-start">Start</label>
               <input id="edit-start" type="datetime-local" className="input" value={editStartsAt} disabled={editRule.status !== 'scheduled'} onChange={(event) => setEditStartsAt(event.target.value)} />
-              {editRule.status !== 'scheduled' && <p className="mt-1 text-[11px] text-slate-500">The start of an active or expired rule cannot move.</p>}
+              {editRule.status !== 'scheduled' && <p className="mt-1 text-[11px] text-muted-foreground">The start of an active or expired rule cannot move.</p>}
             </div>
             <div>
-              <label className="label text-xs" htmlFor="edit-end">End <span className="font-normal text-slate-400">(blank = no end)</span></label>
+              <label className="label text-xs" htmlFor="edit-end">End <span className="font-normal text-muted-foreground">(blank = no end)</span></label>
               <input id="edit-end" type="datetime-local" className="input" value={editEndsAt} onChange={(event) => setEditEndsAt(event.target.value)} />
             </div>
-            {editError && <p className="text-xs font-semibold text-red-600 sm:col-span-2">{editError}</p>}
+            {editError && <p className="text-xs font-semibold text-destructive sm:col-span-2">{editError}</p>}
           </div>
         )}
       </ReasonDialog>
@@ -631,7 +631,7 @@ function FreeUnlockTab({
         message={
           disableRule ? (
             <p>
-              <strong className="text-navy-900">{disableRule.listing?.title ?? disableRule.targetId}</strong> returns to its normal price for new unlocks immediately. Disabled rules cannot be re-enabled; create a new rule instead. Unlocks already granted keep their access period.
+              <strong className="text-foreground">{disableRule.listing?.title ?? disableRule.targetId}</strong> returns to its normal price for new unlocks immediately. Disabled rules cannot be re-enabled; create a new rule instead. Unlocks already granted keep their access period.
             </p>
           ) : null
         }

@@ -105,27 +105,27 @@ function VerifyEmailPageInner() {
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
           <Link href="/" className="mb-6 inline-flex items-center gap-2.5">
-            <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-navy-950 p-2 ring-1 ring-white/10">
+            <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-background p-2 ring-1 ring-white/10">
               <Image src="/images/Logo.png" alt="Veriq Logo" width={40} height={40} className="rounded-lg" />
             </span>
             <span className="text-left leading-none">
-              <span className="block font-display text-xl font-bold text-white">Veriq</span>
-              <span className="block text-[10px] font-semibold uppercase tracking-widest text-gold-400">Property</span>
+              <span className="block font-display text-xl font-bold text-foreground">Veriq</span>
+              <span className="block text-[10px] font-semibold uppercase tracking-widest text-primary">Property</span>
             </span>
           </Link>
-          <h1 className="font-display text-2xl font-bold text-white">Verify your email</h1>
-          <p className="mt-2 text-sm text-white/60">
-            {email ? <>We sent a 6-digit code to <strong className="text-white/90">{email}</strong>.</> : 'Open the verification link after registration.'}
+          <h1 className="font-display text-2xl font-bold text-foreground">Verify your email</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {email ? <>We sent a 6-digit code to <strong className="text-foreground">{email}</strong>.</> : 'Open the verification link after registration.'}
           </p>
         </div>
 
-        <section className="rounded-lg border border-white/20 bg-white/10 p-6 shadow-2xl backdrop-blur-xl sm:p-8">
+        <section className="rounded-lg border border-white/20 bg-[#ffffff0f] p-6 shadow-2xl backdrop-blur-xl sm:p-8">
           {verified ? (
             <div className="text-center">
-              <CheckCircle className="mx-auto h-12 w-12 text-emerald-400" />
-              <h2 className="mt-4 font-display text-lg font-bold text-white">Email verified</h2>
-              <p className="mt-2 text-sm text-white/60">{message}</p>
-              <button type="button" onClick={() => router.replace('/auth/login')} className="mt-6 w-full rounded-lg bg-gold-gradient py-3 text-sm font-bold text-navy-900">
+              <CheckCircle className="mx-auto h-12 w-12 text-primary" />
+              <h2 className="mt-4 font-display text-lg font-bold text-foreground">Email verified</h2>
+              <p className="mt-2 text-sm text-muted-foreground">{message}</p>
+              <button type="button" onClick={() => router.replace('/auth/login')} className="mt-6 w-full rounded-lg bg-primary py-3 text-sm font-bold text-foreground">
                 Continue to sign in
               </button>
             </div>
@@ -146,23 +146,23 @@ function VerifyEmailPageInner() {
                     autoComplete={index === 0 ? 'one-time-code' : 'off'}
                     aria-label={`Verification code digit ${index + 1}`}
                     maxLength={1}
-                    className="h-12 min-w-0 flex-1 rounded-lg border border-white/20 bg-white/10 text-center text-xl font-bold text-white outline-none focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20 sm:h-14"
+                    className="h-12 min-w-0 flex-1 rounded-lg border border-white/20 bg-[#ffffff0f] text-center text-xl font-bold text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-[#10b98133] sm:h-14"
                   />
                 ))}
               </div>
 
-              {error && <p role="alert" className="mb-4 text-center text-sm text-red-300">{error}</p>}
-              {message && <p className="mb-4 text-center text-sm text-emerald-300">{message}</p>}
+              {error && <p role="alert" className="mb-4 text-center text-sm text-[#fda4af]">{error}</p>}
+              {message && <p className="mb-4 text-center text-sm text-[#6ee7b7]">{message}</p>}
 
-              <button type="submit" disabled={isSubmitting} className="flex w-full items-center justify-center gap-2 rounded-lg bg-gold-gradient py-3 text-sm font-bold text-navy-900 disabled:opacity-60">
-                {isSubmitting && <LoadingSpinner size="sm" className="text-navy-900" />}
+              <button type="submit" disabled={isSubmitting} className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-3 text-sm font-bold text-foreground disabled:opacity-60">
+                {isSubmitting && <LoadingSpinner size="sm" className="text-foreground" />}
                 {isSubmitting ? 'Verifying...' : 'Verify email'}
               </button>
 
-              <div className="mt-5 flex items-center justify-center gap-2 text-xs text-white/60">
+              <div className="mt-5 flex items-center justify-center gap-2 text-xs text-muted-foreground">
                 <Mail className="h-3.5 w-3.5" />
                 <span>Didn&apos;t receive it?</span>
-                <button type="button" onClick={resend} disabled={cooldown > 0 || isResending || !email} className="inline-flex items-center gap-1 font-semibold text-gold-400 disabled:text-white/30">
+                <button type="button" onClick={resend} disabled={cooldown > 0 || isResending || !email} className="inline-flex items-center gap-1 font-semibold text-primary disabled:text-muted-foreground">
                   {isResending && <RotateCw className="h-3 w-3 animate-spin" />}
                   {cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend code'}
                 </button>

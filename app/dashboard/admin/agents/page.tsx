@@ -17,10 +17,10 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 const TIER_BADGE: Record<AgentTrustTier, string> = {
-  bronze: 'bg-orange-100 text-orange-700',
-  silver: 'bg-slate-100 text-slate-700',
-  gold: 'bg-gold-100 text-gold-700',
-  platinum: 'bg-purple-100 text-purple-700',
+  bronze: 'bg-[#ffffff08] text-muted-foreground',
+  silver: 'bg-[#ffffff08] text-muted-foreground',
+  gold: 'bg-[#10b98112] text-primary',
+  platinum: 'bg-[#ffffff08] text-muted-foreground',
 };
 
 type ActionType = 'approve-l1' | 'approve-l2' | 'approve-listing' | 'revoke-listing' | 'deactivate' | 'reactivate';
@@ -200,8 +200,8 @@ export default function AdminAgentsPage() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="font-display text-2xl font-bold text-navy-900">Agent Management</h1>
-          <p className="text-sm text-veriq-muted">
+          <h1 className="font-display text-2xl font-bold text-foreground">Agent Management</h1>
+          <p className="text-sm text-muted-foreground">
             {total} registered agent{total !== 1 ? 's' : ''}
           </p>
         </div>
@@ -211,15 +211,15 @@ export default function AdminAgentsPage() {
       </div>
 
       {/* Veriq Agent account controls */}
-      <div className="flex flex-col gap-3 rounded-xl border border-emerald-100 bg-emerald-50/70 p-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 rounded-xl border border-[#10b98135] bg-[#10b98112] p-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-3">
-          <UserCog className="mt-0.5 h-5 w-5 flex-shrink-0 text-emerald-600" />
-          <p className="text-sm leading-6 text-emerald-900">
+          <UserCog className="mt-0.5 h-5 w-5 flex-shrink-0 text-primary" />
+          <p className="text-sm leading-6 text-primary">
             <strong>Veriq Agent accounts are Admin-created.</strong> Create accounts, issue referral codes, suspend or restore Agents,
             change publishing permission and set per-Agent commission share from Veriq Agents. This page keeps legacy verification document review.
           </p>
         </div>
-        <Link href="/dashboard/admin/veriq-agents" className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-700">
+        <Link href="/dashboard/admin/veriq-agents" className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-foreground hover:bg-[#34d399]">
           Open Veriq Agents <ArrowRight className="h-4 w-4" />
         </Link>
       </div>
@@ -227,34 +227,34 @@ export default function AdminAgentsPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         {[
-          { label: 'Total Agents', value: total, cls: 'bg-blue-50 text-blue-600' },
-          { label: 'L1 Verified', value: agents.filter((a) => a.isGovIdVerified).length, cls: 'bg-emerald-50 text-emerald-600' },
-          { label: 'L2 Professional', value: agents.filter((a) => a.isProfessionallyVerified).length, cls: 'bg-purple-50 text-purple-600' },
-          { label: 'Pending Review', value: agents.filter((a) => (!a.isGovIdVerified && a.govIdUrl) || (!a.isProfessionallyVerified && hasProfessionalSubmission(a))).length, cls: 'bg-amber-50 text-amber-600' },
+          { label: 'Total Agents', value: total, cls: 'bg-[#ffffff08] text-muted-foreground' },
+          { label: 'L1 Verified', value: agents.filter((a) => a.isGovIdVerified).length, cls: 'bg-[#10b98112] text-primary' },
+          { label: 'L2 Professional', value: agents.filter((a) => a.isProfessionallyVerified).length, cls: 'bg-[#ffffff08] text-muted-foreground' },
+          { label: 'Pending Review', value: agents.filter((a) => (!a.isGovIdVerified && a.govIdUrl) || (!a.isProfessionallyVerified && hasProfessionalSubmission(a))).length, cls: 'bg-[#fbbf2410] text-[#fcd34d]' },
         ].map((s) => (
           <div key={s.label} className="card p-4">
             <p className={`text-2xl font-black ${s.cls.split(' ')[1]}`}>{s.value}</p>
-            <p className="text-xs text-slate-500 mt-0.5">{s.label}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{s.label}</p>
           </div>
         ))}
       </div>
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3 items-center">
-        <div className="flex items-center gap-2 flex-1 min-w-64 rounded-xl border border-slate-200 bg-white px-4 py-2.5">
-          <Search className="h-4 w-4 text-slate-400 flex-shrink-0" />
+        <div className="flex items-center gap-2 flex-1 min-w-64 rounded-xl border border-[#ffffff12] bg-card px-4 py-2.5">
+          <Search className="h-4 w-4 text-muted-foreground flex-shrink-0" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search agents by name, email or phone…"
-            className="flex-1 text-sm text-navy-900 placeholder:text-slate-400 outline-none bg-transparent"
+            className="flex-1 text-sm text-foreground placeholder:text-muted-foreground outline-none bg-transparent"
           />
         </div>
         <select
           value={statusFilter}
           onChange={(e) => { setStatusFilter(e.target.value as typeof statusFilter); setPage(1); }}
-          className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-navy-700 outline-none focus:border-veriq-secondary"
+          className="rounded-xl border border-[#ffffff12] bg-card px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary"
         >
           <option value="all">All agents</option>
           <option value="pending">Pending review</option>
@@ -267,19 +267,19 @@ export default function AdminAgentsPage() {
       <div className="card overflow-hidden">
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
-            <LoadingSpinner size="lg" className="text-veriq-secondary" />
+            <LoadingSpinner size="lg" className="text-primary" />
           </div>
         ) : filteredAgents.length === 0 ? (
           <div className="flex flex-col items-center py-16 text-center">
-            <User className="h-10 w-10 text-slate-300 mb-3" />
-            <p className="text-sm font-medium text-navy-900">No agents found</p>
-            <p className="text-xs text-veriq-muted mt-1">Try adjusting your filters</p>
+            <User className="h-10 w-10 text-muted-foreground mb-3" />
+            <p className="text-sm font-medium text-foreground">No agents found</p>
+            <p className="text-xs text-muted-foreground mt-1">Try adjusting your filters</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-veriq-surface">
-                <tr className="text-left text-xs text-slate-400 border-b border-slate-100">
+              <thead className="bg-background">
+                <tr className="text-left text-xs text-muted-foreground border-b border-[#ffffff12]">
                   <th className="px-6 py-4 font-medium">Agent</th>
                   <th className="px-4 py-4 font-medium">Tier</th>
                   <th className="px-4 py-4 font-medium">Verification</th>
@@ -288,7 +288,7 @@ export default function AdminAgentsPage() {
                   <th className="px-4 py-4 font-medium text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-50">
+              <tbody className="divide-y divide-[#ffffff12]">
                 {filteredAgents.map((agent) => {
                   const name = `${agent.user?.firstName ?? ''} ${agent.user?.lastName ?? ''}`.trim();
                   const initial = name[0]?.toUpperCase() ?? 'A';
@@ -299,22 +299,22 @@ export default function AdminAgentsPage() {
                   const contact = phoneLinks(agent.user?.phone);
 
                   return (
-                    <tr key={agent.id} className="hover:bg-slate-50 transition-colors">
+                    <tr key={agent.id} className="hover:bg-[#ffffff08] transition-colors">
                       {/* Agent */}
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="h-9 w-9 rounded-full bg-veriq-secondary flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                          <div className="h-9 w-9 rounded-full bg-primary flex items-center justify-center text-foreground text-sm font-bold flex-shrink-0">
                             {initial}
                           </div>
                           <div className="min-w-0">
-                            <p className="font-semibold text-navy-900 text-xs truncate">{name || 'Unknown'}</p>
-                            <p className="text-[10px] text-slate-400 truncate">{agent.user?.email}</p>
+                            <p className="font-semibold text-foreground text-xs truncate">{name || 'Unknown'}</p>
+                            <p className="text-[10px] text-muted-foreground truncate">{agent.user?.email}</p>
                             {contact ? (
                               <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                                <span className="text-[10px] font-medium text-slate-600">{contact.display}</span>
+                                <span className="text-[10px] font-medium text-muted-foreground">{contact.display}</span>
                                 <a
                                   href={contact.call}
-                                  className="inline-grid h-6 w-6 place-items-center rounded-md border border-slate-200 text-slate-600 transition-colors hover:border-veriq-secondary hover:bg-emerald-50 hover:text-veriq-secondary"
+                                  className="inline-grid h-6 w-6 place-items-center rounded-md border border-[#ffffff12] text-muted-foreground transition-colors hover:border-primary hover:bg-[#10b98112] hover:text-primary"
                                   title={`Call ${name || 'agent'}`}
                                   aria-label={`Call ${name || 'agent'} on ${contact.display}`}
                                 >
@@ -324,7 +324,7 @@ export default function AdminAgentsPage() {
                                   href={contact.whatsapp}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="inline-grid h-6 w-6 place-items-center rounded-md border border-emerald-200 text-emerald-600 transition-colors hover:bg-emerald-50"
+                                  className="inline-grid h-6 w-6 place-items-center rounded-md border border-[#10b98135] text-primary transition-colors hover:bg-[#10b98112]"
                                   title={`WhatsApp ${name || 'agent'}`}
                                   aria-label={`Message ${name || 'agent'} on WhatsApp`}
                                 >
@@ -332,10 +332,10 @@ export default function AdminAgentsPage() {
                                 </a>
                               </div>
                             ) : (
-                              <p className="mt-1 text-[10px] italic text-slate-400">No phone provided</p>
+                              <p className="mt-1 text-[10px] italic text-muted-foreground">No phone provided</p>
                             )}
                             {agent.businessName && (
-                              <p className="text-[10px] text-slate-400 italic truncate">{agent.businessName}</p>
+                              <p className="text-[10px] text-muted-foreground italic truncate">{agent.businessName}</p>
                             )}
                           </div>
                         </div>
@@ -353,23 +353,23 @@ export default function AdminAgentsPage() {
                         <div className="space-y-1">
                           <div className="flex items-center gap-1.5">
                             {agent.isGovIdVerified ? (
-                              <CheckCircle className="h-3.5 w-3.5 text-emerald-500" />
+                              <CheckCircle className="h-3.5 w-3.5 text-primary" />
                             ) : hasPendingL1 ? (
-                              <Clock className="h-3.5 w-3.5 text-amber-500" />
+                              <Clock className="h-3.5 w-3.5 text-[#fcd34d]" />
                             ) : (
-                              <XCircle className="h-3.5 w-3.5 text-slate-300" />
+                              <XCircle className="h-3.5 w-3.5 text-muted-foreground" />
                             )}
-                            <span className="text-[10px] text-slate-600">L1 Basic</span>
+                            <span className="text-[10px] text-muted-foreground">L1 Basic</span>
                           </div>
                           <div className="flex items-center gap-1.5">
                             {agent.isProfessionallyVerified ? (
-                              <CheckCircle className="h-3.5 w-3.5 text-emerald-500" />
+                              <CheckCircle className="h-3.5 w-3.5 text-primary" />
                             ) : hasPendingL2 ? (
-                              <Clock className="h-3.5 w-3.5 text-amber-500" />
+                              <Clock className="h-3.5 w-3.5 text-[#fcd34d]" />
                             ) : (
-                              <XCircle className="h-3.5 w-3.5 text-slate-300" />
+                              <XCircle className="h-3.5 w-3.5 text-muted-foreground" />
                             )}
-                            <span className="text-[10px] text-slate-600">L2 Professional</span>
+                            <span className="text-[10px] text-muted-foreground">L2 Professional</span>
                           </div>
                         </div>
                       </td>
@@ -382,19 +382,19 @@ export default function AdminAgentsPage() {
                               href={agent.govIdUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="flex items-center gap-1 text-[10px] text-blue-600 hover:underline"
+                              className="flex items-center gap-1 text-[10px] text-muted-foreground hover:underline"
                             >
                               <ExternalLink className="h-3 w-3" /> ID Doc
                             </a>
                           ) : (
-                            <span className="text-[10px] text-slate-400">No L1 docs</span>
+                            <span className="text-[10px] text-muted-foreground">No L1 docs</span>
                           )}
                           {agent.selfieUrl ? (
                             <a
                               href={agent.selfieUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="flex items-center gap-1 text-[10px] text-blue-600 hover:underline"
+                              className="flex items-center gap-1 text-[10px] text-muted-foreground hover:underline"
                             >
                               <ExternalLink className="h-3 w-3" /> Selfie
                             </a>
@@ -404,7 +404,7 @@ export default function AdminAgentsPage() {
                               href={agent.cacDocumentUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="flex items-center gap-1 text-[10px] text-blue-600 hover:underline"
+                              className="flex items-center gap-1 text-[10px] text-muted-foreground hover:underline"
                             >
                               <ExternalLink className="h-3 w-3" /> CAC Doc
                             </a>
@@ -414,7 +414,7 @@ export default function AdminAgentsPage() {
                               href={agent.associationMembershipUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="flex items-center gap-1 text-[10px] text-blue-600 hover:underline"
+                              className="flex items-center gap-1 text-[10px] text-muted-foreground hover:underline"
                             >
                               <ExternalLink className="h-3 w-3" /> Association Doc
                             </a>
@@ -424,13 +424,13 @@ export default function AdminAgentsPage() {
                               href={agent.landlordAuthorizationUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="flex items-center gap-1 text-[10px] text-blue-600 hover:underline"
+                              className="flex items-center gap-1 text-[10px] text-muted-foreground hover:underline"
                             >
                               <ExternalLink className="h-3 w-3" /> Authorization
                             </a>
                           ) : null}
                           {(agent.cacNumber || agent.realEstateAssociation) && (
-                            <p className="max-w-[140px] truncate text-[10px] text-slate-500">
+                            <p className="max-w-[140px] truncate text-[10px] text-muted-foreground">
                               {[agent.cacNumber, agent.realEstateAssociation].filter(Boolean).join(' · ')}
                             </p>
                           )}
@@ -440,26 +440,26 @@ export default function AdminAgentsPage() {
                       {/* Status */}
                       <td className="px-4 py-4">
                         {isActive ? (
-                          <span className="badge bg-emerald-100 text-emerald-700 text-[10px]">
+                          <span className="badge bg-[#10b98112] text-primary text-[10px]">
                             <CheckCircle className="h-2.5 w-2.5" /> Active
                           </span>
                         ) : (
-                          <span className="badge bg-red-100 text-red-600 text-[10px]">
+                          <span className="badge bg-[#fb718510] text-destructive text-[10px]">
                             <XCircle className="h-2.5 w-2.5" /> Inactive
                           </span>
                         )}
                         {hasPendingL1 && !agent.isGovIdVerified && (
-                          <span className="badge bg-amber-100 text-amber-700 text-[10px] mt-1">
+                          <span className="badge bg-[#fbbf2410] text-[#fcd34d] text-[10px] mt-1">
                             <Clock className="h-2.5 w-2.5" /> L1 Pending
                           </span>
                         )}
                         {hasPendingL2 && !agent.isProfessionallyVerified && (
-                          <span className="badge bg-blue-100 text-blue-700 text-[10px] mt-1">
+                          <span className="badge bg-[#ffffff08] text-muted-foreground text-[10px] mt-1">
                             <Clock className="h-2.5 w-2.5" /> L2 Pending
                           </span>
                         )}
                         {agent.isListingApprovedByAdmin && (
-                          <span className="badge mt-1 bg-blue-100 text-[10px] text-blue-700">
+                          <span className="badge mt-1 bg-[#ffffff08] text-[10px] text-muted-foreground">
                             <CheckCircle className="h-2.5 w-2.5" /> Listing override
                           </span>
                         )}
@@ -468,17 +468,17 @@ export default function AdminAgentsPage() {
                       {/* Actions */}
                       <td className="px-4 py-4">
                         <div className="flex flex-col gap-1.5 items-end">
-                          <Link href={`/dashboard/admin/communications?directUserId=${agent.userId}&recipient=${encodeURIComponent(name || 'Agent')}`} className="flex items-center gap-1 text-[10px] font-bold text-emerald-700"><Mail className="h-3 w-3" />Send email</Link>
+                          <Link href={`/dashboard/admin/communications?directUserId=${agent.userId}&recipient=${encodeURIComponent(name || 'Agent')}`} className="flex items-center gap-1 text-[10px] font-bold text-primary"><Mail className="h-3 w-3" />Send email</Link>
                           <Link
                             href={`/dashboard/admin/properties?agentId=${agent.id}&agentName=${encodeURIComponent(name || 'Agent')}`}
-                            className="text-[10px] font-bold text-navy-700 hover:text-veriq-secondary hover:underline"
+                            className="text-[10px] font-bold text-foreground hover:text-primary hover:underline"
                           >
                             View listings
                           </Link>
                           {hasPendingL1 && !agent.isGovIdVerified && (
                             <button
                               onClick={() => initiateAction(agent, 'approve-l1')}
-                              className="rounded-lg bg-emerald-600 text-white px-3 py-1.5 text-[10px] font-bold hover:bg-emerald-700 transition-colors"
+                              className="rounded-lg bg-primary text-primary-foreground px-3 py-1.5 text-[10px] font-bold hover:bg-[#34d399] transition-colors"
                             >
                               Approve identity
                             </button>
@@ -486,7 +486,7 @@ export default function AdminAgentsPage() {
                           {hasPendingL2 && !agent.isProfessionallyVerified && agent.isGovIdVerified && (
                             <button
                               onClick={() => initiateAction(agent, 'approve-l2')}
-                              className="rounded-lg bg-purple-600 text-white px-3 py-1.5 text-[10px] font-bold hover:bg-purple-700 transition-colors"
+                              className="rounded-lg bg-[#ffffff12] text-foreground px-3 py-1.5 text-[10px] font-bold hover:bg-[#ffffff12] transition-colors"
                             >
                               Approve professional
                             </button>
@@ -495,14 +495,14 @@ export default function AdminAgentsPage() {
                             agent.isListingApprovedByAdmin ? (
                               <button
                                 onClick={() => initiateAction(agent, 'revoke-listing')}
-                                className="text-[10px] font-bold text-amber-700 hover:underline"
+                                className="text-[10px] font-bold text-[#fcd34d] hover:underline"
                               >
                                 Revoke listing access
                               </button>
                             ) : (
                               <button
                                 onClick={() => initiateAction(agent, 'approve-listing')}
-                                className="rounded-lg bg-blue-600 px-3 py-1.5 text-[10px] font-bold text-white transition-colors hover:bg-blue-700"
+                                className="rounded-lg bg-[#ffffff12] px-3 py-1.5 text-[10px] font-bold text-foreground transition-colors hover:bg-[#ffffff12]"
                               >
                                 Approve to list
                               </button>
@@ -511,14 +511,14 @@ export default function AdminAgentsPage() {
                           {agent.isActive && userActive ? (
                             <button
                               onClick={() => initiateAction(agent, 'deactivate')}
-                              className="text-[10px] font-bold text-red-500 hover:underline"
+                              className="text-[10px] font-bold text-destructive hover:underline"
                             >
                               Deactivate
                             </button>
                           ) : !userActive ? (
                             <button
                               onClick={() => initiateAction(agent, 'reactivate')}
-                              className="text-[10px] font-bold text-emerald-600 hover:underline"
+                              className="text-[10px] font-bold text-primary hover:underline"
                             >
                               Reactivate
                             </button>
@@ -540,15 +540,15 @@ export default function AdminAgentsPage() {
           <button
             disabled={page === 1}
             onClick={() => setPage((p) => p - 1)}
-            className="h-9 w-9 flex items-center justify-center rounded-lg border border-slate-200 disabled:opacity-40"
+            className="h-9 w-9 flex items-center justify-center rounded-lg border border-[#ffffff12] disabled:opacity-40"
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
-          <span className="text-sm text-slate-600">Page {page} of {totalPages}</span>
+          <span className="text-sm text-muted-foreground">Page {page} of {totalPages}</span>
           <button
             disabled={page === totalPages}
             onClick={() => setPage((p) => p + 1)}
-            className="h-9 w-9 flex items-center justify-center rounded-lg border border-slate-200 disabled:opacity-40"
+            className="h-9 w-9 flex items-center justify-center rounded-lg border border-[#ffffff12] disabled:opacity-40"
           >
             <ChevronRight className="h-4 w-4" />
           </button>

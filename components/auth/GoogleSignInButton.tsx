@@ -67,20 +67,20 @@ export function GoogleSignInButton({ onCredential, disabled = false }: {
         <button
           type="button"
           onClick={() => setError('Google sign-in needs NEXT_PUBLIC_GOOGLE_CLIENT_ID to be configured.')}
-          className="flex min-h-11 w-full items-center justify-center gap-3 rounded border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+          className="flex min-h-11 w-full items-center justify-center gap-3 rounded border border-[#ffffff12] bg-card px-4 py-2.5 text-sm font-semibold text-muted-foreground transition-colors hover:bg-[#ffffff08]"
           aria-describedby={error ? 'google-signin-config-error' : undefined}
         >
-          <span aria-hidden="true" className="text-base font-bold text-blue-600">G</span>
+          <span aria-hidden="true" className="text-base font-bold text-muted-foreground">G</span>
           Continue with Google
         </button>
-        {error && <p id="google-signin-config-error" role="alert" className="flex items-start gap-1 text-xs text-red-300"><AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />{error}</p>}
+        {error && <p id="google-signin-config-error" role="alert" className="flex items-start gap-1 text-xs text-[#fda4af]"><AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />{error}</p>}
       </div>
     );
   }
   return (
     <div className="space-y-2">
       <div ref={target} className={disabled ? 'pointer-events-none opacity-60' : ''} />
-      {error && <p className="flex items-center gap-1 text-xs text-red-300"><AlertCircle className="h-3.5 w-3.5" />{error}</p>}
+      {error && <p className="flex items-center gap-1 text-xs text-[#fda4af]"><AlertCircle className="h-3.5 w-3.5" />{error}</p>}
     </div>
   );
 }

@@ -113,10 +113,10 @@ function sectionsToHtml(content: BlogPost['content'] = []) {
 }
 
 function statusBadge(status?: BlogPostStatus) {
-  if (status === 'published') return 'bg-emerald-100 text-emerald-700';
-  if (status === 'scheduled') return 'bg-blue-100 text-blue-700';
-  if (status === 'archived') return 'bg-slate-200 text-slate-600';
-  return 'bg-amber-100 text-amber-700';
+  if (status === 'published') return 'bg-[#10b98112] text-primary';
+  if (status === 'scheduled') return 'bg-[#ffffff08] text-muted-foreground';
+  if (status === 'archived') return 'bg-[#ffffff08] text-muted-foreground';
+  return 'bg-[#fbbf2410] text-[#fcd34d]';
 }
 
 function ToolbarButton({
@@ -134,7 +134,7 @@ function ToolbarButton({
       title={title}
       onMouseDown={(e) => e.preventDefault()}
       onClick={onClick}
-      className="inline-grid h-9 w-9 place-items-center rounded-lg border border-slate-200 text-slate-600 transition hover:border-veriq-secondary hover:bg-emerald-50 hover:text-veriq-secondary"
+      className="inline-grid h-9 w-9 place-items-center rounded-lg border border-[#ffffff12] text-muted-foreground transition hover:border-primary hover:bg-[#10b98112] hover:text-primary"
     >
       {children}
     </button>
@@ -394,12 +394,12 @@ export default function AdminBlogsPage() {
     <div className="mx-auto max-w-7xl space-y-6">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
         <div>
-          <p className="mb-2 inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold uppercase tracking-wide text-veriq-secondary">
+          <p className="mb-2 inline-flex items-center gap-2 rounded-full bg-[#10b98112] px-3 py-1 text-xs font-bold uppercase tracking-wide text-primary">
             <BookOpen className="h-3.5 w-3.5" />
             Content studio
           </p>
-          <h1 className="font-display text-2xl font-bold text-navy-900">Blog Management</h1>
-          <p className="text-sm text-veriq-muted">
+          <h1 className="font-display text-2xl font-bold text-foreground">Blog Management</h1>
+          <p className="text-sm text-muted-foreground">
             Draft, schedule, optimize, preview, and publish editorial content from one workspace.
           </p>
         </div>
@@ -416,17 +416,17 @@ export default function AdminBlogsPage() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-4">
-        <div className="card p-4"><p className="text-xs text-slate-500">Total</p><p className="text-2xl font-black text-navy-900">{stats.total}</p></div>
-        <div className="card p-4"><p className="text-xs text-slate-500">Published</p><p className="text-2xl font-black text-emerald-600">{stats.published}</p></div>
-        <div className="card p-4"><p className="text-xs text-slate-500">Scheduled</p><p className="text-2xl font-black text-blue-600">{stats.scheduled}</p></div>
-        <div className="card p-4"><p className="text-xs text-slate-500">Drafts</p><p className="text-2xl font-black text-amber-600">{stats.drafts}</p></div>
+        <div className="card p-4"><p className="text-xs text-muted-foreground">Total</p><p className="text-2xl font-black text-foreground">{stats.total}</p></div>
+        <div className="card p-4"><p className="text-xs text-muted-foreground">Published</p><p className="text-2xl font-black text-primary">{stats.published}</p></div>
+        <div className="card p-4"><p className="text-xs text-muted-foreground">Scheduled</p><p className="text-2xl font-black text-muted-foreground">{stats.scheduled}</p></div>
+        <div className="card p-4"><p className="text-xs text-muted-foreground">Drafts</p><p className="text-2xl font-black text-[#fcd34d]">{stats.drafts}</p></div>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[330px_minmax(0,1fr)]">
         <aside className="card overflow-hidden">
-          <div className="space-y-3 border-b border-slate-100 p-4">
+          <div className="space-y-3 border-b border-[#ffffff12] p-4">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <input value={query} onChange={(e) => setQuery(e.target.value)} className="input !py-2.5 pl-9" placeholder="Search posts..." />
             </div>
             <div className="grid grid-cols-2 gap-2">
@@ -445,24 +445,24 @@ export default function AdminBlogsPage() {
           {isLoading ? (
             <div className="flex justify-center py-16"><LoadingSpinner size="lg" /></div>
           ) : posts.length === 0 ? (
-            <div className="py-16 text-center text-sm text-veriq-muted">No blog posts found.</div>
+            <div className="py-16 text-center text-sm text-muted-foreground">No blog posts found.</div>
           ) : (
-            <div className="max-h-[760px] divide-y divide-slate-100 overflow-y-auto">
+            <div className="max-h-[760px] divide-y divide-[#ffffff12] overflow-y-auto">
               {posts.map((post) => (
                 <button
                   key={post.id ?? post.slug}
                   type="button"
                   onClick={() => editPost(post)}
-                  className={`block w-full p-4 text-left transition hover:bg-slate-50 ${editingId === post.id ? 'bg-emerald-50/70' : ''}`}
+                  className={`block w-full p-4 text-left transition hover:bg-[#ffffff08] ${editingId === post.id ? 'bg-[#10b98112]' : ''}`}
                 >
                   <div className="mb-2 flex items-center gap-2">
                     <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${statusBadge(post.status)}`}>
                       {post.status}
                     </span>
-                    <span className="truncate text-[11px] text-slate-400">{post.category}</span>
+                    <span className="truncate text-[11px] text-muted-foreground">{post.category}</span>
                   </div>
-                  <p className="line-clamp-2 text-sm font-bold text-navy-900">{post.title}</p>
-                  <p className="mt-1 line-clamp-2 text-xs text-slate-500">{post.excerpt}</p>
+                  <p className="line-clamp-2 text-sm font-bold text-foreground">{post.title}</p>
+                  <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{post.excerpt}</p>
                 </button>
               ))}
             </div>
@@ -471,10 +471,10 @@ export default function AdminBlogsPage() {
 
         <form onSubmit={(event) => save(event)} className="space-y-6">
           <section className="card overflow-hidden">
-            <div className="flex flex-col gap-3 border-b border-slate-100 p-5 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-col gap-3 border-b border-[#ffffff12] p-5 lg:flex-row lg:items-center lg:justify-between">
               <div>
-                <h2 className="font-display text-lg font-bold text-navy-900">{editingId ? 'Edit Article' : 'Create Article'}</h2>
-                <p className="text-xs text-slate-500">{wordCount} words · suggested read time {Math.max(1, Math.ceil(wordCount / 220))} min</p>
+                <h2 className="font-display text-lg font-bold text-foreground">{editingId ? 'Edit Article' : 'Create Article'}</h2>
+                <p className="text-xs text-muted-foreground">{wordCount} words · suggested read time {Math.max(1, Math.ceil(wordCount / 220))} min</p>
               </div>
               <div className="flex flex-wrap gap-2">
                 {editingId && form.status === 'published' && (
@@ -524,8 +524,8 @@ export default function AdminBlogsPage() {
                   />
                 </div>
 
-                <div className="rounded-xl border border-slate-200 bg-white">
-                  <div className="flex flex-wrap gap-2 border-b border-slate-100 p-3">
+                <div className="rounded-xl border border-[#ffffff12] bg-card">
+                  <div className="flex flex-wrap gap-2 border-b border-[#ffffff12] p-3">
                     <ToolbarButton title="Bold" onClick={() => runCommand('bold')}><Bold className="h-4 w-4" /></ToolbarButton>
                     <ToolbarButton title="Italic" onClick={() => runCommand('italic')}><Italic className="h-4 w-4" /></ToolbarButton>
                     <ToolbarButton title="Underline" onClick={() => runCommand('underline')}><Underline className="h-4 w-4" /></ToolbarButton>
@@ -544,7 +544,7 @@ export default function AdminBlogsPage() {
                     <ToolbarButton title="Embed media" onClick={insertMedia}><Video className="h-4 w-4" /></ToolbarButton>
                     <ToolbarButton title="Insert table" onClick={insertTable}><Table className="h-4 w-4" /></ToolbarButton>
                     <ToolbarButton title="Text color" onClick={() => runCommand('foreColor', window.prompt('Hex color', '#10B981') || '#10B981')}><Palette className="h-4 w-4" /></ToolbarButton>
-                    <label title="Upload image into article" className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-lg border border-slate-200 px-3 text-xs font-medium text-slate-600 hover:border-veriq-secondary hover:bg-emerald-50 hover:text-veriq-secondary">
+                    <label title="Upload image into article" className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-lg border border-[#ffffff12] px-3 text-xs font-medium text-muted-foreground hover:border-primary hover:bg-[#10b98112] hover:text-primary">
                       {isUploadingInlineImage ? <LoadingSpinner size="sm" /> : <Upload className="h-4 w-4" />}
                       <span>{isUploadingInlineImage ? 'Uploading...' : 'Add image'}</span>
                       <input
@@ -571,8 +571,8 @@ export default function AdminBlogsPage() {
               </div>
 
               <aside className="space-y-4">
-                <div className="rounded-xl border border-slate-200 p-4">
-                  <p className="mb-3 flex items-center gap-2 text-sm font-bold text-navy-900"><Archive className="h-4 w-4 text-veriq-secondary" /> Publishing</p>
+                <div className="rounded-xl border border-[#ffffff12] p-4">
+                  <p className="mb-3 flex items-center gap-2 text-sm font-bold text-foreground"><Archive className="h-4 w-4 text-primary" /> Publishing</p>
                   <div className="space-y-3">
                     <div>
                       <label className="label">Status</label>
@@ -591,8 +591,8 @@ export default function AdminBlogsPage() {
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-slate-200 p-4">
-                  <p className="mb-3 flex items-center gap-2 text-sm font-bold text-navy-900"><Tags className="h-4 w-4 text-veriq-secondary" /> Organization</p>
+                <div className="rounded-xl border border-[#ffffff12] p-4">
+                  <p className="mb-3 flex items-center gap-2 text-sm font-bold text-foreground"><Tags className="h-4 w-4 text-primary" /> Organization</p>
                   <div className="space-y-3">
                     <div>
                       <label className="label">Slug</label>
@@ -611,16 +611,16 @@ export default function AdminBlogsPage() {
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-slate-200 p-4">
-                  <p className="mb-3 flex items-center gap-2 text-sm font-bold text-navy-900"><ImageIcon className="h-4 w-4 text-veriq-secondary" /> Media</p>
+                <div className="rounded-xl border border-[#ffffff12] p-4">
+                  <p className="mb-3 flex items-center gap-2 text-sm font-bold text-foreground"><ImageIcon className="h-4 w-4 text-primary" /> Media</p>
                   <div className="space-y-3">
                     {form.coverImage ? (
-                      <div className="relative overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+                      <div className="relative overflow-hidden rounded-lg border border-[#ffffff12] bg-[#ffffff08]">
                         <img src={form.coverImage} alt="Blog cover preview" className="h-40 w-full object-cover" />
                         <button
                           type="button"
                           onClick={() => setForm((prev) => ({ ...prev, coverImage: '' }))}
-                          className="absolute right-2 top-2 inline-grid h-8 w-8 place-items-center rounded-lg bg-white/95 text-red-600 shadow-sm hover:bg-red-50"
+                          className="absolute right-2 top-2 inline-grid h-8 w-8 place-items-center rounded-lg bg-card text-destructive shadow-sm hover:bg-[#fb718510]"
                           title="Remove cover image"
                           aria-label="Remove cover image"
                         >
@@ -628,9 +628,9 @@ export default function AdminBlogsPage() {
                         </button>
                       </div>
                     ) : (
-                      <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center">
-                        <ImageIcon className="mx-auto h-7 w-7 text-slate-300" />
-                        <p className="mt-2 text-xs text-slate-500">No cover image uploaded</p>
+                      <div className="rounded-lg border border-dashed border-[#ffffff12] bg-[#ffffff08] px-4 py-6 text-center">
+                        <ImageIcon className="mx-auto h-7 w-7 text-muted-foreground" />
+                        <p className="mt-2 text-xs text-muted-foreground">No cover image uploaded</p>
                       </div>
                     )}
                     <div>
@@ -651,13 +651,13 @@ export default function AdminBlogsPage() {
                         }}
                       />
                     </label>
-                    <p className="text-xs text-slate-500">JPG, PNG, WebP, HEIC or HEIF. Maximum original size: 25 MB. Images are optimized automatically.</p>
+                    <p className="text-xs text-muted-foreground">JPG, PNG, WebP, HEIC or HEIF. Maximum original size: 25 MB. Images are optimized automatically.</p>
                     <input value={form.youtubeId ?? ''} onChange={(e) => setForm((prev) => ({ ...prev, youtubeId: e.target.value }))} className="input" placeholder="Featured YouTube URL or ID" />
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-slate-200 p-4">
-                  <p className="mb-3 flex items-center gap-2 text-sm font-bold text-navy-900"><UserRound className="h-4 w-4 text-veriq-secondary" /> Author</p>
+                <div className="rounded-xl border border-[#ffffff12] p-4">
+                  <p className="mb-3 flex items-center gap-2 text-sm font-bold text-foreground"><UserRound className="h-4 w-4 text-primary" /> Author</p>
                   <div className="space-y-3">
                     <input value={form.authorName ?? ''} onChange={(e) => setForm((prev) => ({ ...prev, authorName: e.target.value }))} className="input" placeholder="Author name" />
                     <input value={form.authorAvatar ?? ''} onChange={(e) => setForm((prev) => ({ ...prev, authorAvatar: e.target.value }))} className="input" placeholder="Author avatar URL" />
@@ -668,7 +668,7 @@ export default function AdminBlogsPage() {
           </section>
 
           <section className="card overflow-hidden">
-            <div className="flex flex-wrap gap-2 border-b border-slate-100 p-4">
+            <div className="flex flex-wrap gap-2 border-b border-[#ffffff12] p-4">
               {(['write', 'preview', 'seo', 'revisions'] as const).map((tab) => (
                 <button
                   key={tab}
@@ -677,7 +677,7 @@ export default function AdminBlogsPage() {
                     syncEditor();
                     setActiveTab(tab);
                   }}
-                  className={`rounded-lg px-4 py-2 text-xs font-bold capitalize ${activeTab === tab ? 'bg-navy-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                  className={`rounded-lg px-4 py-2 text-xs font-bold capitalize ${activeTab === tab ? 'bg-primary text-primary-foreground' : 'bg-[#ffffff08] text-muted-foreground hover:bg-[#ffffff08]'}`}
                 >
                   {tab}
                 </button>
@@ -687,7 +687,7 @@ export default function AdminBlogsPage() {
             {activeTab === 'preview' && (
               <article className="cms-preview mx-auto max-w-3xl p-6">
                 {form.coverImage && <img src={form.coverImage} alt="" className="mb-6 h-72 w-full rounded-xl object-cover" />}
-                <p className="mb-3 text-xs font-bold uppercase tracking-wide text-veriq-secondary">{form.category}</p>
+                <p className="mb-3 text-xs font-bold uppercase tracking-wide text-primary">{form.category}</p>
                 <h1>{form.title || 'Untitled article'}</h1>
                 <p className="lead">{form.excerpt}</p>
                 <div dangerouslySetInnerHTML={{ __html: form.contentHtml ?? '' }} />
@@ -700,23 +700,23 @@ export default function AdminBlogsPage() {
                   <div>
                     <label className="label">SEO title</label>
                     <input value={form.seoTitle ?? ''} onChange={(e) => setForm((prev) => ({ ...prev, seoTitle: e.target.value }))} className="input" maxLength={180} />
-                    <p className="mt-1 text-[11px] text-slate-400">{form.seoTitle?.length ?? 0}/180</p>
+                    <p className="mt-1 text-[11px] text-muted-foreground">{form.seoTitle?.length ?? 0}/180</p>
                   </div>
                   <div>
                     <label className="label">Meta description</label>
                     <textarea value={form.seoDescription ?? ''} onChange={(e) => setForm((prev) => ({ ...prev, seoDescription: e.target.value }))} className="input min-h-[120px]" maxLength={300} />
-                    <p className="mt-1 text-[11px] text-slate-400">{form.seoDescription?.length ?? 0}/300</p>
+                    <p className="mt-1 text-[11px] text-muted-foreground">{form.seoDescription?.length ?? 0}/300</p>
                   </div>
                   <div>
                     <label className="label">Canonical URL</label>
                     <input value={form.canonicalUrl ?? ''} onChange={(e) => setForm((prev) => ({ ...prev, canonicalUrl: e.target.value }))} className="input" placeholder="https://veriq.ng/blog/article-slug" />
                   </div>
                 </div>
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
-                  <p className="mb-3 text-xs font-bold uppercase tracking-wide text-slate-500">Search preview</p>
-                  <p className="text-lg font-semibold text-blue-700">{form.seoTitle || form.title || 'SEO title'}</p>
-                  <p className="mt-1 text-xs text-emerald-700">veriq.ng/blog/{form.slug || 'article-slug'}</p>
-                  <p className="mt-2 text-sm text-slate-600">{form.seoDescription || form.excerpt || 'Meta description appears here.'}</p>
+                <div className="rounded-xl border border-[#ffffff12] bg-[#ffffff08] p-5">
+                  <p className="mb-3 text-xs font-bold uppercase tracking-wide text-muted-foreground">Search preview</p>
+                  <p className="text-lg font-semibold text-muted-foreground">{form.seoTitle || form.title || 'SEO title'}</p>
+                  <p className="mt-1 text-xs text-primary">veriq.ng/blog/{form.slug || 'article-slug'}</p>
+                  <p className="mt-2 text-sm text-muted-foreground">{form.seoDescription || form.excerpt || 'Meta description appears here.'}</p>
                 </div>
               </div>
             )}
@@ -724,16 +724,16 @@ export default function AdminBlogsPage() {
             {activeTab === 'revisions' && (
               <div className="p-6">
                 {!currentPost?.revisionHistory?.length ? (
-                  <p className="text-sm text-slate-500">Revision history will appear after the first saved update.</p>
+                  <p className="text-sm text-muted-foreground">Revision history will appear after the first saved update.</p>
                 ) : (
                   <div className="space-y-3">
                     {currentPost.revisionHistory.slice().reverse().map((revision, index) => (
-                      <div key={index} className="rounded-xl border border-slate-200 p-4">
+                      <div key={index} className="rounded-xl border border-[#ffffff12] p-4">
                         <div className="flex flex-wrap items-center justify-between gap-2">
-                          <p className="text-sm font-bold text-navy-900">Version {String(revision.version ?? currentPost.revisionHistory!.length - index)}</p>
-                          <p className="text-xs text-slate-400">{String(revision.savedAt ?? '')}</p>
+                          <p className="text-sm font-bold text-foreground">Version {String(revision.version ?? currentPost.revisionHistory!.length - index)}</p>
+                          <p className="text-xs text-muted-foreground">{String(revision.savedAt ?? '')}</p>
                         </div>
-                        <p className="mt-1 text-xs text-slate-500">{String(revision.title ?? 'Untitled')} · {String(revision.status ?? 'draft')}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">{String(revision.title ?? 'Untitled')} · {String(revision.status ?? 'draft')}</p>
                       </div>
                     ))}
                   </div>
@@ -742,10 +742,10 @@ export default function AdminBlogsPage() {
             )}
 
             {activeTab === 'write' && (
-              <div className="flex items-center justify-between gap-3 p-6 text-sm text-slate-500">
+              <div className="flex items-center justify-between gap-3 p-6 text-sm text-muted-foreground">
                 <span>Use the editor above to compose rich articles with images, tables, embeds, links, and formatting.</span>
                 {editingId && (
-                  <button type="button" onClick={() => deletePost(currentPost!)} className="inline-flex items-center gap-2 rounded-lg border border-red-100 px-3 py-2 text-xs font-bold text-red-500 hover:bg-red-50">
+                  <button type="button" onClick={() => deletePost(currentPost!)} className="inline-flex items-center gap-2 rounded-lg border border-[#fb718530] px-3 py-2 text-xs font-bold text-destructive hover:bg-[#fb718510]">
                     <Trash2 className="h-4 w-4" />
                     Delete
                   </button>

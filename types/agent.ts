@@ -50,6 +50,7 @@ export type ChecklistItemStatus = 'pending' | 'passed' | 'failed' | 'not_applica
 export const VERIFICATION_CHECKLIST_KEYS = [
   'authority',
   'identity',
+  'liveVideoVerification',
   'location',
   'duplicate',
   'facts',
@@ -59,12 +60,20 @@ export const VERIFICATION_CHECKLIST_KEYS = [
   'units',
   'commercial',
 ] as const;
+
+/**
+ * Checks whose note is evidence of the check itself rather than a comment on it, so a note is
+ * required to pass them and not only to fail them (Master Blueprint §3 step 2: the Agent records
+ * the live video verification they carried out). Publication is blocked until these pass.
+ */
+export const NOTE_REQUIRED_TO_PASS_KEYS = ['liveVideoVerification'] as const;
 export type VerificationChecklistKey = (typeof VERIFICATION_CHECKLIST_KEYS)[number];
 
 /** Shared Property checks (no Units); re-verification needs only authority/facts/commercial (§28.2). */
 export const SHARED_CHECK_KEYS: readonly VerificationChecklistKey[] = [
   'authority',
   'identity',
+  'liveVideoVerification',
   'location',
   'duplicate',
   'facts',

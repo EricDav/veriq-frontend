@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from 'react';
 import { CheckCircle, Send, ShieldCheck } from 'lucide-react';
 import { saleListingsApi } from '@/lib/api/renter';
+import { Button, Panel } from '@/components/ui';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { FieldShell } from '@/components/ui/Select';
 import { ApiErrorNotice } from './ApiErrorNotice';
@@ -69,32 +70,32 @@ export function SaleEnquiryForm({
 
   if (sent) {
     return (
-      <section className="card space-y-3 p-5 sm:p-6" aria-live="polite">
-        <p className="flex items-center gap-2 font-display text-base font-bold text-emerald-800">
-          <CheckCircle className="h-5 w-5 text-emerald-600" /> Enquiry sent to Veriq
+      <Panel as="section" className="space-y-3" aria-live="polite">
+        <p className="flex items-center gap-2 font-display text-base font-semibold text-foreground">
+          <CheckCircle aria-hidden="true" className="h-5 w-5 text-primary" /> Enquiry sent to Veriq
         </p>
-        <p className="text-sm leading-6 text-slate-600">
+        <p className="text-ui-md leading-6 text-muted-foreground">
           A Veriq Agent will contact you about {listingTitle} on the number you gave us. Veriq handles buyer contact
           for every sale listing, so you will hear from us rather than from the owner.
         </p>
-      </section>
+      </Panel>
     );
   }
 
   return (
-    <section className="card space-y-4 p-5 sm:p-6" aria-labelledby="sale-enquiry-heading">
+    <Panel as="section" className="space-y-4" aria-labelledby="sale-enquiry-heading">
       <div>
-        <h2 id="sale-enquiry-heading" className="font-display text-base font-bold text-navy-900">
+        <h2 id="sale-enquiry-heading" className="font-display text-base font-semibold text-foreground">
           Enquire about this property
         </h2>
-        <p className="mt-1 text-sm leading-6 text-slate-500">
+        <p className="mt-1 text-ui-md leading-6 text-muted-foreground">
           Viewing this listing is free — there is no unlock fee. Send your details and a Veriq Agent will contact you
           {agentName ? `. ${agentName} manages this sale.` : '.'}
         </p>
       </div>
 
       <form onSubmit={submit} className="space-y-3" noValidate>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 wide:grid-cols-2">
           <FieldShell
             htmlFor="enquiry-name"
             label="Your name"
@@ -158,15 +159,15 @@ export function SaleEnquiryForm({
 
         <ApiErrorNotice error={error} fallback="Your enquiry could not be sent. Please try again." />
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="flex items-start gap-2 text-xs leading-5 text-slate-500">
-            <ShieldCheck className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" /> {note}
+        <div className="flex flex-col gap-3 wide:flex-row wide:items-center wide:justify-between">
+          <p className="flex items-start gap-2 text-ui-sm leading-6 text-muted-foreground">
+            <ShieldCheck aria-hidden="true" className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" /> {note}
           </p>
-          <button type="submit" disabled={sending} className="btn-primary flex-shrink-0 !py-2.5">
-            {sending ? <LoadingSpinner size="sm" /> : <Send className="h-4 w-4" />} Send enquiry
-          </button>
+          <Button type="submit" disabled={sending} className="flex-shrink-0">
+            {sending ? <LoadingSpinner size="sm" /> : <Send aria-hidden="true" className="h-4 w-4" />} Send enquiry
+          </Button>
         </div>
       </form>
-    </section>
+    </Panel>
   );
 }

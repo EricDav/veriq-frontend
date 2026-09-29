@@ -6,6 +6,7 @@ import { Building2, KeyRound, Plus } from "lucide-react";
 import { shortLetOperatorsApi } from "@/lib/api";
 import { OperatorPortalStatus, ShortLetOperator } from "@/types";
 import { useToast } from "@/components/ui/Toast";
+import { buttonClass } from '@/components/ui';
 
 export default function AgentShortLetOperatorsPage() {
   const [items, setItems] = useState<ShortLetOperator[]>([]);
@@ -78,14 +79,14 @@ export default function AgentShortLetOperatorsPage() {
           <h1 className="font-display text-2xl font-bold">
             Short Let Operator Access
           </h1>
-          <p className="text-sm text-veriq-muted">
+          <p className="text-sm text-muted-foreground">
             Create restricted portal access for approved operators associated
             with your listings.
           </p>
         </div>
         <Link
           href="/dashboard/properties/new"
-          className="btn-primary inline-flex items-center gap-2 self-start"
+          className={buttonClass('primary', 'default', 'self-start')}
         >
           <Plus className="h-4 w-4" />
           Add Short Let listing
@@ -93,7 +94,7 @@ export default function AgentShortLetOperatorsPage() {
       </div>
 
       {credential && (
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm">
+        <div className="rounded-lg border border-[#10b98135] bg-[#10b98112] p-4 text-sm">
           <p className="font-semibold">Temporary operator login</p>
           <p className="mt-2">
             Email: <strong>{credential.email}</strong>
@@ -101,25 +102,25 @@ export default function AgentShortLetOperatorsPage() {
           <p>
             Password: <strong>{credential.password}</strong>
           </p>
-          <p className="mt-2 text-xs text-emerald-800">
+          <p className="mt-2 text-xs text-[#6ee7b7]">
             Share these credentials securely. The temporary password is
             displayed only here.
           </p>
         </div>
       )}
 
-      <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+      <div className="overflow-hidden rounded-lg border border-[#ffffff18] bg-card">
         {loading ? (
-          <p className="p-8 text-center text-sm text-slate-500">
+          <p className="p-8 text-center text-sm text-muted-foreground">
             Loading operator access...
           </p>
         ) : items.length === 0 ? (
           <div className="p-10 text-center">
-            <Building2 className="mx-auto h-10 w-10 text-slate-300" />
-            <h2 className="mt-3 font-display text-lg font-semibold text-navy-900">
+            <Building2 className="mx-auto h-10 w-10 text-muted-foreground" />
+            <h2 className="mt-3 font-display text-lg font-semibold text-foreground">
               No associated operators yet
             </h2>
-            <p className="mx-auto mt-1 max-w-md text-sm text-slate-500">
+            <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
               Associate an Admin-approved operator while creating or editing a
               Short Let listing. The operator will then appear here for portal
               access.
@@ -130,15 +131,15 @@ export default function AgentShortLetOperatorsPage() {
             <section key={item.id} className="border-b p-5 last:border-0">
               <div className="grid gap-4 lg:grid-cols-[1.2fr_1fr_auto] lg:items-end">
                 <div>
-                  <p className="font-semibold text-navy-900">{item.name}</p>
-                  <p className="text-xs text-slate-500">
+                  <p className="font-semibold text-foreground">{item.name}</p>
+                  <p className="text-xs text-muted-foreground">
                     {item.phone} · {item.associatedListings?.length ?? 0}{" "}
                     associated{" "}
                     {(item.associatedListings?.length ?? 0) === 1
                       ? "listing"
                       : "listings"}
                   </p>
-                  <span className="mt-2 inline-flex rounded-full bg-slate-100 px-2 py-1 text-[11px] font-semibold capitalize text-slate-600">
+                  <span className="mt-2 inline-flex rounded-full bg-[#ffffff0f] px-2 py-1 text-[11px] font-semibold capitalize text-muted-foreground">
                     Portal: {item.portalStatus.replace("_", " ")}
                   </span>
                 </div>
@@ -162,7 +163,7 @@ export default function AgentShortLetOperatorsPage() {
                 </label>
                 <button
                   disabled={workingId === item.id}
-                  className="btn-outline flex items-center justify-center gap-2"
+                  className={buttonClass('secondary')}
                   onClick={() => manageAccess(item)}
                 >
                   <KeyRound className="h-4 w-4" />
@@ -173,8 +174,8 @@ export default function AgentShortLetOperatorsPage() {
                       : "Reset access"}
                 </button>
               </div>
-              <div className="mt-4 border-t border-slate-100 pt-3">
-                <p className="mb-2 text-xs font-semibold uppercase text-slate-400">
+              <div className="mt-4 border-t border-[#ffffff10] pt-3">
+                <p className="mb-2 text-xs font-semibold uppercase text-muted-foreground">
                   Associated listings
                 </p>
                 <div className="flex flex-wrap gap-2">
@@ -182,7 +183,7 @@ export default function AgentShortLetOperatorsPage() {
                     <Link
                       key={listing.id}
                       href={`/dashboard/properties/${listing.id}/edit`}
-                      className="rounded-md border border-slate-200 px-3 py-2 text-xs font-medium text-navy-700 hover:border-veriq-secondary"
+                      className="rounded-md border border-[#ffffff18] px-3 py-2 text-xs font-medium text-foreground hover:border-primary"
                     >
                       {listing.title}
                     </Link>

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Crosshair, MapPin, Plus, Search, X } from 'lucide-react';
 import { communityApi } from '@/lib/api';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { Button } from '@/components/ui';
 import { cn } from '@/lib/utils';
 import type { CommunityArea, CommunityLocation, Street } from '@/types';
 import type { SchemaIssue, SubmissionLocationInput, SubmittedAddress } from '@/types/operator';
@@ -262,7 +263,7 @@ export function LocationSelector({
 
   const fieldError = (messages: string[]) =>
     messages.map((message) => (
-      <p key={message} className="mt-1 text-xs font-medium text-red-600">
+      <p key={message} className="mt-1 text-xs font-medium text-destructive">
         {message}
       </p>
     ));
@@ -270,22 +271,30 @@ export function LocationSelector({
   return (
     <div className="space-y-5">
       {loadError && !hierarchyLocked && (
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div
+          role="alert"
+          className="flex flex-wrap items-center justify-between gap-2 rounded-unit border border-[#fb718530] bg-[#fb718510] px-4 py-3 text-ui-md text-[#fda4af]"
+        >
           <span>{loadError}</span>
-          <button type="button" className="font-semibold underline" onClick={() => setReloadKey((key) => key + 1)}>
+          <Button
+            variant="secondary"
+            size="small"
+            className="border-[#fb718540] text-[#fda4af]"
+            onClick={() => setReloadKey((key) => key + 1)}
+          >
             Retry
-          </button>
+          </Button>
         </div>
       )}
 
       {hierarchyLocked ? (
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm">
-          <p className="flex items-center gap-2 font-semibold text-navy-900">
-            <MapPin className="h-4 w-4 text-veriq-secondary" />
+        <div className="rounded-unit border border-[#ffffff18] bg-[#070b1444] p-[17px] text-ui-md">
+          <p className="flex items-center gap-2 font-semibold text-foreground">
+            <MapPin aria-hidden="true" className="h-4 w-4 flex-shrink-0 text-primary" />
             {[value.streetName, value.areaName, value.lgaName, value.state].filter(Boolean).join(', ') || 'Location not set'}
           </p>
           {mode === 'address_only' && (
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs text-muted-foreground">
               The Street, Veriq Area and LGA of a verified Property cannot be changed here. Contact Veriq support if the Property is on a different street.
             </p>
           )}
@@ -294,7 +303,7 @@ export function LocationSelector({
         <>
           <div className="grid gap-4 sm:grid-cols-3">
             <div>
-              <label htmlFor={`${idPrefix}-state`} className="label">State <span className="text-red-500">*</span></label>
+              <label htmlFor={`${idPrefix}-state`} className="label">State <span className="text-destructive">*</span></label>
               <select
                 id={`${idPrefix}-state`}
                 className="input"
@@ -312,7 +321,7 @@ export function LocationSelector({
               {fieldError(issueFor('location.state'))}
             </div>
             <div>
-              <label htmlFor={`${idPrefix}-lga`} className="label">Local Government Area <span className="text-red-500">*</span></label>
+              <label htmlFor={`${idPrefix}-lga`} className="label">Local Government Area <span className="text-destructive">*</span></label>
               <select
                 id={`${idPrefix}-lga`}
                 className="input"
@@ -329,12 +338,12 @@ export function LocationSelector({
                 ))}
               </select>
               {value.state && loading !== 'lgas' && lgas.length === 0 && (
-                <p className="mt-1 text-xs text-slate-500">No active LGAs are configured for this State yet.</p>
+                <p className="mt-1 text-xs text-muted-foreground">No active LGAs are configured for this State yet.</p>
               )}
               {fieldError(issueFor('location.localGovernmentId'))}
             </div>
             <div>
-              <label htmlFor={`${idPrefix}-area`} className="label">Veriq Area <span className="text-red-500">*</span></label>
+              <label htmlFor={`${idPrefix}-area`} className="label">Veriq Area <span className="text-destructive">*</span></label>
               <select
                 id={`${idPrefix}-area`}
                 className="input"
@@ -353,19 +362,19 @@ export function LocationSelector({
                 ))}
               </select>
               {value.lgaId && loading !== 'areas' && areas.length === 0 && (
-                <p className="mt-1 text-xs text-slate-500">No active Veriq Areas are configured for this LGA yet.</p>
+                <p className="mt-1 text-xs text-muted-foreground">No active Veriq Areas are configured for this LGA yet.</p>
               )}
               {fieldError(issueFor('location.areaId'))}
             </div>
           </div>
 
           <div>
-            <span className="label">Street / Estate / Road <span className="text-red-500">*</span></span>
+            <span className="label">Street / Estate / Road <span className="text-destructive">*</span></span>
             {!value.areaId ? (
-              <p className="rounded-lg border border-dashed border-slate-200 px-4 py-3 text-sm text-slate-500">Select the Veriq Area first.</p>
+              <p className="rounded-unit border border-dashed border-[#ffffff25] px-4 py-3 text-ui-md text-muted-foreground">Select the Veriq Area first.</p>
             ) : value.streetMode === 'propose' ? (
-              <div className="space-y-2 rounded-xl border border-amber-200 bg-amber-50/60 p-4">
-                <label htmlFor={`${idPrefix}-proposed-street`} className="text-sm font-semibold text-navy-900">Add New Street</label>
+              <div className="space-y-2 rounded-unit border border-[#fbbf2425] bg-[#fbbf2409] p-[17px]">
+                <label htmlFor={`${idPrefix}-proposed-street`} className="block text-ui-md font-semibold text-foreground">Add New Street</label>
                 <input
                   id={`${idPrefix}-proposed-street`}
                   className="input"
@@ -374,27 +383,27 @@ export function LocationSelector({
                   value={value.proposedStreetName}
                   onChange={(event) => update({ proposedStreetName: event.target.value })}
                 />
-                <p className="text-xs text-amber-800">
+                <p className="text-xs text-[#fcd34d]">
                   The street is proposed for Veriq review in {value.areaName}. Your submission can be verified while the street is pending, but it cannot be published until Veriq approves the street.
                 </p>
-                <button type="button" className="text-xs font-semibold text-veriq-secondary" onClick={() => update(clearStreet)}>
+                <Button variant="ghost" size="small" className="px-0" onClick={() => update(clearStreet)}>
                   Search approved streets instead
-                </button>
+                </Button>
               </div>
             ) : value.streetId ? (
-              <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
-                <p className="flex min-w-0 items-center gap-2 text-sm font-semibold text-navy-900">
-                  <MapPin className="h-4 w-4 flex-shrink-0 text-veriq-secondary" />
+              <div className="flex items-center justify-between gap-3 rounded-unit border border-[#10b98135] bg-[#10b98112] px-4 py-3">
+                <p className="flex min-w-0 items-center gap-2 text-ui-md font-semibold text-foreground">
+                  <MapPin aria-hidden="true" className="h-4 w-4 flex-shrink-0 text-primary" />
                   <span className="truncate">{value.streetName || 'Selected street'}</span>
                 </p>
-                <button type="button" className="flex items-center gap-1 text-xs font-semibold text-slate-600" onClick={() => update(clearStreet)}>
-                  <X className="h-3.5 w-3.5" /> Change
-                </button>
+                <Button variant="ghost" size="small" className="flex-shrink-0" onClick={() => update(clearStreet)}>
+                  <X aria-hidden="true" className="h-3.5 w-3.5" /> Change
+                </Button>
               </div>
             ) : (
               <div className="space-y-2">
                 <div className="relative">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <input
                     className="input pl-9"
                     placeholder={`Search streets in ${value.areaName}`}
@@ -403,15 +412,15 @@ export function LocationSelector({
                     aria-label="Search streets"
                   />
                 </div>
-                <div className="max-h-56 overflow-y-auto rounded-xl border border-slate-200">
+                <div className="max-h-56 overflow-y-auto rounded-unit border border-[#ffffff18]" aria-live="polite">
                   {streetsLoading ? (
-                    <div className="flex items-center justify-center gap-2 p-4 text-sm text-slate-500">
-                      <LoadingSpinner size="sm" /> Searching…
+                    <div className="flex items-center justify-center gap-2 p-4 text-ui-md text-muted-foreground">
+                      <LoadingSpinner size="sm" className="text-primary" /> Searching…
                     </div>
                   ) : streetError ? (
-                    <p className="p-4 text-sm text-red-600">{streetError}</p>
+                    <p role="alert" className="p-4 text-ui-md text-[#fda4af]">{streetError}</p>
                   ) : streets.length === 0 ? (
-                    <p className="p-4 text-sm text-slate-500">
+                    <p className="p-4 text-ui-md text-muted-foreground">
                       {query.trim() ? `No approved street matches "${query.trim()}".` : 'No approved streets found in this Veriq Area.'}
                     </p>
                   ) : (
@@ -419,22 +428,23 @@ export function LocationSelector({
                       <button
                         key={street.id}
                         type="button"
-                        className="block w-full border-b border-slate-100 px-4 py-2.5 text-left text-sm last:border-0 hover:bg-slate-50"
+                        className="block w-full border-b border-[#ffffff10] px-4 py-2.5 text-left text-ui-md transition-colors last:border-0 hover:bg-[#ffffff0f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
                         onClick={() => update({ streetId: street.id, streetName: street.streetName, proposedStreetName: '', streetMode: 'select' })}
                       >
-                        <span className="font-medium text-navy-900">{street.streetName}</span>
-                        {street.landmark && <span className="block text-xs text-slate-500">Near {street.landmark}</span>}
+                        <span className="font-medium text-foreground">{street.streetName}</span>
+                        {street.landmark && <span className="block text-xs text-muted-foreground">Near {street.landmark}</span>}
                       </button>
                     ))
                   )}
                 </div>
-                <button
-                  type="button"
-                  className="inline-flex items-center gap-1.5 text-sm font-semibold text-veriq-secondary"
+                <Button
+                  variant="ghost"
+                  size="small"
+                  className="px-0 text-primary hover:text-[#34d399]"
                   onClick={() => update({ streetMode: 'propose', streetId: '', streetName: '', proposedStreetName: query.trim() })}
                 >
-                  <Plus className="h-4 w-4" /> Can&apos;t find it? Add New Street
-                </button>
+                  <Plus aria-hidden="true" className="h-4 w-4" /> Can&apos;t find it? Add New Street
+                </Button>
               </div>
             )}
             {fieldError(issueFor('location.street', 'location.streetId', 'location.proposedStreetName'))}
@@ -444,21 +454,21 @@ export function LocationSelector({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="sm:col-span-2">
-          <label htmlFor={`${idPrefix}-address`} className="label">House / building number and address <span className="text-red-500">*</span></label>
+          <label htmlFor={`${idPrefix}-address`} className="label">House / building number and address <span className="text-destructive">*</span></label>
           <input
             id={`${idPrefix}-address`}
-            className={cn('input', issueFor('location.address').length > 0 && 'border-red-400')}
+            className={cn('input', issueFor('location.address').length > 0 && 'border-destructive')}
             maxLength={300}
             disabled={disabled}
             placeholder="e.g. No. 14, beside the community borehole"
             value={value.address}
             onChange={(event) => update({ address: event.target.value })}
           />
-          <p className="mt-1 text-xs text-slate-500">Kept private. Only shown to renters after unlock, once your Veriq Agent verifies it.</p>
+          <p className="mt-1 text-xs text-muted-foreground">Kept private. Only shown to renters after unlock, once your Veriq Agent verifies it.</p>
           {fieldError(issueFor('location.address'))}
         </div>
         <div>
-          <label htmlFor={`${idPrefix}-building`} className="label">Building / estate name <span className="text-xs font-normal text-slate-400">Optional</span></label>
+          <label htmlFor={`${idPrefix}-building`} className="label">Building / estate name <span className="ml-1.5 text-xs font-normal text-muted-foreground">Optional</span></label>
           <input
             id={`${idPrefix}-building`}
             className="input"
@@ -469,7 +479,7 @@ export function LocationSelector({
           />
         </div>
         <div>
-          <label htmlFor={`${idPrefix}-landmark`} className="label">Landmark / directions <span className="text-xs font-normal text-slate-400">Optional</span></label>
+          <label htmlFor={`${idPrefix}-landmark`} className="label">Landmark / directions <span className="ml-1.5 text-xs font-normal text-muted-foreground">Optional</span></label>
           <input
             id={`${idPrefix}-landmark`}
             className="input"
@@ -481,26 +491,30 @@ export function LocationSelector({
         </div>
       </div>
 
-      <div className="flex flex-col gap-2 rounded-xl border border-slate-200 p-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="text-sm">
-          <p className="font-medium text-navy-900">Map coordinates <span className="text-xs font-normal text-slate-400">Optional</span></p>
-          <p className="text-xs text-slate-500">
+      <div className="flex flex-col gap-2 rounded-unit border border-[#ffffff18] bg-[#070b1444] p-[17px] sm:flex-row sm:items-center sm:justify-between">
+        <div className="text-ui-md">
+          <p className="font-medium text-foreground">Map coordinates <span className="ml-1.5 text-xs font-normal text-muted-foreground">Optional</span></p>
+          <p className="text-xs text-muted-foreground">
             {value.latitude !== null && value.longitude !== null
               ? `${value.latitude}, ${value.longitude}`
               : 'Capture coordinates while standing at the property, if you can.'}
           </p>
-          {geoMessage && <p className="mt-1 text-xs text-slate-600">{geoMessage}</p>}
+          {geoMessage && (
+            <p role="status" aria-live="polite" className="mt-1 text-xs text-muted-foreground">
+              {geoMessage}
+            </p>
+          )}
         </div>
         <div className="flex gap-2">
           {value.latitude !== null && !disabled && (
-            <button type="button" className="btn-ghost !px-3 !py-2 text-xs" onClick={() => update({ latitude: null, longitude: null })}>
+            <Button variant="ghost" size="small" onClick={() => update({ latitude: null, longitude: null })}>
               Clear
-            </button>
+            </Button>
           )}
-          <button type="button" className="btn-outline !px-3 !py-2 text-xs" disabled={disabled || locating} onClick={captureDeviceLocation}>
-            {locating ? <LoadingSpinner size="sm" /> : <Crosshair className="h-3.5 w-3.5" />}
+          <Button variant="secondary" size="small" disabled={disabled || locating} onClick={captureDeviceLocation}>
+            {locating ? <LoadingSpinner size="sm" /> : <Crosshair aria-hidden="true" className="h-3.5 w-3.5" />}
             Use my current location
-          </button>
+          </Button>
         </div>
       </div>
     </div>

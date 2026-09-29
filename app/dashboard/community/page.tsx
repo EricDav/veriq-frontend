@@ -328,7 +328,7 @@ export default function CommunityDashboardPage() {
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <div>
-        <h1 className="font-display text-2xl font-black text-navy-900">Community Contributor</h1>
+        <h1 className="font-display text-2xl font-black text-foreground">Community Contributor</h1>
         <p className="mt-1 text-sm text-veriq-muted">Share reliable street-level intelligence and unlock Community Benefits.</p>
       </div>
 
@@ -341,12 +341,12 @@ export default function CommunityDashboardPage() {
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="card p-5">
-          <p className="text-xs text-slate-500">Status</p>
-          <p className="mt-1 text-xl font-black text-navy-900">{statusCopy(profile?.contributorStatus)}</p>
+          <p className="text-xs text-muted-foreground">Status</p>
+          <p className="mt-1 text-xl font-black text-foreground">{statusCopy(profile?.contributorStatus)}</p>
         </div>
         <div className="card p-5">
-          <p className="text-xs text-slate-500">Contributed streets</p>
-          <p className="mt-1 text-xl font-black text-navy-900">{contributions.length}</p>
+          <p className="text-xs text-muted-foreground">Contributed streets</p>
+          <p className="mt-1 text-xl font-black text-foreground">{contributions.length}</p>
         </div>
       </div>
 
@@ -354,8 +354,8 @@ export default function CommunityDashboardPage() {
         <form id="contribute" onSubmit={submit} className="card space-y-5 p-6">
           <div>
             <div className="flex items-center justify-between gap-3">
-              <h2 className="font-display text-base font-bold text-navy-900">{editingContributionId ? 'Update Street Intelligence' : 'Contribute Street Intelligence'}</h2>
-              {editingContributionId && <button type="button" onClick={cancelEdit} className="text-xs font-bold text-slate-500"><X className="mr-1 inline h-3.5 w-3.5" /> Cancel</button>}
+              <h2 className="font-display text-base font-bold text-foreground">{editingContributionId ? 'Update Street Intelligence' : 'Contribute Street Intelligence'}</h2>
+              {editingContributionId && <button type="button" onClick={cancelEdit} className="text-xs font-bold text-muted-foreground"><X className="mr-1 inline h-3.5 w-3.5" /> Cancel</button>}
             </div>
             <p className="mt-1 text-xs text-veriq-muted">Search for an approved street, or submit a missing street for admin verification first.</p>
           </div>
@@ -390,11 +390,11 @@ export default function CommunityDashboardPage() {
                   <div className="absolute z-20 mt-1 max-h-64 w-full overflow-y-auto rounded-lg border border-slate-200 bg-white p-1 shadow-lg">
                     {existingStreets.map((item) => (
                       <button key={item.id} type="button" onClick={() => { setStreetId(item.id); setStreetQuery(item.streetName); setExistingArea(item.area); }} className="block w-full rounded-md px-3 py-2 text-left hover:bg-slate-50">
-                        <span className="block text-sm font-bold text-navy-900">{item.streetName}</span>
+                        <span className="block text-sm font-bold text-foreground">{item.streetName}</span>
                         <span className="block text-xs text-veriq-muted">{item.area}</span>
                       </button>
                     ))}
-                    {existingStreets.length === 0 && <p className="px-3 py-3 text-xs text-slate-500">No approved street matches this name.</p>}
+                    {existingStreets.length === 0 && <p className="px-3 py-3 text-xs text-muted-foreground">No approved street matches this name.</p>}
                   </div>
                 )}
                 {streetId && <p className="mt-1 text-xs font-semibold text-emerald-700">Approved street selected{existingArea ? ` in ${existingArea}` : ''}.</p>}
@@ -455,13 +455,13 @@ export default function CommunityDashboardPage() {
                   <p className="text-[10px] font-bold uppercase text-emerald-700">
                     Question {questionIndex + 1} of {categories.length}
                   </p>
-                  <p className="mt-1 text-xs font-semibold text-slate-500">{currentCategory.section}</p>
+                  <p className="mt-1 text-xs font-semibold text-muted-foreground">{currentCategory.section}</p>
                 </div>
                 <div className="h-1.5 w-24 overflow-hidden rounded-full bg-slate-200">
                   <div className="h-full bg-emerald-500" style={{ width: `${((questionIndex + 1) / categories.length) * 100}%` }} />
                 </div>
               </div>
-              <h3 className="font-display text-base font-bold text-navy-900">
+              <h3 className="font-display text-base font-bold text-foreground">
                 {currentCategory.question ?? currentCategory.name}
               </h3>
               <div className="mt-4 grid gap-2">
@@ -491,7 +491,7 @@ export default function CommunityDashboardPage() {
 
               {currentCategory.supplementaryConfig && currentAnswer?.responseType === ContributionResponseType.ANSWERED && (
                 <fieldset className="mt-5">
-                  <legend className="text-xs font-bold text-navy-900">{currentCategory.supplementaryConfig.question}</legend>
+                  <legend className="text-xs font-bold text-foreground">{currentCategory.supplementaryConfig.question}</legend>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {currentCategory.supplementaryConfig.options.map((option) => {
                       const selected = currentAnswer.supplementaryValue?.includes(option) ?? false;
@@ -538,22 +538,22 @@ export default function CommunityDashboardPage() {
 
         <div className="space-y-4">
           <div className="card p-6">
-            <h2 className="font-display mb-4 text-base font-bold text-navy-900">Community Participation</h2>
+            <h2 className="font-display mb-4 text-base font-bold text-foreground">Community Participation</h2>
             <div className="grid gap-2 text-sm">
-              <Link href="#contribute" className="rounded-xl border border-slate-100 p-3 font-semibold text-navy-800">Add Intelligence for Another Street</Link>
-              <p className="rounded-xl border border-slate-100 p-3 font-semibold text-navy-800">Confirm a Previous Street Report</p>
-              <p className="rounded-xl border border-slate-100 p-3 font-semibold text-navy-800">Update a Previous Street Report</p>
+              <Link href="#contribute" className="rounded-xl border border-slate-100 p-3 font-semibold text-foreground">Add Intelligence for Another Street</Link>
+              <p className="rounded-xl border border-slate-100 p-3 font-semibold text-foreground">Confirm a Previous Street Report</p>
+              <p className="rounded-xl border border-slate-100 p-3 font-semibold text-foreground">Update a Previous Street Report</p>
             </div>
           </div>
 
           <div className="card p-6">
-            <h2 className="font-display mb-2 flex items-center gap-2 text-base font-bold text-navy-900">
+            <h2 className="font-display mb-2 flex items-center gap-2 text-base font-bold text-foreground">
               <UserPlus className="h-4 w-4 text-veriq-secondary" /> Invite a Friend
             </h2>
             <p className="mb-4 text-xs text-veriq-muted">Share your referral link and help grow the Community Contributor network.</p>
             <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Referral code</p>
-              <p className="mt-1 break-all font-mono text-sm font-bold text-navy-900">{referralCode || 'Generating...'}</p>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Referral code</p>
+              <p className="mt-1 break-all font-mono text-sm font-bold text-foreground">{referralCode || 'Generating...'}</p>
             </div>
             <button type="button" onClick={copyReferral} disabled={!referralCode} className="mt-3 w-full rounded-lg bg-navy-900 px-4 py-2.5 text-xs font-bold text-white hover:bg-navy-800 disabled:opacity-60">
               <Copy className="mr-2 inline h-3.5 w-3.5" /> Copy Referral Link
@@ -561,7 +561,7 @@ export default function CommunityDashboardPage() {
           </div>
 
           <div className="card p-6">
-            <h2 className="font-display mb-4 flex items-center gap-2 text-base font-bold text-navy-900">
+            <h2 className="font-display mb-4 flex items-center gap-2 text-base font-bold text-foreground">
               <MapPin className="h-4 w-4 text-veriq-secondary" /> My Contributed Streets
             </h2>
             {contributions.length === 0 ? (
@@ -572,9 +572,9 @@ export default function CommunityDashboardPage() {
                   <div key={item.id} className="rounded-xl border border-slate-100 p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <p className="font-bold text-navy-900">{item.street?.streetName ?? item.streetId}</p>
+                        <p className="font-bold text-foreground">{item.street?.streetName ?? item.streetId}</p>
                         <p className="mt-1 text-xs text-veriq-muted capitalize">{item.relationshipType.replace(/_/g, ' ')}</p>
-                        <p className="mt-1 flex items-center gap-1 text-xs text-slate-400">
+                        <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
                           <Clock className="h-3 w-3" /> Last contribution: {new Date(item.lastUpdatedAt ?? item.submittedAt).toLocaleDateString()}
                         </p>
                       </div>

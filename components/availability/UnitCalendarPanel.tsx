@@ -18,15 +18,16 @@ import {
 import { Notice, SectionCard } from '@/components/listing-forms/ui';
 import { errorMessage } from '@/components/listing-forms/issues';
 import { formatDate } from '@/components/renter/format';
+import { Badge, type BadgeTone } from '@/components/ui';
 
 const KIND_OPTIONS = [
   { value: 'booked', label: 'Booked — a confirmed stay' },
   { value: 'blocked', label: 'Blocked — dates I am withholding' },
 ];
 
-const KIND_META: Record<UnitCalendarPeriodKind, { label: string; cls: string }> = {
-  booked: { label: 'Booked', cls: 'bg-amber-50 text-amber-700' },
-  blocked: { label: 'Blocked', cls: 'bg-slate-100 text-slate-600' },
+const KIND_META: Record<UnitCalendarPeriodKind, { label: string; tone: BadgeTone }> = {
+  booked: { label: 'Booked', tone: 'amber' },
+  blocked: { label: 'Blocked', tone: 'neutral' },
 };
 
 /**
@@ -132,7 +133,7 @@ export function UnitCalendarPanel({
 
   if (loading && !calendar) {
     return (
-      <div className={`flex items-center gap-2 rounded-xl border border-slate-200 p-4 text-sm text-slate-500 ${className ?? ''}`}>
+      <div className={`flex items-center gap-2 rounded-xl border border-border p-4 text-sm text-muted-foreground ${className ?? ''}`}>
         <LoadingSpinner size="sm" /> Loading the unit calendar…
       </div>
     );
@@ -168,7 +169,7 @@ export function UnitCalendarPanel({
         </>
       }
     >
-      <div className="grid gap-3 rounded-xl border border-slate-200 p-4">
+      <div className="grid gap-3 rounded-xl border border-border p-4">
         <Select
           id={`calendar-kind-${unitId}`}
           label="These dates are"
@@ -208,14 +209,14 @@ export function UnitCalendarPanel({
         </div>
       </div>
 
-      <p className="text-xs text-emerald-700" role="status" aria-live="polite">
+      <p className="text-xs text-[#34d399]" role="status" aria-live="polite">
         {status ?? ''}
       </p>
 
       <div className="space-y-2">
-        <h3 className="text-sm font-semibold text-navy-900">Dates on this unit</h3>
+        <h3 className="text-sm font-semibold text-foreground">Dates on this unit</h3>
         {active.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-slate-200 px-4 py-6 text-center text-sm text-slate-500">
+          <p className="rounded-xl border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
             Nothing is marked. Every night in the bookable window is searchable and unlockable.
           </p>
         ) : (
@@ -223,14 +224,14 @@ export function UnitCalendarPanel({
             {active.map((period) => (
               <li
                 key={period.id}
-                className="flex flex-col gap-2 rounded-xl border border-slate-200 p-3 sm:flex-row sm:items-center sm:justify-between"
+                className="flex flex-col gap-2 rounded-xl border border-border p-3 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div className="min-w-0">
-                  <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-navy-900">
-                    <span className={`badge ${KIND_META[period.kind].cls}`}>{KIND_META[period.kind].label}</span>
+                  <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-foreground">
+                    <Badge tone={KIND_META[period.kind].tone}>{KIND_META[period.kind].label}</Badge>
                     {formatStay({ checkIn: period.startDate, checkOut: period.endDate })}
                   </p>
-                  {period.reason && <p className="mt-0.5 truncate text-xs text-slate-500">{period.reason}</p>}
+                  {period.reason && <p className="mt-0.5 truncate text-xs text-muted-foreground">{period.reason}</p>}
                 </div>
                 <button
                   type="button"
@@ -245,11 +246,11 @@ export function UnitCalendarPanel({
           </ul>
         )}
         {released.length > 0 && (
-          <details className="rounded-xl border border-slate-200 px-3 py-2">
-            <summary className="cursor-pointer text-xs font-semibold text-slate-600">
+          <details className="rounded-xl border border-border px-3 py-2">
+            <summary className="cursor-pointer text-xs font-semibold text-muted-foreground">
               {released.length} released range{released.length === 1 ? '' : 's'}
             </summary>
-            <ul className="mt-2 space-y-1 text-xs text-slate-500">
+            <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
               {released.map((period) => (
                 <li key={period.id}>
                   {KIND_META[period.kind].label} · {period.startDate} → {period.endDate} · released{' '}

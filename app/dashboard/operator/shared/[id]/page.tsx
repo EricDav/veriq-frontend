@@ -46,6 +46,7 @@ import type {
   SharedManagerData,
   UnitAvailabilityStatus,
 } from '@/types/operator';
+import { buttonClass } from '@/components/ui';
 
 const EDITABLE: PublicationStatus[] = ['draft', 'needs_correction'];
 const LIVE: PublicationStatus[] = ['published', 'ready_to_publish', 'suspended'];
@@ -119,7 +120,7 @@ function SharedOpportunityManager() {
   if (loadError || !data || !opportunity) {
     return (
       <div className="mx-auto max-w-3xl space-y-4">
-        <Link href="/dashboard/operator/shared" className="inline-flex items-center gap-1.5 text-sm text-slate-500"><ArrowLeft className="h-4 w-4" /> Shared Property</Link>
+        <Link href="/dashboard/operator/shared" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground"><ArrowLeft className="h-4 w-4" /> Shared Property</Link>
         <Notice tone="error" title="Opportunity unavailable">
           <p>{loadError}</p>
           <button type="button" className="mt-1 font-semibold underline" onClick={() => { setLoading(true); void load(); }}>Try again</button>
@@ -221,11 +222,11 @@ function SharedOpportunityManager() {
   return (
     <div className="mx-auto max-w-4xl space-y-5">
       <div className="space-y-3">
-        <Link href="/dashboard/operator/shared" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-navy-900"><ArrowLeft className="h-4 w-4" /> Shared Property</Link>
+        <Link href="/dashboard/operator/shared" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" /> Shared Property</Link>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
-            <h1 className="font-display text-2xl font-bold text-navy-900">{opportunity.displayLabel}</h1>
-            <p className="text-sm text-slate-500">{SHARED_TYPE_LABELS[opportunity.opportunityType]} · {opportunity.area}, {opportunity.city}</p>
+            <h1 className="font-display text-2xl font-bold text-foreground">{opportunity.displayLabel}</h1>
+            <p className="text-sm text-muted-foreground">{SHARED_TYPE_LABELS[opportunity.opportunityType]} · {opportunity.area}, {opportunity.city}</p>
             <div className="mt-2 flex flex-wrap gap-1.5">
               <StatusBadge tone={publication.tone}>{publication.label}</StatusBadge>
               <StatusBadge tone={verification.tone}><ShieldCheck className="h-3 w-3" /> {verification.label}</StatusBadge>
@@ -233,7 +234,7 @@ function SharedOpportunityManager() {
             </div>
           </div>
           {canSubmit && (
-            <a href="#shared-declaration" className="btn-primary !py-2.5">
+            <a href="#shared-declaration" className={buttonClass()}>
               <Send className="h-4 w-4" />
               {status === 'needs_correction' ? 'Resubmit' : 'Submit for verification'}
             </a>
@@ -249,7 +250,7 @@ function SharedOpportunityManager() {
           suspensionReason={opportunity.suspensionReason}
         />
         {data.verification && (
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-muted-foreground">
             Verification case: <StatusBadge tone={CASE_STATUS_META[data.verification.status].tone} className="!py-0.5">{CASE_STATUS_META[data.verification.status].label}</StatusBadge>
             {data.verification.isReverification ? ' · lightweight re-verification' : ''}
           </p>
@@ -266,7 +267,7 @@ function SharedOpportunityManager() {
             <div id="shared-declaration" className="space-y-3">
               <ListingDeclarationPanel state={declaration} idPrefix="shared-declaration" disabled={submitting} />
               <div className="flex justify-end">
-                <button type="button" className="btn-primary !py-2.5" disabled={submitting || !declaration.canSubmit} onClick={() => void submit()}>
+                <button type="button" className={buttonClass()} disabled={submitting || !declaration.canSubmit} onClick={() => void submit()}>
                   {submitting ? <LoadingSpinner size="sm" /> : <Send className="h-4 w-4" />}
                   {status === 'needs_correction' ? 'Resubmit' : 'Submit for verification'}
                 </button>
@@ -275,12 +276,12 @@ function SharedOpportunityManager() {
           </div>
         )}
         {status !== 'draft' && !data.readiness.ready && data.readiness.blockers.length > 0 && (
-          <div className="rounded-xl border border-slate-200 p-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Still needed before publication</p>
-            <ul className="mt-1 ml-4 list-disc space-y-0.5 text-sm text-slate-700">
+          <div className="rounded-xl border border-[#ffffff18] p-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Still needed before publication</p>
+            <ul className="mt-1 ml-4 list-disc space-y-0.5 text-sm text-muted-foreground">
               {data.readiness.blockers.map((blocker) => <li key={blocker.code}>{blocker.message}</li>)}
             </ul>
-            <p className="mt-1 text-xs text-slate-500">Some steps are completed by Veriq and your assigned Agent.</p>
+            <p className="mt-1 text-xs text-muted-foreground">Some steps are completed by Veriq and your assigned Agent.</p>
           </div>
         )}
       </SectionCard>
@@ -303,7 +304,7 @@ function SharedOpportunityManager() {
                 Your verification period lapsed, so your Veriq Agent must re-verify this opportunity (continued occupancy, household arrangement and contribution) before it becomes public again.
               </Notice>
             ) : status !== 'published' ? (
-              <p className="text-xs text-slate-500">Only a published opportunity can be made available to renters.</p>
+              <p className="text-xs text-muted-foreground">Only a published opportunity can be made available to renters.</p>
             ) : undefined
           }
           onChange={async (next: UnitAvailabilityStatus, reason?: string) => {
@@ -332,7 +333,7 @@ function SharedOpportunityManager() {
               ? 'Contribution, charges and contact details apply immediately. Household facts and intelligence are reviewed by your Veriq Agent before the public version changes.'
               : 'Details are locked while your Veriq Agent verifies this opportunity.'
         }
-        actions={live && !requesting ? <button type="button" className="btn-outline !px-3 !py-2 text-xs" onClick={() => setRequesting(true)}>Request changes</button> : undefined}
+        actions={live && !requesting ? <button type="button" className={buttonClass('secondary', 'small')} onClick={() => setRequesting(true)}>Request changes</button> : undefined}
       >
         {!direct && !live && <Notice tone="info">Wait for your Veriq Agent to finish verification or request a correction before editing.</Notice>}
         {requesting && <Notice tone="warning" title="Requesting changes">Facts and intelligence changes are sent to your Veriq Agent; the published version stays unchanged until approved.</Notice>}
@@ -341,17 +342,17 @@ function SharedOpportunityManager() {
         <div>
           <label htmlFor="shared-title" className="label">Opportunity title</label>
           <input id="shared-title" className="input" maxLength={160} disabled={!editable} value={displayLabel} onChange={(event) => setDisplayLabel(event.target.value)} />
-          {saveIssues.filter((issue) => issue.path === 'displayLabel').map((issue) => <p key={issue.message} className="mt-1 text-xs font-medium text-red-600">{issue.message}</p>)}
+          {saveIssues.filter((issue) => issue.path === 'displayLabel').map((issue) => <p key={issue.message} className="mt-1 text-xs font-medium text-destructive">{issue.message}</p>)}
         </div>
 
-        <div className="rounded-xl bg-slate-50 p-4 text-sm">
-          <p className="flex items-center gap-2 font-medium text-navy-900"><MapPin className="h-4 w-4 text-veriq-secondary" /> {[opportunity.submittedAddress?.streetName, opportunity.area, opportunity.city, opportunity.state].filter(Boolean).join(', ')}</p>
-          <p className="text-xs text-slate-500">{opportunity.submittedAddress?.address}</p>
-          <p className="mt-1 text-xs text-slate-500">Your Veriq Agent verifies the exact private location during verification; it cannot be changed here.</p>
+        <div className="rounded-xl bg-[#070b1444] p-4 text-sm">
+          <p className="flex items-center gap-2 font-medium text-foreground"><MapPin className="h-4 w-4 text-primary" /> {[opportunity.submittedAddress?.streetName, opportunity.area, opportunity.city, opportunity.state].filter(Boolean).join(', ')}</p>
+          <p className="text-xs text-muted-foreground">{opportunity.submittedAddress?.address}</p>
+          <p className="mt-1 text-xs text-muted-foreground">Your Veriq Agent verifies the exact private location during verification; it cannot be changed here.</p>
         </div>
 
         {schemaLoading ? (
-          <p className="flex items-center gap-2 text-sm text-slate-500"><LoadingSpinner size="sm" /> Loading form…</p>
+          <p className="flex items-center gap-2 text-sm text-muted-foreground"><LoadingSpinner size="sm" /> Loading form…</p>
         ) : schemaError || !schema ? (
           <Notice tone="error">{schemaError ?? 'This form is unavailable.'} <button type="button" className="font-semibold underline" onClick={reloadSchema}>Retry</button></Notice>
         ) : (
@@ -367,18 +368,18 @@ function SharedOpportunityManager() {
         )}
 
         {(editable || (live && commercialChanged)) && (
-          <div className="space-y-3 border-t border-slate-100 pt-4">
+          <div className="space-y-3 border-t border-[#ffffff10] pt-4">
             {live && requesting && (
               <label className="block">
-                <span className="label">Note for your Veriq Agent <span className="text-xs font-normal text-slate-400">Optional</span></span>
+                <span className="label">Note for your Veriq Agent <span className="text-xs font-normal text-muted-foreground">Optional</span></span>
                 <textarea className="input" rows={2} maxLength={2000} value={message} onChange={(event) => setMessage(event.target.value)} />
               </label>
             )}
             <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
               {(dirty || requesting) && (
-                <button type="button" className="btn-ghost" onClick={() => { resetDetails(); setRequesting(false); }}>{requesting ? 'Cancel request' : 'Discard changes'}</button>
+                <button type="button" className={buttonClass('ghost')} onClick={() => { resetDetails(); setRequesting(false); }}>{requesting ? 'Cancel request' : 'Discard changes'}</button>
               )}
-              <button type="button" className="btn-primary" disabled={saving || !dirty} onClick={() => void saveDetails()}>
+              <button type="button" className={buttonClass()} disabled={saving || !dirty} onClick={() => void saveDetails()}>
                 {saving && <LoadingSpinner size="sm" />} {live && (factsChanged || intelligenceChanged || labelChanged) ? 'Send for Agent review' : 'Save changes'}
               </button>
             </div>
@@ -386,14 +387,14 @@ function SharedOpportunityManager() {
         )}
       </SectionCard>
 
-      <SectionCard title={<span className="flex items-center gap-2"><Camera className="h-4 w-4 text-veriq-secondary" /> Media</span>} description="The offered room or bed, shared living area, kitchen and bathroom the incoming resident will use.">
+      <SectionCard title={<span className="flex items-center gap-2"><Camera className="h-4 w-4 text-primary" /> Media</span>} description="The offered room or bed, shared living area, kitchen and bathroom the incoming resident will use.">
         <MediaChecklist ownerType="shared_opportunity" ownerId={opportunity.id} readOnly={status === 'archived'} readOnlyReason="Archived opportunities cannot receive new media." onChanged={() => void load()} />
       </SectionCard>
 
-      <SectionCard title={<span className="flex items-center gap-2"><FileLock2 className="h-4 w-4 text-veriq-secondary" /> Verification evidence</span>} description="Occupancy proof is required before submission. Files are private to you, your Veriq Agent and Veriq Admin.">
+      <SectionCard title={<span className="flex items-center gap-2"><FileLock2 className="h-4 w-4 text-primary" /> Verification evidence</span>} description="Occupancy proof is required before submission. Files are private to you, your Veriq Agent and Veriq Admin.">
         <EvidenceUploader ownerType="shared_opportunity" ownerId={opportunity.id} kinds={SHARED_EVIDENCE_KINDS} disabled={status === 'archived'} onChanged={setEvidence} />
         {opportunity.permissionDeclaredAt && (
-          <p className="text-xs text-slate-500">Sharing permission declared {formatDateTime(opportunity.permissionDeclaredAt)}.</p>
+          <p className="text-xs text-muted-foreground">Sharing permission declared {formatDateTime(opportunity.permissionDeclaredAt)}.</p>
         )}
       </SectionCard>
 
@@ -403,7 +404,7 @@ function SharedOpportunityManager() {
         actions={status !== 'archived' && !editingContact ? (
           <button
             type="button"
-            className="btn-outline !px-3 !py-2 text-xs"
+            className={buttonClass('secondary', 'small')}
             onClick={() => {
               setContact({ contactType: 'operator', name: opportunity.contactName, phone: opportunity.contactPhone, whatsappPhone: opportunity.contactWhatsappPhone ?? '' });
               setContactIssues([]);
@@ -414,16 +415,16 @@ function SharedOpportunityManager() {
           </button>
         ) : undefined}
       >
-        <div className="rounded-xl bg-slate-50 p-4 text-sm">
-          <p className="font-semibold text-navy-900">{opportunity.contactName}</p>
-          <p className="text-xs text-slate-500">{opportunity.contactPhone}{opportunity.contactWhatsappPhone && opportunity.contactWhatsappPhone !== opportunity.contactPhone ? ` · WhatsApp ${opportunity.contactWhatsappPhone}` : ''}</p>
+        <div className="rounded-xl bg-[#070b1444] p-4 text-sm">
+          <p className="font-semibold text-foreground">{opportunity.contactName}</p>
+          <p className="text-xs text-muted-foreground">{opportunity.contactPhone}{opportunity.contactWhatsappPhone && opportunity.contactWhatsappPhone !== opportunity.contactPhone ? ` · WhatsApp ${opportunity.contactWhatsappPhone}` : ''}</p>
         </div>
         {editingContact && (
-          <div className="space-y-4 rounded-xl border border-slate-200 p-4">
+          <div className="space-y-4 rounded-xl border border-[#ffffff18] p-4">
             <ContactFields value={contact} onChange={setContact} issues={contactIssues} allowCaretaker={false} idPrefix="shared-contact-edit" />
             <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-              <button type="button" className="btn-ghost" onClick={() => setEditingContact(false)}>Cancel</button>
-              <button type="button" className="btn-primary" disabled={savingContact} onClick={() => void saveContact()}>{savingContact && <LoadingSpinner size="sm" />} Save contact</button>
+              <button type="button" className={buttonClass('ghost')} onClick={() => setEditingContact(false)}>Cancel</button>
+              <button type="button" className={buttonClass()} disabled={savingContact} onClick={() => void saveContact()}>{savingContact && <LoadingSpinner size="sm" />} Save contact</button>
             </div>
           </div>
         )}

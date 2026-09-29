@@ -5,6 +5,7 @@ import { FileSignature } from 'lucide-react';
 import { operatorAccountsApi } from '@/lib/api/operator';
 import type { ListingDeclaration, SubmitListingInput } from '@/types/operator';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { Button, CheckLine } from '@/components/ui';
 import { Notice } from './ui';
 
 export interface ListingDeclarationState {
@@ -82,8 +83,12 @@ export function ListingDeclarationPanel({
 
   if (loading && !declaration) {
     return (
-      <div className="flex items-center gap-2 rounded-xl border border-slate-200 p-4 text-sm text-slate-500">
-        <LoadingSpinner size="sm" /> Loading the Veriq listing declaration…
+      <div
+        role="status"
+        aria-live="polite"
+        className="flex items-center gap-2 rounded-unit border border-[#ffffff18] bg-[#070b1444] p-[17px] text-ui-md text-muted-foreground"
+      >
+        <LoadingSpinner size="sm" className="text-primary" /> Loading the Veriq listing declaration…
       </div>
     );
   }
@@ -92,45 +97,45 @@ export function ListingDeclarationPanel({
     return (
       <Notice tone="error" title="The listing declaration could not be loaded">
         <p>You cannot submit without accepting the current declaration. Reload the page and try again.</p>
-        <button type="button" onClick={() => void state.reload()} className="mt-2 text-sm font-semibold underline">
+        <Button variant="secondary" size="small" className="mt-3" onClick={() => void state.reload()}>
           Try again
-        </button>
+        </Button>
       </Notice>
     );
   }
 
   return (
-    <section className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4" aria-labelledby={`${idPrefix}-heading`}>
-      <div className="flex items-start gap-2">
-        <FileSignature className="mt-0.5 h-4 w-4 flex-shrink-0 text-veriq-secondary" />
+    <section
+      className="space-y-4 rounded-unit border border-[#ffffff18] bg-[#070b1444] p-[17px]"
+      aria-labelledby={`${idPrefix}-heading`}
+    >
+      <div className="flex items-start gap-2.5">
+        <FileSignature aria-hidden="true" className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" />
         <div className="min-w-0">
-          <h3 id={`${idPrefix}-heading`} className="font-display text-sm font-semibold text-navy-900">
+          <h3 id={`${idPrefix}-heading`} className="font-display text-ui-md font-semibold text-foreground">
             Veriq listing declaration
           </h3>
-          <p className="text-xs text-slate-500">Version {declaration.version}. You accept this each time you submit.</p>
+          <p className="text-ui-sm text-muted-foreground">
+            Version {declaration.version}. You accept this each time you submit.
+          </p>
         </div>
       </div>
-      <ol className="ml-4 list-decimal space-y-2 text-sm leading-6 text-navy-800">
+      <ol className="ml-4 list-decimal space-y-2 text-ui-md leading-6 text-foreground">
         {declaration.clauses.map((clause) => (
           <li key={clause.id}>{clause.text}</li>
         ))}
       </ol>
       {error ? <Notice tone="warning">The declaration was reloaded. Read it again and accept to submit.</Notice> : null}
-      <label htmlFor={`${idPrefix}-accept`} className="flex items-start gap-2.5 text-sm text-navy-900">
-        <input
-          id={`${idPrefix}-accept`}
-          type="checkbox"
-          className="mt-0.5 h-4 w-4 flex-shrink-0 accent-veriq-secondary"
-          checked={accepted}
-          disabled={disabled}
-          onChange={(event) => setAccepted(event.target.checked)}
-        />
-        <span>
-          I have read and accept all {declaration.clauses.length} clauses above for this submission.
-        </span>
-      </label>
+      <CheckLine
+        id={`${idPrefix}-accept`}
+        checked={accepted}
+        disabled={disabled}
+        onCheckedChange={setAccepted}
+      >
+        I have read and accept all {declaration.clauses.length} clauses above for this submission.
+      </CheckLine>
       {!accepted && (
-        <p className="text-xs text-slate-500" role="status">
+        <p className="text-ui-sm text-muted-foreground" role="status">
           Accept the declaration to submit. It is not accepted for you and an earlier acceptance does not carry over.
         </p>
       )}

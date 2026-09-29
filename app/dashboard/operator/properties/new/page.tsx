@@ -45,6 +45,7 @@ import type {
   UnitAvailabilityStatus,
   UnitSubmissionInput,
 } from '@/types/operator';
+import { buttonClass } from '@/components/ui';
 
 interface DraftUnit {
   localId: string;
@@ -369,17 +370,17 @@ function CreatePropertyWizard() {
 
   const fieldIssues = (path: string) =>
     issues.filter((issue) => issue.path === path).map((issue) => (
-      <p key={issue.message} className="mt-1 text-xs font-medium text-red-600">{issue.message}</p>
+      <p key={issue.message} className="mt-1 text-xs font-medium text-destructive">{issue.message}</p>
     ));
 
   return (
     <div className="mx-auto max-w-4xl space-y-5 pb-24">
       <div>
-        <Link href="/dashboard/operator/properties" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-navy-900">
+        <Link href="/dashboard/operator/properties" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" /> My Properties
         </Link>
-        <h1 className="mt-2 font-display text-2xl font-bold text-navy-900">Add Property</h1>
-        <p className="text-sm text-slate-500">
+        <h1 className="mt-2 font-display text-2xl font-bold text-foreground">Add Property</h1>
+        <p className="text-sm text-muted-foreground">
           Your property stays private until your Veriq Agent verifies and publishes it. Listing on Veriq is free.
         </p>
       </div>
@@ -397,12 +398,12 @@ function CreatePropertyWizard() {
                   onClick={() => setStep(index)}
                   className={cn(
                     'flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-40',
-                    step === index ? 'border-veriq-secondary bg-veriq-secondary text-white' : 'border-slate-200 bg-white text-slate-600',
+                    step === index ? 'border-primary bg-primary text-primary-foreground' : 'border-[#ffffff18] bg-card text-muted-foreground',
                   )}
                   aria-current={step === index ? 'step' : undefined}
                 >
                   <span>{index + 1}. {item.label}</span>
-                  {count > 0 && <span className={cn('rounded-full px-1.5 text-[10px]', step === index ? 'bg-white/25' : 'bg-red-100 text-red-700')}>{count}</span>}
+                  {count > 0 && <span className={cn('rounded-full px-1.5 text-[10px]', step === index ? 'bg-[#ffffff25] text-primary-foreground' : 'bg-[#fb718518] text-[#fda4af]')}>{count}</span>}
                 </button>
               </li>
             );
@@ -415,7 +416,7 @@ function CreatePropertyWizard() {
           <p>
             Your property was saved as a draft. Continue in the property editor to fix the remaining issues, add media and evidence, and submit.
           </p>
-          <Link href={`/dashboard/operator/properties/${createdId}`} className="btn-primary mt-2 !py-2">Open draft editor</Link>
+          <Link href={`/dashboard/operator/properties/${createdId}`} className={buttonClass('primary', 'default', 'mt-2')}>Open draft editor</Link>
         </Notice>
       )}
 
@@ -437,19 +438,19 @@ function CreatePropertyWizard() {
                     onClick={() => chooseCategory(value)}
                     className={cn(
                       'flex flex-col gap-2 rounded-2xl border-2 p-4 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50',
-                      category === value ? 'border-veriq-secondary bg-emerald-50' : 'border-slate-200 hover:border-slate-300',
+                      category === value ? 'border-primary bg-[#10b98112]' : 'border-[#ffffff18] hover:border-input',
                     )}
                   >
-                    <Icon className={cn('h-6 w-6', category === value ? 'text-veriq-secondary' : 'text-slate-400')} />
-                    <span className="font-semibold text-navy-900">{CATEGORY_LABELS[value]}</span>
-                    <span className="text-xs text-slate-500">{unavailable ? 'Not accepting submissions' : CATEGORY_DESCRIPTIONS[value]}</span>
+                    <Icon className={cn('h-6 w-6', category === value ? 'text-primary' : 'text-muted-foreground')} />
+                    <span className="font-semibold text-foreground">{CATEGORY_LABELS[value]}</span>
+                    <span className="text-xs text-muted-foreground">{unavailable ? 'Not accepting submissions' : CATEGORY_DESCRIPTIONS[value]}</span>
                   </button>
                 );
               })}
             </div>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-muted-foreground">
               Offering a room or bedspace in the home you live in?{' '}
-              <Link href="/dashboard/operator/shared/new" className="font-semibold text-veriq-secondary">Create a Shared Property opportunity</Link>.
+              <Link href="/dashboard/operator/shared/new" className="font-semibold text-primary">Create a Shared Property opportunity</Link>.
             </p>
           </SectionCard>
         )}
@@ -458,14 +459,14 @@ function CreatePropertyWizard() {
           <SectionCard title="Property and location" description="Select the canonical location. The exact address is private until unlock.">
             <div className="grid gap-4 sm:grid-cols-[1fr_200px]">
               <div>
-                <label htmlFor="property-title" className="label">Property title <span className="text-red-500">*</span></label>
+                <label htmlFor="property-title" className="label">Property title <span className="text-destructive">*</span></label>
                 <input id="property-title" className="input" maxLength={300} value={title} placeholder="e.g. Adeyemi Court, Rumuola" onChange={(event) => { setTitle(event.target.value); setValidated(false); }} />
                 {fieldIssues('title')}
               </div>
               <div>
-                <label htmlFor="known-units" className="label">Total Units in property <span className="text-red-500">*</span></label>
+                <label htmlFor="known-units" className="label">Total Units in property <span className="text-destructive">*</span></label>
                 <input id="known-units" className="input" type="number" inputMode="numeric" min={1} max={2000} step={1} value={knownUnitCount} onChange={(event) => { setKnownUnitCount(event.target.value); setValidated(false); }} />
-                <p className="mt-1 text-xs text-slate-500">All apartments/rooms, including occupied ones.</p>
+                <p className="mt-1 text-xs text-muted-foreground">All apartments/rooms, including occupied ones.</p>
                 {fieldIssues('knownUnitCount')}
               </div>
             </div>
@@ -479,7 +480,7 @@ function CreatePropertyWizard() {
             description="Facts and intelligence shared by the whole property. Unit-specific details are captured on each Unit (§31.1–31.3)."
           >
             {propertySchemaLoading ? (
-              <p className="flex items-center gap-2 text-sm text-slate-500"><LoadingSpinner size="sm" /> Loading form…</p>
+              <p className="flex items-center gap-2 text-sm text-muted-foreground"><LoadingSpinner size="sm" /> Loading form…</p>
             ) : propertySchemaError || !propertySchema ? (
               <Notice tone="error">
                 {propertySchemaError ?? 'The property form is not available.'}{' '}
@@ -503,13 +504,13 @@ function CreatePropertyWizard() {
           <SectionCard
             title="Units"
             description="Add the Units you can document now. You can add more later as they become documentable without disturbing occupants (§9.4)."
-            actions={<button type="button" className="btn-outline !px-3 !py-2 text-xs" onClick={addUnit}><Plus className="h-4 w-4" /> Add Unit</button>}
+            actions={<button type="button" className={buttonClass('secondary', 'small')} onClick={addUnit}><Plus className="h-4 w-4" /> Add Unit</button>}
           >
             {fieldIssues('units')}
             {units.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-slate-200 p-6 text-center">
-                <p className="text-sm text-slate-600">No Units added yet. At least one Unit is required to submit.</p>
-                <button type="button" className="btn-primary mt-3 !py-2" onClick={addUnit}><Plus className="h-4 w-4" /> Add first Unit</button>
+              <div className="rounded-xl border border-dashed border-[#ffffff18] p-6 text-center">
+                <p className="text-sm text-muted-foreground">No Units added yet. At least one Unit is required to submit.</p>
+                <button type="button" className={buttonClass('primary', 'default', 'mt-3')} onClick={addUnit}><Plus className="h-4 w-4" /> Add first Unit</button>
               </div>
             ) : (
               <div className="space-y-3">
@@ -553,11 +554,11 @@ function CreatePropertyWizard() {
               <ReviewRow label="Location" value={formatLocation(location) || 'Not selected'} onEdit={() => setStep(1)} wide />
             </dl>
             {units.length > 0 && (
-              <ul className="divide-y divide-slate-100 rounded-xl border border-slate-200 text-sm">
+              <ul className="divide-y divide-[#ffffff10] rounded-xl border border-[#ffffff18] text-sm">
                 {units.map((unit) => (
                   <li key={unit.localId} className="flex items-center justify-between gap-3 px-4 py-2.5">
-                    <span className="font-medium text-navy-900">{unit.displayLabel || 'Unnamed Unit'}</span>
-                    <span className="text-xs text-slate-500">
+                    <span className="font-medium text-foreground">{unit.displayLabel || 'Unnamed Unit'}</span>
+                    <span className="text-xs text-muted-foreground">
                       {unitSubtypes.find((item) => item.subtype === unit.subtype)?.label ?? 'Type not selected'} · {unit.availabilityStatus === 'available' ? 'Available' : 'Unavailable'}
                     </span>
                   </li>
@@ -570,7 +571,7 @@ function CreatePropertyWizard() {
                 <IssueList title={`${issues.length} item${issues.length === 1 ? '' : 's'} need attention`} issues={issues} />
                 <div className="flex flex-wrap gap-2">
                   {[1, 2, 3, 4].filter((index) => issueCount(index) > 0).map((index) => (
-                    <button key={index} type="button" className="btn-outline !px-3 !py-1.5 text-xs" onClick={() => setStep(index)}>
+                    <button key={index} type="button" className={buttonClass('secondary', 'small')} onClick={() => setStep(index)}>
                       Fix {STEPS[index].label} ({issueCount(index)})
                     </button>
                   ))}
@@ -588,15 +589,15 @@ function CreatePropertyWizard() {
             <ListingDeclarationPanel state={declaration} idPrefix="new-property-declaration" disabled={busy !== null} />
 
             <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-              <button type="button" className="btn-ghost" disabled={busy !== null} onClick={() => void check()}>
+              <button type="button" className={buttonClass('ghost')} disabled={busy !== null} onClick={() => void check()}>
                 {busy === 'validate' ? <LoadingSpinner size="sm" /> : <CheckCircle2 className="h-4 w-4" />} Check answers
               </button>
-              <button type="button" className="btn-outline" disabled={busy !== null} onClick={() => void save(false)}>
+              <button type="button" className={buttonClass('secondary')} disabled={busy !== null} onClick={() => void save(false)}>
                 {busy === 'draft' ? <LoadingSpinner size="sm" /> : <Save className="h-4 w-4" />} Save draft
               </button>
               <button
                 type="button"
-                className="btn-primary"
+                className={buttonClass()}
                 disabled={busy !== null || !declaration.canSubmit}
                 onClick={() => void save(true)}
               >
@@ -608,12 +609,12 @@ function CreatePropertyWizard() {
       </fieldset>
 
       {step < 5 && (
-        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 px-4 py-3 backdrop-blur lg:static lg:border-0 lg:bg-transparent lg:p-0">
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[#ffffff18] bg-[#111827f2] px-4 py-3 backdrop-blur lg:static lg:border-0 lg:bg-transparent lg:p-0">
           <div className="mx-auto flex max-w-4xl items-center justify-between gap-2">
-            <button type="button" className="btn-ghost" disabled={step === 0} onClick={goBack}>
+            <button type="button" className={buttonClass('ghost')} disabled={step === 0} onClick={goBack}>
               <ArrowLeft className="h-4 w-4" /> Back
             </button>
-            <button type="button" className="btn-primary !py-2.5" onClick={goNext}>
+            <button type="button" className={buttonClass()} onClick={goNext}>
               Continue <ArrowRight className="h-4 w-4" />
             </button>
           </div>
@@ -633,12 +634,12 @@ function unitPayloadAnswers(unit: DraftUnit): SchemaAnswers {
 
 function ReviewRow({ label, value, onEdit, wide }: { label: string; value: string; onEdit: () => void; wide?: boolean }) {
   return (
-    <div className={cn('rounded-xl bg-slate-50 px-4 py-3', wide && 'sm:col-span-2')}>
-      <dt className="flex items-center justify-between text-xs text-slate-500">
+    <div className={cn('rounded-xl bg-[#070b1444] px-4 py-3', wide && 'sm:col-span-2')}>
+      <dt className="flex items-center justify-between text-xs text-muted-foreground">
         {label}
-        <button type="button" className="font-semibold text-veriq-secondary" onClick={onEdit}>Edit</button>
+        <button type="button" className="font-semibold text-primary" onClick={onEdit}>Edit</button>
       </dt>
-      <dd className="mt-0.5 font-medium text-navy-900">{value}</dd>
+      <dd className="mt-0.5 font-medium text-foreground">{value}</dd>
     </div>
   );
 }
@@ -671,35 +672,35 @@ function DraftUnitCard({
   const { schema, loading, error, reload } = useSchema(schemaId);
   const subtypeLabel = subtypes.find((item) => item.subtype === unit.subtype)?.label;
   return (
-    <div className={cn('rounded-2xl border', issues.length ? 'border-red-200' : 'border-slate-200')}>
+    <div className={cn('rounded-2xl border', issues.length ? 'border-[#fb718530]' : 'border-[#ffffff18]')}>
       <button type="button" onClick={onToggle} className="flex w-full items-center justify-between gap-3 p-4 text-left" aria-expanded={expanded}>
         <div className="min-w-0">
-          <p className="truncate font-semibold text-navy-900">{unit.displayLabel || 'Unnamed Unit'}</p>
-          <p className="text-xs text-slate-500">{subtypeLabel ?? 'Select the Unit type'}</p>
+          <p className="truncate font-semibold text-foreground">{unit.displayLabel || 'Unnamed Unit'}</p>
+          <p className="text-xs text-muted-foreground">{subtypeLabel ?? 'Select the Unit type'}</p>
         </div>
         <div className="flex items-center gap-2">
-          {issues.length > 0 && <span className="rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-bold text-red-700">{issues.length}</span>}
-          {expanded ? <ChevronUp className="h-4 w-4 text-slate-400" /> : <ChevronDown className="h-4 w-4 text-slate-400" />}
+          {issues.length > 0 && <span className="rounded-full bg-[#fb718518] px-2 py-0.5 text-[11px] font-bold text-[#fda4af]">{issues.length}</span>}
+          {expanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
         </div>
       </button>
       {expanded && (
-        <div className="space-y-4 border-t border-slate-100 p-4">
+        <div className="space-y-4 border-t border-[#ffffff10] p-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label htmlFor={`${unit.localId}-label`} className="label">Unit Display Label <span className="text-red-500">*</span></label>
+              <label htmlFor={`${unit.localId}-label`} className="label">Unit Display Label <span className="text-destructive">*</span></label>
               <input id={`${unit.localId}-label`} className="input" maxLength={160} value={unit.displayLabel} placeholder="e.g. Apartment 1, Room B2" onChange={(event) => onLabel(event.target.value)} />
-              <p className="mt-1 text-xs text-slate-500">Unique within this property and kept stable for history.</p>
-              {issues.filter((issue) => issue.path === 'displayLabel').map((issue) => <p key={issue.message} className="mt-1 text-xs font-medium text-red-600">{issue.message}</p>)}
+              <p className="mt-1 text-xs text-muted-foreground">Unique within this property and kept stable for history.</p>
+              {issues.filter((issue) => issue.path === 'displayLabel').map((issue) => <p key={issue.message} className="mt-1 text-xs font-medium text-destructive">{issue.message}</p>)}
             </div>
             <div>
-              <label htmlFor={`${unit.localId}-subtype`} className="label">Unit type <span className="text-red-500">*</span></label>
+              <label htmlFor={`${unit.localId}-subtype`} className="label">Unit type <span className="text-destructive">*</span></label>
               <select id={`${unit.localId}-subtype`} className="input" value={unit.subtype} onChange={(event) => onSubtype(event.target.value)}>
                 <option value="">Select Unit type</option>
                 {subtypes.map((subtype) => (
                   <option key={subtype.id} value={subtype.subtype ?? ''}>{subtype.label}</option>
                 ))}
               </select>
-              {issues.filter((issue) => issue.path === 'subtype').map((issue) => <p key={issue.message} className="mt-1 text-xs font-medium text-red-600">{issue.message}</p>)}
+              {issues.filter((issue) => issue.path === 'subtype').map((issue) => <p key={issue.message} className="mt-1 text-xs font-medium text-destructive">{issue.message}</p>)}
             </div>
             <div className="sm:col-span-2">
               <span className="label">Current availability</span>
@@ -709,20 +710,20 @@ function DraftUnitCard({
                     key={status}
                     type="button"
                     onClick={() => onAvailability(status)}
-                    className={cn('rounded-lg border px-3 py-2 text-xs font-semibold', unit.availabilityStatus === status ? 'border-veriq-secondary bg-emerald-50 text-navy-900' : 'border-slate-200 text-slate-600')}
+                    className={cn('rounded-lg border px-3 py-2 text-xs font-semibold', unit.availabilityStatus === status ? 'border-primary bg-[#10b98112] text-foreground' : 'border-[#ffffff18] text-muted-foreground')}
                   >
                     {status === 'available' ? (schema?.availabilityLabels?.available ?? 'Available') : (schema?.availabilityLabels?.unavailable ?? 'Unavailable')}
                   </button>
                 ))}
               </div>
-              <p className="mt-1 text-xs text-slate-500">Units are shown to renters only after Veriq Agent verification.</p>
+              <p className="mt-1 text-xs text-muted-foreground">Units are shown to renters only after Veriq Agent verification.</p>
             </div>
           </div>
 
           {!unit.subtype ? (
-            <p className="rounded-lg border border-dashed border-slate-200 px-4 py-3 text-sm text-slate-500">Select the Unit type to load its questions.</p>
+            <p className="rounded-lg border border-dashed border-[#ffffff18] px-4 py-3 text-sm text-muted-foreground">Select the Unit type to load its questions.</p>
           ) : loading ? (
-            <p className="flex items-center gap-2 text-sm text-slate-500"><LoadingSpinner size="sm" /> Loading {subtypeLabel} form…</p>
+            <p className="flex items-center gap-2 text-sm text-muted-foreground"><LoadingSpinner size="sm" /> Loading {subtypeLabel} form…</p>
           ) : error || !schema ? (
             <Notice tone="error">
               {error ?? 'This Unit type form is unavailable.'}{' '}
@@ -733,7 +734,7 @@ function DraftUnitCard({
           )}
 
           <div className="flex justify-end">
-            <button type="button" className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-600" onClick={onRemove}>
+            <button type="button" className="inline-flex items-center gap-1.5 text-xs font-semibold text-destructive" onClick={onRemove}>
               <Trash2 className="h-3.5 w-3.5" /> Remove Unit
             </button>
           </div>

@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { Modal } from '@/components/ui/Modal';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { cn } from '@/lib/utils';
+import { Button, CheckLine } from '@/components/ui';
 
 export interface ReasonDialogProps {
   isOpen: boolean;
@@ -80,13 +80,13 @@ export function ReasonDialog({
       size="md"
       className="max-h-[92vh] overflow-y-auto"
     >
-      <form onSubmit={submit} className="space-y-4">
-        <div className="text-sm leading-relaxed text-slate-600">{message}</div>
+      <form onSubmit={submit} className="space-y-5">
+        <div className="text-ui-md leading-relaxed text-muted-foreground">{message}</div>
         {children}
         <div>
-          <label className="label text-xs" htmlFor="reason-dialog-reason">
+          <label className="label" htmlFor="reason-dialog-reason">
             {reasonLabel}
-            {!reasonRequired && <span className="font-normal text-slate-400"> (optional)</span>}
+            {!reasonRequired && <span className="ml-1.5 text-xs font-normal text-muted-foreground">Optional</span>}
           </label>
           <textarea
             id="reason-dialog-reason"
@@ -96,44 +96,39 @@ export function ReasonDialog({
             maxLength={maxLength}
             placeholder={reasonPlaceholder}
             required={reasonRequired}
+            aria-describedby="reason-dialog-reason-count"
           />
-          <p className="mt-1 text-[11px] text-slate-400">
+          <p id="reason-dialog-reason-count" className="mt-1 text-xs text-muted-foreground">
             {reasonRequired && trimmed.length < minLength
               ? `At least ${minLength} characters.`
               : `${trimmed.length}/${maxLength}`}
           </p>
         </div>
         {acknowledgement && (
-          <label className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
-            <input
-              type="checkbox"
+          <div className="rounded-review border border-[#fbbf2425] bg-[#fbbf2409] p-3.5">
+            <CheckLine
+              id="reason-dialog-acknowledgement"
               checked={acknowledged}
-              onChange={(event) => setAcknowledged(event.target.checked)}
-              className="mt-0.5 h-4 w-4 accent-amber-600"
-            />
-            <span>{acknowledgement}</span>
-          </label>
+              onCheckedChange={setAcknowledged}
+              className="text-ui-sm"
+            >
+              {acknowledgement}
+            </CheckLine>
+          </div>
         )}
-        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={submitting}
-            className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-medium text-navy-700 hover:bg-slate-50 disabled:opacity-50"
-          >
+        <div className="flex flex-col-reverse gap-3 wide:flex-row wide:justify-end">
+          <Button variant="secondary" onClick={onClose} disabled={submitting}>
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             type="submit"
+            variant={variant === 'danger' ? 'secondary' : 'primary'}
             disabled={!ready}
-            className={cn(
-              'inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold text-white transition-colors disabled:opacity-50',
-              variant === 'danger' ? 'bg-red-600 hover:bg-red-700' : 'bg-emerald-600 hover:bg-emerald-700',
-            )}
+            className={variant === 'danger' ? 'border-[#fb718530] bg-[#fb718512] text-[#fda4af] hover:bg-[#fb718520]' : undefined}
           >
             {submitting && <LoadingSpinner size="sm" />}
             {confirmLabel}
-          </button>
+          </Button>
         </div>
       </form>
     </Modal>
