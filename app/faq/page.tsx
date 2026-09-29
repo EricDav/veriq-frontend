@@ -1,47 +1,84 @@
-import { Shield } from 'lucide-react';
+import type { Metadata } from 'next';
+import { Eyebrow } from '@/components/ui';
 import { getPublicPageContent } from '@/lib/site-content';
 import { FAQClient } from './FAQClient';
+import {
+  DEFAULT_FAQS,
+  DEFAULT_FAQ_CATEGORIES,
+  FAQ_CONTENT_VERSION,
+  type FAQCategory,
+  type FAQItem,
+} from './faq-data';
 
-import { DEFAULT_FAQS, DEFAULT_FAQ_CATEGORIES, FAQ_CONTENT_VERSION, type FAQCategory, type FAQItem } from './faq-data';
+export const metadata: Metadata = {
+  title: 'FAQ',
+  description:
+    'Answers about unlocking a property, what access covers, refunds and wallet credit, Street Intelligence, listing as an Operator, and staying safe.',
+};
+
+function isFAQList(value: unknown): value is FAQItem[] {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (item): item is FAQItem =>
+        typeof item === 'object' &&
+        item !== null &&
+        typeof (item as { q?: unknown }).q === 'string' &&
+        typeof (item as { a?: unknown }).a === 'string',
+    )
+  );
+}
+
+function isCategoryList(value: unknown): value is FAQCategory[] {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (item): item is FAQCategory =>
+        typeof item === 'object' &&
+        item !== null &&
+        typeof (item as { label?: unknown }).label === 'string' &&
+        typeof (item as { value?: unknown }).value === 'string',
+    )
+  );
+}
 
 export default async function FAQPage() {
   const content = await getPublicPageContent('faq');
   const hero = content.hero;
   const questions = content.questions;
   const cta = content.cta;
-  const managedData = questions?.data ?? null;
-  const hasCurrentManagedFAQ = managedData?.faqVersion === FAQ_CONTENT_VERSION && Array.isArray(managedData.faqs);
-  const faqs = hasCurrentManagedFAQ ? managedData.faqs as FAQItem[] : DEFAULT_FAQS;
-  const categories = hasCurrentManagedFAQ && Array.isArray(managedData.categories)
-    ? managedData.categories as FAQCategory[]
-    : DEFAULT_FAQ_CATEGORIES;
+
+  // Managed content written against an older answer set is ignored rather than merged, so a stale CMS
+  // entry can never resurrect an answer that no longer matches the Master Blueprint.
+  const managed = questions?.data;
+  const managedFaqs = managed?.faqVersion === FAQ_CONTENT_VERSION ? managed.faqs : null;
+  const faqs = isFAQList(managedFaqs) ? managedFaqs : DEFAULT_FAQS;
+  const managedCategories = managed?.faqVersion === FAQ_CONTENT_VERSION ? managed.categories : null;
+  const categories = isCategoryList(managedCategories) ? managedCategories : DEFAULT_FAQ_CATEGORIES;
 
   return (
-    <>
-      <section className="bg-hero-pattern pt-32 pb-20 relative overflow-hidden">
-        <div className="absolute bottom-0 left-0 right-0">
-          <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
-            <path d="M0 80L1440 80L1440 40C1200 0 800 0 720 40C640 80 240 80 0 40L0 80Z" fill="white" />
-          </svg>
+    <section className="bg-background pb-16 pt-28 sm:pb-24 sm:pt-32">
+      <div className="mx-auto max-w-[1280px] px-5 sm:px-10">
+        <div className="max-w-[790px]">
+          <Eyebrow>{hero?.subtitle ?? 'Your questions, answered'}</Eyebrow>
+          <h1 className="mt-2 font-display text-[1.8rem] font-semibold leading-[1.2] tracking-[-0.035em] text-foreground sm:text-[2rem]">
+            {hero?.title ?? 'A little clarity goes a long way.'}
+          </h1>
+          {hero?.body && (
+            <p className="mt-2 text-[0.95rem] leading-[1.6] text-muted-foreground">{hero.body}</p>
+          )}
         </div>
-        <div className="relative mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 text-center">
-          <div className="inline-flex items-center gap-2 rounded-full bg-[#ffffff0f] border border-white/20 px-4 py-1.5 text-xs font-semibold text-primary mb-5">
-            <Shield className="h-3.5 w-3.5" />
-            {hero?.subtitle ?? 'Frequently Asked Questions'}
-          </div>
-          <h1 className="font-display text-5xl font-bold text-foreground mb-4">{hero?.title ?? 'FAQ'}</h1>
-          <p className="text-muted-foreground text-lg">
-            {hero?.body ?? 'Answers about Property Intelligence, Street Intelligence, agents, payments, refunds, and using Veriq Property.'}
-          </p>
-        </div>
-      </section>
 
-      <FAQClient
-        faqs={faqs}
-        categories={categories}
-        ctaTitle={cta?.title ?? 'Still have questions?'}
-        ctaBody={cta?.body ?? 'Use the official Contact Us or Support options for any enquiry not covered above.'}
-      />
-    </>
+        <FAQClient
+          faqs={faqs}
+          categories={categories}
+          ctaTitle={cta?.title ?? 'Still have a question?'}
+          ctaBody={
+            cta?.body ??
+            'Anything not covered here goes to the Veriq team through the contact page. For an unlocked property, your operator contact and assigned Agent are in your unlock history.'
+          }
+        />
+      </div>
+    </section>
   );
 }

@@ -1,88 +1,75 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import {
-  AlertTriangle, Building2, CheckCircle2, Clock, CreditCard, KeyRound, Landmark, Lock, MapPin, MessageCircle,
-  Search, ShieldCheck, Undo2, Users, Wallet,
-} from 'lucide-react';
+import { AlertTriangle, ArrowUpRight, Check } from 'lucide-react';
+import { Button, Eyebrow, Notice, Panel, ReviewCard } from '@/components/ui';
 
 export const metadata: Metadata = {
   title: 'How Veriq Works',
   description:
-    'How Veriq verifies properties, what an unlock gives you, how wallet credit and refunds work, and what happens when your access period ends.',
+    'A straightforward path from browsing to a more informed decision: what is free, what an unlock adds, how wallet credit and refunds work.',
 };
 
+/**
+ * The prototype's `#how-it-works` is a prose column of five numbered steps. The panels below the steps
+ * are ours — what an unlock actually contains, how each category differs, Street Intelligence and the
+ * refund route — and are kept because the prototype has no room for them and the product does.
+ */
 const STEPS = [
   {
-    icon: Search,
-    title: '1. Search by what you actually need',
+    title: 'Explore for free',
     body:
-      'Filter Residential Property, Short Lets, Hostels, Shared Property and Property for Sale by area, price, accommodation type and availability. Rental searches match individual Units inside a property and return the property that has at least one matching Unit.',
+      'Choose Residential Property, Short Lets, Hostels, Shared Property or Property for Sale. Compare basic details, prices and clear availability labels.',
   },
   {
-    icon: Building2,
-    title: '2. Read the basic details first',
+    title: 'Unlock the full picture',
     body:
-      'Before you pay anything you see the category, general area, the verified public photo, the documented Unit types with their basic prices, and whether they are available now. Exact address, protected photos, full intelligence and contacts stay locked.',
+      'Click Unlock to go directly to checkout. Available wallet credit applies automatically. Pay only the balance. Access begins after successful full settlement, lasts 24 hours, and the exact expiry time is shown on your unlock.',
   },
   {
-    icon: Lock,
-    title: '3. Unlock at the listed fee',
+    title: 'Check the details',
     body:
-      'Clicking Unlock opens a checkout that shows the effective fee, any Veriq Wallet credit applied, the remaining amount, the 24-hour access period, current availability and the refund rules. Some listings are marked Free, and unlock at ₦0. A property with no available unit cannot be unlocked at all — you can ask to be told when one is free instead.',
+      'Explore all documented verified units, their images, property-type intelligence and the linked street record. See source and confidence information before drawing conclusions.',
   },
   {
-    icon: KeyRound,
-    title: '4. Use your 24 hours of access',
+    title: 'Connect and decide',
     body:
-      'Once payment is confirmed you get the exact verified location, all documented Units, protected photos, property-type intelligence, the linked Street Intelligence and the contact routes — for 24 hours from that confirmation. The exact expiry time is shown on your unlock.',
+      'Contact the owner, caretaker or operator. Arrange your inspection directly and contact your assigned Veriq Agent for support. Unlocking does not reserve a property.',
   },
   {
-    icon: MessageCircle,
-    title: '5. Contact and inspect',
+    title: 'Report a material issue',
     body:
-      'Message or call the property contact directly on WhatsApp with a pre-filled Veriq reference, and message the assigned Veriq Agent about verification, intelligence or unlock questions. Always inspect in person before paying anyone.',
-  },
-  {
-    icon: Clock,
-    title: '6. Tell us what happened',
-    body:
-      'When your 24 hours end, protected details lock again and Veriq asks whether you took the property, did not take it, or are still considering. If you took it, you can tell us which Unit and opt into sharing resident experience later.',
+      'Submit a supported refund request through Unlock history within 24 hours. Approved refunds become non-expiring wallet credit for a future eligible unlock.',
   },
 ];
 
 const UNLOCK_INCLUDES = [
-  'Exact verified address and location',
-  'All documented verified Units with details, prices and availability',
-  'Full property and Unit photos intended for unlocked viewers',
-  'Property-type and Unit-specific intelligence verified by a Veriq Agent',
-  'Linked community-powered Street Intelligence with its source and confidence',
-  'Property contact phone number and WhatsApp action',
-  'WhatsApp support from the assigned Veriq Agent',
-  'Short Let booking link where the operator provides one',
+  'The exact verified location',
+  'Every documented verified unit, with its details, price and availability',
+  'Protected property and unit images',
+  'Property-type and unit intelligence reviewed by a Veriq Agent',
+  'The linked Street Intelligence record, with its source and confidence',
+  'The property contact, and WhatsApp support from your assigned Veriq Agent',
 ];
 
-const CATEGORY_NOTES = [
+const CATEGORIES = [
   {
-    icon: Building2,
     title: 'Residential, Short Lets and Hostels',
     body:
-      'One unlock covers the whole property and every documented verified Unit — never a separate fee per room. These properties stay listed even when all Units are currently unavailable, and that is clearly shown before you pay.',
+      'One unlock covers the whole property and every documented verified unit — never a fee per room. Short Let availability is checked against the dates you searched.',
     href: '/properties',
     cta: 'Browse properties',
   },
   {
-    icon: Users,
     title: 'Shared Property',
     body:
-      'A current resident offers a room or bedspace in the home they occupy. Veriq verifies their identity, occupancy and permission to share. One unlock covers that opportunity, and it disappears from search as soon as the space is taken.',
+      'A current resident offers a room or bedspace in the home they occupy. Veriq verifies their occupancy and permission to share, and the opportunity disappears from search once the space is taken.',
     href: '/shared',
     cta: 'Browse Shared Property',
   },
   {
-    icon: Landmark,
     title: 'Property for Sale',
     body:
-      'Sellers do not self-list. A Veriq Agent verifies the seller, confirms the property or land and records the status of each document. You see document statuses — never the documents — and a sighted document is not a legal search.',
+      'Only the owner may submit, and an Agent visits before publication to confirm the property and review ownership and authority-to-sell documents. You see document statuses, never the documents — and a sighted document is not a legal title guarantee.',
     href: '/for-sale',
     cta: 'Browse Property for Sale',
   },
@@ -90,129 +77,162 @@ const CATEGORY_NOTES = [
 
 export default function HowItWorksPage() {
   return (
-    <>
-      <section className="bg-background pb-14 pt-28 text-foreground sm:pt-32">
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-          <p className="text-xs font-bold uppercase tracking-wider text-[#6ee7b7]">How Veriq works</p>
-          <h1 className="mt-2 font-display text-3xl font-bold leading-tight sm:text-5xl">Know before you go — and know exactly what you are paying for.</h1>
-          <p className="mt-5 max-w-3xl text-sm leading-7 text-muted-foreground sm:text-base">
-            Veriq sells time-limited access to verified property information, property-type intelligence and clearly labelled community-powered
-            Street Intelligence. An unlock is not a reservation and does not guarantee a successful rental, booking or purchase. There is no agency
-            fee and no inspection fee in the Veriq model.
+    <section className="bg-background pb-16 pt-28 sm:pb-24 sm:pt-32">
+      <div className="mx-auto max-w-[1280px] px-5 sm:px-10">
+        <div className="max-w-[790px]">
+          <Eyebrow>How it works</Eyebrow>
+          <h1 className="mt-3 font-display text-[2rem] font-semibold leading-[1.2] tracking-[-0.035em] text-foreground sm:text-[3.3rem] sm:leading-[1.25]">
+            Know before you go.
+          </h1>
+          <p className="mt-5 text-[1.05rem] leading-[1.6] text-muted-foreground sm:text-[1.1rem]">
+            A straightforward path from browsing to a more informed decision.
           </p>
-          <div className="mt-7 flex flex-wrap gap-3">
-            <Link href="/properties" className="btn-primary">Start searching</Link>
-            <Link href="/refund-policy" className="btn-outline !border-white/30 !bg-transparent !text-foreground hover:!bg-[#ffffff0f]">Refund Policy</Link>
-          </div>
-        </div>
-      </section>
 
-      <section className="bg-card py-14 sm:py-16">
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-          <h2 className="font-display text-2xl font-black text-foreground sm:text-3xl">From search to inspection</h2>
-          <div className="mt-8 grid gap-5 sm:grid-cols-2">
-            {STEPS.map(({ icon: Icon, title, body }) => (
-              <article key={title} className="rounded-2xl border border-[#ffffff12] bg-card p-5">
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#10b98112] text-primary"><Icon className="h-5 w-5" /></span>
-                <h3 className="mt-4 font-display text-base font-bold text-foreground">{title}</h3>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">{body}</p>
-              </article>
+          <ol className="mt-4">
+            {STEPS.map(({ title, body }, index) => (
+              <li key={title} className="mt-8">
+                <h2 className="font-display text-[1.35rem] font-semibold leading-[1.25] tracking-[-0.035em] text-foreground">
+                  <span className="text-primary">{index + 1}.</span> {title}
+                </h2>
+                <p className="mt-4 text-[0.95rem] leading-[1.6] text-muted-foreground">{body}</p>
+              </li>
             ))}
-          </div>
+          </ol>
         </div>
-      </section>
 
-      <section className="bg-background py-14 sm:py-16">
-        <div className="mx-auto grid max-w-5xl gap-8 px-4 sm:px-6 lg:grid-cols-2 lg:px-8">
-          <div>
-            <h2 className="font-display text-2xl font-black text-foreground">What an unlock gives you</h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Exactly what is included is listed on the checkout for each listing, because it differs slightly between rentals, Shared Property and
-              Property for Sale. For a rental property it normally includes:
+        <div className="mt-14 grid gap-6 lg:grid-cols-2">
+          <Panel as="section" aria-labelledby="includes-heading">
+            <h2
+              id="includes-heading"
+              className="font-display text-[1.12rem] font-semibold leading-[1.3] tracking-[-0.035em] text-foreground"
+            >
+              What an unlock gives you
+            </h2>
+            <p className="mt-3 text-[0.95rem] leading-[1.6] text-muted-foreground">
+              Checkout lists exactly what is included for that listing, because it differs slightly between
+              rentals, Shared Property and Property for Sale. For a rental property it normally covers:
             </p>
-            <ul className="mt-5 space-y-2">
+            <ul className="mt-4 space-y-2.5">
               {UNLOCK_INCLUDES.map((item) => (
-                <li key={item} className="flex items-start gap-2 text-sm text-foreground"><CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" /> {item}</li>
+                <li key={item} className="flex items-start gap-2.5 text-[0.9rem] leading-[1.55] text-muted-foreground">
+                  <Check className="mt-0.5 h-4 w-4 flex-none text-primary" aria-hidden="true" />
+                  <span>{item}</span>
+                </li>
               ))}
             </ul>
-          </div>
-          <div className="space-y-4">
-            <div className="rounded-2xl border border-[#ffffff12] bg-card p-5">
-              <p className="flex items-center gap-2 font-display text-base font-bold text-foreground"><CreditCard className="h-4 w-4 text-primary" /> Paying for an unlock</p>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                You are never asked to fund a wallet first. Available Veriq Wallet credit is applied automatically up to the fee: with enough credit the
-                unlock is confirmed without a payment page, with partial credit you pay only the difference, and with no credit you pay the fee directly.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-[#ffffff12] bg-card p-5">
-              <p className="flex items-center gap-2 font-display text-base font-bold text-foreground"><ShieldCheck className="h-4 w-4 text-primary" /> Access starts only after payment is confirmed</p>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                Returning from the payment page is not proof of payment. Veriq verifies the payment with the provider, then starts and records your access
-                period. A failed, cancelled or pending payment never grants access, and credit held for an unfinished checkout is released.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-[#ffffff12] bg-card p-5">
-              <p className="flex items-center gap-2 font-display text-base font-bold text-foreground"><Wallet className="h-4 w-4 text-primary" /> Veriq Wallet</p>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                The wallet holds approved refund credit. It does not expire, works across every eligible category, and is spent only when you choose to
-                unlock something. <Link href="/dashboard/wallet" className="font-semibold text-primary hover:underline">View your wallet</Link>.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
+          </Panel>
 
-      <section className="bg-card py-14 sm:py-16">
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-          <h2 className="font-display text-2xl font-black text-foreground">How each category works</h2>
-          <div className="mt-8 grid gap-5 md:grid-cols-3">
-            {CATEGORY_NOTES.map(({ icon: Icon, title, body, href, cta }) => (
-              <article key={title} className="flex flex-col rounded-2xl border border-[#ffffff12] p-5">
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#ffffff08] text-foreground"><Icon className="h-5 w-5" /></span>
-                <h3 className="mt-4 font-display text-base font-bold text-foreground">{title}</h3>
-                <p className="mt-2 flex-1 text-sm leading-6 text-muted-foreground">{body}</p>
-                <Link href={href} className="mt-4 text-sm font-semibold text-primary hover:underline">{cta}</Link>
-              </article>
+          <Panel as="section" aria-labelledby="paying-heading">
+            <h2
+              id="paying-heading"
+              className="font-display text-[1.12rem] font-semibold leading-[1.3] tracking-[-0.035em] text-foreground"
+            >
+              Paying, and being paid back
+            </h2>
+            <dl className="mt-4 space-y-5">
+              <div>
+                <dt className="text-[0.95rem] font-semibold text-foreground">You never fund a wallet first</dt>
+                <dd className="mt-1.5 text-[0.9rem] leading-[1.55] text-muted-foreground">
+                  Wallet credit is applied automatically up to the fee. With enough credit the unlock is confirmed
+                  without a payment page; otherwise you pay only the difference.
+                </dd>
+              </div>
+              <div>
+                <dt className="text-[0.95rem] font-semibold text-foreground">Access starts only on settlement</dt>
+                <dd className="mt-1.5 text-[0.9rem] leading-[1.55] text-muted-foreground">
+                  Returning from the payment page is not proof of payment. Veriq confirms it with the provider, then
+                  starts and records your 24 hours. Credit held for an unfinished checkout is released.
+                </dd>
+              </div>
+              <div>
+                <dt className="text-[0.95rem] font-semibold text-foreground">Approved refunds become wallet credit</dt>
+                <dd className="mt-1.5 text-[0.9rem] leading-[1.55] text-muted-foreground">
+                  Credit does not expire, works across every eligible category, and is spent only when you choose to
+                  unlock something.{' '}
+                  <Link href="/refund-policy" className="font-semibold text-primary hover:underline">
+                    Read the Refund Policy
+                  </Link>
+                  .
+                </dd>
+              </div>
+            </dl>
+          </Panel>
+        </div>
+
+        <section aria-labelledby="categories-heading" className="mt-14">
+          <h2
+            id="categories-heading"
+            className="font-display text-[1.35rem] font-semibold leading-[1.25] tracking-[-0.035em] text-foreground"
+          >
+            How each category works
+          </h2>
+          <div className="mt-6 grid gap-5 md:grid-cols-3">
+            {CATEGORIES.map(({ title, body, href, cta }) => (
+              <ReviewCard
+                key={title}
+                title={title}
+                footer={
+                  <Link href={href} className="text-[0.9rem] font-semibold text-primary hover:underline">
+                    {cta}
+                  </Link>
+                }
+              >
+                <p className="text-[0.9rem] leading-[1.55]">{body}</p>
+              </ReviewCard>
             ))}
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section className="bg-background py-14 sm:py-16">
-        <div className="mx-auto grid max-w-5xl gap-8 px-4 sm:px-6 lg:grid-cols-2 lg:px-8">
-          <div className="rounded-2xl border border-[#ffffff12] bg-card p-6">
-            <p className="flex items-center gap-2 font-display text-lg font-bold text-foreground"><MapPin className="h-5 w-5 text-primary" /> Street Intelligence is community powered</p>
-            <p className="mt-3 text-sm leading-6 text-muted-foreground">
-              Every listing links to the canonical record for its street. Inside an unlock you see that record with its source label, confidence level and
-              last-updated date, and you can share the standalone street page with people who know the area so they can contribute. A shared street link
-              never carries property addresses, protected photos, contacts or your access.
+        <div className="mt-14 grid gap-6 lg:grid-cols-2">
+          <Panel as="section" aria-labelledby="street-heading">
+            <h2
+              id="street-heading"
+              className="font-display text-[1.12rem] font-semibold leading-[1.3] tracking-[-0.035em] text-foreground"
+            >
+              Street Intelligence is community powered
+            </h2>
+            <p className="mt-3 text-[0.95rem] leading-[1.6] text-muted-foreground">
+              Every listing links to the record for its street, with its source label, confidence and last-updated
+              date. You can share the standalone street link with people who know the area so they can contribute — a
+              shared link never carries addresses, protected images, contacts or your access.
             </p>
-            <Link href="/street-intelligence" className="mt-4 inline-flex text-sm font-semibold text-primary hover:underline">Explore Street Intelligence</Link>
-          </div>
-          <div className="rounded-2xl border border-[#ffffff12] bg-card p-6">
-            <p className="flex items-center gap-2 font-display text-lg font-bold text-foreground"><Undo2 className="h-5 w-5 text-muted-foreground" /> If something was wrong</p>
-            <p className="mt-3 text-sm leading-6 text-muted-foreground">
-              If a qualifying problem affected your unlock — for example the listing was already unavailable, the contact was invalid, or a verified fact was
-              materially inaccurate — you can request a refund from My Unlocks within the refund window. Veriq Admin reviews the evidence and decides.
-              Approved refunds are credited to your Veriq Wallet for future unlocks, not returned as cash.
-            </p>
-            <Link href="/refund-policy" className="mt-4 inline-flex text-sm font-semibold text-primary hover:underline">Read the Refund Policy</Link>
-          </div>
-        </div>
-      </section>
+            <Link
+              href="/street-intelligence"
+              className="mt-4 inline-flex text-[0.9rem] font-semibold text-primary hover:underline"
+            >
+              Explore Street Intelligence
+            </Link>
+          </Panel>
 
-      <section className="bg-card pb-16">
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-          <div className="flex items-start gap-3 rounded-2xl border border-[#fbbf2430] bg-[#fbbf2410] p-5">
-            <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#fcd34d]" />
-            <p className="text-sm leading-6 text-[#fcd34d]">
-              Always inspect a property in person and confirm terms directly with the property contact before paying anyone. Veriq provides verified
-              information and intelligence to help you decide — it is not a guarantee, and Veriq never asks you to pay rent, a deposit or a purchase price
-              through the platform. <Link href="/safety" className="font-semibold underline">Read the safety guidance</Link>.
+          <Notice
+            tone="amber"
+            icon={<AlertTriangle className="h-5 w-5" />}
+            title="Inspect before you pay anyone"
+          >
+            <p className="leading-[1.6]">
+              Confirm terms directly with the property contact and see the place in person. Veriq provides verified
+              information and intelligence to help you decide — it is not a guarantee of title, condition or
+              availability, and Veriq never collects rent, a deposit or a purchase price.{' '}
+              <Link href="/safety" className="font-semibold text-foreground underline">
+                Read the safety guidance
+              </Link>
+              .
             </p>
-          </div>
+          </Notice>
         </div>
-      </section>
-    </>
+
+        <div className="mt-12 flex flex-wrap gap-3">
+          <Button asChild>
+            <Link href="/properties">
+              Explore properties
+              <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+            </Link>
+          </Button>
+          <Button asChild variant="secondary">
+            <Link href="/contact">Get help</Link>
+          </Button>
+        </div>
+      </div>
+    </section>
   );
 }

@@ -1,327 +1,233 @@
 export type FAQItem = { q: string; a: string; categories?: string[] };
 export type FAQCategory = { label: string; value: string };
 
-export const FAQ_CONTENT_VERSION = '2026-08-23';
+/**
+ * Bumped whenever the shipped answers change, so CMS-managed FAQ content written against an older set
+ * is ignored rather than mixed with this one. `app/faq/page.tsx` compares it to `data.faqVersion`.
+ */
+export const FAQ_CONTENT_VERSION = '2026-09-29';
 
+/**
+ * The first nine entries are the prototype's `#faq`, in its order. Everything after them is ours: the
+ * prototype has nine questions and no content system, while this page is CMS-backed and carries the
+ * categories, so questions the prototype has no room for are kept rather than dropped.
+ *
+ * Every answer here is checked against Master Blueprint v1.0. Where an older answer described the
+ * retired public-agent model — agents listing properties, agent trust scores, a 40/60 unlock revenue
+ * share, agent withdrawals — it is gone: Blueprint §2 and §8 make Veriq Agents internal and
+ * Admin-created, and the prototype's own "Is listing free?" answer says Operators receive no unlock
+ * earnings.
+ */
 export const DEFAULT_FAQS: FAQItem[] = [
   {
-    "q": "What is Veriq Property?",
-    "a": "Veriq Property is a property intelligence platform designed to help people make better property decisions before physical inspection.\nInstead of simply showing property listings, Veriq helps users understand the property, the street, and the agent before deciding whether a property is worth visiting.\nDepending on the property and location, Veriq may provide Property Intelligence, Street Intelligence, listing freshness information, agent trust signals, estimated move-in costs, and other decision-support information.\nFor paid Property Intelligence unlocks linked to an agent-listed property, Veriq currently shares the applicable unlock revenue with the listing Agent. The current standard revenue-sharing formula is 40% to the Agent and 60% to Veriq Property.",
-    "categories": [
-      "general"
-    ]
+    q: 'Do I need to top up a wallet?',
+    a: 'No. Click Unlock to go directly to checkout. Existing refund credit applies automatically; pay only any remaining balance.',
+    categories: ['unlock', 'payment'],
   },
   {
-    "q": "Is Veriq Property a real estate agency?",
-    "a": "No. Veriq Property is a property intelligence platform, not a real estate agency, landlord, property developer, or property owner.\nProperties on the platform are listed by independent agents, property professionals, owners, or other approved participants.",
-    "categories": [
-      "general"
-    ]
+    q: 'How long does access last?',
+    a: '24 hours by default, starting after successful settlement. The exact expiry time is shown on your unlock. Free unlocks are also time-bound.',
+    categories: ['unlock'],
   },
   {
-    "q": "Does Veriq Property own the listed properties?",
-    "a": "No. Unless expressly stated otherwise, Veriq Property does not own the properties displayed on the platform.\nThe relevant property owner, landlord, agent, or property professional remains responsible for the property and the eventual transaction.",
-    "categories": [
-      "general"
-    ]
+    q: 'Does one unlock cover every unit?',
+    a: 'One property unlock covers all documented verified units in that property. Each shared opportunity has its own scope.',
+    categories: ['unlock'],
   },
   {
-    "q": "Does Veriq Property guarantee properties?",
-    "a": "No.\nVeriq provides structured information and trust signals to help users make better decisions, but it does not guarantee that a property will remain available, that every detail will remain unchanged, or that a particular transaction will be successful.\nUsers should physically inspect properties and independently confirm important information before making payments or commitments.",
-    "categories": [
-      "general"
-    ]
+    // The prototype answers this one "Residential Property, Short Let and Hostel listings remain
+    // unlockable for planning with a clear unavailable disclosure." That is wrong for this product and
+    // is deliberately not reproduced: Master Blueprint §5 says a property with no available unit
+    // "stays visible as Currently Unavailable, but paid unlock and direct Operator or Caretaker contact
+    // are disabled", and requires notify-me, similar available properties and Street Intelligence
+    // instead — which is what the backend enforces and what the rest of the UI already does (§9:
+    // "do not accept money for a property with no available unit"). The blueprint wins over the
+    // prototype on product rules; the prototype only wins on design.
+    q: 'Can I unlock an unavailable property?',
+    a: 'No. When no unit is available the property stays visible as Currently Unavailable, and both paid unlock and direct operator or caretaker contact are disabled — Veriq does not take money for a property with nothing to let.\nInstead you can ask to be notified when a unit becomes available, browse similar available properties, and read the street’s own Street Intelligence record, which is never locked behind a property.',
+    categories: ['unlock'],
   },
   {
-    "q": "Is Veriq Property available only in Port Harcourt?",
-    "a": "Veriq Property is launching with an initial focus on Port Harcourt and surrounding supported locations.\nCoverage will expand progressively as more properties, agents, locations, and intelligence become available.",
-    "categories": [
-      "general"
-    ]
+    q: 'How do refunds work?',
+    a: 'Request through Unlock history within 24 hours and provide evidence. Your assigned Agent confirms or Admin decides; if it is approved your wallet is credited automatically and the refunded access is revoked.\nA request qualifies where the unit was available when you paid, is confirmed unavailable within your access period, you did not take it, and the request arrives before your access expires.',
+    categories: ['payment', 'unlock'],
   },
   {
-    "q": "What can I see before unlocking a Property Intelligence report?",
-    "a": "Before unlocking, users can see enough basic information to decide whether a property may be worth considering.\nDepending on the listing, this may include:\n• Property photos or preview images\n• Property type\n• Location\n• Rent or price\n• Number of bedrooms and bathrooms\n• Estimated move-in costs\n• Listing freshness or availability status\n• Listing agent information\n• Agent verification and available performance indicators\n• The Property Intelligence access fee\n• An overview of what the full report contains\nThe detailed Property Intelligence itself remains locked until the applicable access requirement is completed.",
-    "categories": [
-      "property-user"
-    ]
+    q: 'Who can share Street Intelligence?',
+    a: 'Unlocked users can share the standalone street link to people who know the street. It does not share private property information or access.',
+    categories: ['street-intelligence'],
   },
   {
-    "q": "Why do I need to pay before seeing the full Property Intelligence?",
-    "a": "The access fee is for the Property Intelligence report and related consultation access, not simply for viewing a property listing.\nThe report may contain structured information, additional images, property condition information, disclosures, utility and access information, environmental observations, and other details intended to help you determine whether the property is worth physically inspecting.\nBasic property information remains available before you decide whether to unlock the report.\nWhere a paid Property Intelligence unlock relates to an agent-listed property, the current standard revenue-sharing formula allocates 40% of the unlock fee to the listing Agent and 60% to Veriq Property.\nFor example, if a user pays ₦1,000 to unlock the Property Intelligence for an Agent's property, the Agent earns ₦400 and Veriq Property receives ₦600.",
-    "categories": [
-      "property-user"
-    ]
+    q: 'What if Street Intelligence does not exist?',
+    a: 'The Veriq Agent manually supplies a street-level record labelled Initial Veriq Intelligence, with source and timestamp, and links it to the property. Where the street itself is new, it goes to Admin for approval first.',
+    categories: ['street-intelligence'],
   },
   {
-    "q": "Does paying the Intelligence Access Fee reserve the property?",
-    "a": "No.\nUnlocking Property Intelligence does not reserve the property or guarantee that another person will not rent or take the property.\nThe payment gives you access to the relevant intelligence and associated features for the stated access period.",
-    "categories": [
-      "property-user"
-    ]
+    q: 'Is listing free?',
+    a: 'Yes, under the current model. Operators receive no unlock earnings.',
+    categories: ['operator'],
   },
   {
-    "q": "Does the Intelligence Access Fee include rent, agency fee or inspection fee?",
-    "a": "No. The Intelligence Access Fee is separate from:\n• Rent\n• Agency fee\n• Legal fee\n• Caution fee\n• Service charge\n• Inspection fee\n• Property deposit\n• Transportation expenses\n• Any other property-related payment\nAny applicable property charges should be confirmed separately.",
-    "categories": [
-      "property-user"
-    ]
+    q: 'Can a caretaker create a Residential Property owner account?',
+    a: 'Residential Property accounts belong to owners. A caretaker can be added as a replaceable property contact.',
+    categories: ['operator'],
+  },
+
+  {
+    q: 'What is Veriq Property?',
+    a: 'Veriq Property is a property intelligence platform rather than a listing board. It helps you understand a property, its units and its street before you spend a morning and a transport fare finding out in person.\nOperators supply the facts, units and media; an assigned Veriq Agent verifies the submission, links Street Intelligence and publishes; you unlock the full package when a property looks worth a closer look.',
+    categories: ['general'],
   },
   {
-    "q": "How long can I access an unlocked Property Intelligence report?",
-    "a": "A paid unlock covers the property intelligence for 24 hours from confirmed payment, and the exact expiry time is shown on your unlock before and after you pay.\nThe refund window is the same 24 hours and never outlives your access, so a refund request has to reach Veriq before your access expires.",
-    "categories": [
-      "property-user"
-    ]
+    q: 'Is Veriq Property a real estate agency?',
+    a: 'No. Veriq is not an agency, landlord, developer or property owner.\nProperties are supplied by Property Operators — owners, short let and hostel operators, caretakers and current residents — who remain responsible for the property and for the eventual transaction.',
+    categories: ['general'],
   },
   {
-    "q": "What is a Free Intelligence Unlock?",
-    "a": "Some properties may occasionally offer Property Intelligence without the normal access fee.\nThese may appear as Free Intelligence, Free Unlock, or a similar label.\nFree unlocks are promotional or limited offers and may not always be available. Users may still need a Veriq account to claim a free unlock.",
-    "categories": [
-      "property-user"
-    ]
+    q: 'Does Veriq own the properties on the platform?',
+    a: 'No. Unless expressly stated otherwise, Veriq does not own what it publishes. The owner or operator remains responsible for the property and the transaction.',
+    categories: ['general'],
   },
   {
-    "q": "Do I need an account to browse properties?",
-    "a": "No. Users should be able to browse available properties and view public listing information without creating an account.\nAn account may be required when you want to unlock Property Intelligence, claim a free unlock, access protected agent contact information, or use certain personalised platform features.",
-    "categories": [
-      "property-user"
-    ]
+    q: 'Does Veriq guarantee a property?',
+    a: 'No. Veriq verifies and structures information so you can decide well. It does not guarantee that a property stays available, that every detail stays unchanged, or that a transaction succeeds — and document review is never a legal title guarantee.',
+    categories: ['general', 'safety'],
   },
   {
-    "q": "Why do listings expire automatically?",
-    "a": "Property availability changes quickly.\nVeriq requires listings to be reconfirmed periodically so that old or unavailable properties do not remain indefinitely on the platform.\nListings that are not refreshed within the required period may automatically expire, be hidden, or require reconfirmation before becoming visible again. This is part of Veriq's listing-freshness system.",
-    "categories": [
-      "property-user"
-    ]
+    q: 'Where is Veriq available?',
+    a: 'Veriq is running a Rivers State pilot, beginning with Port Harcourt and Obio Akpor. Coverage grows as more properties, streets and intelligence are verified.',
+    categories: ['general'],
   },
   {
-    "q": "What does “Availability Confirmed” mean?",
-    "a": "It means the listing's availability was reconfirmed within the period indicated by Veriq.\nIt does not guarantee that the property will still be available later because property availability can change at any time.",
-    "categories": [
-      "property-user"
-    ]
+    q: 'What can I see before unlocking?',
+    a: 'Enough to judge whether a property is worth a closer look: the category, the general area, the verified cover image, the documented unit types with their basic prices, and clear availability labels.\nThe exact address and coordinates, protected images, full intelligence and direct contacts stay locked until you unlock.',
+    categories: ['unlock', 'property-intelligence'],
   },
   {
-    "q": "Does Veriq Property handle rent payments?",
-    "a": "At present, Veriq's core payment function relates to platform services such as Property Intelligence access.\nRent, agency fees, inspection fees, deposits, and other property transaction payments are generally handled between the relevant parties unless Veriq expressly introduces and identifies a supported payment service for such transactions.\nThe Property Intelligence unlock fee is a Veriq platform payment. For an agent-listed property, the current standard revenue-sharing formula is 40% to the listing Agent and 60% to Veriq Property.",
-    "categories": [
-      "property-user"
-    ]
+    q: 'Why is the full intelligence behind a fee?',
+    a: 'The fee is for verified property intelligence and the access that comes with it — structured condition, utility, access and environmental information, protected images, all documented units, the linked street record and the direct contact route — not for viewing a listing.\nThe basics stay free precisely so you can decide whether unlocking is worth it.',
+    categories: ['unlock', 'payment'],
   },
   {
-    "q": "What is Property Intelligence?",
-    "a": "Property Intelligence is structured information designed to help you understand a specific property before deciding whether to physically inspect it.\nDepending on the property, it may cover information such as:\n• Property condition\n• Detailed images\n• Utilities\n• Access\n• Relevant disclosures\n• Environmental observations\n• Compound or surrounding conditions\n• Estimated costs\n• Agent observations\n• Other inspection-related information\nIt is decision-support information and does not replace physical inspection or professional due diligence.",
-    "categories": [
-      "property-intelligence"
-    ]
+    q: 'Does unlocking reserve the property?',
+    a: 'No. An unlock gives you the intelligence and the contact route for 24 hours. It does not hold the unit, and someone else can still take it.',
+    categories: ['unlock'],
   },
   {
-    "q": "Is Property Intelligence the same as Street Intelligence?",
-    "a": "No.\nProperty Intelligence is about a specific property.\nStreet Intelligence is about the location surrounding a street, estate, road, or other recognised addressable location.\nTogether, they help users understand both the property and its wider environment.",
-    "categories": [
-      "property-intelligence"
-    ]
+    q: 'Does the unlock fee include rent, agency or inspection fees?',
+    a: 'No. It is separate from rent, caution and legal fees, service charges, deposits and transport.\nVeriq has no agency fee and no inspection fee, and Operators agree not to collect agency, inspection, finder, connection or disguised fees from renters introduced through Veriq.',
+    categories: ['payment'],
   },
   {
-    "q": "What is Street Intelligence?",
-    "a": "Street Intelligence is Veriq's community-powered location intelligence system.\nIt helps users understand everyday conditions around a street, estate, road, or other supported location before choosing a property there.\nIt may cover areas such as flood risk, electricity, network coverage, noise, security feel, road access, drainage, and other relevant living conditions.",
-    "categories": [
-      "street-intelligence"
-    ]
+    q: 'Do I need an account to browse?',
+    a: 'No. Browsing and public listing information are open to everyone.\nAn account is needed to unlock a property, claim a free unlock, reach protected contacts, or use anything tied to you such as your wallet, unlock history or availability alerts.',
+    categories: ['unlock', 'general'],
   },
   {
-    "q": "Who provides Street Intelligence?",
-    "a": "Street Intelligence is community-based.\nEligible users who are familiar with a location can contribute structured intelligence about that location.\nStreet Intelligence is separate from the Property Intelligence submitted through the property-listing process.",
-    "categories": [
-      "street-intelligence"
-    ]
+    q: 'What is a free unlock?',
+    a: 'Some properties are published with the unlock fee waived and are labelled clearly. A free unlock is time-bound in the same way a paid one is, and an account is still required to claim it.',
+    categories: ['unlock'],
   },
   {
-    "q": "How does Veriq decide which Street Intelligence result to display?",
-    "a": "Veriq uses a community voting system.\nWhen sufficient verified community contributions are available for a location, the system uses those contributions and the voting outcome to determine the intelligence displayed.\nThe number of contributors and other confidence indicators may also be shown to help users understand the strength of the available information.",
-    "categories": [
-      "street-intelligence"
-    ]
+    q: 'What do the availability labels mean?',
+    a: 'The Operator or the assigned Agent updates each unit as soon as it is taken or genuinely becomes available, so a label reflects the last confirmed position rather than a promise about tomorrow.\nIf a unit turns out to have been unavailable when you paid, that is what the refund route is for.',
+    categories: ['unlock', 'property-intelligence'],
   },
   {
-    "q": "What happens when a location does not yet have enough community contributions?",
-    "a": "Where sufficient community contributions have not yet been received, Veriq may display Initial Intelligence based on available structured research and information.\nOnce the required community contribution threshold is reached, the community voting result can replace or update the initial intelligence.",
-    "categories": [
-      "street-intelligence"
-    ]
+    q: 'What is Property Intelligence?',
+    a: 'Structured information about one specific property and its units, recorded through fixed selections rather than free text so answers stay comparable.\nDepending on the property it covers condition, utilities and electricity, network quality, noise, security feel, road access, compound culture, flooding during heavy rain, detailed images and an optional Agent Observation for professional context.',
+    categories: ['property-intelligence'],
   },
   {
-    "q": "Is Street Intelligence guaranteed to be completely accurate?",
-    "a": "No.\nStreet Intelligence reflects available community contributions and information at a particular time.\nConditions can change, and people's experiences may differ. Users should treat Street Intelligence as decision-support information and make independent enquiries before making an important property decision.",
-    "categories": [
-      "street-intelligence"
-    ]
+    q: 'How is Property Intelligence different from Street Intelligence?',
+    a: 'Property Intelligence describes one property and its units. Street Intelligence describes the street, estate or road around it, is community-powered, and is linked to a property but never sourced from a property page.\nTogether they tell you about the place and about the neighbourhood you would be living in.',
+    categories: ['property-intelligence', 'street-intelligence'],
   },
   {
-    "q": "Who can contribute Street Intelligence?",
-    "a": "Eligible users who genuinely know or are familiar with a location may contribute.\nVeriq may require contributors to satisfy account, location-familiarity, verification, or other eligibility requirements before their contributions are accepted or counted.",
-    "categories": [
-      "street-intelligence"
-    ]
+    q: 'What does Street Intelligence cover?',
+    a: 'Everyday conditions on a street: flood risk, electricity, network coverage and best network, noise and its source, security feel, road access, drainage and what the street is like during heavy rain.\nEach record shows its source, its confidence and when it was last updated.',
+    categories: ['street-intelligence'],
   },
   {
-    "q": "Can someone manipulate Street Intelligence by submitting many votes?",
-    "a": "Manipulation is prohibited.\nUsers must not create multiple accounts, coordinate false submissions, misrepresent their familiarity with a location, or otherwise attempt to manipulate Street Intelligence results.\nVeriq may reject contributions, restrict contributor privileges, or suspend accounts where abuse is detected.",
-    "categories": [
-      "street-intelligence"
-    ]
+    q: 'How does Veriq decide what a street record says?',
+    a: 'From verified community contributions. Where enough people who know the street have contributed, their answers and the voting outcome set what is displayed, and the number of contributors is shown so you can weigh it.\nUntil then the record stays labelled Initial Veriq Intelligence, and community contributions replace it once the threshold is reached.',
+    categories: ['street-intelligence'],
   },
   {
-    "q": "What if I cannot find my street, estate or road?",
-    "a": "You can use the Suggest a Location feature.\nThe proposed location will be submitted for review before it can be added to Veriq's recognised location database.",
-    "categories": [
-      "street-intelligence"
-    ]
+    q: 'Can Street Intelligence be manipulated?',
+    a: 'Manipulation is prohibited. Creating multiple accounts, coordinating submissions or misrepresenting familiarity with a street may lead to rejected contributions, restricted contributor privileges or a suspended account.\nContributors may be asked to satisfy account, familiarity and verification requirements before their answers count.',
+    categories: ['street-intelligence', 'safety'],
   },
   {
-    "q": "How are agents verified?",
-    "a": "Veriq may require agents to provide identity and other relevant verification information before receiving a verification status.\nAn Agent Verified or Identity Verified badge means that the applicable Veriq verification requirements have been completed.\nIt does not mean Veriq guarantees every property submitted by that agent or guarantees the agent's future conduct.",
-    "categories": [
-      "agent"
-    ]
+    q: 'My street is not listed. What now?',
+    a: 'Propose it. A proposal carries the State, LGA and Veriq Area so Admin can review it, and the street becomes selectable once it is approved.',
+    categories: ['street-intelligence'],
   },
   {
-    "q": "What are Agent Trust Scores?",
-    "a": "Agent Trust Scores and performance indicators are designed to help users evaluate agents using available platform activity and performance data.\nDepending on the system in use, indicators may consider factors such as:\n• Listing accuracy\n• Listing freshness\n• Response reliability\n• Inspection success\n• Consultation history\n• User feedback\n• Property availability performance\nThese are trust signals, not guarantees of future performance.",
-    "categories": [
-      "agent"
-    ]
+    q: 'Who checks a property before it is published?',
+    a: 'A verified Operator submits the property, units, images, intelligence, prices and availability, and actively accepts the listing declaration.\nThe assigned Veriq Agent then calls and completes a live video verification, compares the live property to the submission, requests corrections, links or supplies Street Intelligence, and publishes only when the information is accurate enough. Material actions, corrections and escalations are recorded.',
+    categories: ['operator', 'safety'],
   },
   {
-    "q": "Can agents lose visibility or be suspended?",
-    "a": "Yes.\nAgents who repeatedly submit stale, misleading, unavailable, fraudulent, or otherwise non-compliant listings may face actions such as:\n• Reduced visibility\n• Lower trust indicators\n• Removal of listings\n• Temporary restrictions\n• Suspension\n• Loss of special status\n• Payment or commission restrictions\n• Permanent removal in serious cases",
-    "categories": [
-      "agent"
-    ]
+    q: 'What does a Veriq Agent do, and can I become one?',
+    a: 'A Veriq Agent is internal staff, not a marketplace agent: they verify the operator and the property, review intelligence, link or create street records, publish, support renters after an unlock and record their decisions.\nAgent accounts are created by Admin, so they cannot be registered from the public site. The public account types are Renter and Property Operator.',
+    categories: ['operator', 'general'],
   },
   {
-    "q": "Can multiple agents list the same property?",
-    "a": "Yes, where multiple legitimate agents have authority to market the same property.\nEach listing remains connected to the agent who submitted it, and each agent remains responsible for the accuracy, freshness, and conduct associated with their own listing.\nVeriq may moderate duplicate or suspicious listings to prevent abuse or unnecessary clutter.",
-    "categories": [
-      "agent"
-    ]
+    q: 'What does an Operator need before posting?',
+    a: 'Signing up takes an operator category, full name, email and acceptance of the Operator Terms; a phone number is optional at that point.\nBefore posting, a phone OTP, a valid government ID and a selfie holding that ID are required, and Veriq may ask for limited further evidence of identity, role or authority. Verification confirms the person — it does not confirm ownership of every property they later submit.',
+    categories: ['operator'],
   },
   {
-    "q": "Why does Veriq track agent performance?",
-    "a": "Verification confirms identity, but identity alone does not tell users how well an agent performs.\nPerformance tracking helps users consider factors such as listing accuracy, freshness, responsiveness, and inspection outcomes when deciding who to engage with.",
-    "categories": [
-      "agent"
-    ]
+    q: 'Can two Operators list the same property?',
+    a: 'No. Each physical property has one permanent Veriq Property ID, and duplicate submissions are corrected, merged or rejected during review.\nIf a property changes hands or its contact changes, the existing record is updated rather than listed again.',
+    categories: ['operator'],
   },
   {
-    "q": "How do agents earn from Property Intelligence unlocks?",
-    "a": "When a user pays to unlock Property Intelligence for a property listed by an Agent, the listing Agent earns a share of the applicable unlock fee.\nThe current standard revenue-sharing formula is 40% to the Agent and 60% to Veriq Property.\nExample: if a user pays ₦1,000 to unlock an Agent's property, the Agent earns ₦400 and Veriq Property receives ₦600.\nThe standard revenue-sharing rate may be reviewed as the platform develops. Where the applicable rate changes, Veriq will communicate the current rate through the platform or its official agent compensation rules.",
-    "categories": [
-      "agent"
-    ]
+    q: 'Will an approved refund come back as cash?',
+    a: 'No. An approved refund becomes Veriq Wallet credit for another unlock rather than an automatic cash return.\nThe credit does not expire and can be spent on any eligible unlock, in any category.',
+    categories: ['payment'],
   },
   {
-    "q": "Can agents withdraw earnings immediately?",
-    "a": "Not necessarily.\nAgent earnings may remain in a pending or review state for a defined period before becoming available for withdrawal.\nThis allows Veriq to review qualifying transactions and address issues such as unavailable or misleading listings before releasing applicable earnings.",
-    "categories": [
-      "agent"
-    ]
+    q: 'What does not qualify for a refund?',
+    a: 'Changing your mind after unlocking, deciding not to inspect, choosing another property, letting the access period pass unused, or a unit that was genuinely available when you paid and was legitimately taken afterwards.\nA mismatch with personal preference does not qualify where the published information was materially accurate.',
+    categories: ['payment'],
   },
   {
-    "q": "What is the minimum withdrawal amount for agents?",
-    "a": "The current minimum withdrawal threshold is ₦5,000, subject to Veriq's prevailing agent payout rules.\nVeriq may update withdrawal thresholds, review periods, or payout conditions as the platform develops.",
-    "categories": [
-      "agent"
-    ]
+    q: 'Are payments on Veriq secure?',
+    a: 'Platform payments run through supported payment providers inside Veriq’s own checkout, and every unlock, wallet credit and refund is recorded in the ledger.\nOnly ever pay a Veriq fee through the checkout shown in Veriq. Treat anyone asking you to send an unlock fee another way as a fraud attempt.',
+    categories: ['payment', 'safety'],
   },
   {
-    "q": "Can agent earnings be reversed or withheld?",
-    "a": "Yes, in qualifying cases.\nWhere an earning is linked to a property that is found to be fraudulent, materially misleading, duplicated, improperly listed, or otherwise in violation of Veriq's policies, the associated earning may be withheld, reversed, or adjusted in accordance with the applicable agent rules.",
-    "categories": [
-      "agent"
-    ]
+    q: 'How does Veriq keep misleading listings out?',
+    a: 'Operator identity verification, live video verification of each property by the assigned Agent, structured intelligence fields with no Unknown option, an availability duty on every unit, recorded review decisions, the refund route and enforcement against repeat offenders.\nThese reduce risk substantially but cannot eliminate every inaccurate or dishonest submission, which is why inspection still matters.',
+    categories: ['safety'],
   },
   {
-    "q": "What happens if a property is no longer available after I pay to unlock its intelligence?",
-    "a": "If you unlock a Property Intelligence report and discover that the property qualifies as unavailable under Veriq's Refund Policy, you may submit the matter for review.\nIf approved, Veriq may provide the remedy allowed under the applicable policy, such as a wallet credit, replacement unlock, credit toward another eligible property, or another approved remedy.\nNot every case of a property later becoming unavailable automatically qualifies.",
-    "categories": [
-      "payment"
-    ]
+    q: 'Does a verified badge mean Veriq guarantees the property?',
+    a: 'No. Read a badge for exactly what it verifies: that a specific Veriq check was completed. It is not a guarantee of the operator’s future conduct, of every detail of the property, or of the outcome of your transaction.',
+    categories: ['safety'],
   },
   {
-    "q": "Will I always receive a cash refund?",
-    "a": "No.\nAn approved refund request does not necessarily mean money will be returned directly to your bank account or payment card.\nDepending on the applicable Refund Policy, the remedy may be provided as:\n• Veriq wallet credit\n• Replacement intelligence unlock\n• Credit toward another eligible property\n• Another approved remedy\nCash refunds may only apply where expressly provided under the applicable policy or required by law.",
-    "categories": [
-      "payment"
-    ]
+    q: 'Should I still inspect the property?',
+    a: 'Yes, always. Property Intelligence and Street Intelligence exist to help you decide what is worth visiting and what to look for when you get there.\nThey do not replace a physical inspection, legal due diligence, title verification or professional advice.',
+    categories: ['safety'],
   },
   {
-    "q": "What may qualify for refund or credit consideration?",
-    "a": "Depending on the Refund Policy and the evidence available, qualifying circumstances may include situations such as:\n• The property was already unavailable when the user unlocked the report\n• The listing was materially stale\n• A duplicate listing caused an improper paid unlock\n• The listing contained serious material misrepresentation\n• Another qualifying circumstance expressly covered by the Refund Policy\nVeriq may investigate a claim before approving a remedy.",
-    "categories": [
-      "payment"
-    ]
+    q: 'How do I reach Veriq?',
+    a: 'Use the contact page or the support options inside the platform. For anything about an unlocked property, open it from your unlock history — the operator contact and your assigned Agent’s WhatsApp support are there.\nUse official Veriq channels rather than contact details supplied by an unknown third party.',
+    categories: ['support'],
   },
-  {
-    "q": "What does NOT normally qualify for a refund or credit?",
-    "a": "Examples that would not normally qualify include:\n• You simply changed your mind after unlocking the report\n• You no longer like the property\n• You decide not to attend an inspection\n• The property does not match your personal preferences where the information supplied was materially accurate\n• You rented or chose another property\n• You fail to use the intelligence during its access period\n• The property was genuinely available when you unlocked it but was legitimately taken afterwards, unless the applicable Refund Policy provides otherwise\n• Circumstances outside the qualifying refund rules\nThe final determination remains subject to the published Refund Policy and applicable law.",
-    "categories": [
-      "payment"
-    ]
-  },
-  {
-    "q": "How do I request a refund or credit review?",
-    "a": "Use the refund/support option provided through Veriq or contact Veriq Support with the relevant property and unlock information.\nYou may be asked to provide information or evidence so Veriq can review the circumstances.",
-    "categories": [
-      "payment"
-    ]
-  },
-  {
-    "q": "Are payments on Veriq secure?",
-    "a": "Platform payments are processed through supported payment providers.\nUsers should only make Veriq platform payments through the official payment process shown within Veriq.\nUsers should be cautious if anyone asks them to make a supposed Veriq Intelligence payment through an unofficial channel.",
-    "categories": [
-      "payment"
-    ]
-  },
-  {
-    "q": "How does Veriq Property reduce fake or misleading listings?",
-    "a": "Veriq uses several mechanisms intended to improve listing quality, including:\n• Agent verification\n• Listing freshness requirements\n• Structured property information\n• Content moderation\n• Property Intelligence requirements\n• Agent performance tracking\n• Expiration of stale listings\n• User reporting\n• Enforcement actions for repeated violations\nThese measures reduce risk but cannot completely eliminate fraudulent or inaccurate behaviour.",
-    "categories": [
-      "safety"
-    ]
-  },
-  {
-    "q": "Does a Verified badge mean Veriq guarantees the person or property?",
-    "a": "No.\nA verification badge should always be interpreted according to what it specifically verifies.\nFor example, Agent Identity Verified means the relevant agent identity-verification requirement was completed.\nIt does not mean Veriq guarantees the agent's character, every property listed by the agent, or the success of a transaction.",
-    "categories": [
-      "safety"
-    ]
-  },
-  {
-    "q": "Should I still inspect a property after reading the Intelligence Report?",
-    "a": "Yes.\nAlways physically inspect a property before making a commitment.\nVeriq Property Intelligence and Street Intelligence are designed to help you make a more informed decision about whether to inspect and what to look out for.\nThey are not substitutes for physical inspection, legal due diligence, title verification, professional advice, or other checks appropriate to the transaction.",
-    "categories": [
-      "safety"
-    ]
-  },
-  {
-    "q": "How can I contact Veriq Property?",
-    "a": "You can contact Veriq Property through the official Contact Us or Support options provided on the platform.\nFor account, property, payment, refund, or technical enquiries, use Veriq's official support channels rather than contact information supplied by an unknown third party.",
-    "categories": [
-      "support"
-    ]
-  }
 ];
 
 export const DEFAULT_FAQ_CATEGORIES: FAQCategory[] = [
   { label: 'All', value: 'all' },
-  { label: 'General', value: 'general' },
-  { label: 'Property Users', value: 'property-user' },
+  { label: 'Unlocks & access', value: 'unlock' },
+  { label: 'Payments & refunds', value: 'payment' },
   { label: 'Property Intelligence', value: 'property-intelligence' },
   { label: 'Street Intelligence', value: 'street-intelligence' },
-  { label: 'Agents', value: 'agent' },
-  { label: 'Payments & Refunds', value: 'payment' },
-  { label: 'Safety & Trust', value: 'safety' },
+  { label: 'Listing & Operators', value: 'operator' },
+  { label: 'Safety & trust', value: 'safety' },
+  { label: 'About Veriq', value: 'general' },
   { label: 'Support', value: 'support' },
 ];

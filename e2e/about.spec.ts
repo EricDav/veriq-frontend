@@ -11,14 +11,18 @@ test('About page presents the intelligence story and primary journeys', async ({
 
   await page.goto('/about');
 
-  await expect(page.getByRole('heading', { name: /Building The Intelligence Layer/ })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Know Before You Go.' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Trust Is Earned. Not Claimed.' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: /What You Can Do On Veriq/ })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Browse Properties' }).first()).toHaveAttribute('href', '/properties');
-  await expect(page.getByRole('link', { name: 'Explore Street Intelligence' })).toHaveAttribute('href', '/street-intelligence');
+  await expect(
+    page.getByRole('heading', { name: 'Better property decisions start with better information.', level: 1 }),
+  ).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Know the property' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Understand the street' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Connect directly' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'What we set out to fix' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Explore properties' })).toHaveAttribute('href', '/properties');
+  await expect(page.getByRole('link', { name: 'Get help' })).toHaveAttribute('href', '/contact');
 
   await page.screenshot({ path: 'test-results/about-desktop.png', fullPage: true });
-  await page.setViewportSize({ width: 390, height: 844 });
+  await page.setViewportSize({ width: 375, height: 812 });
+  await expect(page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).resolves.toBe(true);
   await page.screenshot({ path: 'test-results/about-mobile.png', fullPage: true });
 });
