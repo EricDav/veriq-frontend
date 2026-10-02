@@ -70,7 +70,9 @@ const SOCIAL_LINKS = [
 
 export function Footer() {
   const pathname = usePathname();
-  if (pathname.startsWith('/dashboard') || pathname.startsWith('/auth')) return null;
+  // The dashboard carries its own shell; every public page, auth included, gets the site footer —
+  // which is how the prototype has it.
+  if (pathname.startsWith('/dashboard')) return null;
 
   const openInstallPrompt = () => {
     window.dispatchEvent(new Event('veriq:open-install-prompt'));
@@ -79,7 +81,8 @@ export function Footer() {
   return (
     <footer className="border-t border-border bg-background text-muted-foreground">
       {/* Main footer */}
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
+      {/* `.footer` is `padding: 45px 5% 25px` in the prototype — full width, no 1280px cap. */}
+      <div className="px-[5%] pb-10 pt-[45px]">
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-5">
           {/* Brand */}
           <div className="lg:col-span-2">
@@ -155,7 +158,7 @@ export function Footer() {
 
       {/* Bottom bar */}
       <div className="border-t border-border">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="flex flex-col items-center justify-between gap-3 px-[5%] py-[25px] sm:flex-row">
           <p className="text-xs text-muted-foreground">
             &copy; {new Date().getFullYear()} Veriq Global Services Ltd.
           </p>

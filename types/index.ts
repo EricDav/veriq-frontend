@@ -1164,6 +1164,15 @@ export interface PaginatedResponse<T> {
 
 // ─── Auth DTOs ────────────────────────────────────────────────────────────
 
+/** The five categories an Operator can be set up to list, as the register endpoint names them. */
+export enum PropertyCategory {
+  RESIDENTIAL = 'residential',
+  SHORT_LET = 'short_let',
+  HOSTEL = 'hostel',
+  SHARED_PROPERTY = 'shared_property',
+  FOR_SALE = 'for_sale',
+}
+
 export interface RegisterDto {
   firstName: string;
   lastName: string;
@@ -1174,6 +1183,13 @@ export interface RegisterDto {
   role?: UserRole;
   /** Veriq Agent referral code; assigns a new Property Operator to that Agent (§3.2). */
   referralCode?: string;
+  // ─── Property Operator signup (Master Blueprint §3) ───────────────────────
+  /** One to six categories. Required for a Property Operator account. */
+  operatorCategories?: PropertyCategory[];
+  /** Legal or operating entity name; the API falls back to the account's own full name. */
+  legalName?: string;
+  /** Must be true for a Property Operator account. */
+  acceptOperatorTerms?: boolean;
 }
 
 export interface LoginDto {

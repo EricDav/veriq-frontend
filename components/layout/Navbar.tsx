@@ -18,6 +18,20 @@ const NAV_LINKS = [
   { label: "How it works", href: "/how-it-works" },
 ];
 
+/**
+ * What the drawer lists: the header's three links, then the one or two account actions. The desktop
+ * header shows those as buttons; on a phone the prototype makes them the same plain rows.
+ */
+function mobileLinks(isAuthenticated: boolean) {
+  return [
+    ...NAV_LINKS,
+    isAuthenticated
+      ? { label: "Dashboard", href: "/dashboard" }
+      : { label: "Log in", href: "/auth/login" },
+    { label: "List your property", href: "/auth/register?role=operator" },
+  ];
+}
+
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -25,7 +39,6 @@ export function Navbar() {
   const { isAuthenticated } = useAuth();
 
   const isDashboard = pathname.startsWith("/dashboard");
-  const isAuthPage = pathname.startsWith("/auth");
   const darkPropertyHeader = pathname.startsWith("/properties");
   const solidHeader = !darkPropertyHeader && (scrolled || pathname.startsWith("/street-intelligence"));
 
@@ -39,7 +52,28 @@ export function Navbar() {
     setMobileOpen(false);
   }, [pathname]);
 
-  if (isDashboard || isAuthPage) return null;
+  const MOBILE_LINKS = mobileLinks(isAuthenticated);
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobileOpen(false);
+    };
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [mobileOpen]);
+
+  /*
+   * The dashboard has its own workspace header, so the site nav stays out of it. Auth is different:
+   * the prototype keeps the site nav on `#login` and `#signup`, and a visitor part-way through signing
+   * up still needs a way back to the rest of the site.
+   */
+  if (isDashboard) return null;
 
   return (
     <header
@@ -49,7 +83,13 @@ export function Navbar() {
           : "bg-transparent"
       }`}
     >
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      {/*
+        The prototype's `.site-nav` is `padding: 22px 5%` with no max-width, so the header runs almost
+        edge to edge however wide the window is. Capping it at 1280px here made the bar stop short of
+        the window on a large screen, which in turn made every centred panel below it look wider than
+        it does in the design.
+      */}
+      <div className="px-[5%]">
         <div className="flex h-16 items-center justify-between lg:h-20">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 group">
@@ -121,48 +161,45 @@ export function Navbar() {
 
           {/* Mobile Menu Toggle */}
           <button
-            className={`lg:hidden rounded-lg p-2 transition-colors ${
+            className={`relative z-[80] rounded-lg p-2 transition-colors lg:hidden ${
               solidHeader ? "text-foreground hover:bg-[#ffffff08]" : "text-foreground hover:bg-[#ffffff0f]"
             }`}
             onClick={() => setMobileOpen((v) => !v)}
-            aria-label="Toggle menu"
+            aria-label={mobileOpen ? "Close menu" : "Open menu"}
+            aria-expanded={mobileOpen}
+            aria-controls="mobile-menu"
           >
             {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </button>
         </div>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Mobile menu: the prototype slides a panel in from the right over a dimmed page, rather than
+          dropping a block under the header. Items are plain text with generous spacing — no icons,
+          no boxes. */}
       {mobileOpen && (
-        <div className="lg:hidden bg-card border-t border-[#ffffff12] shadow-lg">
-          <div className="max-w-7xl mx-auto px-4 py-4 space-y-1">
-            {NAV_LINKS.map((link) => (
+        <div className="lg:hidden">
+          <div
+            className="fixed inset-0 z-[60] bg-[#00000099]"
+            onClick={() => setMobileOpen(false)}
+            aria-hidden="true"
+          />
+          <nav
+            id="mobile-menu"
+            aria-label="Main"
+            className="fixed inset-y-0 right-0 z-[70] flex w-[82vw] max-w-[360px] flex-col overflow-y-auto border-l border-border bg-background px-9 pb-10 pt-[70px]"
+          >
+            {MOBILE_LINKS.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className="block rounded-lg px-3 py-2.5 text-sm font-medium text-foreground hover:bg-[#ffffff08] hover:text-primary transition-colors"
+                onClick={() => setMobileOpen(false)}
+                className="py-[22px] text-[1.05rem] text-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:text-primary"
               >
                 {link.label}
               </Link>
             ))}
-            <div className="pt-3 pb-1 border-t border-[#ffffff12] flex flex-col gap-2">
-              {isAuthenticated ? (
-                <Link href="/dashboard" className="btn-primary w-full !py-2.5 flex items-center justify-center gap-2">
-                  <LayoutDashboard className="h-4 w-4" />
-                  Dashboard
-                </Link>
-              ) : (
-                <>
-                  <Link href="/auth/login" className="btn-outline w-full !py-2.5">
-                    Log in
-                  </Link>
-                  <Link href="/auth/register?role=operator" className="btn-primary w-full !py-2.5">
-                    List your property
-                  </Link>
-                </>
-              )}
-            </div>
-          </div>
+          </nav>
         </div>
       )}
     </header>

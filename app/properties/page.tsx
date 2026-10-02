@@ -188,6 +188,12 @@ export default function PropertiesPage() {
     const checkIn = params.get('checkIn') ?? '';
     const checkOut = params.get('checkOut') ?? '';
     if (checkIn && checkOut) setStay({ checkIn, checkOut });
+    // The home page's search bar sends its category straight through, so arriving here lands on the
+    // same tab the visitor picked rather than on "All Categories".
+    const requested = params.get('category');
+    if (requested && BROWSE_CATEGORIES.some((item) => item.value === requested)) {
+      setCategory(requested as BrowseCategory);
+    }
     if (!Object.values(locationFilters).some(Boolean)) return;
     setFilters(locationFilters);
     setPendingFilters(locationFilters);

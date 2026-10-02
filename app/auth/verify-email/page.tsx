@@ -1,12 +1,12 @@
 'use client';
 
 import { FormEvent, KeyboardEvent, Suspense, useEffect, useRef, useState } from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { CheckCircle, Mail, RotateCw } from 'lucide-react';
+import { AlertCircle, CheckCircle, Mail, RotateCw } from 'lucide-react';
 import { ApiError, authApi } from '@/lib/api';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { AuthPanel } from '@/components/auth/AuthPanel';
+import { Button, Notice } from '@/components/ui';
 
 const CODE_LENGTH = 6;
 const RESEND_COOLDOWN_SECONDS = 60;
@@ -101,77 +101,79 @@ function VerifyEmailPageInner() {
   };
 
   return (
-    <main className="min-h-screen bg-hero-pattern flex items-center justify-center px-4 py-20">
-      <div className="w-full max-w-md">
-        <div className="mb-8 text-center">
-          <Link href="/" className="mb-6 inline-flex items-center gap-2.5">
-            <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-background p-2 ring-1 ring-white/10">
-              <Image src="/images/Logo.png" alt="Veriq Logo" width={40} height={40} className="rounded-lg" />
-            </span>
-            <span className="text-left leading-none">
-              <span className="block font-display text-xl font-bold text-foreground">Veriq</span>
-              <span className="block text-[10px] font-semibold uppercase tracking-widest text-primary">Property</span>
-            </span>
-          </Link>
-          <h1 className="font-display text-2xl font-bold text-foreground">Verify your email</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {email ? <>We sent a 6-digit code to <strong className="text-foreground">{email}</strong>.</> : 'Open the verification link after registration.'}
-          </p>
+    <AuthPanel
+      title="Verify your email"
+      showLinks={false}
+      lead={
+        email ? (
+          <>
+            We sent a 6-digit code to <strong className="text-foreground">{email}</strong>.
+          </>
+        ) : (
+          'Open the verification link after registration.'
+        )
+      }
+    >
+      {verified ? (
+        <div className="flex flex-col gap-[22px]">
+          <Notice icon={<CheckCircle className="h-5 w-5" />} title="Email verified">
+            {message}
+          </Notice>
+          <Button type="button" onClick={() => router.replace('/auth/login')} className="w-full">
+            Continue to sign in
+          </Button>
         </div>
+      ) : (
+        <form onSubmit={submit} noValidate className="flex flex-col gap-[22px]">
+          <div
+            className="flex justify-center gap-2"
+            onPaste={(event) => {
+              event.preventDefault();
+              setCode(event.clipboardData.getData('text'));
+            }}
+          >
+            {digits.map((digit, index) => (
+              <input
+                key={index}
+                ref={(element) => { inputs.current[index] = element; }}
+                value={digit}
+                onChange={(event) => handleDigit(index, event.target.value)}
+                onKeyDown={(event) => handleKeyDown(index, event)}
+                inputMode="numeric"
+                autoComplete={index === 0 ? 'one-time-code' : 'off'}
+                aria-label={`Verification code digit ${index + 1}`}
+                maxLength={1}
+                className="input h-12 min-w-0 flex-1 px-0 text-center text-xl font-semibold sm:h-14"
+              />
+            ))}
+          </div>
 
-        <section className="rounded-lg border border-white/20 bg-[#ffffff0f] p-6 shadow-2xl backdrop-blur-xl sm:p-8">
-          {verified ? (
-            <div className="text-center">
-              <CheckCircle className="mx-auto h-12 w-12 text-primary" />
-              <h2 className="mt-4 font-display text-lg font-bold text-foreground">Email verified</h2>
-              <p className="mt-2 text-sm text-muted-foreground">{message}</p>
-              <button type="button" onClick={() => router.replace('/auth/login')} className="mt-6 w-full rounded-lg bg-primary py-3 text-sm font-bold text-foreground">
-                Continue to sign in
-              </button>
-            </div>
-          ) : (
-            <form onSubmit={submit} noValidate>
-              <div className="mb-5 flex justify-center gap-2" onPaste={(event) => {
-                event.preventDefault();
-                setCode(event.clipboardData.getData('text'));
-              }}>
-                {digits.map((digit, index) => (
-                  <input
-                    key={index}
-                    ref={(element) => { inputs.current[index] = element; }}
-                    value={digit}
-                    onChange={(event) => handleDigit(index, event.target.value)}
-                    onKeyDown={(event) => handleKeyDown(index, event)}
-                    inputMode="numeric"
-                    autoComplete={index === 0 ? 'one-time-code' : 'off'}
-                    aria-label={`Verification code digit ${index + 1}`}
-                    maxLength={1}
-                    className="h-12 min-w-0 flex-1 rounded-lg border border-white/20 bg-[#ffffff0f] text-center text-xl font-bold text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-[#10b98133] sm:h-14"
-                  />
-                ))}
-              </div>
-
-              {error && <p role="alert" className="mb-4 text-center text-sm text-[#fda4af]">{error}</p>}
-              {message && <p className="mb-4 text-center text-sm text-[#6ee7b7]">{message}</p>}
-
-              <button type="submit" disabled={isSubmitting} className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-3 text-sm font-bold text-foreground disabled:opacity-60">
-                {isSubmitting && <LoadingSpinner size="sm" className="text-foreground" />}
-                {isSubmitting ? 'Verifying...' : 'Verify email'}
-              </button>
-
-              <div className="mt-5 flex items-center justify-center gap-2 text-xs text-muted-foreground">
-                <Mail className="h-3.5 w-3.5" />
-                <span>Didn&apos;t receive it?</span>
-                <button type="button" onClick={resend} disabled={cooldown > 0 || isResending || !email} className="inline-flex items-center gap-1 font-semibold text-primary disabled:text-muted-foreground">
-                  {isResending && <RotateCw className="h-3 w-3 animate-spin" />}
-                  {cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend code'}
-                </button>
-              </div>
-            </form>
+          {error && (
+            <Notice tone="amber" icon={<AlertCircle className="h-5 w-5" />}>{error}</Notice>
           )}
-        </section>
-      </div>
-    </main>
+          {message && <Notice icon={<CheckCircle className="h-5 w-5" />}>{message}</Notice>}
+
+          <Button type="submit" disabled={isSubmitting} className="w-full">
+            {isSubmitting && <LoadingSpinner size="sm" />}
+            {isSubmitting ? 'Verifying…' : 'Verify email'}
+          </Button>
+
+          <div className="flex items-center justify-center gap-2 text-ui-md text-muted-foreground">
+            <Mail className="h-3.5 w-3.5" aria-hidden="true" />
+            <span>Didn&apos;t receive it?</span>
+            <button
+              type="button"
+              onClick={resend}
+              disabled={cooldown > 0 || isResending || !email}
+              className="inline-flex items-center gap-1 font-semibold text-primary disabled:text-muted-foreground"
+            >
+              {isResending && <RotateCw className="h-3 w-3 animate-spin" />}
+              {cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend code'}
+            </button>
+          </div>
+        </form>
+      )}
+    </AuthPanel>
   );
 }
 

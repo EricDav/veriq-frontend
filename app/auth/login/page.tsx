@@ -1,18 +1,18 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Eye, EyeOff, AlertCircle } from 'lucide-react';
-import Image from 'next/image';
+import { AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { ApiError } from '@/lib/api';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useToast } from '@/components/ui/Toast';
-import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
+import { AuthPanel } from '@/components/auth/AuthPanel';
+import { Button, FieldShell, Notice } from '@/components/ui';
 
 // ─── Validation Schema ────────────────────────────────────────────────────
 
@@ -25,12 +25,22 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 // ─── Component ────────────────────────────────────────────────────────────
 
+/**
+ * The prototype's `#login` panel, with real authentication in it.
+ *
+ * The prototype is a demo: it has no password field and its own notice says password authentication
+ * is "reserved for the production implementation". This is that implementation, so the panel, the
+ * page head, the field grammar and the three-link row are the prototype's, and email + password +
+ * Google sign-in are ours.
+ */
 function LoginPageInner() {
   const router = useRouter();
   const params = useSearchParams();
   const redirect = params.get('redirect') ?? '/dashboard';
 
-  const { login, loginWithGoogle, isAuthenticated, isLoading } = useAuth();
+  // Google sign-in stays implemented end to end — `loginWithGoogle` and its endpoint are untouched —
+  // but the prototype's login panel offers email only, so no Google control is rendered here.
+  const { login, isAuthenticated, isLoading } = useAuth();
   const { success } = useToast();
 
   const [showPassword, setShowPassword] = useState(false);
@@ -40,9 +50,7 @@ function LoginPageInner() {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
-  });
+  } = useForm<LoginFormData>({ resolver: zodResolver(loginSchema) });
 
   // Single redirect effect — fires whenever isAuthenticated becomes true
   // (covers both "already logged in on page load" and "just logged in")
@@ -71,11 +79,7 @@ function LoginPageInner() {
           router.push(`/auth/verify-phone?email=${email}`);
           return;
         }
-        setServerError(
-          err.statusCode === 401
-            ? 'Invalid email or password.'
-            : err.message,
-        );
+        setServerError(err.statusCode === 401 ? 'Invalid email or password.' : err.message);
       } else {
         setServerError('Something went wrong. Please try again.');
       }
@@ -83,128 +87,65 @@ function LoginPageInner() {
   };
 
   return (
-    <div className="min-h-screen bg-hero-pattern flex items-center justify-center px-4 py-20">
-      <div className="w-full max-w-md">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2.5 mb-6">
-            <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-background p-2 ring-1 ring-white/10">
-              <Image src="/images/Logo.png" alt="Veriq Logo" width={40} height={40} className="rounded-lg" />
-            </span>
-            <div className="flex flex-col leading-none text-left">
-              <span className="font-display text-xl font-bold text-foreground">Veriq</span>
-              <span className="text-[10px] font-semibold tracking-widest uppercase text-primary">Property</span>
-            </div>
-          </Link>
-          <h1 className="font-display text-2xl font-bold text-foreground mb-1">Welcome back</h1>
-          <p className="text-muted-foreground text-sm">Sign in to your Veriq Property account</p>
-        </div>
+    <AuthPanel title="Welcome back" lead="Sign in to pick up where you left off.">
+      {serverError && (
+        <Notice tone="amber" icon={<AlertCircle className="h-5 w-5" />} title="We could not sign you in">
+          {serverError}
+        </Notice>
+      )}
 
-        {/* Form card */}
-        <div className="rounded-2xl bg-[#ffffff0f] border border-white/20 backdrop-blur-xl p-8 shadow-2xl">
-          {/* Server error */}
-          {serverError && (
-            <div className="mb-5 flex items-start gap-2.5 rounded-xl bg-[#fb718510] border border-[#fb718530] px-4 py-3">
-              <AlertCircle className="h-4 w-4 text-[#fda4af] flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-[#fda4af]">{serverError}</p>
-            </div>
-          )}
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-[22px]" noValidate>
+        <FieldShell htmlFor="login-email" label="Email address" required error={errors.email?.message}>
+          <input
+            id="login-email"
+            {...register('email')}
+            type="email"
+            autoComplete="email"
+            className="input"
+            placeholder="you@example.com"
+          />
+        </FieldShell>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
-            {/* Email */}
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-1.5">
-                Email Address
-              </label>
-              <input
-                {...register('email')}
-                type="email"
-                autoComplete="email"
-                className={`w-full rounded-lg border bg-[#ffffff0f] px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none transition-all focus:ring-2 focus:ring-white/10 ${
-                  errors.email
-                    ? 'border-[#fb718530] focus:border-[#fb718530]'
-                    : 'border-white/20 focus:border-white/40'
-                }`}
-                placeholder="you@example.com"
-              />
-              {errors.email && (
-                <p className="mt-1.5 text-xs text-[#fda4af]">{errors.email.message}</p>
-              )}
-            </div>
-
-            {/* Password */}
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-sm font-medium text-foreground">Password</label>
-                <Link
-                  href="/auth/forgot-password"
-                  className="text-xs text-primary hover:text-primary transition-colors"
-                >
-                  Forgot password?
-                </Link>
-              </div>
-              <div className="relative">
-                <input
-                  {...register('password')}
-                  type={showPassword ? 'text' : 'password'}
-                  autoComplete="current-password"
-                  className={`w-full rounded-lg border bg-[#ffffff0f] px-4 py-3 pr-11 text-sm text-foreground placeholder:text-muted-foreground outline-none transition-all focus:ring-2 focus:ring-white/10 ${
-                    errors.password
-                      ? 'border-[#fb718530] focus:border-[#fb718530]'
-                      : 'border-white/20 focus:border-white/40'
-                  }`}
-                  placeholder="Enter your password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground transition-colors"
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-              {errors.password && (
-                <p className="mt-1.5 text-xs text-[#fda4af]">{errors.password.message}</p>
-              )}
-            </div>
-
-            {/* Submit */}
+        <FieldShell
+          htmlFor="login-password"
+          label="Password"
+          required
+          error={errors.password?.message}
+        >
+          <div className="relative">
+            <input
+              id="login-password"
+              {...register('password')}
+              type={showPassword ? 'text' : 'password'}
+              autoComplete="current-password"
+              className="input pr-11"
+              placeholder="Enter your password"
+            />
             <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary py-3.5 text-sm font-bold text-foreground shadow-glow transition-all duration-200 hover:scale-[1.02] active:scale-95 disabled:opacity-60 disabled:scale-100"
+              type="button"
+              onClick={() => setShowPassword((value) => !value)}
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
             >
-              {isSubmitting && <LoadingSpinner size="sm" className="text-foreground" />}
-              {isSubmitting ? 'Signing in…' : 'Sign In'}
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
-          </form>
-
-          <div className="mt-5 space-y-4">
-            <div className="flex items-center gap-3 text-[11px] uppercase text-muted-foreground"><span className="h-px flex-1 bg-[#ffffff14]" />or<span className="h-px flex-1 bg-[#ffffff14]" /></div>
-            <GoogleSignInButton onCredential={async (credential) => { setServerError(null); await loginWithGoogle(credential); success('Welcome back!'); }} />
           </div>
+        </FieldShell>
 
-          <div className="mt-6 text-center">
-            <p className="text-sm text-muted-foreground">
-              Don&apos;t have an account?{' '}
-              <Link href="/auth/register" className="text-primary font-semibold hover:text-primary transition-colors">
-                Create account
-              </Link>
-            </p>
-          </div>
-        </div>
+        <Button type="submit" disabled={isSubmitting} className="w-full">
+          {isSubmitting && <LoadingSpinner size="sm" />}
+          {isSubmitting ? 'Signing in…' : 'Sign in'}
+        </Button>
+      </form>
 
-        <div className="mt-6 flex items-center justify-center gap-4">
-          <Link href="/auth/register?role=agent" className="text-xs text-muted-foreground hover:text-muted-foreground transition-colors">
-            Join as Agent
-          </Link>
-          <span className="text-muted-foreground">•</span>
-          <Link href="/terms" className="text-xs text-muted-foreground hover:text-muted-foreground transition-colors">
-            Terms of Service
-          </Link>
-        </div>
-      </div>
-    </div>
+      <p className="text-ui-md text-muted-foreground">
+        New to Veriq?{' '}
+        <Link href="/auth/register" className="font-semibold text-primary hover:underline">
+          Create an account
+        </Link>
+        .
+      </p>
+    </AuthPanel>
   );
 }
 
