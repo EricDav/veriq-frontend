@@ -6,15 +6,15 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Users, Home, Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react';
-import Image from 'next/image';
+import { AlertCircle, CheckCircle, Eye, EyeOff, Users } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { ApiError, locationsApi } from '@/lib/api';
 import { referralCodesApi } from '@/lib/api/operator';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useToast } from '@/components/ui/Toast';
-import { UserRole, type AllowedState, type RegisterDto } from '@/types';
-import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
+import { PropertyCategory, UserRole, type AllowedState, type RegisterDto } from '@/types';
+import { AuthPanel } from '@/components/auth/AuthPanel';
+import { Button, FieldShell, Notice } from '@/components/ui';
 
 // ─── Validation Schema ────────────────────────────────────────────────────
 
@@ -47,14 +47,47 @@ const PASSWORD_HINTS = [
   { test: (v: string) => /[@$!%*?&_\-#]/.test(v), label: 'Special character' },
 ];
 
+/** The prototype opens signup on an "Account type" select rather than two tiles. */
+const ACCOUNT_TYPES = [
+  { value: UserRole.RENTER, label: 'Renter' },
+  { value: UserRole.PROPERTY_OPERATOR, label: 'Operator' },
+] as const;
+
+const ROLE_WORD: Record<string, string> = {
+  [UserRole.RENTER]: 'Renter',
+  [UserRole.PROPERTY_OPERATOR]: 'Operator',
+};
+
+/**
+ * What an Operator account is set up to list. The register endpoint requires at least one and accepts
+ * up to six (Master Blueprint §3), so this is a checkbox group rather than the prototype's single
+ * "Operator type" select — an owner with a block of flats and a short let is one account, not two.
+ */
+const OPERATOR_CATEGORIES = [
+  { value: PropertyCategory.RESIDENTIAL, label: 'Residential Property' },
+  { value: PropertyCategory.SHORT_LET, label: 'Short Lets' },
+  { value: PropertyCategory.HOSTEL, label: 'Hostels' },
+  { value: PropertyCategory.SHARED_PROPERTY, label: 'Shared Property' },
+  { value: PropertyCategory.FOR_SALE, label: 'Property for Sale' },
+] as const;
+
 // ─── Component ────────────────────────────────────────────────────────────
 
+/**
+ * The prototype's `#signup` panel, with real registration in it.
+ *
+ * The prototype is a demo — it collects a name, an email and a referral code and has no password at
+ * all. This keeps its shell, its "Account type" select, its "Create your {role} account" heading, its
+ * optional referral field and its notice, and adds the fields registration actually requires.
+ */
 function RegisterPageInner() {
   const router = useRouter();
   const params = useSearchParams();
   const defaultRole = params.get('role') === 'operator' ? UserRole.PROPERTY_OPERATOR : UserRole.RENTER;
 
-  const { register: registerUser, loginWithGoogle } = useAuth();
+  // Google sign-up stays implemented end to end — `loginWithGoogle` and its endpoint are untouched —
+  // but the prototype's signup panel offers one route in, so no Google control is rendered here.
+  const { register: registerUser } = useAuth();
   const { success } = useToast();
 
   const [selectedRole, setSelectedRole] = useState<UserRole>(defaultRole);
@@ -64,6 +97,9 @@ function RegisterPageInner() {
   const [states, setStates] = useState<AllowedState[]>([]);
   const [statesLoading, setStatesLoading] = useState(true);
   const [referralCode, setReferralCode] = useState('');
+  const [categories, setCategories] = useState<PropertyCategory[]>([]);
+  const [legalName, setLegalName] = useState('');
+  const [acceptOperatorTerms, setAcceptOperatorTerms] = useState(false);
   const [referral, setReferral] = useState<{ status: 'idle' | 'checking' | 'valid' | 'invalid'; agentName?: string; message?: string }>({ status: 'idle' });
 
   const {
@@ -74,6 +110,9 @@ function RegisterPageInner() {
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
   });
+
+  const isOperator = selectedRole === UserRole.PROPERTY_OPERATOR;
+  const roleWord = ROLE_WORD[selectedRole] ?? 'Veriq';
 
   const watchedPassword = watch('password', '');
   React.useEffect(() => {
@@ -128,8 +167,17 @@ function RegisterPageInner() {
       setServerError(referral.message ?? 'Referral code is not valid. Remove it or enter a valid code.');
       return;
     }
+    // Both are required by the register endpoint for an Operator, so they are caught here rather
+    // than coming back as a wall of validator messages.
+    if (selectedRole === UserRole.PROPERTY_OPERATOR && categories.length === 0) {
+      setServerError('Choose at least one kind of property you will list.');
+      return;
+    }
+    if (selectedRole === UserRole.PROPERTY_OPERATOR && !acceptOperatorTerms) {
+      setServerError('Accept the Operator Terms to create a Property Operator account.');
+      return;
+    }
     try {
-      // The API accepts an optional referralCode for Property Operator signup; the shared RegisterDto type predates it.
       await registerUser({
         firstName: data.firstName,
         lastName: data.lastName,
@@ -138,15 +186,21 @@ function RegisterPageInner() {
         state: data.state,
         password: data.password,
         role: selectedRole,
-        ...(selectedRole === UserRole.PROPERTY_OPERATOR && code ? { referralCode: code } : {}),
-      } as RegisterDto & { referralCode?: string });
-      success(selectedRole === UserRole.PROPERTY_OPERATOR ? 'Account created. Check your phone for the verification code.' : 'Account created. Check your email for the verification code.');
+        ...(selectedRole === UserRole.PROPERTY_OPERATOR
+          ? {
+              operatorCategories: categories,
+              acceptOperatorTerms,
+              // The API falls back to first + last name when this is blank, so it is only sent when given.
+              ...(legalName.trim() ? { legalName: legalName.trim() } : {}),
+              ...(code ? { referralCode: code } : {}),
+            }
+          : {}),
+      } satisfies RegisterDto);
+      success('Account created. Check your email for the verification code.');
+      // Every account verifies by email at signup, Operators included. An Operator's phone is still
+      // verified before they can post — the posting-readiness check is where that is asked for.
       const email = encodeURIComponent(data.email.trim().toLowerCase());
-      if (selectedRole === UserRole.PROPERTY_OPERATOR) {
-        router.push(`/auth/verify-phone?email=${email}`);
-      } else {
-        router.push(`/auth/verify-email?email=${email}`);
-      }
+      router.push(`/auth/verify-email?email=${email}`);
     } catch (err) {
       if (err instanceof ApiError) {
         if (err.errors) {
@@ -163,285 +217,292 @@ function RegisterPageInner() {
   };
 
   return (
-    <div className="min-h-screen bg-hero-pattern flex items-center justify-center px-4 py-20">
-      <div className="w-full max-w-md">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2.5 mb-6">
-            <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-background p-2 ring-1 ring-white/10">
-              <Image src="/images/Logo.png" alt="Veriq Logo" width={40} height={40} className="rounded-lg" />
-            </span>
-            <div className="flex flex-col leading-none text-left">
-              <span className="font-display text-xl font-bold text-foreground">Veriq</span>
-              <span className="text-[10px] font-semibold tracking-widest uppercase text-primary">Property</span>
-            </div>
-          </Link>
-          <h1 className="font-display text-2xl font-bold text-foreground mb-1">Create your account</h1>
-          <p className="text-muted-foreground text-sm">Join thousands making smarter property decisions</p>
-        </div>
+    <AuthPanel
+      title={`Create your ${roleWord} account`}
+      lead="A Veriq account takes a minute. You can browse for free either way."
+    >
+      {serverError && (
+        <Notice tone="amber" icon={<AlertCircle className="h-5 w-5" />} title="We could not create your account">
+          {serverError}
+        </Notice>
+      )}
 
-        {/* Form card */}
-        <div className="rounded-2xl bg-[#ffffff0f] border border-white/20 backdrop-blur-xl p-8 shadow-2xl">
-          {/* Server error */}
-          {serverError && (
-            <div className="mb-5 flex items-start gap-2.5 rounded-xl bg-[#fb718510] border border-[#fb718530] px-4 py-3">
-              <AlertCircle className="h-4 w-4 text-[#fda4af] flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-[#fda4af]">{serverError}</p>
-            </div>
-          )}
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-[22px]" noValidate>
+        {/*
+          A plain select rather than the shared one: that primitive always starts blank on a "Select…"
+          placeholder, because Blueprint §4 forbids a preselected answer on an important field. Account
+          type is the exception the prototype makes — it opens on a choice and the heading follows it —
+          and neither option is a silent default that could be submitted unnoticed.
+        */}
+        <FieldShell htmlFor="register-role" label="Account type" required>
+          <select
+            id="register-role"
+            className="input"
+            value={selectedRole}
+            onChange={(event) => setSelectedRole(event.target.value as UserRole)}
+          >
+            {ACCOUNT_TYPES.map(({ value, label }) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </FieldShell>
 
-          {/* Role selector */}
-          <div className="mb-6">
-            <p className="text-sm font-medium text-foreground mb-3">I am a:</p>
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => setSelectedRole(UserRole.RENTER)}
-                className={`flex flex-col items-center gap-2 rounded-xl border-2 py-4 text-center transition-all ${
-                  selectedRole === UserRole.RENTER
-                    ? 'border-primary bg-[#10b98112]'
-                    : 'border-white/20 hover:border-white/40'
-                }`}
-              >
-                <Home className={`h-6 w-6 ${selectedRole === UserRole.RENTER ? 'text-primary' : 'text-muted-foreground'}`} />
-                <span className="text-sm font-semibold text-foreground">Renter</span>
-                <span className="text-[10px] text-muted-foreground">Browse &amp; inspect</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setSelectedRole(UserRole.PROPERTY_OPERATOR)}
-                className={`flex flex-col items-center gap-2 rounded-xl border-2 py-4 text-center transition-all ${
-                  selectedRole === UserRole.PROPERTY_OPERATOR
-                    ? 'border-primary bg-[#10b98112]'
-                    : 'border-white/20 hover:border-white/40'
-                }`}
-              >
-                <Users className={`h-6 w-6 ${selectedRole === UserRole.PROPERTY_OPERATOR ? 'text-primary' : 'text-muted-foreground'}`} />
-                <span className="text-sm font-semibold text-foreground">Property Operator</span>
-                <span className="text-[10px] text-muted-foreground">Manage property records</span>
-              </button>
-            </div>
-          </div>
+        <FieldShell htmlFor="register-first-name" label="First name" required error={errors.firstName?.message}>
+          <input
+            id="register-first-name"
+            {...register('firstName')}
+            type="text"
+            autoComplete="given-name"
+            className="input"
+          />
+        </FieldShell>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
-            {/* Name row */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label htmlFor="register-first-name" className="block text-sm font-medium text-foreground mb-1.5">First Name</label>
-                <input
-                  id="register-first-name"
-                  {...register('firstName')}
-                  type="text"
-                  autoComplete="given-name"
-                  className={`w-full rounded-lg border bg-[#ffffff0f] px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none transition-all focus:ring-2 focus:ring-white/10 ${
-                    errors.firstName ? 'border-[#fb718530]' : 'border-white/20 focus:border-white/40'
-                  }`}
-                  placeholder="John"
-                />
-                {errors.firstName && (
-                  <p className="mt-1 text-xs text-[#fda4af]">{errors.firstName.message}</p>
-                )}
-              </div>
-              <div>
-                <label htmlFor="register-last-name" className="block text-sm font-medium text-foreground mb-1.5">Last Name</label>
-                <input
-                  id="register-last-name"
-                  {...register('lastName')}
-                  type="text"
-                  autoComplete="family-name"
-                  className={`w-full rounded-lg border bg-[#ffffff0f] px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none transition-all focus:ring-2 focus:ring-white/10 ${
-                    errors.lastName ? 'border-[#fb718530]' : 'border-white/20 focus:border-white/40'
-                  }`}
-                  placeholder="Doe"
-                />
-                {errors.lastName && (
-                  <p className="mt-1 text-xs text-[#fda4af]">{errors.lastName.message}</p>
-                )}
-              </div>
-            </div>
+        <FieldShell htmlFor="register-last-name" label="Last name" required error={errors.lastName?.message}>
+          <input
+            id="register-last-name"
+            {...register('lastName')}
+            type="text"
+            autoComplete="family-name"
+            className="input"
+          />
+        </FieldShell>
 
-            {/* Email */}
-            <div>
-              <label htmlFor="register-email" className="block text-sm font-medium text-foreground mb-1.5">Email Address</label>
-              <input
-                id="register-email"
-                {...register('email')}
-                type="email"
-                autoComplete="email"
-                className={`w-full rounded-lg border bg-[#ffffff0f] px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none transition-all focus:ring-2 focus:ring-white/10 ${
-                  errors.email ? 'border-[#fb718530]' : 'border-white/20 focus:border-white/40'
-                }`}
-                placeholder="john@example.com"
-              />
-              {errors.email && <p className="mt-1 text-xs text-[#fda4af]">{errors.email.message}</p>}
-            </div>
+        <FieldShell htmlFor="register-email" label="Email address" required error={errors.email?.message}>
+          <input
+            id="register-email"
+            {...register('email')}
+            type="email"
+            autoComplete="email"
+            className="input"
+          />
+        </FieldShell>
 
-            {/* Phone */}
-            <div>
-              <label htmlFor="register-phone" className="block text-sm font-medium text-foreground mb-1.5">Phone Number {selectedRole === UserRole.RENTER && <span className="text-muted-foreground">(optional)</span>}</label>
-              <input
-                id="register-phone"
-                {...register('phone')}
-                type="tel"
-                autoComplete="tel"
-                className={`w-full rounded-lg border bg-[#ffffff0f] px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none transition-all focus:ring-2 focus:ring-white/10 ${
-                  errors.phone ? 'border-[#fb718530]' : 'border-white/20 focus:border-white/40'
-                }`}
-                placeholder="+234 800 000 0000"
-              />
-              {errors.phone && <p className="mt-1 text-xs text-[#fda4af]">{errors.phone.message}</p>}
-            </div>
+        <FieldShell
+          htmlFor="register-phone"
+          label="Phone number"
+          required={isOperator}
+          optional={!isOperator}
+          error={errors.phone?.message}
+        >
+          <input
+            id="register-phone"
+            {...register('phone')}
+            type="tel"
+            autoComplete="tel"
+            className="input"
+            placeholder="+234 800 000 0000"
+          />
+        </FieldShell>
 
-            {/* State */}
-            <div>
-              <label htmlFor="register-state" className="block text-sm font-medium text-foreground mb-1.5">State</label>
-              <select
-                id="register-state"
-                {...register('state')}
-                disabled={statesLoading}
-                className={`w-full rounded-lg border bg-[#ffffff0f] px-4 py-3 text-sm text-foreground outline-none transition-all focus:ring-2 focus:ring-white/10 ${
-                  errors.state ? 'border-[#fb718530]' : 'border-white/20 focus:border-white/40'
-                } disabled:opacity-60`}
-              >
-                <option value="" className="text-foreground">
-                  {statesLoading ? 'Loading states...' : 'Select your state'}
-                </option>
-                {states.map((state) => (
-                  <option key={state.id} value={state.name} className="text-foreground">
-                    {state.name}
-                  </option>
-                ))}
-              </select>
-              {errors.state && <p className="mt-1 text-xs text-[#fda4af]">{errors.state.message}</p>}
-              {!statesLoading && states.length === 0 && (
-                <p className="mt-1 text-xs text-[#fcd34d]">No states are currently active. Please contact support.</p>
-              )}
-            </div>
+        <FieldShell
+          htmlFor="register-state"
+          label="State"
+          required
+          error={errors.state?.message}
+          hint={!statesLoading && states.length === 0 ? 'No states are currently active. Please contact support.' : undefined}
+        >
+          <select id="register-state" {...register('state')} disabled={statesLoading} className="input disabled:opacity-60">
+            <option value="">{statesLoading ? 'Loading states…' : 'Select your state'}</option>
+            {states.map((state) => (
+              <option key={state.id} value={state.name}>
+                {state.name}
+              </option>
+            ))}
+          </select>
+        </FieldShell>
 
-            {/* Veriq Agent referral code (Property Operators only) */}
-            {selectedRole === UserRole.PROPERTY_OPERATOR && (
-              <div>
-                <label htmlFor="register-referral" className="block text-sm font-medium text-foreground mb-1.5">
-                  Veriq Agent referral code <span className="text-muted-foreground">(optional)</span>
-                </label>
-                <input
-                  id="register-referral"
-                  type="text"
-                  autoCapitalize="characters"
-                  maxLength={20}
-                  value={referralCode}
-                  onChange={(event) => setReferralCode(event.target.value.toUpperCase())}
-                  className={`w-full rounded-lg border bg-[#ffffff0f] px-4 py-3 text-sm uppercase text-foreground placeholder:text-muted-foreground placeholder:normal-case outline-none transition-all focus:ring-2 focus:ring-white/10 ${
-                    referral.status === 'invalid' ? 'border-[#fb718530]' : 'border-white/20 focus:border-white/40'
-                  }`}
-                  placeholder="If a Veriq Agent referred you"
-                />
-                {referral.status === 'checking' && (
-                  <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground"><LoadingSpinner size="sm" /> Checking code…</p>
-                )}
-                {referral.status === 'valid' && (
-                  <p className="mt-1 flex items-center gap-1.5 text-xs text-[#6ee7b7]">
-                    <CheckCircle className="h-3 w-3" /> Referred by {referral.agentName || 'a Veriq Agent'} — they will be assigned to verify your properties.
-                  </p>
-                )}
-                {referral.status === 'invalid' && (
-                  <p className="mt-1 text-xs text-[#fda4af]">{referral.message ?? 'Referral code is not valid'}</p>
-                )}
-                {referral.status === 'idle' && (
-                  <p className="mt-1 text-xs text-muted-foreground">Leave blank and Veriq will assign an Agent after your first submission.</p>
-                )}
-              </div>
-            )}
-
-            {/* Password */}
-            <div>
-              <label htmlFor="register-password" className="block text-sm font-medium text-foreground mb-1.5">Password</label>
-              <div className="relative">
-                <input
-                  id="register-password"
-                  {...register('password')}
-                  type={showPassword ? 'text' : 'password'}
-                  autoComplete="new-password"
-                  className={`w-full rounded-lg border bg-[#ffffff0f] px-4 py-3 pr-11 text-sm text-foreground placeholder:text-muted-foreground outline-none transition-all focus:ring-2 focus:ring-white/10 ${
-                    errors.password ? 'border-[#fb718530]' : 'border-white/20 focus:border-white/40'
-                  }`}
-                  placeholder="Create a strong password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground transition-colors"
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-              {/* Password strength hints */}
-              {passwordValue.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
-                  {PASSWORD_HINTS.map((hint) => (
-                    <span
-                      key={hint.label}
-                      className={`text-[10px] flex items-center gap-1 ${
-                        hint.test(passwordValue) ? 'text-primary' : 'text-muted-foreground'
-                      }`}
-                    >
-                      <CheckCircle className="h-2.5 w-2.5" />
-                      {hint.label}
-                    </span>
-                  ))}
-                </div>
-              )}
-              {errors.password && (
-                <p className="mt-1 text-xs text-[#fda4af]">{errors.password.message}</p>
-              )}
-            </div>
-
-            {/* Terms */}
-            <div className="flex items-start gap-2">
-              <input
-                {...register('terms')}
-                type="checkbox"
-                id="terms"
-                className="mt-0.5 rounded border-white/20 bg-[#ffffff0f]"
-              />
-              <label htmlFor="terms" className="text-xs text-muted-foreground leading-relaxed">
-                I agree to the{' '}
-                <Link href="/terms" className="text-primary hover:underline">Terms of Service</Link>{' '}
-                and{' '}
-                <Link href="/terms#privacy" className="text-primary hover:underline">Privacy Policy</Link>. I confirm I am at least 18 years old.
-              </label>
-            </div>
-            {errors.terms && <p className="text-xs text-[#fda4af] -mt-2">{errors.terms.message}</p>}
-
-            {/* Submit */}
-            <button
-              type="submit"
-              disabled={isSubmitting || statesLoading || states.length === 0}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary py-3.5 text-sm font-bold text-foreground shadow-glow transition-all duration-200 hover:scale-[1.02] active:scale-95 disabled:opacity-60 disabled:scale-100"
-            >
-              {isSubmitting && <LoadingSpinner size="sm" className="text-foreground" />}
-              {isSubmitting ? 'Creating account…' : 'Create Account'}
-            </button>
-          </form>
-
-          {selectedRole === UserRole.RENTER && (
-            <div className="mt-5 space-y-4">
-              <div className="flex items-center gap-3 text-[11px] uppercase text-muted-foreground"><span className="h-px flex-1 bg-[#ffffff14]" />or<span className="h-px flex-1 bg-[#ffffff14]" /></div>
-              <GoogleSignInButton onCredential={async (credential) => { await loginWithGoogle(credential); router.replace('/dashboard'); }} />
-            </div>
-          )}
-
-          <div className="mt-6 text-center">
-            <p className="text-sm text-muted-foreground">
-              Already have an account?{' '}
-              <Link href="/auth/login" className="text-primary font-semibold hover:text-primary transition-colors">
-                Sign in
-              </Link>
+        {isOperator && (
+          <fieldset className="min-w-0">
+            <legend className="label">Operator type *</legend>
+            <p className="mb-3 text-xs text-muted-foreground">
+              What you will list. Pick every one that applies.
             </p>
+            <div className="flex flex-col gap-2.5">
+              {OPERATOR_CATEGORIES.map(({ value, label }) => (
+                <label key={value} className="flex items-start gap-2.5 text-ui-md text-foreground">
+                  <input
+                    type="checkbox"
+                    className="mt-1 rounded border-input bg-[#070b1444]"
+                    checked={categories.includes(value)}
+                    onChange={(event) =>
+                      setCategories((current) =>
+                        event.target.checked
+                          ? [...current, value]
+                          : current.filter((item) => item !== value),
+                      )
+                    }
+                  />
+                  <span>{label}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        )}
+
+        {isOperator && (
+          <FieldShell
+            htmlFor="register-legal-name"
+            label="Business name"
+            optional
+            hint="Leave blank to use your own name."
+          >
+            <input
+              id="register-legal-name"
+              type="text"
+              maxLength={200}
+              autoComplete="organization"
+              className="input"
+              value={legalName}
+              onChange={(event) => setLegalName(event.target.value)}
+            />
+          </FieldShell>
+        )}
+
+        {isOperator && (
+          <FieldShell
+            htmlFor="register-referral"
+            label="Agent referral code"
+            optional
+            error={referral.status === 'invalid' ? (referral.message ?? 'Referral code is not valid') : undefined}
+            hint={
+              referral.status === 'checking' ? (
+                <span className="flex items-center gap-1.5">
+                  <LoadingSpinner size="sm" /> Checking code…
+                </span>
+              ) : referral.status === 'valid' ? (
+                <span className="flex items-center gap-1.5 text-[#6ee7b7]">
+                  <CheckCircle className="h-3 w-3" /> Referred by {referral.agentName || 'a Veriq Agent'} — they will be
+                  assigned to verify your properties.
+                </span>
+              ) : undefined
+            }
+          >
+            <input
+              id="register-referral"
+              type="text"
+              autoCapitalize="characters"
+              maxLength={20}
+              value={referralCode}
+              onChange={(event) => setReferralCode(event.target.value.toUpperCase())}
+              className="input uppercase placeholder:normal-case"
+              placeholder="If a Veriq Agent referred you"
+            />
+          </FieldShell>
+        )}
+
+        <FieldShell htmlFor="register-password" label="Password" required error={errors.password?.message}>
+          <div className="relative">
+            <input
+              id="register-password"
+              {...register('password')}
+              type={showPassword ? 'text' : 'password'}
+              autoComplete="new-password"
+              className="input pr-11"
+              placeholder="Create a strong password"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((value) => !value)}
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+            >
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
           </div>
+          {passwordValue.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+              {PASSWORD_HINTS.map((hint) => (
+                <span
+                  key={hint.label}
+                  className={`flex items-center gap-1 text-[10px] ${
+                    hint.test(passwordValue) ? 'text-primary' : 'text-muted-foreground'
+                  }`}
+                >
+                  <CheckCircle className="h-2.5 w-2.5" />
+                  {hint.label}
+                </span>
+              ))}
+            </div>
+          )}
+        </FieldShell>
+
+        {isOperator && (
+          <Notice icon={<Users className="h-5 w-5" />} title="No referral? You can still join">
+            Provide property and unit intelligence. Your assigned Agent verifies the submission, links Street
+            Intelligence and publishes. Sellers start with an Agent-assisted listing.
+          </Notice>
+        )}
+
+        {/*
+          Required by the register endpoint for an Operator account, and separate from the site Terms
+          below on purpose — Blueprint §3 wants the Operator Terms accepted as its own act.
+        */}
+        {isOperator && (
+          <label htmlFor="operator-terms" className="flex items-start gap-2.5 text-ui-md text-muted-foreground">
+            <input
+              type="checkbox"
+              id="operator-terms"
+              className="mt-1 rounded border-input bg-[#070b1444]"
+              checked={acceptOperatorTerms}
+              onChange={(event) => setAcceptOperatorTerms(event.target.checked)}
+            />
+            <span>
+              I accept the{' '}
+              <Link href="/operator-terms" className="font-semibold text-primary hover:underline">
+                Operator Terms
+              </Link>
+              , including how my listings are verified and published.
+            </span>
+          </label>
+        )}
+
+        <div>
+          <label htmlFor="terms" className="flex items-start gap-2.5 text-ui-md text-muted-foreground">
+            <input
+              {...register('terms')}
+              type="checkbox"
+              id="terms"
+              className="mt-1 rounded border-input bg-[#070b1444]"
+            />
+            <span>
+              I agree to the{' '}
+              <Link href="/terms" className="font-semibold text-primary hover:underline">
+                Terms of Service
+              </Link>{' '}
+              and{' '}
+              <Link href="/privacy" className="font-semibold text-primary hover:underline">
+                Privacy Policy
+              </Link>
+              . I confirm I am at least 18 years old.
+            </span>
+          </label>
+          {errors.terms && (
+            <p role="alert" className="mt-1 text-xs font-medium text-destructive">
+              {errors.terms.message}
+            </p>
+          )}
         </div>
-      </div>
-    </div>
+
+        <Button
+          type="submit"
+          disabled={isSubmitting || statesLoading || states.length === 0}
+          className="w-full"
+        >
+          {isSubmitting && <LoadingSpinner size="sm" />}
+          {isSubmitting ? 'Creating account…' : `Create ${roleWord} account`}
+        </Button>
+      </form>
+
+      <p className="text-ui-md text-muted-foreground">
+        Already have an account?{' '}
+        <Link href="/auth/login" className="font-semibold text-primary hover:underline">
+          Sign in
+        </Link>
+        .
+      </p>
+    </AuthPanel>
   );
 }
 

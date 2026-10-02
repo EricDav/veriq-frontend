@@ -41,11 +41,16 @@ export function FieldShell({
 }: FieldShellProps) {
   return (
     <div className={cn('min-w-0', className)}>
+      {/*
+        The prototype writes both markers inline at the label's own size — "Account type *" and
+        "Agent referral code (Optional)" — rather than colouring the asterisk or setting the word in a
+        smaller chip, which read as two different type sizes on one line.
+      */}
       {label && (
         <label htmlFor={htmlFor} className={cn('label', labelClassName)}>
           {label}
-          {required && <span className="ml-1 text-destructive">*</span>}
-          {optional && !required && <span className="ml-1.5 text-xs font-normal text-muted-foreground">Optional</span>}
+          {required && <span> *</span>}
+          {optional && !required && <span className="font-normal"> (Optional)</span>}
         </label>
       )}
       {children}
