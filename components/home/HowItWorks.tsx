@@ -29,23 +29,23 @@ const STEPS = [
 
 export function HowItWorks({ content: _content }: { content?: SiteContent }) {
   return (
-    <section id="how-it-works" className="bg-background py-14 sm:py-[60px]">
-      <div className="mx-auto max-w-[1280px] px-5 sm:px-10">
-        <Eyebrow>From search to certainty</Eyebrow>
-        <h2 className="mt-4 max-w-2xl font-display text-[1.9rem] font-semibold leading-[1.15] tracking-[-0.04em] text-foreground sm:text-[2.2rem]">
-          Less guesswork. More confidence.
-        </h2>
+    <section id="how-it-works" className="py-[25px] wide:py-10">
+      <Eyebrow>From search to certainty</Eyebrow>
+      <h2 className="mb-4 mt-3 max-w-2xl font-display text-[clamp(1.55rem,2.6vw,2.25rem)] font-semibold leading-[1.25] tracking-[-0.035em] text-foreground">
+        Less guesswork. More confidence.
+      </h2>
 
-        <ol className="mt-10 grid gap-x-9 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
-          {STEPS.map(({ number, title, description }) => (
-            <li key={number} className="border-t border-border pt-7">
-              <span className="block font-display text-[1.7rem] leading-none text-primary">{number}</span>
-              <h3 className="mt-[30px] font-display text-base font-semibold text-foreground">{title}</h3>
-              <p className="mt-3 text-[0.95rem] leading-[1.6] text-muted-foreground">{description}</p>
-            </li>
-          ))}
-        </ol>
-      </div>
+      <ol className="mt-10 grid gap-x-9 gap-y-10 wide:grid-cols-2 min-[1051px]:grid-cols-3">
+        {STEPS.map(({ number, title, description }) => (
+          <li key={number} className="border-t border-border pt-7">
+            <span className="block font-display text-[1.7rem] leading-none text-primary">{number}</span>
+            <h3 className="mb-3 mt-[30px] font-display text-[1.12rem] font-semibold leading-[1.25] tracking-[-0.035em] text-foreground">
+              {title}
+            </h3>
+            <p className="text-muted-foreground">{description}</p>
+          </li>
+        ))}
+      </ol>
     </section>
   );
 }

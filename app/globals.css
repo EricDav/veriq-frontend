@@ -64,6 +64,12 @@ html {
 
 body {
   font-family: var(--font-inter);
+  /*
+   * The prototype's body is 16px/1.6. Without the line-height here the page inherits Tailwind
+   * preflight's 1.5, which makes every paragraph in the app a shade tighter than the design.
+   */
+  font-size: 16px;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   /*
@@ -76,10 +82,16 @@ body {
 }
 
 @layer base {
+  /*
+   * The prototype's heading rule, verbatim: `h1,h2,h3,h4,.brand { font-family:Sora; font-weight:600;
+   * line-height:1.25; letter-spacing:-.035em }`. It was 700/1.2 with no tracking here, which read as
+   * heavier and tighter than the design on every screen that does not set its own.
+   */
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-sora);
-    font-weight: 700;
-    line-height: 1.2;
+    font-weight: 600;
+    line-height: 1.25;
+    letter-spacing: -0.035em;
   }
 }
 
@@ -127,12 +139,27 @@ body {
     @apply badge;
   }
 
+  /*
+   * The prototype's control: `padding:12px 14px; border-radius:9px`, 14px type on the body's 1.6
+   * leading, which is what gives it its 48px height. It was 16px of side padding on a 10px radius at
+   * Tailwind's tighter `text-sm` leading, so it sat ~2px short and a shade wider inside.
+   */
   .input {
-    @apply w-full rounded-unit border border-input bg-[#070b1444] px-4 py-3 text-sm text-foreground outline-none transition-colors duration-150 placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-[#10b98166];
+    @apply w-full rounded-btn border border-input bg-[#070b1444] px-[14px] py-3 text-sm font-medium leading-[1.6] text-foreground outline-none transition-colors duration-150 placeholder:font-normal placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-[#10b98166];
   }
 
+  /*
+   * A native select sizes itself from the font rather than from line-height, so it lands at 43px
+   * where the prototype's control is 48. Pinning the height keeps a select and a text input the same
+   * size when they sit next to each other.
+   */
+  select.input {
+    @apply h-12 text-base;
+  }
+
+  /* `label.field` is 8px above its control, not 6px. */
   .label {
-    @apply mb-1.5 block text-sm font-medium text-foreground;
+    @apply mb-2 block text-sm font-medium leading-[1.6] text-foreground;
   }
 
   .cms-editor,
@@ -288,21 +315,23 @@ body {
 .animate-delay-400 { animation-delay: 400ms; }
 .animate-delay-500 { animation-delay: 500ms; }
 
+/*
+ * The prototype paints every page flat on --background and carries no background image anywhere, so
+ * this is a plain fill. The class name stays because auth, blog, terms and privacy all reference it.
+ */
 .bg-hero-pattern {
-  background-color: #030508;
-  background-image:
-    linear-gradient(90deg, rgba(3, 5, 8, 0.82) 0%, rgba(3, 5, 8, 0.52) 48%, rgba(3, 5, 8, 0.26) 100%),
-    url('/images/web-background-visual-layer.png') !important;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: cover;
+  background-color: var(--background);
+  background-image: none;
 }
 
-@media (max-width: 767px) {
-  .bg-hero-pattern {
-    background-image:
-      linear-gradient(180deg, rgba(3, 5, 8, 0.8) 0%, rgba(3, 5, 8, 0.46) 42%, rgba(3, 5, 8, 0.22) 100%),
-      url('/images/app-background-visual-layer.png') !important;
-    background-position: center top;
-  }
+/*
+ * The prototype's heading defaults, as a *fallback only*. Element selectors here would outrank the
+ * Tailwind utility classes the screens set per heading, so the sizes live on the headings themselves
+ * and this block carries just the family, weight and tracking that never vary.
+ */
+.proto-type :is(h1, h2, h3, h4):not([class*='text-']) {
+  font-family: var(--font-sora), system-ui, sans-serif;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.035em;
 }

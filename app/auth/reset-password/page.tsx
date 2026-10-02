@@ -1,10 +1,11 @@
 'use client';
 
 import React, { Suspense, useState } from 'react';
-import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, Lock } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { authApi, ApiError } from '@/lib/api';
+import { AuthPanel } from '@/components/auth/AuthPanel';
+import { Button, FieldShell, Notice } from '@/components/ui';
 
 function ResetPasswordForm() {
   const router = useRouter();
@@ -44,67 +45,56 @@ function ResetPasswordForm() {
   };
 
   return (
-    <form onSubmit={submit} className="mt-6 space-y-4">
-      <div>
-        <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">New password</label>
+    <form onSubmit={submit} className="flex flex-col gap-[22px]">
+      <FieldShell htmlFor="reset-password" label="New password" required hint="Password must be at least 6 characters.">
         <input
+          id="reset-password"
           type="password"
           required
           minLength={6}
           value={newPassword}
-          onChange={(e) => setNewPassword(e.target.value)}
-          className="w-full rounded-xl border border-white/15 bg-[#ffffff0f] px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-ring"
+          onChange={(event) => setNewPassword(event.target.value)}
+          className="input"
           placeholder="Create a strong password"
           autoComplete="new-password"
         />
-      </div>
-      <div>
-        <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">Confirm password</label>
+      </FieldShell>
+
+      <FieldShell htmlFor="reset-confirm" label="Confirm password" required>
         <input
+          id="reset-confirm"
           type="password"
           required
           minLength={6}
           value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          className="w-full rounded-xl border border-white/15 bg-[#ffffff0f] px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-ring"
+          onChange={(event) => setConfirmPassword(event.target.value)}
+          className="input"
           placeholder="Repeat password"
           autoComplete="new-password"
         />
-      </div>
+      </FieldShell>
 
-      <p className="text-xs leading-5 text-muted-foreground">
-        Password must be at least 6 characters.
-      </p>
-      {error && <p className="rounded-xl bg-[#fb718510] p-3 text-sm text-[#fda4af]">{error}</p>}
+      {error && (
+        <Notice tone="amber" icon={<AlertCircle className="h-5 w-5" />}>{error}</Notice>
+      )}
 
-      <button type="submit" disabled={isSubmitting} className="btn-gold w-full justify-center disabled:opacity-60">
-        {isSubmitting ? 'Resetting...' : 'Reset password'}
-      </button>
+      <Button type="submit" disabled={isSubmitting} className="w-full">
+        {isSubmitting ? 'Resetting…' : 'Reset password'}
+      </Button>
     </form>
   );
 }
 
 export default function ResetPasswordPage() {
   return (
-    <main className="min-h-screen bg-hero-pattern px-4 py-10 text-foreground">
-      <div className="mx-auto flex min-h-[calc(100vh-5rem)] max-w-md flex-col justify-center">
-        <Link href="/auth/login" className="mb-8 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="h-4 w-4" /> Back to login
-        </Link>
-
-        <div className="rounded-2xl border border-white/10 bg-[#ffffff0f] p-6 shadow-2xl backdrop-blur">
-          <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-xl bg-[#10b98112] text-primary">
-            <Lock className="h-6 w-6" />
-          </div>
-          <h1 className="font-display text-2xl font-black">Reset password</h1>
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            Choose a new password for your Veriq Property account.
-          </p>
-          <Suspense fallback={null}>
-            <ResetPasswordForm />
-          </Suspense>
-        </div>
-      </div>
-    </main>
+    <AuthPanel
+      title="Reset password"
+      lead="Choose a new password for your Veriq account."
+      showLinks={false}
+    >
+      <Suspense fallback={null}>
+        <ResetPasswordForm />
+      </Suspense>
+    </AuthPanel>
   );
 }

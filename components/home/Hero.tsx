@@ -1,49 +1,86 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowRight, BedDouble, Building2, CheckCircle2, Heart, Home, MapPin, ShieldCheck, Waves, Zap } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, Building2, ShieldCheck } from 'lucide-react';
 import type { SiteContent } from '@/types';
+import { Badge, ChipIcon, Eyebrow, buttonClass } from '@/components/ui';
+import { HomeSearch } from './HomeSearch';
 
-const TRUST_POINTS = ['Verified Property Intelligence', 'Street Intelligence for your area', 'Direct access to operators after unlock'];
-const UNITS = [
-  { label: '2-Bedroom Flat', available: true },
-  { label: '1-Bedroom Flat', available: false },
-  { label: 'Self-Contain', available: false },
-];
-const SIGNALS = [
-  { icon: ShieldCheck, label: 'Availability Confirmed', value: '' },
-  { icon: CheckCircle2, label: 'Verified by Veriq', value: '' },
-  { icon: Waves, label: 'Flood Risk:', value: 'Low' },
-  { icon: Home, label: 'Road Access:', value: 'Good' },
-  { icon: Zap, label: 'Electricity:', value: 'Fair' },
-  { icon: ShieldCheck, label: 'Security Feel:', value: 'Good' },
-];
-
+/**
+ * The prototype's `.hero`: a 1.05fr/1fr split with the claim on the left and one photograph on the
+ * right, the photo carrying a badge at its top right and a caption panel hanging off its bottom left
+ * corner. The search bar sits directly below it.
+ *
+ * The copy is the prototype's, word for word, and the numbers are its stylesheet's: an h1 of
+ * clamp(2.8rem, 5vw, 4.65rem) at -0.065em and 1.13 leading, an art column of 475px stepping to 420 at
+ * 1050 and 350 at 760, and the photo's 110px top-left corner relaxing to 65px on a phone.
+ */
 export function Hero({ content: _content }: { content?: SiteContent }) {
   return (
-    <section className="relative overflow-hidden bg-hero-pattern pb-16 pt-28 lg:pb-20 lg:pt-32">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_72%_42%,rgba(16,185,129,0.12),transparent_35%)]" />
-      <div className="relative mx-auto grid max-w-7xl gap-12 px-4 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:px-8">
+    <>
+      <section className="grid items-center gap-[35px] pb-[65px] pt-6 wide:grid-cols-[1.05fr_1fr] wide:gap-[30px] wide:pt-[50px] min-[1051px]:gap-[60px]">
         <div>
-          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-[#10b98135] bg-[#10b98112] px-4 py-1.5 text-xs font-semibold text-[#6ee7b7]"><MapPin className="h-3.5 w-3.5" /> Launch Phase: Port Harcourt</div>
-          <h1 className="font-display text-5xl font-black leading-[0.98] text-foreground sm:text-6xl lg:text-7xl">Know <span className="text-primary">Before</span><br />You Go.</h1>
-          <p className="mt-6 max-w-lg text-base leading-relaxed text-muted-foreground">Veriq helps you understand the property, the street, and the real availability before you spend time and money on inspection.</p>
-          <ul className="mt-7 space-y-3">{TRUST_POINTS.map((point) => <li key={point} className="flex items-center gap-3 text-sm text-foreground"><CheckCircle2 className="h-4 w-4 flex-none text-primary" />{point}</li>)}</ul>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row"><Link href="/properties" className="btn-primary">Browse Properties <ArrowRight className="h-4 w-4" /></Link><Link href="/street-intelligence" className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/20 bg-card/[0.04] px-6 py-3 text-sm font-semibold text-foreground transition hover:bg-[#ffffff0f]">Explore Street Intelligence</Link></div>
-          <div className="mt-9 grid max-w-lg gap-4 border-t border-white/10 pt-5 text-xs text-muted-foreground sm:grid-cols-2"><span className="flex items-center gap-3"><Building2 className="h-5 w-5 text-primary" /> Trusted property intelligence<br />in Port Harcourt</span><span className="flex items-center gap-3"><ShieldCheck className="h-5 w-5 text-primary" /> Smarter decisions<br />for a better tomorrow</span></div>
-        </div>
-        <div className="mx-auto w-full max-w-xl rounded-lg border border-[#10b98135] bg-card p-3 shadow-glow sm:p-4">
-          <div className="relative aspect-[16/8.7] overflow-hidden rounded-lg">
-            <Image src="/images/property-intelligence-home.png" alt="Peace Court property in Rumuola" fill sizes="(min-width: 1024px) 560px, 94vw" className="object-cover" priority />
-            <span className="absolute right-3 top-3 rounded-full bg-primary px-3 py-1 text-[10px] font-bold text-foreground">Available</span><button aria-label="Save property" className="absolute right-3 top-11 flex h-8 w-8 items-center justify-center rounded-full bg-black/35 text-foreground backdrop-blur"><Heart className="h-4 w-4" /></button><span className="absolute bottom-3 right-3 rounded bg-black/70 px-2 py-1 text-[10px] font-semibold text-foreground">12 Photos</span>
+          <Eyebrow>Know before you go</Eyebrow>
+
+          <h1 className="mb-[25px] mt-5 font-display text-[3rem] font-semibold leading-[1.13] tracking-[-0.065em] text-foreground wide:text-[clamp(2.8rem,5vw,4.65rem)]">
+            A property is more
+            <br />
+            than <em className="not-italic text-primary">an address.</em>
+          </h1>
+
+          <p className="max-w-[490px] text-[1.05rem] leading-[1.6] text-muted-foreground">
+            See the property. Understand the street. Connect directly with the owner or caretaker&mdash;with
+            the information you need to decide.
+          </p>
+
+          <div className="mt-7 flex flex-wrap items-center gap-3">
+            <Link href="/properties" className={buttonClass('primary')}>
+              Find your next place
+              <ArrowRight className="h-[18px] w-[18px]" aria-hidden="true" />
+            </Link>
+            <Link href="/how-it-works" className={buttonClass('ghost')}>
+              See how it works
+              <ArrowUpRight className="h-[17px] w-[17px]" aria-hidden="true" />
+            </Link>
           </div>
-          <div className="px-1 pt-4">
-            <h2 className="font-display text-xl font-bold text-foreground sm:text-2xl">Peace Court, Rumuola</h2><p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground"><MapPin className="h-3 w-3" /> Rumuola, Port Harcourt</p><p className="mt-3 text-sm text-muted-foreground">From <strong className="text-xl text-primary">₦1.5M<span className="text-xs">/yr</span></strong></p><p className="mt-1 text-[11px] text-muted-foreground">3 documented units · 1 available</p>
-            <div className="mt-3 space-y-1.5 border-b border-white/10 pb-4">{UNITS.map((unit) => <div key={unit.label} className="flex items-center justify-between text-xs"><span className="flex items-center gap-2 text-muted-foreground"><BedDouble className="h-3.5 w-3.5" />{unit.label}</span><span className={unit.available ? 'text-primary' : 'text-[#fda4af]'}><i className={`mr-2 inline-block h-1.5 w-1.5 rounded-full ${unit.available ? 'bg-primary' : 'bg-destructive'}`} />{unit.available ? 'Available' : 'Unavailable'}</span></div>)}</div>
-            <p className="my-3 text-xs font-bold text-muted-foreground">Intelligence Preview</p><div className="grid gap-2 sm:grid-cols-2">{SIGNALS.map(({ icon: Icon, label, value }) => <div key={label} className="flex items-center gap-2 rounded-md bg-card/[0.05] px-3 py-2.5"><Icon className="h-4 w-4 flex-none text-primary" /><p className="text-[10px] font-semibold text-foreground">{label} <span className="text-[#6ee7b7]">{value}</span></p></div>)}</div>
-            <Link href="/properties" className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-xs font-bold text-foreground hover:bg-primary"><ShieldCheck className="h-4 w-4" /> Unlock Full Intelligence</Link>
+
+          <div className="mt-7 flex flex-wrap items-center gap-3 text-[0.8rem] text-muted-foreground">
+            <ShieldCheck className="h-4 w-4 flex-none text-primary" aria-hidden="true" />
+            Agent-verified details <span aria-hidden="true">·</span> No agency or inspection fee
           </div>
         </div>
-      </div>
-    </section>
+
+        <div className="relative h-[350px] wide:h-[420px] min-[1051px]:h-[475px]">
+          <Image
+            src="/images/property-intelligence-home.png"
+            alt="Illustrative contemporary home exterior"
+            fill
+            priority
+            sizes="(min-width: 1051px) 560px, (min-width: 760px) 45vw, 94vw"
+            className="rounded-[65px_18px_18px_18px] object-cover brightness-[0.85] wide:rounded-[110px_18px_18px_18px]"
+          />
+
+          <div className="absolute right-[22px] top-[22px]">
+            <Badge>
+              <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
+              More clarity. Better decisions.
+            </Badge>
+          </div>
+
+          <div className="absolute bottom-[15px] left-[15px] max-w-[270px] rounded-xl border border-[#ffffff22] bg-[#111827ef] px-[22px] py-[18px] shadow-[0_20px_50px_#00000077] backdrop-blur-[12px] wide:bottom-[25px] wide:left-[-10px] wide:max-w-[310px] min-[1051px]:left-[-24px]">
+            <div className="flex items-center gap-3">
+              <ChipIcon>
+                <Building2 className="h-[21px] w-[21px]" aria-hidden="true" />
+              </ChipIcon>
+              <strong className="font-semibold text-foreground">Know what you&rsquo;re walking into.</strong>
+            </div>
+            <p className="mt-1.5 text-[0.85rem] leading-[1.6] text-muted-foreground">
+              Property details, real images and the intelligence behind the address.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <HomeSearch />
+    </>
   );
 }

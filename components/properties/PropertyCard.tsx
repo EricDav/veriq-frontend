@@ -1,34 +1,20 @@
 'use client';
 
-import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { MapPin, CheckCircle, Bed, Bath, Lock, Shield, Home, Gift } from 'lucide-react';
+import { ArrowUpRight, Heart, Home, MapPin } from 'lucide-react';
 import type { Property } from '@/types';
-import { AgentVerificationLevel, FreshnessScore } from '@/types';
+import { PropertyType } from '@/types';
+import { Badge } from '@/components/ui';
 
-// Colour gradient pool keyed by property type for visual variety
-const TYPE_COLORS: Record<string, string> = {
-  flat: 'from-blue-600 to-blue-800',
-  duplex: 'from-indigo-600 to-indigo-800',
-  bungalow: 'from-teal-600 to-teal-800',
-  self_contain: 'from-emerald-600 to-emerald-800',
-  studio: 'from-purple-600 to-purple-800',
-  penthouse: 'from-navy-700 to-navy-900',
-  mansion: 'from-slate-700 to-slate-900',
-  terraced_house: 'from-emerald-600 to-emerald-800',
-  detached_house: 'from-orange-600 to-orange-800',
-  semi_detached: 'from-amber-600 to-amber-800',
-  room_and_parlour: 'from-pink-600 to-pink-800',
-  other: 'from-gray-600 to-gray-800',
-};
-
-const FRESHNESS_BADGE: Record<FreshnessScore, { label: string; cls: string }> = {
-  freshly_verified: { label: 'Freshly Verified', cls: 'bg-emerald-100 text-emerald-700' },
-  recently_verified: { label: 'Recent', cls: 'bg-blue-100 text-blue-700' },
-  verification_expiring: { label: 'Expiring Soon', cls: 'bg-amber-100 text-amber-700' },
-  unverified: { label: 'Unverified', cls: 'bg-slate-100 text-slate-600' },
-};
+/**
+ * The prototype's `.property-card`: photo with the category badge top left and a save control top
+ * right, then location and availability on one line, the title, the documented-unit count, and a
+ * footer carrying the price and the way in.
+ *
+ * Numbers are the prototype's stylesheet: a 220px image (230 on a phone), 21px body padding, a
+ * 1.05rem Sora title and a 0.86rem body line, over a 14px card at #111827 that lifts 4px on hover.
+ */
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api/v1', '') ?? 'http://localhost:3000';
 
@@ -38,24 +24,26 @@ function mediaUrl(url: string): string {
   return `${API_BASE}${url.startsWith('/') ? '' : '/'}${url}`;
 }
 
-function formatNaira(amount: number): string {
-  if (amount >= 1_000_000) {
-    return `₦${(amount / 1_000_000).toFixed(1)}M`;
-  }
-  if (amount >= 1_000) {
-    return `₦${(amount / 1_000).toFixed(0)}k`;
-  }
-  return `₦${amount.toLocaleString()}`;
+/** The five labels the browse filter and the home search both use, keyed off the listing's type. */
+function categoryLabel(propertyType: PropertyType): string {
+  if (propertyType === PropertyType.SHORT_STAY) return 'Short Lets';
+  if (propertyType === PropertyType.HOSTEL) return 'Hostels';
+  if (propertyType === PropertyType.SHARED_APARTMENT) return 'Shared Property';
+  return 'Residential Property';
+}
+
+function naira(amount: number): string {
+  return `₦${Math.round(amount).toLocaleString('en-NG')}`;
 }
 
 export function PropertyCard({
   property,
   detailHref,
-  browseVariant = false,
 }: {
   property: Property;
-  /** Override the link destination (e.g. /dashboard/browse/:id) */
+  /** Override the link destination (e.g. /dashboard/browse/:id). */
   detailHref?: string;
+  /** Retained so existing call sites keep compiling; the card has one appearance now. */
   browseVariant?: boolean;
 }) {
   const {
@@ -65,153 +53,91 @@ export function PropertyCard({
     city,
     state,
     rentAmount,
-    bedrooms,
-    bathrooms,
     propertyType,
-    freshnessScore,
-    agent,
-    status,
-    isVerified,
     coverImageUrl,
-    consultationFee,
-  } = property as Property & { isVerified?: boolean };
+    availabilitySummary,
+    shortStayDailyRate,
+  } = property;
 
-  // The public list returns the effective unlock price, so ₦0 means this listing is currently free to unlock (§12.7).
-  const isFreeUnlock = typeof consultationFee === 'number' && consultationFee === 0;
-  const unlockLabel = isFreeUnlock
-    ? 'Free unlock · ₦0'
-    : typeof consultationFee === 'number' && consultationFee > 0
-      ? `Unlock ₦${consultationFee.toLocaleString('en-NG')}`
-      : 'Unlock full details';
-
-  const gradient = TYPE_COLORS[propertyType] ?? TYPE_COLORS.other;
-  const freshness = FRESHNESS_BADGE[freshnessScore];
-  const agentName = agent?.user
-    ? `${agent.user.firstName} ${agent.user.lastName}`
-    : 'Unknown Agent';
-  const agentInitial = agentName[0]?.toUpperCase() ?? 'A';
-  const agentVerified =
-    (agent?.verificationLevel ?? 0) >= AgentVerificationLevel.BASIC;
+  const href = detailHref ?? `/properties/${id}`;
   const location = [area, city, state].filter(Boolean).join(', ');
-  const isActive = status === 'active';
+
+  const documented = availabilitySummary?.documentedUnits ?? property.units?.length ?? 0;
+  const available =
+    availabilitySummary?.availableUnits ??
+    property.units?.filter((unit) => unit.availabilityStatus === 'available').length ??
+    0;
+  const isAvailable = available > 0;
+
+  const isShortLet = propertyType === PropertyType.SHORT_STAY;
+  const price = isShortLet ? (shortStayDailyRate ?? rentAmount) : rentAmount;
+  const period = isShortLet ? '/ night' : '/ year';
 
   return (
-    <Link href={detailHref ?? `/properties/${id}`} className="group block">
-      <div className={`overflow-hidden rounded-md border transition-all duration-200 ${browseVariant ? 'border-emerald-400/20 bg-navy-800 text-white hover:border-emerald-400/50 hover:shadow-[0_12px_35px_rgba(16,185,129,0.12)]' : 'card'}`}>
-        {/* Image / placeholder */}
-        <div className={`relative ${browseVariant ? 'h-48' : 'h-52'} bg-gradient-to-br ${gradient} overflow-hidden`}>
+    <article className="overflow-hidden rounded-[14px] border border-[#ffffff16] bg-card transition-[transform,border-color] duration-200 hover:-translate-y-1 hover:border-[#10b98170]">
+      <div className="group relative h-[230px] overflow-hidden wide:h-[220px]">
+        <Link href={href} tabIndex={-1} aria-hidden="true" className="block h-full w-full">
           {coverImageUrl ? (
             <Image
               src={mediaUrl(coverImageUrl)}
-              alt={title}
+              alt=""
               fill
-              className="object-cover"
-              sizes="(max-width: 768px) 100vw, 33vw"
+              sizes="(min-width: 1051px) 400px, (min-width: 760px) 45vw, 94vw"
+              className="object-cover transition-transform duration-[600ms] group-hover:scale-[1.04]"
             />
           ) : (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <Home className="h-12 w-12 text-white/10" />
-            </div>
-          )}
-
-          {/* Freshness badge */}
-          <div className="absolute top-3 left-3">
-            <span className={`badge text-xs font-semibold ${freshness.cls}`}>
-              {freshness.label}
+            <span className="flex h-full w-full items-center justify-center bg-[#0b141d]">
+              <Home className="h-10 w-10 text-[#ffffff14]" aria-hidden="true" />
             </span>
-          </div>
-
-          {/* Status warning */}
-          {!isActive && (
-            <div className="absolute top-3 left-3">
-              <span className="badge bg-slate-800/90 text-white text-xs font-semibold capitalize">
-                {status}
-              </span>
-            </div>
           )}
+        </Link>
 
-          {/* Verified badge */}
-          {agentVerified && (
-            <div className="absolute top-3 right-3 flex items-center gap-1 rounded-full bg-white/90 backdrop-blur-sm px-2.5 py-1">
-              <CheckCircle className="h-3 w-3 text-emerald-500" />
-              <span className="text-xs font-bold text-navy-900">Verified</span>
-            </div>
-          )}
+        <span className="absolute left-[14px] top-[14px] inline-flex items-center gap-1.5 rounded-md border border-[#ffffff20] bg-[#070b14d9] px-2.5 py-[5px] text-ui-xs font-medium leading-[1.4] text-foreground">
+          {categoryLabel(propertyType)}
+        </span>
 
-          {isFreeUnlock && (
-            <div className="absolute top-12 right-3 flex items-center gap-1 rounded-full bg-emerald-500 px-2.5 py-1 text-white shadow-sm">
-              <Gift className="h-3 w-3" />
-              <span className="text-xs font-bold">Free Unlock</span>
-            </div>
-          )}
+        <button
+          type="button"
+          aria-label={`Save ${title}`}
+          className="absolute right-[14px] top-[14px] grid h-10 w-10 place-items-center rounded-full border border-[#ffffff20] bg-[#070b1488] text-white transition-colors hover:bg-[#070b14cc] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <Heart className="h-[18px] w-[18px]" aria-hidden="true" />
+        </button>
+      </div>
 
-          {/* Unlock fee CTA */}
-          <div className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-lg bg-navy-900/80 px-3 py-1.5 backdrop-blur-sm">
-            {isFreeUnlock ? <Gift className="h-3 w-3 text-emerald-300" /> : <Lock className="h-3 w-3 text-gold-400" />}
-            <span className="text-xs font-semibold text-white">{unlockLabel}</span>
-          </div>
-
-          {/* Type label */}
-          <div className="absolute bottom-3 left-3 rounded-lg bg-white/90 backdrop-blur-sm px-2.5 py-1">
-            <span className="text-xs font-medium text-navy-700 capitalize">
-              {propertyType.replace(/_/g, ' ')}
-            </span>
-          </div>
+      <div className="p-[21px]">
+        <div className="flex items-center justify-between gap-3">
+          <small className="flex items-center gap-[5px] text-ui-xs text-muted-foreground">
+            <MapPin className="h-[13px] w-[13px] flex-none" aria-hidden="true" />
+            <span className="truncate">{location}</span>
+          </small>
+          <Badge tone={isAvailable ? 'success' : 'amber'}>{isAvailable ? 'Available now' : 'Unavailable'}</Badge>
         </div>
 
-        {/* Content */}
-        <div className={browseVariant ? 'p-4' : 'p-5'}>
-          <h3 className={`font-display text-base font-bold leading-snug group-hover:text-veriq-secondary transition-colors line-clamp-1 mb-1.5 ${browseVariant ? 'text-white' : 'text-navy-900'}`}>
+        <Link href={href}>
+          <h3 className="mb-2 mt-3 font-display text-[1.05rem] font-semibold leading-[1.25] tracking-[-0.035em] text-foreground">
             {title}
           </h3>
+        </Link>
 
-          <div className={`flex items-center gap-1.5 text-xs mb-4 ${browseVariant ? 'text-white/55' : 'text-veriq-muted'}`}>
-            <MapPin className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
-            <span className="truncate">{location}</span>
-          </div>
+        <p className="mb-4 text-[0.86rem] leading-[1.6] text-muted-foreground">
+          {documented} documented {documented === 1 ? 'unit' : 'units'}
+        </p>
 
-          {/* Specs */}
-          <div className={`flex items-center gap-4 text-xs mb-4 pb-4 border-b ${browseVariant ? 'border-white/10 text-white/60' : 'border-slate-100 text-veriq-muted'}`}>
-            <div className="flex items-center gap-1">
-              <Bed className="h-3.5 w-3.5" />
-              <span>{bedrooms} Beds</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <Bath className="h-3.5 w-3.5" />
-              <span>{bathrooms} Baths</span>
-            </div>
-          </div>
-
-          {/* Agent & price */}
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[10px] text-slate-400 uppercase tracking-wider mb-0.5">Agent</p>
-              <div className="flex items-center gap-1.5">
-                <div className="h-5 w-5 rounded-full bg-veriq-secondary flex items-center justify-center text-[9px] font-bold text-white">
-                  {agentInitial}
-                </div>
-                <span className={`text-xs font-medium max-w-[80px] truncate ${browseVariant ? 'text-white/70' : 'text-navy-700'}`}>{agentName}</span>
-                {agent?.isPlatformVerified && (
-                  <Shield className="h-3 w-3 text-emerald-500 flex-shrink-0" />
-                )}
-              </div>
-            </div>
-            <div className="text-right">
-              <p className="text-[10px] text-slate-400 uppercase tracking-wider mb-0.5">Rent</p>
-              <p className={`text-base font-bold ${browseVariant ? 'text-emerald-300' : 'text-navy-900'}`}>
-                {formatNaira(rentAmount)}
-                <span className="text-xs font-normal text-slate-400">/yr</span>
-              </p>
-            </div>
-          </div>
-          {browseVariant && (
-            <div className="mt-4 grid grid-cols-2 gap-2 border-t border-white/10 pt-3">
-              <span className="flex min-h-9 items-center justify-center rounded border border-white/15 text-xs font-semibold text-white/80">View Preview</span>
-              <span className="flex min-h-9 items-center justify-center gap-1.5 rounded bg-emerald-500 text-xs font-semibold text-navy-900">{isFreeUnlock ? <Gift className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}{isFreeUnlock ? 'Unlock Free' : 'Unlock Full Details'}</span>
-            </div>
-          )}
+        <div className="flex items-center justify-between border-t border-[#ffffff10] pt-[15px] text-ui-md">
+          <span className="text-muted-foreground">
+            <strong className="text-[1.05rem] font-semibold text-foreground">{naira(price)}</strong>{' '}
+            <small className="text-ui-md">{period}</small>
+          </span>
+          <Link
+            href={href}
+            aria-label={`View ${title}`}
+            className="text-muted-foreground transition-colors hover:text-primary"
+          >
+            <ArrowUpRight className="h-[21px] w-[21px]" aria-hidden="true" />
+          </Link>
         </div>
       </div>
-    </Link>
+    </article>
   );
 }
